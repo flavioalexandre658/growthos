@@ -2,6 +2,7 @@
 
 import { IFunnelData } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
+import { fmtInt, fmtBRL, fmtBRLDecimal } from "@/utils/format";
 import {
   IconUsers,
   IconEdit,
@@ -66,35 +67,35 @@ export function KpiCards({ data, isLoading }: KpiCardsProps) {
   const cards: KpiCardProps[] = [
     {
       label: "Cadastros",
-      value: String(data?.signups ?? 0),
+      value: fmtInt(data?.signups),
       icon: IconUsers,
       color: "text-indigo-400",
       bgColor: "bg-indigo-600/20",
     },
     {
       label: "Edições",
-      value: String(data?.edits ?? 0),
+      value: fmtInt(data?.edits),
       icon: IconEdit,
       color: "text-violet-400",
       bgColor: "bg-violet-600/20",
     },
     {
       label: "Pagamentos",
-      value: String(data?.payments ?? 0),
+      value: fmtInt(data?.payments),
       icon: IconCreditCard,
       color: "text-emerald-400",
       bgColor: "bg-emerald-600/20",
     },
     {
       label: "Receita",
-      value: `R$ ${(data?.revenue ?? 0).toFixed(0)}`,
+      value: fmtBRL(data?.revenue),
       icon: IconCurrencyDollar,
       color: "text-emerald-400",
       bgColor: "bg-emerald-600/20",
     },
     {
       label: "Ticket Médio",
-      value: `R$ ${data?.ticket_medio ?? "0,00"}`,
+      value: fmtBRLDecimal(data?.ticket_medio),
       icon: IconReceipt,
       color: "text-amber-400",
       bgColor: "bg-amber-600/20",

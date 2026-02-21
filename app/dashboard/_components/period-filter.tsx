@@ -8,7 +8,10 @@ import { IconCalendar, IconX } from "@tabler/icons-react";
 
 const PERIOD_OPTIONS: { value: DashboardPeriod; label: string }[] = [
   { value: "today", label: "Hoje" },
+  { value: "yesterday", label: "Ontem" },
+  { value: "3d", label: "3d" },
   { value: "7d", label: "7d" },
+  { value: "this_month", label: "Mês" },
   { value: "30d", label: "30d" },
   { value: "90d", label: "90d" },
 ];
@@ -62,14 +65,13 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {/* Period quick-select buttons */}
       <div className="flex items-center gap-0.5 rounded-lg border border-zinc-800 bg-zinc-900/80 p-1">
         {PERIOD_OPTIONS.map((opt) => (
           <button
             key={opt.value}
             onClick={() => handlePeriod(opt.value)}
             className={cn(
-              "px-2.5 py-1 rounded-md text-xs font-semibold transition-all",
+              "px-2 py-1 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
               activePeriod === opt.value
                 ? "bg-indigo-600 text-white shadow-sm"
                 : "text-zinc-400 hover:text-zinc-100"
@@ -82,7 +84,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
         <button
           onClick={() => setShowCustom((v) => !v)}
           className={cn(
-            "flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold transition-all",
+            "flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
             hasRange
               ? "bg-indigo-600 text-white shadow-sm"
               : showCustom
@@ -96,7 +98,6 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
         </button>
       </div>
 
-      {/* Custom date range inputs */}
       {showCustom && (
         <div className="flex flex-wrap items-center gap-1.5">
           <input
@@ -107,7 +108,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
               setLocalStart(e.target.value);
               if (localEnd && e.target.value) handleDateApply(e.target.value, localEnd);
             }}
-            className="h-8 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 [color-scheme:dark]"
+            className="h-8 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 text-[16px] sm:text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 [color-scheme:dark]"
           />
           <span className="text-xs text-zinc-600">→</span>
           <input
@@ -118,7 +119,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
               setLocalEnd(e.target.value);
               if (localStart && e.target.value) handleDateApply(localStart, e.target.value);
             }}
-            className="h-8 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 [color-scheme:dark]"
+            className="h-8 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 text-[16px] sm:text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 [color-scheme:dark]"
           />
           {hasRange && (
             <button

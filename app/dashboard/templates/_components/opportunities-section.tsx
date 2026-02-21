@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ResponsiveTable, TableColumn, ServerPaginationConfig } from "@/components/ui/responsive-table";
 import { IconAlertTriangle, IconExternalLink, IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
+import { fmtInt, fmtBRLDecimal } from "@/utils/format";
 
 type OpportunityOrderBy = NonNullable<IOpportunityParams["order_by"]>;
 
@@ -81,7 +82,7 @@ export function OpportunitiesSection({
               <TemplateLink slug={t.slug} name={t.name} />
             </div>
             <span className="text-xs text-zinc-500">
-              {Number(t.views).toLocaleString("pt-BR")} views
+              {fmtInt(t.views)} views
             </span>
           </div>
         </div>
@@ -91,13 +92,13 @@ export function OpportunitiesSection({
       key: "edits",
       header: "Edições",
       align: "right",
-      render: (t) => <span className="font-mono text-sm text-zinc-400">{t.edits}</span>,
+      render: (t) => <span className="font-mono text-sm text-zinc-400">{fmtInt(t.edits)}</span>,
     },
     {
       key: "payments",
       header: "Pagamentos",
       align: "right",
-      render: (t) => <span className="font-mono text-sm text-zinc-400">{t.payments}</span>,
+      render: (t) => <span className="font-mono text-sm text-zinc-400">{fmtInt(t.payments)}</span>,
     },
     {
       key: "edit_to_payment_rate",
@@ -112,7 +113,7 @@ export function OpportunitiesSection({
       header: "Preço",
       align: "right",
       mobileHide: true,
-      render: (t) => <span className="font-mono text-sm text-zinc-400">R$ {Number(t.price).toFixed(2)}</span>,
+      render: (t) => <span className="font-mono text-sm text-zinc-400">{fmtBRLDecimal(t.price)}</span>,
     },
   ];
 

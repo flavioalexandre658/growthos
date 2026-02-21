@@ -1,12 +1,12 @@
 "use client";
 
-import { ITemplateData, ITemplateParams, OrderDirection } from "@/interfaces/dashboard.interface";
+import { ITemplateData, ITemplateParams, OrderDirection, IPaginationMeta } from "@/interfaces/dashboard.interface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ResponsiveTable, TableColumn, ServerPaginationConfig } from "@/components/ui/responsive-table";
 import { IconExternalLink, IconChevronUp, IconChevronDown } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { IPaginationMeta } from "@/interfaces/dashboard.interface";
+import { fmtInt, fmtBRL, fmtBRLDecimal } from "@/utils/format";
 
 type TemplateOrderBy = NonNullable<ITemplateParams["order_by"]>;
 
@@ -104,25 +104,25 @@ export function TemplatesTable({
       key: "views",
       header: "Views",
       align: "right",
-      render: (t) => <span className="font-mono text-sm text-zinc-400">{Number(t.views).toLocaleString("pt-BR")}</span>,
+      render: (t) => <span className="font-mono text-sm text-zinc-400">{fmtInt(t.views)}</span>,
     },
     {
       key: "edits",
       header: "Edições",
       align: "right",
-      render: (t) => <span className="font-mono text-sm text-zinc-400">{t.edits}</span>,
+      render: (t) => <span className="font-mono text-sm text-zinc-400">{fmtInt(t.edits)}</span>,
     },
     {
       key: "payments",
       header: "Pagos",
       align: "right",
-      render: (t) => <span className="font-mono text-sm font-semibold text-emerald-400">{t.payments}</span>,
+      render: (t) => <span className="font-mono text-sm font-semibold text-emerald-400">{fmtInt(t.payments)}</span>,
     },
     {
       key: "revenue",
       header: "Receita",
       align: "right",
-      render: (t) => <span className="font-mono text-sm font-bold text-emerald-400">R$ {Number(t.revenue).toFixed(0)}</span>,
+      render: (t) => <span className="font-mono text-sm font-bold text-emerald-400">{fmtBRL(t.revenue)}</span>,
     },
     {
       key: "view_to_edit",
@@ -150,7 +150,7 @@ export function TemplatesTable({
       header: "RPM",
       align: "right",
       mobileHide: true,
-      render: (t) => <span className="font-mono text-sm font-bold text-amber-400">R$ {t.rpm}</span>,
+      render: (t) => <span className="font-mono text-sm font-bold text-amber-400">{fmtBRLDecimal(t.rpm)}</span>,
     },
   ];
 

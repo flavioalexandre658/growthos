@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { IChannelData } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
+import { fmtBRL } from "@/utils/format";
 
 const CHANNEL_COLORS: Record<string, string> = {
   organic_google: "#16a34a",
@@ -108,7 +109,7 @@ export function ChannelsBarChart({ data, isLoading }: ChannelsBarChartProps) {
                 tick={<CustomXAxisTick />}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(v) => `R$${v}`}
+                tickFormatter={(v) => fmtBRL(v)}
               />
               <YAxis
                 type="category"
@@ -128,7 +129,7 @@ export function ChannelsBarChart({ data, isLoading }: ChannelsBarChartProps) {
                 }}
                 labelStyle={{ color: "#a1a1aa" }}
                 itemStyle={{ color: "#e4e4e7" }}
-                formatter={(v: number) => [`R$ ${v.toFixed(2)}`, "Receita"]}
+                formatter={(v: number) => [fmtBRL(v), "Receita"]}
                 cursor={{ fill: "#ffffff08" }}
               />
               <Bar dataKey="revenue" radius={[0, 6, 6, 0]}>

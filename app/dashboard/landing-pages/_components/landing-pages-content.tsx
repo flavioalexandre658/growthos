@@ -5,11 +5,19 @@ import { useLandingPages } from "@/hooks/queries/use-landing-pages";
 import { useDebounce } from "@/hooks/use-debounce";
 import { IDateFilter, ILandingPageParams, OrderDirection } from "@/interfaces/dashboard.interface";
 import { PeriodFilter } from "@/app/dashboard/_components/period-filter";
+import { MetricFiltersPanel, MetricFilterField } from "@/components/ui/metric-filters";
 import { LandingPagesTable } from "./landing-pages-table";
 import { Input } from "@/components/ui/input";
 import { IconSearch } from "@tabler/icons-react";
 
 const EMPTY_PAGINATION = { page: 1, limit: 30, total: 0, total_pages: 0 };
+
+const METRIC_FIELDS: MetricFilterField[] = [
+  { key: "edits", label: "Edições" },
+  { key: "payments", label: "Pagamentos" },
+  { key: "revenue", label: "Receita", prefix: "R$" },
+  { key: "conversion_rate", label: "Conversão", suffix: "%" },
+];
 
 interface LandingPagesContentProps {
   filter: IDateFilter;
@@ -22,6 +30,7 @@ export function LandingPagesContent({ filter }: LandingPagesContentProps) {
   const [limit, setLimit] = useState(30);
   const [orderBy, setOrderBy] = useState<NonNullable<ILandingPageParams["order_by"]>>("revenue");
   const [orderDir, setOrderDir] = useState<OrderDirection>("DESC");
+  const [metricFilters, setMetricFilters] = useState<Record<string, string>>({});
 
   const params: ILandingPageParams = {
     ...filter,
@@ -30,12 +39,18 @@ export function LandingPagesContent({ filter }: LandingPagesContentProps) {
     order_by: orderBy,
     order_dir: orderDir,
     search: debouncedSearch || undefined,
+    ...(metricFilters as Partial<ILandingPageParams>),
   };
 
   const { data: resp, isLoading } = useLandingPages(params);
 
   const landingPagesData = resp?.data ?? [];
   const pagination = resp?.pagination ?? EMPTY_PAGINATION;
+
+  const handleMetricChange = (values: Record<string, string>) => {
+    setMetricFilters(values);
+    setPage(1);
+  };
 
   return (
     <div className="space-y-4">
@@ -59,6 +74,12 @@ export function LandingPagesContent({ filter }: LandingPagesContentProps) {
           </Suspense>
         </div>
       </div>
+
+      <MetricFiltersPanel
+        fields={METRIC_FIELDS}
+        values={metricFilters}
+        onChange={handleMetricChange}
+      />
 
       <LandingPagesTable
         data={landingPagesData}

@@ -5,6 +5,7 @@ import { ResponsiveTable, TableColumn, ServerPaginationConfig } from "@/componen
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { getChannelName, getChannelColor } from "./channels-bar-chart";
+import { fmtInt, fmtBRL, fmtBRLDecimal } from "@/utils/format";
 
 type ChannelOrderBy = NonNullable<IChannelParams["order_by"]>;
 
@@ -86,13 +87,13 @@ export function ChannelsTable({
       key: "edits",
       header: "Edições",
       align: "right",
-      render: (c) => <span className="font-mono text-sm text-zinc-400">{c.edits}</span>,
+      render: (c) => <span className="font-mono text-sm text-zinc-400">{fmtInt(c.edits)}</span>,
     },
     {
       key: "payments",
       header: "Pagamentos",
       align: "right",
-      render: (c) => <span className="font-mono text-sm font-semibold text-emerald-400">{c.payments}</span>,
+      render: (c) => <span className="font-mono text-sm font-semibold text-emerald-400">{fmtInt(c.payments)}</span>,
     },
     {
       key: "conversion_rate",
@@ -108,13 +109,13 @@ export function ChannelsTable({
       key: "revenue",
       header: "Receita",
       align: "right",
-      render: (c) => <span className="font-mono text-sm font-bold text-emerald-400">R$ {Number(c.revenue).toFixed(0)}</span>,
+      render: (c) => <span className="font-mono text-sm font-bold text-emerald-400">{fmtBRL(c.revenue)}</span>,
     },
     {
       key: "ticket_medio",
       header: "Ticket Médio",
       align: "right",
-      render: (c) => <span className="font-mono text-sm text-zinc-300">R$ {Number(c.ticket_medio).toFixed(2)}</span>,
+      render: (c) => <span className="font-mono text-sm text-zinc-300">{fmtBRLDecimal(c.ticket_medio)}</span>,
     },
   ];
 

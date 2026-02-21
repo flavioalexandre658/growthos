@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useState, Suspense } from "react";
 import { signOut } from "next-auth/react";
 import {
   IconLayoutDashboard,
@@ -54,6 +54,8 @@ const navItems = [
   },
 ];
 
+const DATE_PARAMS = ["period", "start_date", "end_date"];
+
 function NavItem({
   href,
   label,
@@ -70,11 +72,20 @@ function NavItem({
   onClick?: () => void;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isActive = exact ? pathname === href : pathname.startsWith(href);
+
+  const forwarded = new URLSearchParams();
+  for (const key of DATE_PARAMS) {
+    const val = searchParams.get(key);
+    if (val) forwarded.set(key, val);
+  }
+  const qs = forwarded.toString();
+  const resolvedHref = qs ? `${href}?${qs}` : href;
 
   return (
     <Link
-      href={href}
+      href={resolvedHref}
       onClick={onClick}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
@@ -161,14 +172,16 @@ function SidebarContent({
       )}
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
-        {navItems.map((item) => (
-          <NavItem
-            key={item.href}
-            {...item}
-            collapsed={collapsed}
-            onClick={onClose}
-          />
-        ))}
+        <Suspense>
+          {navItems.map((item) => (
+            <NavItem
+              key={item.href}
+              {...item}
+              collapsed={collapsed}
+              onClick={onClose}
+            />
+          ))}
+        </Suspense>
       </nav>
 
       <div className={cn("border-t border-zinc-800/60 p-3", collapsed && "flex justify-center")}>

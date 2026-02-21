@@ -13,14 +13,22 @@ export async function getTemplatesOpportunities(
     return { data: [], pagination: { page: 1, limit: 20, total: 0, total_pages: 0 } };
   }
 
+  const {
+    period, start_date, end_date,
+    page, limit, order_by, order_dir,
+    category_id, name,
+    ...metricFilters
+  } = params;
+
   const qs = buildQueryString({
-    ...dateFilterParams(params),
-    page: params.page ?? 1,
-    limit: params.limit ?? 20,
-    order_by: params.order_by ?? "edits",
-    order_dir: params.order_dir ?? "DESC",
-    category_id: params.category_id,
-    name: params.name,
+    ...dateFilterParams({ period, start_date, end_date }),
+    page: page ?? 1,
+    limit: limit ?? 20,
+    order_by: order_by ?? "edits",
+    order_dir: order_dir ?? "DESC",
+    category_id,
+    name,
+    ...metricFilters,
   });
 
   const res = await fetch(

@@ -4,6 +4,7 @@ import { ICategoryData, ICategoryParams, OrderDirection, IPaginationMeta } from 
 import { ResponsiveTable, TableColumn, ServerPaginationConfig } from "@/components/ui/responsive-table";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
+import { fmtInt, fmtBRL, fmtBRLDecimal } from "@/utils/format";
 
 type CategoryOrderBy = NonNullable<ICategoryParams["order_by"]>;
 
@@ -76,13 +77,13 @@ export function CategoriesTable({
       key: "edits",
       header: "Edições",
       align: "right",
-      render: (c) => <span className="font-mono text-sm text-zinc-400">{c.edits}</span>,
+      render: (c) => <span className="font-mono text-sm text-zinc-400">{fmtInt(c.edits)}</span>,
     },
     {
       key: "payments",
       header: "Pagos",
       align: "right",
-      render: (c) => <span className="font-mono text-sm font-semibold text-emerald-400">{c.payments}</span>,
+      render: (c) => <span className="font-mono text-sm font-semibold text-emerald-400">{fmtInt(c.payments)}</span>,
     },
     {
       key: "conversion_rate",
@@ -98,19 +99,19 @@ export function CategoriesTable({
       key: "revenue",
       header: "Receita Bruta",
       align: "right",
-      render: (c) => <span className="font-mono text-sm font-bold text-emerald-400">R$ {Number(c.revenue).toFixed(0)}</span>,
+      render: (c) => <span className="font-mono text-sm font-bold text-emerald-400">{fmtBRL(c.revenue)}</span>,
     },
     {
       key: "net_revenue",
       header: "Receita Líq.",
       align: "right",
-      render: (c) => <span className="font-mono text-sm text-cyan-400">R$ {Number(c.net_revenue).toFixed(0)}</span>,
+      render: (c) => <span className="font-mono text-sm text-cyan-400">{fmtBRL(c.net_revenue)}</span>,
     },
     {
       key: "ticket_medio",
       header: "Ticket",
       align: "right",
-      render: (c) => <span className="font-mono text-sm text-zinc-300">R$ {Number(c.ticket_medio).toFixed(2)}</span>,
+      render: (c) => <span className="font-mono text-sm text-zinc-300">{fmtBRLDecimal(c.ticket_medio)}</span>,
     },
   ];
 

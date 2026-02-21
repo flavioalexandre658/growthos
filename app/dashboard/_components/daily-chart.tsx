@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { IDailyData } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
+import { fmtInt } from "@/utils/format";
 
 interface DailyChartProps {
   data: IDailyData[] | undefined;
@@ -63,6 +64,7 @@ export function DailyChart({ data, isLoading }: DailyChartProps) {
                   color: "#e4e4e7",
                 }}
                 labelStyle={{ color: "#a1a1aa", marginBottom: 4 }}
+                formatter={(v: number) => fmtInt(v)}
                 cursor={{ fill: "#ffffff08" }}
               />
               <Legend

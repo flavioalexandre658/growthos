@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { IDailyData } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
+import { fmtBRL } from "@/utils/format";
 
 interface RevenueLineChartProps {
   data: IDailyData[] | undefined;
@@ -57,7 +58,7 @@ export function RevenueLineChart({ data, isLoading }: RevenueLineChartProps) {
                 tick={{ fontSize: 10, fill: "#52525b" }}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(v) => `R$${v.toFixed(0)}`}
+                tickFormatter={(v) => fmtBRL(v)}
               />
               <Tooltip
                 contentStyle={{
@@ -67,7 +68,7 @@ export function RevenueLineChart({ data, isLoading }: RevenueLineChartProps) {
                   fontSize: 12,
                   color: "#e4e4e7",
                 }}
-                formatter={(v: number) => `R$ ${v.toFixed(2)}`}
+                formatter={(v: number) => fmtBRL(v)}
                 cursor={{ stroke: "#3f3f46" }}
               />
               <Legend

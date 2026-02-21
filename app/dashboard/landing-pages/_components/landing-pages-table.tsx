@@ -5,6 +5,7 @@ import { ResponsiveTable, TableColumn, ServerPaginationConfig } from "@/componen
 import { IconChevronDown, IconChevronUp, IconExternalLink } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { fmtInt, fmtBRL } from "@/utils/format";
 
 type LandingOrderBy = NonNullable<ILandingPageParams["order_by"]>;
 
@@ -94,13 +95,13 @@ export function LandingPagesTable({
       key: "edits",
       header: "Edições",
       align: "right",
-      render: (lp) => <span className="font-mono text-sm text-zinc-400">{lp.edits}</span>,
+      render: (lp) => <span className="font-mono text-sm text-zinc-400">{fmtInt(lp.edits)}</span>,
     },
     {
       key: "payments",
       header: "Pagamentos",
       align: "right",
-      render: (lp) => <span className="font-mono text-sm font-semibold text-emerald-400">{lp.payments}</span>,
+      render: (lp) => <span className="font-mono text-sm font-semibold text-emerald-400">{fmtInt(lp.payments)}</span>,
     },
     {
       key: "conversion_rate",
@@ -118,7 +119,7 @@ export function LandingPagesTable({
       align: "right",
       render: (lp) => (
         <span className="font-mono text-sm font-bold text-emerald-400">
-          R$ {Number(lp.revenue).toFixed(0)}
+          {fmtBRL(lp.revenue)}
         </span>
       ),
     },

@@ -13,13 +13,21 @@ export async function getLandingPages(
     return { data: [], pagination: { page: 1, limit: 30, total: 0, total_pages: 0 } };
   }
 
+  const {
+    period, start_date, end_date,
+    page, limit, order_by, order_dir,
+    search,
+    ...metricFilters
+  } = params;
+
   const qs = buildQueryString({
-    ...dateFilterParams(params),
-    page: params.page ?? 1,
-    limit: params.limit ?? 30,
-    order_by: params.order_by ?? "revenue",
-    order_dir: params.order_dir ?? "DESC",
-    search: params.search,
+    ...dateFilterParams({ period, start_date, end_date }),
+    page: page ?? 1,
+    limit: limit ?? 30,
+    order_by: order_by ?? "revenue",
+    order_dir: order_dir ?? "DESC",
+    search,
+    ...metricFilters,
   });
 
   const res = await fetch(

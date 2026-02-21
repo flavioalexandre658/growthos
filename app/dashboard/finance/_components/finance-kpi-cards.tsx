@@ -2,6 +2,7 @@
 
 import { IFunnelData } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
+import { fmtBRL, fmtBRLDecimal } from "@/utils/format";
 import {
   IconCurrencyDollar,
   IconWallet,
@@ -58,14 +59,14 @@ export function FinanceKpiCards({ data, isLoading }: FinanceKpiCardsProps) {
   const cards: FinanceKpiCardProps[] = [
     {
       label: "Receita Bruta",
-      value: `R$ ${(data?.revenue ?? 0).toFixed(2)}`,
+      value: fmtBRL(data?.revenue),
       icon: IconCurrencyDollar,
       color: "text-emerald-400",
       bgColor: "bg-emerald-600/20",
     },
     {
       label: "Receita Líquida",
-      value: `R$ ${(data?.net_revenue ?? 0).toFixed(2)}`,
+      value: fmtBRL(data?.net_revenue),
       icon: IconWallet,
       color: "text-cyan-400",
       bgColor: "bg-cyan-600/20",
@@ -79,7 +80,7 @@ export function FinanceKpiCards({ data, isLoading }: FinanceKpiCardsProps) {
     },
     {
       label: "Ticket Médio",
-      value: `R$ ${data?.ticket_medio ?? "0,00"}`,
+      value: fmtBRLDecimal(data?.ticket_medio),
       icon: IconReceipt,
       color: "text-violet-400",
       bgColor: "bg-violet-600/20",

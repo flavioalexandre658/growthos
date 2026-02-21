@@ -2,6 +2,7 @@
 
 import { IFunnelData } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
+import { fmtInt } from "@/utils/format";
 
 interface FunnelSectionProps {
   data: IFunnelData | null | undefined;
@@ -62,7 +63,7 @@ export function FunnelSection({ data, isLoading }: FunnelSectionProps) {
                     <span
                       className={`relative text-base font-bold font-mono ${step.text}`}
                     >
-                      {value.toLocaleString()}
+                      {fmtInt(value)}
                     </span>
                   </div>
                   <p className="mt-1.5 text-[11px] text-zinc-500">{step.label}</p>
