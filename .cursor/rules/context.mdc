@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+
+Esse é um projeto que vai exibir dados de Growth e Analysis, inicialmente vamos extrair dados de uma ferramenta que já está em produção, o objetivo é obter dado úteis para entender onde está havendo crescimento e declinio, o que focar e etc.
+
+O que é necessário responder com essa ferramenta:
+Com SÓ isso implementado, seu admin já responde:
+✅ Quanto de receita veio do Google orgânico vs direto vs Instagram vs Ads?
+✅ Quais landing pages geram mais receita?
+✅ Quais categorias convertem mais?
+✅ Quais templates têm muita edição mas pouco pagamento?
+✅ Mobile vs Desktop: quem paga mais?
+✅ Qual campanha de ads deu retorno?
+✅ Ticket médio por canal
+
+O que respondeDe onde vem o dadoQuantos cadastros hoje/semana/mêsUsers.createdAtQuantas edições no períodoInviteEdits.createdAtQuantos pagamentosPayments.status = 'paid'Taxa cadastro → edição → pagamentoDivisão simples entre os 3Qual template converte maisInvite.views vs InviteEdits vs PaymentsQuais templates têm muita edição e pouco pagamentoMesma query acima, filtradaReceita por categoriaCategoriesInvites → Invites → InviteEdits → PaymentsReceita bruta, líquida, margem, ticket médioPayments.total + InviteEdits.convitede_net_revenueEvolução diária/semanal/mensalGROUP BY DATE(createdAt)Comparativo período vs anteriorMesma query com datas diferentes
+Os endpoints 1-5 e 9 do dashboard-api.js rodam no seu banco atual sem nenhuma mudança.

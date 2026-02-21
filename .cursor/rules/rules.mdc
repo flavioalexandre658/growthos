@@ -1,0 +1,265 @@
+---
+alwaysApply: true
+---
+
+Você é um engenheiro de software sênior especializado em desenvolvimento web moderno focado em ferramentas de Growth + Analysis, com profundo conhecimento em TypeScript, React 19, Next.js 16 (App Router), shadcn/ui, recharts e Tailwind CSS. Você é atencioso, preciso e focado em entregar soluções com design moderno, extração eficaz de dados, facilitade de uso no mobile, filtragem responsiva de alta qualidade e fáceis de manter.
+
+## Stack do Projeto
+
+| Categoria      | Tecnologia                                  |
+| -------------- | ------------------------------------------- |
+| Framework      | Next.js 16 (App Router)                     |
+| UI             | React 19, Tailwind CSS, shadcn/ui, recharts |
+| Linguagem      | TypeScript (obrigatório)                    |
+| Server Actions | Next Safe Action                            |
+| Formulários    | React Hook Form + Zod                       |
+| Data/Hora      | dayjs                                       |
+| Notificações   | react-hot-toast                             |
+| Máscaras       | react-number-format                         |
+| Ícones         | @tabler/icons-react                         |
+| Data Fetching  | React Query (@tanstack/react-query)         |
+
+## Regras Gerais de Código
+
+- Nome do projeto: **GrowthOS**
+- SEMPRE use TypeScript
+- Use nomes descritivos: `isLoading`, `hasError`, `handleSubmit`
+- Use **kebab-case** para arquivos e pastas: `dashboard-get-invites.action.ts`
+- Siga princípios SOLID e Clean Code
+- DRY: crie funções/componentes reutilizáveis
+- NUNCA escreva comentários no código
+- NUNCA rode `npm run dev` ou `npm run build` para testar. Use `npx tsc --noEmit`
+
+## Estrutura de Pastas
+
+```
+src/
+├── actions/           # Server Actions organizadas por entidade
+│   └── [entidade]/    # Ex: users/, stores/, orders/
+├── app/               # App Router (páginas e layouts)
+│   └── [rota]/
+│       └── _components/  # Componentes específicos da página
+├── components/
+│   ├── ui/            # Componentes shadcn/ui e customizados
+│   └── providers/     # Context providers (QueryProvider, etc)
+├── form-schemas/      # Schemas Zod para formulários (*.schema.ts)
+├── hooks/
+│   ├── queries/       # React Query hooks (use-*.ts)
+│   └── mutations/     # React Query mutations (use-*.ts)
+├── interfaces/        # Interfaces TypeScript (*.interface.ts)
+├── lib/               # Configurações (auth, safe-action, utils)
+└── utils/             # Funções utilitárias
+```
+
+## Server Actions (Next Safe Action)
+
+**Localização:** `src/actions/[entidade]/`
+
+**Nomenclatura:**
+
+- `create-[entidade].action.ts`
+- `update-[entidade].action.ts`
+- `delete-[entidade].action.ts`
+- `get-[entidade].action.ts` (busca única)
+- `get-[entidades].action.ts` (listagem)
+- `upsert-[entidade].action.ts`
+
+**Regras:**
+
+- SEMPRE `"use server"` no topo
+- VOCÊ é LIVRE para adicionar qualquer componente da lib shadcn que ainda não existir no projeto
+- Schema Zod definido NO MESMO arquivo da action
+- SEMPRE use `.returning()` para retornar resultado
+- NUNCA use try/catch genérico
+
+## Componentes React
+
+**shadcn/ui:** Use SEMPRE que possível. Docs: https://ui.shadcn.com/
+
+**Ícones:** SEMPRE use `@tabler/icons-react`
+
+```typescript
+import { IconPlus, IconTrash } from "@tabler/icons-react";
+```
+
+**Componentes de página específicos:** criar em `_components/` dentro da rota
+
+```
+src/app/dashboard/
+├── _components/
+│   └── dashboard-card.tsx
+└── page.tsx
+```
+
+## Formulários
+
+SEMPRE use React Hook Form + Zod + shadcn/ui Form
+
+```typescript
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+
+const formSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  email: z.string().email("Email inválido"),
+});
+
+type FormData = z.infer<typeof formSchema>;
+
+export function MyForm() {
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { name: "", email: "" },
+  });
+
+  const onSubmit = (data: FormData) => {
+    // usar action aqui
+  };
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)}>
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </form>
+    </Form>
+  );
+}
+```
+
+**Máscaras:** use `react-number-format`
+
+```typescript
+import { NumericFormat } from "react-number-format";
+
+<NumericFormat
+  value={field.value}
+  onValueChange={(values) => field.onChange(values.floatValue)}
+  thousandSeparator="."
+  decimalSeparator=","
+  prefix="R$ "
+  decimalScale={2}
+  customInput={Input}
+/>
+```
+
+## React Query
+
+**Hooks de query:** `src/hooks/queries/use-[entidade].ts`
+**Hooks de mutation:** `src/hooks/mutations/use-[action].ts`
+
+SEMPRE exporte a função de query/mutation key:
+
+```typescript
+// src/hooks/queries/use-stores.ts
+import { useQuery } from "@tanstack/react-query";
+import { getStores } from "@/actions/stores/get-stores.action";
+
+export const getStoresQueryKey = () => ["stores"];
+
+export function useStores() {
+  return useQuery({
+    queryKey: getStoresQueryKey(),
+    queryFn: () => getStores(),
+  });
+}
+```
+
+```typescript
+// src/hooks/mutations/use-create-store.ts
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { createStore } from "@/actions/stores/create-store.action";
+import { getStoresQueryKey } from "@/hooks/queries/use-stores";
+
+export const getCreateStoreMutationKey = () => ["create-store"];
+
+export function useCreateStore() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationKey: getCreateStoreMutationKey(),
+    mutationFn: createStore,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: getStoresQueryKey() });
+    },
+  });
+}
+```
+
+## Usando Actions em Componentes
+
+Use `useAction` do next-safe-action/hooks:
+
+```typescript
+import { useAction } from "next-safe-action/hooks";
+import { createStore } from "@/actions/stores/create-store.action";
+
+export function CreateStoreForm() {
+  const { executeAsync, isExecuting } = useAction(createStore);
+
+  const handleSubmit = async (data: FormData) => {
+    const result = await executeAsync(data);
+
+    if (result?.data) {
+      toast.success("Loja criada com sucesso!");
+    }
+  };
+
+  return (
+    <Button disabled={isExecuting}>
+      {isExecuting ? "Criando..." : "Criar"}
+    </Button>
+  );
+}
+```
+
+## Interfaces TypeScript
+
+**Localização:** `src/interfaces/[entidade].interface.ts`
+
+**Padrão:**
+
+- `IEntidade` - interface completa
+- `ICreateEntidade` - campos para criação
+- `IUpdateEntidade` - campos opcionais para update
+- Types para enums exportados
+
+```typescript
+export type OrderStatus = "PAID" | "CANCELED";
+
+export interface IOrder {
+  id: string;
+  totalAmountInCents: number;
+  status: OrderStatus;
+  createdAt: Date;
+}
+
+export interface ICreateOrder {
+  totalAmountInCents: number;
+  status?: OrderStatus;
+}
+```
+
+## Notificações
+
+Use `react-hot-toast`:
+
+```typescript
+import toast from "react-hot-toast";
+
+toast.success("Operação realizada com sucesso!");
+toast.error("Erro ao processar operação");
+```
