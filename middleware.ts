@@ -4,10 +4,14 @@ import { NextResponse } from "next/server";
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
-    const isAdminRoute = req.nextUrl.pathname.startsWith("/dashboard");
 
-    if (isAdminRoute && token?.role !== "admin" && token?.role_id !== 1) {
-      return NextResponse.redirect(new URL("/login", req.url));
+    const roleStr = typeof token?.role === "string" ? token.role : null;
+    const isAdmin = roleStr === "admin" || Number(token?.role_id) === 1;
+
+    if (!isAdmin) {
+      const loginUrl = new URL("/login", req.url);
+      loginUrl.searchParams.set("error", "AccessDenied");
+      return NextResponse.redirect(loginUrl);
     }
 
     return NextResponse.next();
@@ -15,6 +19,9 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ token }) => !!token,
+    },
+    pages: {
+      signIn: "/login",
     },
   }
 );
