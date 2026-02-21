@@ -28,10 +28,10 @@ export async function getTemplates(
   });
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard/templates${qs}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/dashboard/templates${qs}`,
     {
       headers: {
-        Authorization: `Bearer ${session.user.access_token}`,
+        Authorization: `${session.user.access_token}`,
         "Content-Type": "application/json",
       },
       cache: "no-store",

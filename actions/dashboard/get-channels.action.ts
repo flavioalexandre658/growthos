@@ -26,10 +26,10 @@ export async function getChannels(
   });
 
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/api/admin/dashboard/channels${qs}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/dashboard/channels${qs}`,
     {
       headers: {
-        Authorization: `Bearer ${session.user.access_token}`,
+        Authorization: `${session.user.access_token}`,
         "Content-Type": "application/json",
       },
       cache: "no-store",
