@@ -4,12 +4,7 @@ import { useState, Suspense } from "react";
 import { useTemplates } from "@/hooks/queries/use-templates";
 import { useTemplatesOpportunities } from "@/hooks/queries/use-templates-opportunities";
 import { useDebounce } from "@/hooks/use-debounce";
-import {
-  DashboardPeriod,
-  ITemplateParams,
-  IOpportunityParams,
-  OrderDirection,
-} from "@/interfaces/dashboard.interface";
+import { IDateFilter, ITemplateParams, IOpportunityParams, OrderDirection } from "@/interfaces/dashboard.interface";
 import { PeriodFilter } from "@/app/dashboard/_components/period-filter";
 import { Input } from "@/components/ui/input";
 import { TemplatesTable } from "./templates-table";
@@ -20,10 +15,10 @@ const EMPTY_PAGINATION = { page: 1, limit: 25, total: 0, total_pages: 0 };
 const EMPTY_OPP_PAGINATION = { page: 1, limit: 20, total: 0, total_pages: 0 };
 
 interface TemplatesContentProps {
-  period: DashboardPeriod;
+  filter: IDateFilter;
 }
 
-export function TemplatesContent({ period }: TemplatesContentProps) {
+export function TemplatesContent({ filter }: TemplatesContentProps) {
   const [nameSearch, setNameSearch] = useState("");
   const debouncedName = useDebounce(nameSearch, 400);
 
@@ -38,7 +33,7 @@ export function TemplatesContent({ period }: TemplatesContentProps) {
   const [oOrderDir, setOOrderDir] = useState<OrderDirection>("DESC");
 
   const templateParams: ITemplateParams = {
-    period,
+    ...filter,
     page: tPage,
     limit: tLimit,
     order_by: tOrderBy,
@@ -47,7 +42,7 @@ export function TemplatesContent({ period }: TemplatesContentProps) {
   };
 
   const opportunityParams: IOpportunityParams = {
-    period,
+    ...filter,
     page: oPage,
     limit: oLimit,
     order_by: oOrderBy,
@@ -70,22 +65,18 @@ export function TemplatesContent({ period }: TemplatesContentProps) {
           <h1 className="text-lg font-bold text-zinc-100">Templates</h1>
           <p className="text-xs text-zinc-500">Performance por template — conversão e receita</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
             <IconSearch size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500" />
             <Input
               placeholder="Buscar template..."
               value={nameSearch}
-              onChange={(e) => {
-                setNameSearch(e.target.value);
-                setTPage(1);
-                setOPage(1);
-              }}
-              className="pl-8 h-8 w-48 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-600 text-sm"
+              onChange={(e) => { setNameSearch(e.target.value); setTPage(1); setOPage(1); }}
+              className="pl-8 h-8 w-44 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-600 text-sm"
             />
           </div>
           <Suspense>
-            <PeriodFilter period={period} />
+            <PeriodFilter filter={filter} />
           </Suspense>
         </div>
       </div>

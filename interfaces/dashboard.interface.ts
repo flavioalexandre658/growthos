@@ -1,6 +1,12 @@
 export type DashboardPeriod = "today" | "7d" | "30d" | "90d";
 export type OrderDirection = "ASC" | "DESC";
 
+export interface IDateFilter {
+  period?: DashboardPeriod;
+  start_date?: string;
+  end_date?: string;
+}
+
 export interface IPaginationMeta {
   page: number;
   limit: number;
@@ -13,8 +19,7 @@ export interface IPaginatedResponse<T> {
   pagination: IPaginationMeta;
 }
 
-export interface IBaseTableParams {
-  period?: DashboardPeriod;
+export interface IBaseTableParams extends IDateFilter {
   page?: number;
   limit?: number;
   order_dir?: OrderDirection;

@@ -2,12 +2,8 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import {
-  IChannelData,
-  IChannelParams,
-  IPaginatedResponse,
-} from "@/interfaces/dashboard.interface";
-import { buildQueryString } from "@/utils/build-query-string";
+import { IChannelData, IChannelParams, IPaginatedResponse } from "@/interfaces/dashboard.interface";
+import { buildQueryString, dateFilterParams } from "@/utils/build-query-string";
 
 export async function getChannels(
   params: IChannelParams = {}
@@ -18,7 +14,7 @@ export async function getChannels(
   }
 
   const qs = buildQueryString({
-    period: params.period ?? "30d",
+    ...dateFilterParams(params),
     page: params.page ?? 1,
     limit: params.limit ?? 30,
     order_by: params.order_by ?? "revenue",
@@ -29,7 +25,7 @@ export async function getChannels(
     `${process.env.NEXT_PUBLIC_API_URL}/dashboard/channels${qs}`,
     {
       headers: {
-        Authorization: `${session.user.access_token}`,
+        Authorization: session.user.access_token,
         "Content-Type": "application/json",
       },
       cache: "no-store",

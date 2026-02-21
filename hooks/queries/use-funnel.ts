@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { getFunnel } from "@/actions/dashboard/get-funnel.action";
-import { DashboardPeriod } from "@/interfaces/dashboard.interface";
+import { IDateFilter } from "@/interfaces/dashboard.interface";
 
-export const getFunnelQueryKey = (period: DashboardPeriod) => ["dashboard", "funnel", period];
+export const getFunnelQueryKey = (filter: IDateFilter) => ["dashboard", "funnel", filter];
 
-export function useFunnel(period: DashboardPeriod = "30d") {
+export function useFunnel(filter: IDateFilter = {}) {
   return useQuery({
-    queryKey: getFunnelQueryKey(period),
-    queryFn: () => getFunnel(period),
+    queryKey: getFunnelQueryKey(filter),
+    queryFn: () => getFunnel(filter),
   });
 }

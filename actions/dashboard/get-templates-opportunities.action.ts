@@ -2,12 +2,8 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import {
-  IOpportunityData,
-  IOpportunityParams,
-  IPaginatedResponse,
-} from "@/interfaces/dashboard.interface";
-import { buildQueryString } from "@/utils/build-query-string";
+import { IOpportunityData, IOpportunityParams, IPaginatedResponse } from "@/interfaces/dashboard.interface";
+import { buildQueryString, dateFilterParams } from "@/utils/build-query-string";
 
 export async function getTemplatesOpportunities(
   params: IOpportunityParams = {}
@@ -18,7 +14,7 @@ export async function getTemplatesOpportunities(
   }
 
   const qs = buildQueryString({
-    period: params.period ?? "30d",
+    ...dateFilterParams(params),
     page: params.page ?? 1,
     limit: params.limit ?? 20,
     order_by: params.order_by ?? "edits",
@@ -31,7 +27,7 @@ export async function getTemplatesOpportunities(
     `${process.env.NEXT_PUBLIC_API_URL}/dashboard/templates/opportunities${qs}`,
     {
       headers: {
-        Authorization: `${session.user.access_token}`,
+        Authorization: session.user.access_token,
         "Content-Type": "application/json",
       },
       cache: "no-store",

@@ -2,12 +2,8 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import {
-  ILandingPageData,
-  ILandingPageParams,
-  IPaginatedResponse,
-} from "@/interfaces/dashboard.interface";
-import { buildQueryString } from "@/utils/build-query-string";
+import { ILandingPageData, ILandingPageParams, IPaginatedResponse } from "@/interfaces/dashboard.interface";
+import { buildQueryString, dateFilterParams } from "@/utils/build-query-string";
 
 export async function getLandingPages(
   params: ILandingPageParams = {}
@@ -18,7 +14,7 @@ export async function getLandingPages(
   }
 
   const qs = buildQueryString({
-    period: params.period ?? "30d",
+    ...dateFilterParams(params),
     page: params.page ?? 1,
     limit: params.limit ?? 30,
     order_by: params.order_by ?? "revenue",
@@ -30,7 +26,7 @@ export async function getLandingPages(
     `${process.env.NEXT_PUBLIC_API_URL}/dashboard/landing-pages${qs}`,
     {
       headers: {
-        Authorization: `${session.user.access_token}`,
+        Authorization: session.user.access_token,
         "Content-Type": "application/json",
       },
       cache: "no-store",

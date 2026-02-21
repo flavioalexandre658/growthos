@@ -2,17 +2,20 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { IDailyData, DashboardPeriod } from "@/interfaces/dashboard.interface";
+import { IDailyData, IDateFilter } from "@/interfaces/dashboard.interface";
+import { buildQueryString, dateFilterParams } from "@/utils/build-query-string";
 
-export async function getDaily(period: DashboardPeriod = "30d"): Promise<IDailyData[]> {
+export async function getDaily(filter: IDateFilter = {}): Promise<IDailyData[]> {
   const session = await getServerSession(authOptions);
   if (!session?.user?.access_token) return [];
 
+  const qs = buildQueryString(dateFilterParams(filter));
+
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}//dashboard/daily?period=${period}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/dashboard/daily${qs}`,
     {
       headers: {
-        Authorization: `${session.user.access_token}`,
+        Authorization: session.user.access_token,
         "Content-Type": "application/json",
       },
       cache: "no-store",

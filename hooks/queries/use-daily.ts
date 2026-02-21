@@ -1,12 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { getDaily } from "@/actions/dashboard/get-daily.action";
-import { DashboardPeriod } from "@/interfaces/dashboard.interface";
+import { IDateFilter } from "@/interfaces/dashboard.interface";
 
-export const getDailyQueryKey = (period: DashboardPeriod) => ["dashboard", "daily", period];
+export const getDailyQueryKey = (filter: IDateFilter) => ["dashboard", "daily", filter];
 
-export function useDaily(period: DashboardPeriod = "30d") {
+export function useDaily(filter: IDateFilter = {}) {
   return useQuery({
-    queryKey: getDailyQueryKey(period),
-    queryFn: () => getDaily(period),
+    queryKey: getDailyQueryKey(filter),
+    queryFn: () => getDaily(filter),
   });
 }

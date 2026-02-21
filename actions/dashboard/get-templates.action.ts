@@ -2,12 +2,8 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import {
-  ITemplateData,
-  ITemplateParams,
-  IPaginatedResponse,
-} from "@/interfaces/dashboard.interface";
-import { buildQueryString } from "@/utils/build-query-string";
+import { ITemplateData, ITemplateParams, IPaginatedResponse } from "@/interfaces/dashboard.interface";
+import { buildQueryString, dateFilterParams } from "@/utils/build-query-string";
 
 export async function getTemplates(
   params: ITemplateParams = {}
@@ -18,7 +14,7 @@ export async function getTemplates(
   }
 
   const qs = buildQueryString({
-    period: params.period ?? "30d",
+    ...dateFilterParams(params),
     page: params.page ?? 1,
     limit: params.limit ?? 50,
     order_by: params.order_by ?? "revenue",
@@ -31,7 +27,7 @@ export async function getTemplates(
     `${process.env.NEXT_PUBLIC_API_URL}/dashboard/templates${qs}`,
     {
       headers: {
-        Authorization: `${session.user.access_token}`,
+        Authorization: session.user.access_token,
         "Content-Type": "application/json",
       },
       cache: "no-store",

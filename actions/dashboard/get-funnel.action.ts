@@ -2,17 +2,20 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { IFunnelData, DashboardPeriod } from "@/interfaces/dashboard.interface";
+import { IFunnelData, IDateFilter } from "@/interfaces/dashboard.interface";
+import { buildQueryString, dateFilterParams } from "@/utils/build-query-string";
 
-export async function getFunnel(period: DashboardPeriod = "30d"): Promise<IFunnelData | null> {
+export async function getFunnel(filter: IDateFilter = {}): Promise<IFunnelData | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user?.access_token) return null;
 
+  const qs = buildQueryString(dateFilterParams(filter));
+
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}//dashboard/funnel?period=${period}`,
+    `${process.env.NEXT_PUBLIC_API_URL}/dashboard/funnel${qs}`,
     {
       headers: {
-        Authorization: `${session.user.access_token}`,
+        Authorization: session.user.access_token,
         "Content-Type": "application/json",
       },
       cache: "no-store",
