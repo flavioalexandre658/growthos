@@ -15,6 +15,7 @@ import {
   IconLogout,
   IconChevronLeft,
   IconChevronRight,
+  IconWorldWww,
 } from "@tabler/icons-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,12 @@ const navItems = [
     href: "/dashboard/finance",
     label: "Financeiro",
     icon: IconCurrencyDollar,
+    exact: false,
+  },
+  {
+    href: "/dashboard/landing-pages",
+    label: "Landing Pages",
+    icon: IconWorldWww,
     exact: false,
   },
 ];

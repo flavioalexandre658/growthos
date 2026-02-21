@@ -22,16 +22,27 @@ export interface TableColumn<T> {
   mobileHide?: boolean;
 }
 
+export interface ServerPaginationConfig {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  pageSizeOptions?: number[];
+}
+
 interface ResponsiveTableProps<T> {
   columns: TableColumn<T>[];
   data: T[];
   getRowKey: (row: T) => string;
   isLoading?: boolean;
   skeletonRows?: number;
-  initialPageSize?: number;
-  pageSizeOptions?: number[];
   emptyMessage?: string;
   header?: React.ReactNode;
+  serverPagination?: ServerPaginationConfig;
+  initialPageSize?: number;
+  pageSizeOptions?: number[];
 }
 
 const DEFAULT_PAGE_SIZES = [10, 25, 50];
@@ -72,7 +83,11 @@ function PaginationBar({
           </SelectTrigger>
           <SelectContent className="bg-zinc-900 border-zinc-700">
             {pageSizeOptions.map((s) => (
-              <SelectItem key={s} value={String(s)} className="text-zinc-300 focus:bg-zinc-800 text-xs">
+              <SelectItem
+                key={s}
+                value={String(s)}
+                className="text-zinc-300 focus:bg-zinc-800 text-xs"
+              >
                 {s}
               </SelectItem>
             ))}
@@ -89,7 +104,7 @@ function PaginationBar({
             variant="ghost"
             size="icon"
             className="h-7 w-7 text-zinc-400 hover:text-zinc-100 disabled:opacity-30"
-            disabled={page === 1}
+            disabled={page <= 1}
             onClick={() => onPageChange(page - 1)}
           >
             <IconChevronLeft size={14} />
@@ -98,7 +113,7 @@ function PaginationBar({
             variant="ghost"
             size="icon"
             className="h-7 w-7 text-zinc-400 hover:text-zinc-100 disabled:opacity-30"
-            disabled={page === totalPages}
+            disabled={page >= totalPages}
             onClick={() => onPageChange(page + 1)}
           >
             <IconChevronRight size={14} />
@@ -115,28 +130,44 @@ export function ResponsiveTable<T>({
   getRowKey,
   isLoading = false,
   skeletonRows = 8,
-  initialPageSize = 25,
-  pageSizeOptions = DEFAULT_PAGE_SIZES,
   emptyMessage = "Nenhum dado encontrado",
   header,
+  serverPagination,
+  initialPageSize = 25,
+  pageSizeOptions = DEFAULT_PAGE_SIZES,
 }: ResponsiveTableProps<T>) {
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(initialPageSize);
+  const [clientPage, setClientPage] = useState(1);
+  const [clientPageSize, setClientPageSize] = useState(initialPageSize);
 
-  const totalPages = Math.max(1, Math.ceil(data.length / pageSize));
-  const safeePage = Math.min(page, totalPages);
-  const start = (safeePage - 1) * pageSize;
-  const paginated = data.slice(start, start + pageSize);
+  const isServer = !!serverPagination;
+
+  const page = isServer ? serverPagination!.page : clientPage;
+  const pageSize = isServer ? serverPagination!.pageSize : clientPageSize;
+  const total = isServer ? serverPagination!.total : data.length;
+  const totalPages = isServer
+    ? serverPagination!.totalPages
+    : Math.max(1, Math.ceil(data.length / clientPageSize));
+
+  const handlePageChange = isServer
+    ? serverPagination!.onPageChange
+    : setClientPage;
+
+  const handlePageSizeChange = isServer
+    ? (s: number) => { serverPagination!.onPageSizeChange(s); serverPagination!.onPageChange(1); }
+    : (s: number) => { setClientPageSize(s); setClientPage(1); };
+
+  const pageSizes = isServer
+    ? (serverPagination!.pageSizeOptions ?? pageSizeOptions)
+    : pageSizeOptions;
+
+  const rows = isServer
+    ? data
+    : data.slice((clientPage - 1) * clientPageSize, clientPage * clientPageSize);
 
   const primaryCol = columns.find((c) => c.mobilePrimary) ?? columns[0];
   const mobileDetailCols = columns.filter(
     (c) => !c.mobileHide && c.key !== primaryCol.key
   );
-
-  const handlePageSizeChange = (s: number) => {
-    setPageSize(s);
-    setPage(1);
-  };
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
@@ -173,7 +204,7 @@ export function ResponsiveTable<T>({
                     ))}
                   </tr>
                 ))
-              : paginated.length === 0
+              : rows.length === 0
               ? (
                 <tr>
                   <td
@@ -184,7 +215,7 @@ export function ResponsiveTable<T>({
                   </td>
                 </tr>
               )
-              : paginated.map((row) => (
+              : rows.map((row) => (
                   <tr
                     key={getRowKey(row)}
                     className="border-b border-zinc-800/60 hover:bg-zinc-800/30 transition-colors"
@@ -219,13 +250,13 @@ export function ResponsiveTable<T>({
                 </div>
               </div>
             ))
-          : paginated.length === 0
+          : rows.length === 0
           ? (
             <div className="py-12 text-center text-sm text-zinc-500">
               {emptyMessage}
             </div>
           )
-          : paginated.map((row) => (
+          : rows.map((row) => (
               <div
                 key={getRowKey(row)}
                 className="border-b border-zinc-800/60 p-4 last:border-b-0"
@@ -246,14 +277,14 @@ export function ResponsiveTable<T>({
       </div>
 
       {/* ── Pagination ── */}
-      {!isLoading && data.length > 0 && (
+      {!isLoading && total > 0 && (
         <PaginationBar
-          page={safeePage}
+          page={page}
           totalPages={totalPages}
           pageSize={pageSize}
-          pageSizeOptions={pageSizeOptions}
-          total={data.length}
-          onPageChange={setPage}
+          pageSizeOptions={pageSizes}
+          total={total}
+          onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
         />
       )}

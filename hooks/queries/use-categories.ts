@@ -1,12 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { getCategories } from "@/actions/dashboard/get-categories.action";
-import { DashboardPeriod } from "@/interfaces/dashboard.interface";
+import { ICategoryParams } from "@/interfaces/dashboard.interface";
 
-export const getCategoriesQueryKey = (period: DashboardPeriod) => ["dashboard", "categories", period];
+export const getCategoriesQueryKey = (params: ICategoryParams) => ["dashboard", "categories", params];
 
-export function useCategories(period: DashboardPeriod = "30d") {
+export function useCategories(params: ICategoryParams = {}) {
   return useQuery({
-    queryKey: getCategoriesQueryKey(period),
-    queryFn: () => getCategories(period),
+    queryKey: getCategoriesQueryKey(params),
+    queryFn: () => getCategories(params),
+    placeholderData: keepPreviousData,
   });
 }

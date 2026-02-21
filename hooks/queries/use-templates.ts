@@ -1,12 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { getTemplates } from "@/actions/dashboard/get-templates.action";
-import { DashboardPeriod } from "@/interfaces/dashboard.interface";
+import { ITemplateParams } from "@/interfaces/dashboard.interface";
 
-export const getTemplatesQueryKey = (period: DashboardPeriod) => ["dashboard", "templates", period];
+export const getTemplatesQueryKey = (params: ITemplateParams) => ["dashboard", "templates", params];
 
-export function useTemplates(period: DashboardPeriod = "30d") {
+export function useTemplates(params: ITemplateParams = {}) {
   return useQuery({
-    queryKey: getTemplatesQueryKey(period),
-    queryFn: () => getTemplates(period),
+    queryKey: getTemplatesQueryKey(params),
+    queryFn: () => getTemplates(params),
+    placeholderData: keepPreviousData,
   });
 }
