@@ -4,7 +4,10 @@ import { useState } from "react";
 import { IconPlus, IconPencil, IconTrash } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ResponsiveTable, type TableColumn } from "@/components/ui/responsive-table";
+import {
+  ResponsiveTable,
+  type TableColumn,
+} from "@/components/ui/responsive-table";
 import { CostFormDialog } from "./cost-form-dialog";
 import { useVariableCosts } from "@/hooks/queries/use-variable-costs";
 import { useCreateVariableCost } from "@/hooks/mutations/use-create-variable-cost";
@@ -18,7 +21,9 @@ interface VariableCostsTableProps {
   organizationId: string;
 }
 
-export function VariableCostsTable({ organizationId }: VariableCostsTableProps) {
+export function VariableCostsTable({
+  organizationId,
+}: VariableCostsTableProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<IVariableCost | null>(null);
 
@@ -63,13 +68,18 @@ export function VariableCostsTable({ organizationId }: VariableCostsTableProps) 
       key: "name",
       header: "Nome",
       mobilePrimary: true,
-      render: (row) => <span className="font-medium text-zinc-100">{row.name}</span>,
+      render: (row) => (
+        <span className="font-medium text-zinc-100">{row.name}</span>
+      ),
     },
     {
       key: "type",
       header: "Tipo",
       render: (row) => (
-        <Badge variant={row.type === "VALUE" ? "secondary" : "outline"} className="text-[10px]">
+        <Badge
+          variant={row.type === "VALUE" ? "secondary" : "outline"}
+          className="text-[10px]"
+        >
           {row.type === "VALUE" ? "R$" : "%"}
         </Badge>
       ),
@@ -79,15 +89,23 @@ export function VariableCostsTable({ organizationId }: VariableCostsTableProps) 
       header: "Valor",
       align: "right",
       render: (row) =>
-        row.type === "PERCENTAGE"
-          ? <span className="font-mono text-zinc-200">{(row.amountInCents / 100).toFixed(2)}%</span>
-          : <span className="font-mono text-zinc-200">{fmtBRLDecimal(row.amountInCents / 100)}</span>,
+        row.type === "PERCENTAGE" ? (
+          <span className="font-mono text-zinc-200">
+            {(row.amountInCents / 100).toFixed(2)}%
+          </span>
+        ) : (
+          <span className="font-mono text-zinc-200">
+            {fmtBRLDecimal(row.amountInCents / 100)}
+          </span>
+        ),
     },
     {
       key: "description",
       header: "Descrição",
       mobileHide: true,
-      render: (row) => <span className="text-zinc-500 text-xs">{row.description ?? "—"}</span>,
+      render: (row) => (
+        <span className="text-zinc-500 text-xs">{row.description ?? ","}</span>
+      ),
     },
     {
       key: "actions",
@@ -129,8 +147,12 @@ export function VariableCostsTable({ organizationId }: VariableCostsTableProps) 
         header={
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-zinc-100">Custos Variáveis</h3>
-              <p className="text-xs text-zinc-500">Percentuais ou valores sobre a receita</p>
+              <h3 className="text-sm font-bold text-zinc-100">
+                Custos Variáveis
+              </h3>
+              <p className="text-xs text-zinc-500">
+                Percentuais ou valores sobre a receita
+              </p>
             </div>
             <Button
               size="sm"

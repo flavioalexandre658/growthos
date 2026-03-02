@@ -1,4 +1,4 @@
-# GrowthOS — Evolução para Fase 2
+# GrowthOS, Evolução para Fase 2
 
 ## Onde estamos agora (Fase 1)
 
@@ -8,25 +8,25 @@ GrowthOS
 └── 123Rifas    → Schema no banco, provider stub (pendente)
 ```
 
-A abstração está pronta. Adicionar 123Rifas é criar um provider — sem reescrever nada.
+A abstração está pronta. Adicionar 123Rifas é criar um provider, sem reescrever nada.
 
 ---
 
 ## Como implementar 123Rifas (próximo passo imediato)
 
-### Passo 1 — Criar endpoints na API da 123Rifas
+### Passo 1, Criar endpoints na API da 123Rifas
 
 A API da 123Rifas precisa expor endpoints no mesmo padrão do GrowthOS:
 
-| Endpoint | Dados esperados |
-|----------|----------------|
-| `GET /dashboard/funnel` | signups, campaigns, payments, revenue, net_revenue, rates, ticket_medio, margin |
-| `GET /dashboard/channels` | channel, payments, revenue, ticket_medio, conversion_rate |
-| `GET /dashboard/daily` | date, signups, campaigns, payments, revenue |
+| Endpoint                  | Dados esperados                                                                 |
+| ------------------------- | ------------------------------------------------------------------------------- |
+| `GET /dashboard/funnel`   | signups, campaigns, payments, revenue, net_revenue, rates, ticket_medio, margin |
+| `GET /dashboard/channels` | channel, payments, revenue, ticket_medio, conversion_rate                       |
+| `GET /dashboard/daily`    | date, signups, campaigns, payments, revenue                                     |
 
 **Diferença principal:** o campo `edits` vira `campaigns`. O funil é Cadastro → Campanha → Pagamento.
 
-### Passo 2 — Criar RifasProvider
+### Passo 2, Criar RifasProvider
 
 ```typescript
 // lib/data-providers/rifas.provider.ts
@@ -66,7 +66,7 @@ export class RifasProvider implements IDataProvider {
 }
 ```
 
-### Passo 3 — Registrar no registry
+### Passo 3, Registrar no registry
 
 ```typescript
 // lib/data-providers/registry.ts
@@ -74,11 +74,11 @@ import { RifasProvider } from "./rifas.provider";
 
 const PROVIDERS = {
   CONVITEDE: () => new ConvitedeProvider(),
-  RIFAS:     () => new RifasProvider(),  // adicionar esta linha
+  RIFAS: () => new RifasProvider(), // adicionar esta linha
 };
 ```
 
-### Passo 4 — Adicionar config em configs.ts
+### Passo 4, Adicionar config em configs.ts
 
 ```typescript
 // lib/data-providers/configs.ts
@@ -102,15 +102,16 @@ Pronto. A 123Rifas aparecerá no seletor do sidebar com funil e métricas própr
 O prompt do Gemini já aceita o `providerType`. Para rifas, o contexto muda:
 
 ```typescript
-// app/api/ai/analyze/route.ts — já implementado
-const context = providerType === "RIFAS"
-  ? "empresa de rifas online (métricas: tickets vendidos, campanhas ativas, prêmios)"
-  : "plataforma de convites digitais (...)";
+// app/api/ai/analyze/route.ts, já implementado
+const context =
+  providerType === "RIFAS"
+    ? "empresa de rifas online (métricas: tickets vendidos, campanhas ativas, prêmios)"
+    : "plataforma de convites digitais (...)";
 ```
 
 ---
 
-## Fase 2 — Clientes Externos
+## Fase 2, Clientes Externos
 
 ### Opção A: SDK (clientes com sistema próprio)
 
@@ -127,6 +128,7 @@ sdk.track("payment", { amount: 4990, userId: "..." });
 ```
 
 **Implementação no GrowthOS:**
+
 - Criar `SDKProvider` que lê eventos de uma tabela `events` no NeonDB
 - Criar endpoint `POST /api/sdk/ingest` para receber eventos
 - Mapear eventos para `IGenericFunnelData`
@@ -147,6 +149,7 @@ export class StripeProvider implements IDataProvider {
 ```
 
 **O que muda:**
+
 - `organizations.api_url` vira null
 - Nova coluna `oauth_token` ou `credentials` (encrypted) na tabela `organizations`
 - Provider recebe o token no construtor
@@ -183,11 +186,13 @@ Futura migração para: `/org/[slug]/dashboard/...`
 5. O `OrganizationContext` passa a ser inicializado pelo layout server-side
 
 ### Benefícios:
+
 - URL compartilhável por org
 - SEO por empresa
 - Isolamento mais claro
 
 ### Por que não agora:
+
 - Refatoração grande (todos os componentes)
 - O Context funciona bem para 2 orgs
 - Priorizar features > refatoração
@@ -196,19 +201,20 @@ Futura migração para: `/org/[slug]/dashboard/...`
 
 ## Roadmap resumido
 
-| Fase | O que fazer |
-|------|-------------|
-| **Agora** | Custos + P&L + IA funcionando para Convitede ✅ |
-| **Próximas 2 semanas** | RifasProvider + API endpoints 123Rifas |
-| **1 mês** | SDK para clientes externos (beta) |
-| **3 meses** | OAuth Stripe connector |
-| **6 meses** | Routing URL-based + white-label |
+| Fase                   | O que fazer                                     |
+| ---------------------- | ----------------------------------------------- |
+| **Agora**              | Custos + P&L + IA funcionando para Convitede ✅ |
+| **Próximas 2 semanas** | RifasProvider + API endpoints 123Rifas          |
+| **1 mês**              | SDK para clientes externos (beta)               |
+| **3 meses**            | OAuth Stripe connector                          |
+| **6 meses**            | Routing URL-based + white-label                 |
 
 ---
 
 ## Variáveis de Ambiente necessárias por fase
 
 ### Fase 1 (atual)
+
 ```env
 DATABASE_URL=          # NeonDB connection string
 GEMINI_API_KEY=        # Google AI Studio
@@ -218,6 +224,7 @@ NEXTAUTH_URL=          # URL do app
 ```
 
 ### Fase 2 (adicionar)
+
 ```env
 RIFAS_API_URL=         # API 123Rifas
 STRIPE_CLIENT_ID=      # OAuth Stripe (futuro)

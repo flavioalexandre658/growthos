@@ -69,7 +69,7 @@ export function StepVerifyEvent({
             "flex h-9 w-9 items-center justify-center rounded-xl border",
             hasEvent
               ? "bg-emerald-600/20 border-emerald-600/30"
-              : "bg-zinc-800/50 border-zinc-700"
+              : "bg-zinc-800/50 border-zinc-700",
           )}
         >
           {hasEvent ? (
@@ -121,15 +121,18 @@ export function StepVerifyEvent({
             <div className="grid grid-cols-2 gap-2 text-xs">
               {[
                 { label: "evento", value: latest.eventType },
-                { label: "canal", value: latest.source ?? "—" },
-                { label: "página", value: latest.landingPage ?? "—" },
-                { label: "device", value: latest.device ?? "—" },
+                { label: "canal", value: latest.source ?? "," },
+                { label: "página", value: latest.landingPage ?? "," },
+                { label: "device", value: latest.device ?? "," },
                 {
                   label: "recebido",
                   value: dayjs(latest.createdAt).fromNow(),
                 },
               ].map((item) => (
-                <div key={item.label} className="bg-emerald-950/30 rounded-lg px-3 py-2">
+                <div
+                  key={item.label}
+                  className="bg-emerald-950/30 rounded-lg px-3 py-2"
+                >
                   <p className="text-emerald-600 uppercase tracking-wider text-[10px] font-semibold">
                     {item.label}
                   </p>
@@ -181,7 +184,7 @@ export function StepVerifyEvent({
           onClick={onComplete}
           className="flex-1 h-10 text-zinc-500 hover:text-zinc-300 border border-zinc-800 text-sm"
         >
-          Pular — configurar depois
+          Pular, configurar depois
         </Button>
         <Button
           onClick={onComplete}
@@ -190,7 +193,7 @@ export function StepVerifyEvent({
             "flex-1 h-10 font-semibold gap-2 group",
             hasEvent
               ? "bg-emerald-600 hover:bg-emerald-500 text-white"
-              : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
+              : "bg-zinc-800 text-zinc-500 cursor-not-allowed",
           )}
         >
           Continuar

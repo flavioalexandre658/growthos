@@ -2,11 +2,15 @@ import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { CostsContent } from "./_components/costs-content";
 
 export const metadata = {
-  title: "Custos & P&L — GrowthOS",
+  title: "Custos & P&L | GrowthOS",
 };
 
 interface CostsPageProps {
-  searchParams: Promise<{ period?: string; start_date?: string; end_date?: string }>;
+  searchParams: Promise<{
+    period?: string;
+    start_date?: string;
+    end_date?: string;
+  }>;
 }
 
 export default async function CostsPage({ searchParams }: CostsPageProps) {

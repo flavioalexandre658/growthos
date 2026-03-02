@@ -123,7 +123,7 @@ export function StepApiKey({
       try {
         const [result] = await createApiKey({
           organizationId,
-          name: `${organizationName} — Default`,
+          name: `${organizationName}, Default`,
           expiresDays: undefined,
         });
         setApiKey(result.key);
@@ -232,14 +232,17 @@ export function StepApiKey({
             Como rastrear seu funil
           </p>
           <span className="text-[10px] text-zinc-600 font-mono">
-            {funnelSteps.length} etapa{funnelSteps.length !== 1 ? "s" : ""}
-            {" "}configurada{funnelSteps.length !== 1 ? "s" : ""}
+            {funnelSteps.length} etapa{funnelSteps.length !== 1 ? "s" : ""}{" "}
+            configurada{funnelSteps.length !== 1 ? "s" : ""}
           </span>
         </div>
 
         {funnelSteps.length === 0 ? (
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3 flex items-start gap-2">
-            <IconInfoCircle size={14} className="text-zinc-600 mt-0.5 shrink-0" />
+            <IconInfoCircle
+              size={14}
+              className="text-zinc-600 mt-0.5 shrink-0"
+            />
             <p className="text-xs text-zinc-500">
               Nenhuma etapa de funil configurada. Volte ao passo anterior para
               definir seu funil.

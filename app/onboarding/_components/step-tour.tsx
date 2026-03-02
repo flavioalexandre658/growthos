@@ -29,7 +29,7 @@ const SECTIONS = [
   {
     icon: IconBrandGoogle,
     title: "Canais",
-    description: "De onde vem sua receita — Google, Instagram, direto e mais",
+    description: "De onde vem sua receita, Google, Instagram, direto e mais",
     color: "text-violet-400",
     iconBg: "bg-violet-500/15 border-violet-500/25",
     cardBg: "hover:border-violet-500/40",
@@ -45,7 +45,7 @@ const SECTIONS = [
   {
     icon: IconWorldWww,
     title: "Landing Pages",
-    description: "Performance por página — pageviews, cadastros e conversão",
+    description: "Performance por página, pageviews, cadastros e conversão",
     color: "text-amber-400",
     iconBg: "bg-amber-500/15 border-amber-500/25",
     cardBg: "hover:border-amber-500/40",
@@ -115,19 +115,24 @@ export function StepTour({ slug, onComplete: _ }: StepTourProps) {
               className={cn(
                 "group flex flex-col gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4",
                 "transition-all duration-200 hover:scale-[1.02] hover:bg-zinc-900/60 cursor-default",
-                section.cardBg
+                section.cardBg,
               )}
             >
               <div
                 className={cn(
                   "flex h-9 w-9 items-center justify-center rounded-lg border",
-                  section.iconBg
+                  section.iconBg,
                 )}
               >
                 <Icon size={17} className={section.color} />
               </div>
               <div className="space-y-1">
-                <p className={cn("text-sm font-bold leading-none", section.color)}>
+                <p
+                  className={cn(
+                    "text-sm font-bold leading-none",
+                    section.color,
+                  )}
+                >
                   {section.title}
                 </p>
                 <p className="text-xs text-zinc-600 leading-relaxed">
@@ -143,7 +148,9 @@ export function StepTour({ slug, onComplete: _ }: StepTourProps) {
             <IconRocket size={17} className="text-indigo-400" />
           </div>
           <div className="space-y-1">
-            <p className="text-sm font-bold text-indigo-400 leading-none">IA Comparativa</p>
+            <p className="text-sm font-bold text-indigo-400 leading-none">
+              IA Comparativa
+            </p>
             <p className="text-xs text-zinc-600 leading-relaxed">
               Compare períodos e receba relatórios automáticos de otimização
             </p>
@@ -163,7 +170,10 @@ export function StepTour({ slug, onComplete: _ }: StepTourProps) {
           </>
         ) : (
           <>
-            <IconRocket size={16} className="transition-transform group-hover:-translate-y-0.5" />
+            <IconRocket
+              size={16}
+              className="transition-transform group-hover:-translate-y-0.5"
+            />
             Explorar o Dashboard
           </>
         )}

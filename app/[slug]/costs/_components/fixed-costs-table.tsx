@@ -4,7 +4,10 @@ import { useState } from "react";
 import { IconPlus, IconPencil, IconTrash } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ResponsiveTable, type TableColumn } from "@/components/ui/responsive-table";
+import {
+  ResponsiveTable,
+  type TableColumn,
+} from "@/components/ui/responsive-table";
 import { CostFormDialog } from "./cost-form-dialog";
 import { useFixedCosts } from "@/hooks/queries/use-fixed-costs";
 import { useCreateFixedCost } from "@/hooks/mutations/use-create-fixed-cost";
@@ -63,13 +66,18 @@ export function FixedCostsTable({ organizationId }: FixedCostsTableProps) {
       key: "name",
       header: "Nome",
       mobilePrimary: true,
-      render: (row) => <span className="font-medium text-zinc-100">{row.name}</span>,
+      render: (row) => (
+        <span className="font-medium text-zinc-100">{row.name}</span>
+      ),
     },
     {
       key: "type",
       header: "Tipo",
       render: (row) => (
-        <Badge variant={row.type === "VALUE" ? "secondary" : "outline"} className="text-[10px]">
+        <Badge
+          variant={row.type === "VALUE" ? "secondary" : "outline"}
+          className="text-[10px]"
+        >
           {row.type === "VALUE" ? "R$" : "%"}
         </Badge>
       ),
@@ -79,15 +87,23 @@ export function FixedCostsTable({ organizationId }: FixedCostsTableProps) {
       header: "Valor",
       align: "right",
       render: (row) =>
-        row.type === "PERCENTAGE"
-          ? <span className="font-mono text-zinc-200">{(row.amountInCents / 100).toFixed(2)}%</span>
-          : <span className="font-mono text-zinc-200">{fmtBRLDecimal(row.amountInCents / 100)}</span>,
+        row.type === "PERCENTAGE" ? (
+          <span className="font-mono text-zinc-200">
+            {(row.amountInCents / 100).toFixed(2)}%
+          </span>
+        ) : (
+          <span className="font-mono text-zinc-200">
+            {fmtBRLDecimal(row.amountInCents / 100)}
+          </span>
+        ),
     },
     {
       key: "description",
       header: "Descrição",
       mobileHide: true,
-      render: (row) => <span className="text-zinc-500 text-xs">{row.description ?? "—"}</span>,
+      render: (row) => (
+        <span className="text-zinc-500 text-xs">{row.description ?? ","}</span>
+      ),
     },
     {
       key: "actions",
@@ -130,7 +146,9 @@ export function FixedCostsTable({ organizationId }: FixedCostsTableProps) {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-bold text-zinc-100">Custos Fixos</h3>
-              <p className="text-xs text-zinc-500">Valores recorrentes independente da receita</p>
+              <p className="text-xs text-zinc-500">
+                Valores recorrentes independente da receita
+              </p>
             </div>
             <Button
               size="sm"

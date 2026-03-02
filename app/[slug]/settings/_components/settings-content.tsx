@@ -77,11 +77,14 @@ function ApiKeyRow({
         "flex items-start gap-3 rounded-lg border px-4 py-3",
         isExpired
           ? "border-red-800/50 bg-red-950/20"
-          : "border-zinc-800 bg-zinc-900/40"
+          : "border-zinc-800 bg-zinc-900/40",
       )}
     >
       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600/20 shrink-0 mt-0.5">
-        <IconKey size={14} className={isExpired ? "text-red-400" : "text-indigo-400"} />
+        <IconKey
+          size={14}
+          className={isExpired ? "text-red-400" : "text-indigo-400"}
+        />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -93,14 +96,21 @@ function ApiKeyRow({
             </span>
           )}
         </div>
-        <p className="font-mono text-xs text-zinc-500 truncate mt-0.5">{keyValue}</p>
+        <p className="font-mono text-xs text-zinc-500 truncate mt-0.5">
+          {keyValue}
+        </p>
         <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1">
           <p className="text-[10px] text-zinc-600 flex items-center gap-1">
             <IconClock size={10} />
             {lastUsedLabel}
           </p>
           {expiresLabel && (
-            <p className={cn("text-[10px] flex items-center gap-1", isExpired ? "text-red-500" : "text-zinc-600")}>
+            <p
+              className={cn(
+                "text-[10px] flex items-center gap-1",
+                isExpired ? "text-red-500" : "text-zinc-600",
+              )}
+            >
               <IconClock size={10} />
               {expiresLabel}
             </p>
@@ -118,7 +128,11 @@ function ApiKeyRow({
           className="h-7 w-7 text-zinc-500 hover:text-zinc-100"
           title="Copiar chave"
         >
-          {copied ? <IconCheck size={14} className="text-emerald-400" /> : <IconCopy size={14} />}
+          {copied ? (
+            <IconCheck size={14} className="text-emerald-400" />
+          ) : (
+            <IconCopy size={14} />
+          )}
         </Button>
         <Button
           variant="ghost"
@@ -135,7 +149,13 @@ function ApiKeyRow({
   );
 }
 
-function InstallSnippet({ apiKey, baseUrl }: { apiKey: string; baseUrl: string }) {
+function InstallSnippet({
+  apiKey,
+  baseUrl,
+}: {
+  apiKey: string;
+  baseUrl: string;
+}) {
   const [copied, setCopied] = useState(false);
   const snippet = `<script async src="${baseUrl}/tracker.js" data-key="${apiKey}"></script>`;
 
@@ -159,7 +179,11 @@ function InstallSnippet({ apiKey, baseUrl }: { apiKey: string; baseUrl: string }
           onClick={handleCopy}
           className="h-6 gap-1.5 text-xs text-zinc-500 hover:text-zinc-100 px-2"
         >
-          {copied ? <IconCheck size={12} className="text-emerald-400" /> : <IconCopy size={12} />}
+          {copied ? (
+            <IconCheck size={12} className="text-emerald-400" />
+          ) : (
+            <IconCopy size={12} />
+          )}
           {copied ? "Copiado!" : "Copiar"}
         </Button>
       </div>
@@ -180,7 +204,11 @@ function CreateKeyForm({
   orgId: string;
   orgName: string;
   keyCount: number;
-  onCreate: (input: { organizationId: string; name: string; expiresDays: number | undefined }) => void;
+  onCreate: (input: {
+    organizationId: string;
+    name: string;
+    expiresDays: number | undefined;
+  }) => void;
   isCreating: boolean;
 }) {
   const [expiresDays, setExpiresDays] = useState<number | undefined>(undefined);
@@ -197,7 +225,11 @@ function CreateKeyForm({
     <div className="flex flex-wrap items-center gap-2">
       <select
         value={expiresDays ?? ""}
-        onChange={(e) => setExpiresDays(e.target.value === "" ? undefined : Number(e.target.value))}
+        onChange={(e) =>
+          setExpiresDays(
+            e.target.value === "" ? undefined : Number(e.target.value),
+          )
+        }
         className="h-8 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none"
       >
         {EXPIRY_OPTIONS.map((opt) => (
@@ -219,16 +251,26 @@ function CreateKeyForm({
   );
 }
 
-function OrgApiKeysSection({ orgId, orgName }: { orgId: string; orgName: string }) {
+function OrgApiKeysSection({
+  orgId,
+  orgName,
+}: {
+  orgId: string;
+  orgName: string;
+}) {
   const { data: keys, isLoading } = useApiKeys(orgId);
   const createMutation = useCreateApiKey(orgId);
   const deleteMutation = useDeleteApiKey(orgId);
 
   const [baseUrl, setBaseUrl] = useState(
-    typeof window !== "undefined" ? window.location.origin : ""
+    typeof window !== "undefined" ? window.location.origin : "",
   );
 
-  const handleCreate = async (input: { organizationId: string; name: string; expiresDays: number | undefined }) => {
+  const handleCreate = async (input: {
+    organizationId: string;
+    name: string;
+    expiresDays: number | undefined;
+  }) => {
     const result = await createMutation.mutateAsync(input);
     if (result?.[0]) {
       toast.success("Nova API key criada!");
@@ -240,7 +282,9 @@ function OrgApiKeysSection({ orgId, orgName }: { orgId: string; orgName: string 
     toast.success("API key revogada.");
   };
 
-  const firstActiveKey = keys?.find((k) => k.isActive && (!k.expiresAt || new Date() < k.expiresAt));
+  const firstActiveKey = keys?.find(
+    (k) => k.isActive && (!k.expiresAt || new Date() < k.expiresAt),
+  );
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
@@ -303,9 +347,12 @@ function OrgApiKeysSection({ orgId, orgName }: { orgId: string; orgName: string 
             </div>
             <InstallSnippet apiKey={firstActiveKey.key} baseUrl={baseUrl} />
             <p className="text-[11px] text-zinc-600 leading-relaxed">
-              Cole este script no <code className="text-zinc-400">&lt;head&gt;</code> de qualquer página do seu site.
-              O tracker.js captura automaticamente pageviews, UTMs, device e referrer.
-              Use <code className="text-zinc-400">window.GrowthOS.track()</code> para eventos manuais.
+              Cole este script no{" "}
+              <code className="text-zinc-400">&lt;head&gt;</code> de qualquer
+              página do seu site. O tracker.js captura automaticamente
+              pageviews, UTMs, device e referrer. Use{" "}
+              <code className="text-zinc-400">window.GrowthOS.track()</code>{" "}
+              para eventos manuais.
             </p>
           </div>
         )}
@@ -321,21 +368,38 @@ export function SettingsContent() {
     <div className="space-y-6">
       <div>
         <h1 className="text-lg font-bold text-zinc-100">Configurações</h1>
-        <p className="text-xs text-zinc-500">Gerencie API keys e instalação do tracker</p>
+        <p className="text-xs text-zinc-500">
+          Gerencie API keys e instalação do tracker
+        </p>
       </div>
 
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-        <h3 className="text-sm font-bold text-zinc-100 mb-1">Como instalar o tracker</h3>
+        <h3 className="text-sm font-bold text-zinc-100 mb-1">
+          Como instalar o tracker
+        </h3>
         <p className="text-xs text-zinc-500 mb-4">
-          O tracker.js coleta dados automaticamente — sem npm, sem SDK, sem endpoints exclusivos no seu sistema.
+          O tracker.js coleta dados automaticamente, sem npm, sem SDK, sem
+          endpoints exclusivos no seu sistema.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { label: "1. Gere uma API key", desc: "Cada organização tem sua própria key para autenticar os eventos" },
-            { label: "2. Cole o script no <head>", desc: "Um único script captura pageviews, UTMs, device e referrer automaticamente" },
-            { label: "3. Dispare eventos manuais", desc: "Use GrowthOS.track('payment', {...}) para enviar dados financeiros" },
+            {
+              label: "1. Gere uma API key",
+              desc: "Cada organização tem sua própria key para autenticar os eventos",
+            },
+            {
+              label: "2. Cole o script no <head>",
+              desc: "Um único script captura pageviews, UTMs, device e referrer automaticamente",
+            },
+            {
+              label: "3. Dispare eventos manuais",
+              desc: "Use GrowthOS.track('payment', {...}) para enviar dados financeiros",
+            },
           ].map((step) => (
-            <div key={step.label} className="rounded-lg border border-zinc-800 p-3">
+            <div
+              key={step.label}
+              className="rounded-lg border border-zinc-800 p-3"
+            >
               <p className="text-xs font-bold text-indigo-400">{step.label}</p>
               <p className="text-xs text-zinc-500 mt-1">{step.desc}</p>
             </div>
@@ -346,9 +410,14 @@ export function SettingsContent() {
       {isLoading ? (
         <Skeleton className="h-48 w-full rounded-xl bg-zinc-800" />
       ) : organization ? (
-        <OrgApiKeysSection orgId={organization.id} orgName={organization.name} />
+        <OrgApiKeysSection
+          orgId={organization.id}
+          orgName={organization.name}
+        />
       ) : (
-        <p className="text-center py-8 text-zinc-600 text-sm">Organização não encontrada.</p>
+        <p className="text-center py-8 text-zinc-600 text-sm">
+          Organização não encontrada.
+        </p>
       )}
     </div>
   );

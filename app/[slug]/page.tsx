@@ -2,14 +2,20 @@ import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { OverviewContent } from "./_components/overview-content";
 
 export const metadata = {
-  title: "Visão Geral — GrowthOS",
+  title: "Visão Geral | GrowthOS",
 };
 
 interface DashboardPageProps {
-  searchParams: Promise<{ period?: string; start_date?: string; end_date?: string }>;
+  searchParams: Promise<{
+    period?: string;
+    start_date?: string;
+    end_date?: string;
+  }>;
 }
 
-export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+export default async function DashboardPage({
+  searchParams,
+}: DashboardPageProps) {
   const params = await searchParams;
   const filter: IDateFilter =
     params.start_date && params.end_date

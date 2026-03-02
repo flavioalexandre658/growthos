@@ -2,14 +2,20 @@ import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { ChannelsContent } from "./_components/channels-content";
 
 export const metadata = {
-  title: "Canais — GrowthOS",
+  title: "Canais | GrowthOS",
 };
 
 interface ChannelsPageProps {
-  searchParams: Promise<{ period?: string; start_date?: string; end_date?: string }>;
+  searchParams: Promise<{
+    period?: string;
+    start_date?: string;
+    end_date?: string;
+  }>;
 }
 
-export default async function ChannelsPage({ searchParams }: ChannelsPageProps) {
+export default async function ChannelsPage({
+  searchParams,
+}: ChannelsPageProps) {
   const params = await searchParams;
   const filter: IDateFilter =
     params.start_date && params.end_date

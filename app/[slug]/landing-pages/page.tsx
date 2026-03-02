@@ -2,14 +2,20 @@ import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { LandingPagesContent } from "./_components/landing-pages-content";
 
 export const metadata = {
-  title: "Landing Pages — GrowthOS",
+  title: "Landing Pages | GrowthOS",
 };
 
 interface LandingPagesPageProps {
-  searchParams: Promise<{ period?: string; start_date?: string; end_date?: string }>;
+  searchParams: Promise<{
+    period?: string;
+    start_date?: string;
+    end_date?: string;
+  }>;
 }
 
-export default async function LandingPagesPage({ searchParams }: LandingPagesPageProps) {
+export default async function LandingPagesPage({
+  searchParams,
+}: LandingPagesPageProps) {
   const params = await searchParams;
   const filter: IDateFilter =
     params.start_date && params.end_date

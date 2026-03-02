@@ -48,7 +48,14 @@ const ADDITIONAL_CHANNEL_NAMES: Record<string, string> = {
 const ALL_CHANNEL_NAMES = { ...CHANNEL_NAMES, ...ADDITIONAL_CHANNEL_NAMES };
 
 function getChannelColor(channel: string, index: number) {
-  const fallbacks = ["#6366f1", "#8b5cf6", "#06b6d4", "#22c55e", "#f59e0b", "#e11d48"];
+  const fallbacks = [
+    "#6366f1",
+    "#8b5cf6",
+    "#06b6d4",
+    "#22c55e",
+    "#f59e0b",
+    "#e11d48",
+  ];
   return CHANNEL_COLORS[channel] ?? fallbacks[index % fallbacks.length];
 }
 
@@ -56,7 +63,15 @@ function getChannelName(channel: string) {
   return ALL_CHANNEL_NAMES[channel] ?? channel;
 }
 
-function CustomYAxisTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: string } }) {
+function CustomYAxisTick({
+  x,
+  y,
+  payload,
+}: {
+  x?: number;
+  y?: number;
+  payload?: { value: string };
+}) {
   return (
     <text x={x} y={y} dy={4} textAnchor="end" fill="#a1a1aa" fontSize={11}>
       {payload?.value}
@@ -64,7 +79,15 @@ function CustomYAxisTick({ x, y, payload }: { x?: number; y?: number; payload?: 
   );
 }
 
-function CustomXAxisTick({ x, y, payload }: { x?: number; y?: number; payload?: { value: string } }) {
+function CustomXAxisTick({
+  x,
+  y,
+  payload,
+}: {
+  x?: number;
+  y?: number;
+  payload?: { value: string };
+}) {
   return (
     <text x={x} y={y} dy={12} textAnchor="middle" fill="#52525b" fontSize={10}>
       {payload?.value}
@@ -88,9 +111,11 @@ export function ChannelsBarChart({ data, isLoading }: ChannelsBarChartProps) {
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-      <h3 className="text-sm font-bold text-zinc-100">Receita por Canal de Aquisição</h3>
+      <h3 className="text-sm font-bold text-zinc-100">
+        Receita por Canal de Aquisição
+      </h3>
       <p className="mt-0.5 text-xs text-zinc-500">
-        De onde vem quem PAGA — requer attribution ativo
+        De onde vem quem PAGA, requer attribution ativo
       </p>
 
       <div className="mt-5">
@@ -101,9 +126,16 @@ export function ChannelsBarChart({ data, isLoading }: ChannelsBarChartProps) {
             Sem dados de attribution no período
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={Math.max(chartData.length * 44, 200)}>
+          <ResponsiveContainer
+            width="100%"
+            height={Math.max(chartData.length * 44, 200)}
+          >
             <BarChart data={chartData} layout="vertical" barSize={20}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" horizontal={false} />
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="#27272a"
+                horizontal={false}
+              />
               <XAxis
                 type="number"
                 tick={<CustomXAxisTick />}

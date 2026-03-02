@@ -1,4 +1,4 @@
-# GrowthOS — Arquitetura do Sistema
+# GrowthOS, Arquitetura do Sistema
 
 ## Visão Geral
 
@@ -22,15 +22,15 @@ GrowthOS
 
 ## Stack Técnica
 
-| Camada | Tecnologia |
-|--------|-----------|
-| Framework | Next.js 15 (App Router) |
-| UI | React 19, Tailwind CSS, shadcn/ui, Recharts |
-| Auth | NextAuth v4 (JWT + Credentials) |
-| Banco local | NeonDB (PostgreSQL serverless) |
-| ORM | Drizzle ORM |
-| IA | Google Gemini 1.5 Flash |
-| Data fetching | React Query v5 |
+| Camada        | Tecnologia                                  |
+| ------------- | ------------------------------------------- |
+| Framework     | Next.js 15 (App Router)                     |
+| UI            | React 19, Tailwind CSS, shadcn/ui, Recharts |
+| Auth          | NextAuth v4 (JWT + Credentials)             |
+| Banco local   | NeonDB (PostgreSQL serverless)              |
+| ORM           | Drizzle ORM                                 |
+| IA            | Google Gemini 1.5 Flash                     |
+| Data fetching | React Query v5                              |
 
 ---
 
@@ -58,15 +58,15 @@ URL (searchParams) → Page (server) → *Content (client)
 
 ### Capabilities por Provider
 
-| Feature | Convitede | 123Rifas |
-|---------|-----------|----------|
-| funnel | ✅ | ✅ |
-| channels | ✅ | A definir |
-| categories | ✅ | A definir |
-| daily | ✅ | A definir |
-| templates | ✅ | ❌ |
-| templates-opportunities | ✅ | ❌ |
-| landing-pages | ✅ | A definir |
+| Feature                 | Convitede | 123Rifas  |
+| ----------------------- | --------- | --------- |
+| funnel                  | ✅        | ✅        |
+| channels                | ✅        | A definir |
+| categories              | ✅        | A definir |
+| daily                   | ✅        | A definir |
+| templates               | ✅        | ❌        |
+| templates-opportunities | ✅        | ❌        |
+| landing-pages           | ✅        | A definir |
 
 O sidebar filtra os itens de navegação com base nas capabilities da org ativa.
 
@@ -76,28 +76,28 @@ O sidebar filtra os itens de navegação com base nas capabilities da org ativa.
 
 ### Tabela `organizations`
 
-| Coluna | Tipo | Descrição |
-|--------|------|-----------|
-| id | uuid PK | ID único |
-| name | text | Nome da empresa |
-| slug | text unique | Identificador (convitede, 123rifas) |
-| api_url | text? | URL da API externa |
-| provider_type | text enum | CONVITEDE, RIFAS, CUSTOM |
-| created_at | timestamp | |
-| updated_at | timestamp | |
+| Coluna        | Tipo        | Descrição                           |
+| ------------- | ----------- | ----------------------------------- |
+| id            | uuid PK     | ID único                            |
+| name          | text        | Nome da empresa                     |
+| slug          | text unique | Identificador (convitede, 123rifas) |
+| api_url       | text?       | URL da API externa                  |
+| provider_type | text enum   | CONVITEDE, RIFAS, CUSTOM            |
+| created_at    | timestamp   |                                     |
+| updated_at    | timestamp   |                                     |
 
 ### Tabela `fixed_costs`
 
-| Coluna | Tipo | Descrição |
-|--------|------|-----------|
-| id | uuid PK | |
-| organization_id | uuid FK | Referência para organizations |
-| name | text | Nome do custo (ex: Aluguel) |
-| amount_in_cents | integer | Valor em centavos (PERCENTAGE: 1550 = 15.50%) |
-| type | text enum | VALUE ou PERCENTAGE |
-| description | text? | Observação |
-| created_at | timestamp | |
-| updated_at | timestamp | |
+| Coluna          | Tipo      | Descrição                                     |
+| --------------- | --------- | --------------------------------------------- |
+| id              | uuid PK   |                                               |
+| organization_id | uuid FK   | Referência para organizations                 |
+| name            | text      | Nome do custo (ex: Aluguel)                   |
+| amount_in_cents | integer   | Valor em centavos (PERCENTAGE: 1550 = 15.50%) |
+| type            | text enum | VALUE ou PERCENTAGE                           |
+| description     | text?     | Observação                                    |
+| created_at      | timestamp |                                               |
+| updated_at      | timestamp |                                               |
 
 ### Tabela `variable_costs`
 
@@ -106,6 +106,7 @@ Mesma estrutura de `fixed_costs`.
 ### Convenção PERCENTAGE
 
 Quando `type = "PERCENTAGE"`, o `amount_in_cents` armazena a porcentagem × 100:
+
 - 15.5% → `amount_in_cents = 1550`
 - 5% → `amount_in_cents = 500`
 
@@ -165,11 +166,13 @@ Os componentes `funnel-section.tsx` e `kpi-cards.tsx` renderizam dinamicamente b
 ### Tipos de análise
 
 **1. Análise financeira** (`type: "analysis"`):
+
 - Envia P&L completo + dados do funil
 - Gemini identifica onde o dinheiro está sendo perdido
 - Sugere ações concretas priorizadas
 
 **2. Comparativo entre períodos** (`type: "comparison"`):
+
 - Usuário seleciona seção + 2 períodos
 - Frontend faz 2 fetches paralelos para cada período
 - Gemini compara e aponta tendências
@@ -183,6 +186,7 @@ O Gemini retorna a resposta via `ReadableStream`. O frontend lê chunk a chunk e
 ## Como adicionar uma nova organização
 
 1. Inserir registro em `organizations` (via seed ou admin):
+
    ```sql
    INSERT INTO organizations (name, slug, provider_type, api_url)
    VALUES ('Nova Empresa', 'nova-empresa', 'CONVITEDE', 'https://api.novaempresa.com');

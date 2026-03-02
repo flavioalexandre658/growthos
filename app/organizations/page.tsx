@@ -6,7 +6,7 @@ import { getOrganizations } from "@/actions/organizations/get-organizations.acti
 import { OrganizationsContent } from "./_components/organizations-content";
 
 export const metadata = {
-  title: "Organizações — GrowthOS",
+  title: "Organizações | GrowthOS",
 };
 
 export default async function OrganizationsPage() {
@@ -25,10 +25,7 @@ export default async function OrganizationsPage() {
   return (
     <main className="min-h-screen bg-zinc-950">
       <Suspense>
-        <OrganizationsContent
-          initialOrgs={orgs}
-          userName={session.user.name}
-        />
+        <OrganizationsContent initialOrgs={orgs} userName={session.user.name} />
       </Suspense>
     </main>
   );

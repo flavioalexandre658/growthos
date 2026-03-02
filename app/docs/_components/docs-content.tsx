@@ -44,9 +44,9 @@ const AUTO_CONTEXT_ROWS = [
   },
 ];
 
-const INSTALL_HTML = `<script
+const buildInstallHtml = (baseUrl: string) => `<script
   async
-  src="https://growthos.dev/tracker.js"
+  src="${baseUrl}/tracker.js"
   data-key="tok_xxx"
 ></script>`;
 
@@ -72,7 +72,9 @@ const SCRIPT_ATTRS_ROWS = [
   },
 ];
 
-const INSTALL_NEXTJS = `import Script from 'next/script'
+const buildInstallNextjs = (
+  baseUrl: string,
+) => `import Script from 'next/script'
 
 export default function RootLayout({ children }) {
   return (
@@ -81,7 +83,7 @@ export default function RootLayout({ children }) {
       <body>
         {children}
         <Script
-          src="https://growthos.dev/tracker.js"
+          src="${baseUrl}/tracker.js"
           data-key={process.env.NEXT_PUBLIC_GROWTHOS_KEY}
           strategy="afterInteractive"
         />
@@ -95,7 +97,7 @@ const ENV_CODE = `NEXT_PUBLIC_GROWTHOS_KEY=tok_convitede_xxx`;
 const HOOK_CODE = `'use client'
 
 import { useCallback } from 'react'
-import type { GrowthOSEventType, GrowthOSEventData } from '@/types/growthos'
+import type { GrowthOSEventType | GrowthOSEventData } from '@/types/growthos'
 
 export function useTracker() {
   const track = useCallback(
@@ -163,14 +165,14 @@ const SIGNUP_CODE = `window.GrowthOS.track('signup', {
   customer_id: 'hash_anonimo',
 })`;
 
-const ABANDONED_CODE = `// Disparo manual — quando você sabe o motivo exato
+const ABANDONED_CODE = `// Disparo manual , quando você sabe o motivo exato
 window.GrowthOS.track('checkout_abandoned', {
   gross_value: 89.00,
   product_id: 'template-aniversario-002',
   reason: 'payment_failed',  // exit | payment_failed | timeout
 })
 
-// Disparo automático — pelo tracker via beforeunload
+// Disparo automático , pelo tracker via beforeunload
 // Não é necessário nenhum código adicional.
 // O tracker usa os dados do último checkout_started salvo em sessionStorage.`;
 
@@ -241,9 +243,9 @@ console.log(window.GrowthOS)
 window.GrowthOS.track('pageview')
 // Verificar no Network: POST /api/track → 204`;
 
-const DEBUG_ATTRS_CODE = `<script
+const buildDebugAttrsCode = (baseUrl: string) => `<script
   async
-  src="https://growthos.dev/tracker.js"
+  src="${baseUrl}/tracker.js"
   data-key="tok_xxx"
   data-debug="true"
 ></script>
@@ -291,10 +293,10 @@ const API_PAYLOAD_CODE = `POST /api/track
 Content-Type: application/json
 
 {
-  "key": "tok_xxx",            // obrigatório — API key
-  "event_type": "payment",     // obrigatório — tipo do evento
+  "key": "tok_xxx",            // obrigatório , API key
+  "event_type": "payment",     // obrigatório , tipo do evento
 
-  // valores monetários — enviar em reais, a API converte para centavos
+  // valores monetários , enviar em reais, a API converte para centavos
   "gross_value": 150.00,
   "net_value": 140.00,
   "discount": 10.00,
@@ -307,7 +309,7 @@ Content-Type: application/json
   "product_name": "Convite Casamento",
   "category": "casamento",
 
-  // atribuição — preenchido automaticamente pelo tracker
+  // atribuição , preenchido automaticamente pelo tracker
   "source": "google",
   "medium": "organic",
   "campaign": "val2024",
@@ -315,13 +317,13 @@ Content-Type: application/json
   "landing_page": "/convite/casamento",
   "referrer": "https://google.com",
 
-  // contexto — preenchido automaticamente pelo tracker
+  // contexto , preenchido automaticamente pelo tracker
   "device": "mobile",
   "customer_type": "new",
   "customer_id": "hash_anonimo",
   "session_id": "s_abc123",
 
-  // extra livre — max 20 chaves, strings max 500 chars
+  // extra livre , max 20 chaves, strings max 500 chars
   "metadata": { "promo_code": "VERAO10" }
 }`;
 
@@ -354,6 +356,11 @@ const API_RESPONSES_ROWS = [
 ];
 
 export function DocsContent() {
+  const appUrl =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://seu-dominio.com";
+
   return (
     <Tabs defaultValue="install" className="flex gap-0 h-full">
       <div className="w-52 shrink-0 border-r border-border pr-4 pt-6 sticky top-0 h-[calc(100vh-57px)] overflow-y-auto">
@@ -404,30 +411,28 @@ export function DocsContent() {
           </div>
 
           <CodeBlock
-            code={INSTALL_HTML}
+            code={buildInstallHtml(appUrl)}
             lang="html"
             title="Qualquer sistema HTML"
           />
 
           <Callout type="tip">
-            O atributo{" "}
-            <code className="font-mono text-xs">async</code> garante que o
-            script é carregado em paralelo, sem bloquear o parsing do HTML nem
-            atrasar o{" "}
-            <code className="font-mono text-xs">LCP</code> da página. O
-            tracker só executa após o download, sem nenhum impacto no
+            O atributo <code className="font-mono text-xs">async</code> garante
+            que o script é carregado em paralelo, sem bloquear o parsing do HTML
+            nem atrasar o <code className="font-mono text-xs">LCP</code> da
+            página. O tracker só executa após o download, sem nenhum impacto no
             desempenho do site.
           </Callout>
 
           <Callout type="warn">
-            Substitua{" "}
-            <code className="font-mono text-xs">https://growthos.dev</code>{" "}
-            pelo domínio onde o <strong>seu</strong> GrowthOS está hospedado. O
-            tracker extrai automaticamente o endpoint a partir do{" "}
-            <code className="font-mono text-xs">src</code> — eventos são
+            Os snippets acima usam{" "}
+            <code className="font-mono text-xs">{appUrl}</code> como base , este
+            é o domínio onde o seu GrowthOS está hospedado. Certifique-se de que
+            este endereço está correto antes de copiar. O tracker extrai
+            automaticamente o endpoint a partir do{" "}
+            <code className="font-mono text-xs">src</code> , eventos são
             enviados para{" "}
-            <code className="font-mono text-xs">SEU_DOMINIO/api/track</code>.
-            O snippet correto já é gerado no passo de instalação do onboarding.
+            <code className="font-mono text-xs">{appUrl}/api/track</code>.
           </Callout>
 
           <Callout type="info">
@@ -502,7 +507,11 @@ export function DocsContent() {
             </p>
           </div>
 
-          <CodeBlock code={INSTALL_NEXTJS} lang="tsx" title="app/layout.tsx" />
+          <CodeBlock
+            code={buildInstallNextjs(appUrl)}
+            lang="tsx"
+            title="app/layout.tsx"
+          />
           <CodeBlock code={ENV_CODE} lang="bash" title=".env.local" />
 
           <Callout type="warn">
@@ -550,7 +559,7 @@ export function DocsContent() {
               <Badge variant="secondary">zero config</Badge>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              O tracker detecta e envia alguns eventos automaticamente — sem
+              O tracker detecta e envia alguns eventos automaticamente , sem
               nenhum código adicional.
             </p>
           </div>
@@ -569,7 +578,7 @@ export function DocsContent() {
               ],
               [
                 "pageview",
-                "Navegação SPA — history.pushState, replaceState ou popstate",
+                "Navegação SPA , history.pushState, replaceState ou popstate",
                 "nova landing_page, mantém session_id e UTMs da sessão",
               ],
               [
@@ -607,7 +616,7 @@ export function DocsContent() {
 
           <div className="space-y-3">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              SPA Tracking — como funciona
+              SPA Tracking , como funciona
             </h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               O tracker intercepta{" "}
@@ -626,7 +635,7 @@ export function DocsContent() {
               <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                 pageview
               </code>{" "}
-              é disparado automaticamente sempre que o pathname muda — sem
+              é disparado automaticamente sempre que o pathname muda , sem
               nenhuma configuração extra.
             </p>
           </div>
@@ -699,15 +708,15 @@ export function DocsContent() {
               </Badge>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Para eventos que dependem de lógica do servidor — como confirmação
-              de pagamento — use o método manual após a resposta da API.
+              Para eventos que dependem de lógica do servidor , como confirmação
+              de pagamento , use o método manual após a resposta da API.
             </p>
           </div>
 
           <CodeBlock
             code={PAYMENT_CODE}
             lang="js"
-            title="payment — mais importante"
+            title="payment , mais importante"
           />
 
           <Callout type="tip">
@@ -719,7 +728,7 @@ export function DocsContent() {
           <CodeBlock
             code={CHECKOUT_STARTED_CODE}
             lang="js"
-            title="checkout_started — habilita auto-abandon"
+            title="checkout_started , habilita auto-abandon"
           />
 
           <Callout type="info">
@@ -733,7 +742,7 @@ export function DocsContent() {
           <CodeBlock
             code={ABANDONED_CODE}
             lang="js"
-            title="checkout_abandoned — receita perdida"
+            title="checkout_abandoned , receita perdida"
           />
         </TabsContent>
 
@@ -752,7 +761,7 @@ export function DocsContent() {
           <div className="space-y-5">
             <EventCard
               name="pageview"
-              description="Visualização de página. Disparado automaticamente pelo tracker — manual só se necessário."
+              description="Visualização de página. Disparado automaticamente pelo tracker , manual só se necessário."
               variant="secondary"
               props={[]}
             />
@@ -938,7 +947,7 @@ export function DocsContent() {
           <CodeBlock
             code={DATA_ATTRS_CODE}
             lang="html"
-            title="HTML — data attributes"
+            title="HTML , data attributes"
           />
 
           <div className="rounded-lg border border-border overflow-hidden">
@@ -1018,7 +1027,7 @@ export function DocsContent() {
               <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                 tracker.js
               </code>
-              . Pode ser chamado diretamente se necessário — por exemplo, para
+              . Pode ser chamado diretamente se necessário , por exemplo, para
               importar dados históricos ou disparar eventos server-side.
             </p>
           </div>
@@ -1135,9 +1144,9 @@ export function DocsContent() {
 
           <CodeBlock code={DEBUG_CODE} lang="js" title="Console do navegador" />
           <CodeBlock
-            code={DEBUG_ATTRS_CODE}
+            code={buildDebugAttrsCode(appUrl)}
             lang="html"
-            title="Modo debug — data-debug=true"
+            title="Modo debug , data-debug=true"
           />
 
           <Separator />
@@ -1153,7 +1162,7 @@ export function DocsContent() {
             <CodeBlock
               code={DEBUG_QUEUE_CODE}
               lang="js"
-              title="DevTools — inspecionar estado"
+              title="DevTools , inspecionar estado"
             />
           </div>
 

@@ -2,11 +2,15 @@ import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { FinanceContent } from "./_components/finance-content";
 
 export const metadata = {
-  title: "Financeiro — GrowthOS",
+  title: "Financeiro | GrowthOS",
 };
 
 interface FinancePageProps {
-  searchParams: Promise<{ period?: string; start_date?: string; end_date?: string }>;
+  searchParams: Promise<{
+    period?: string;
+    start_date?: string;
+    end_date?: string;
+  }>;
 }
 
 export default async function FinancePage({ searchParams }: FinancePageProps) {

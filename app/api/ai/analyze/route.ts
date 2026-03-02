@@ -3,10 +3,15 @@ import { NextRequest } from "next/server";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-function buildAnalysisPrompt(orgName: string, providerType: string, data: Record<string, unknown>): string {
-  const context = providerType === "RIFAS"
-    ? "empresa de rifas online (métricas: tickets vendidos, campanhas ativas, prêmios)"
-    : "plataforma de convites digitais (métricas: cadastros, edições, pagamentos)";
+function buildAnalysisPrompt(
+  orgName: string,
+  providerType: string,
+  data: Record<string, unknown>,
+): string {
+  const context =
+    providerType === "RIFAS"
+      ? "empresa de rifas online (métricas: tickets vendidos, campanhas ativas, prêmios)"
+      : "plataforma de convites digitais (métricas: cadastros, edições, pagamentos)";
 
   return `Você é um analista financeiro sênior especializado em crescimento digital analisando dados da ${orgName}, uma ${context}.
 
@@ -31,11 +36,12 @@ function buildComparisonPrompt(
   periodALabel: string,
   periodBLabel: string,
   dataA: Record<string, unknown>,
-  dataB: Record<string, unknown>
+  dataB: Record<string, unknown>,
 ): string {
-  const context = providerType === "RIFAS"
-    ? "empresa de rifas online"
-    : "plataforma de convites digitais";
+  const context =
+    providerType === "RIFAS"
+      ? "empresa de rifas online"
+      : "plataforma de convites digitais";
 
   const sectionLabels: Record<string, string> = {
     overview: "Visão Geral",
@@ -49,10 +55,10 @@ function buildComparisonPrompt(
 
 SEÇÃO ANALISADA: ${sectionLabels[section] ?? section}
 
-PERÍODO A — ${periodALabel}:
+PERÍODO A, ${periodALabel}:
 ${JSON.stringify(dataA, null, 2)}
 
-PERÍODO B — ${periodBLabel}:
+PERÍODO B, ${periodBLabel}:
 ${JSON.stringify(dataB, null, 2)}
 
 INSTRUÇÕES:
@@ -81,13 +87,13 @@ export async function POST(req: NextRequest) {
       periodA.label,
       periodB.label,
       periodA.data,
-      periodB.data
+      periodB.data,
     );
   } else {
     prompt = buildAnalysisPrompt(
       orgName ?? "sua empresa",
       providerType ?? "CONVITEDE",
-      body.data
+      body.data,
     );
   }
 

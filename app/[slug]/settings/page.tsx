@@ -1,7 +1,7 @@
 import { SettingsContent } from "./_components/settings-content";
 
 export const metadata = {
-  title: "Configurações — GrowthOS",
+  title: "Configurações | GrowthOS",
 };
 
 export default function SettingsPage() {

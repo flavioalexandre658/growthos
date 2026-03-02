@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { DocsContent } from "./_components/docs-content";
 
 export const metadata = {
-  title: "Documentação — GrowthOS",
+  title: "Documentação | GrowthOS",
 };
 
 export default function DocsPage() {

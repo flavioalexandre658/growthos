@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 
 export const metadata = {
-  title: "Criar conta — GrowthOS",
+  title: "Criar conta | GrowthOS",
 };
 
 export default async function RegisterPage() {
@@ -37,7 +37,9 @@ export default async function RegisterPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
             <IconChartBar size={18} className="text-white" />
           </div>
-          <span className="text-sm font-bold text-zinc-100 tracking-tight">GrowthOS</span>
+          <span className="text-sm font-bold text-zinc-100 tracking-tight">
+            GrowthOS
+          </span>
         </div>
 
         <div className="relative z-10 w-full max-w-md space-y-8">
@@ -54,7 +56,7 @@ export default async function RegisterPage() {
             </h1>
             <p className="text-zinc-500 text-sm leading-relaxed">
               Descubra onde está o lucro, onde está o desperdício e o que
-              otimizar primeiro — com dados e análise inteligente.
+              otimizar primeiro, com dados e análise inteligente.
             </p>
           </div>
 
@@ -64,7 +66,7 @@ export default async function RegisterPage() {
                 icon: IconChartLine,
                 title: "Receita em tempo real",
                 description:
-                  "Faturamento bruto, líquido, ticket médio e margem por canal — tudo atualizado automaticamente.",
+                  "Faturamento bruto, líquido, ticket médio e margem por canal, tudo atualizado automaticamente.",
                 color: "text-indigo-400",
                 bg: "bg-indigo-500/10 border-indigo-500/20",
               },
@@ -105,7 +107,8 @@ export default async function RegisterPage() {
           </div>
 
           <p className="text-xs text-zinc-700">
-            © {new Date().getFullYear()} GrowthOS · Decisões melhores, crescimento consistente.
+            © {new Date().getFullYear()} GrowthOS · Decisões melhores,
+            crescimento consistente.
           </p>
         </div>
       </div>

@@ -35,7 +35,7 @@ export function RevenueLineChart({ data, isLoading }: RevenueLineChartProps) {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <h3 className="text-sm font-bold text-zinc-100">
-        Receita Diária — Bruta vs Líquida
+        Receita Diária, Bruta vs Líquida
       </h3>
       <p className="mt-0.5 text-xs text-zinc-500">
         Evolução da receita no período selecionado
@@ -72,7 +72,11 @@ export function RevenueLineChart({ data, isLoading }: RevenueLineChartProps) {
                 cursor={{ stroke: "#3f3f46" }}
               />
               <Legend
-                wrapperStyle={{ fontSize: 11, color: "#71717a", paddingTop: 12 }}
+                wrapperStyle={{
+                  fontSize: 11,
+                  color: "#71717a",
+                  paddingTop: 12,
+                }}
               />
               <Line
                 type="monotone"
