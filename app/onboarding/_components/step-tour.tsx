@@ -59,7 +59,7 @@ interface StepTourProps {
   onComplete: () => void;
 }
 
-export function StepTour({ onComplete: _onComplete }: StepTourProps) {
+export function StepTour(_props: StepTourProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { update } = useSession();
 
