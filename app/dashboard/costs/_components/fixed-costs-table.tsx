@@ -10,7 +10,7 @@ import { useFixedCosts } from "@/hooks/queries/use-fixed-costs";
 import { useCreateFixedCost } from "@/hooks/mutations/use-create-fixed-cost";
 import { useUpdateFixedCost } from "@/hooks/mutations/use-update-fixed-cost";
 import { useDeleteFixedCost } from "@/hooks/mutations/use-delete-fixed-cost";
-import { fmtBRL, fmtBRLDecimal } from "@/utils/format";
+import { fmtBRLDecimal } from "@/utils/format";
 import type { IFixedCost, CostValueType } from "@/interfaces/cost.interface";
 import toast from "react-hot-toast";
 

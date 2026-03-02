@@ -337,7 +337,7 @@ export function DocsContent() {
           <Callout type="warn">
             Use{" "}
             <code className="font-mono text-xs">
-              strategy="afterInteractive"
+              {`strategy="afterInteractive"`}
             </code>{" "}
             para não bloquear o carregamento. Os UTMs da URL são capturados
             corretamente mesmo com essa estratégia.

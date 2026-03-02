@@ -1,7 +1,7 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRL, fmtBRLDecimal } from "@/utils/format";
+import { fmtBRL } from "@/utils/format";
 import {
   IconTrendingUp,
   IconTrendingDown,

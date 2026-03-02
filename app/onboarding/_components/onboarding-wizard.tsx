@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { IconChartBar, IconCheck } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { StepCreateOrg } from "./step-create-org";
