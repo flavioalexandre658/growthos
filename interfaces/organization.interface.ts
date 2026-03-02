@@ -9,6 +9,7 @@ export interface IOrganization {
   name: string;
   slug: string;
   funnelSteps: IFunnelStep[];
+  hasRecurringRevenue: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

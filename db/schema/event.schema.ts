@@ -34,6 +34,12 @@ export const events = pgTable(
     customerId: text("customer_id"),
     sessionId: text("session_id"),
 
+    billingType: text("billing_type"),
+    billingInterval: text("billing_interval"),
+    subscriptionId: text("subscription_id"),
+    planId: text("plan_id"),
+    planName: text("plan_name"),
+
     metadata: jsonb("metadata"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },

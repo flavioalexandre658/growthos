@@ -296,6 +296,85 @@ Seções disponíveis para comparação entre dois períodos:
 
 ---
 
+## 5.1 Recorrência (MRR)
+
+### Eventos de recorrência
+
+| Evento | Quando disparar | Como disparar |
+|---|---|---|
+| `payment` com `billing_type: 'recurring'` | Renovação ou nova assinatura paga | Webhook do gateway (server-side) |
+| `subscription_canceled` | Assinatura cancelada | Webhook do gateway |
+| `subscription_changed` | Upgrade ou downgrade de plano | Webhook ou ação do admin |
+
+### Campos obrigatórios para recorrência
+
+| Campo | Descrição |
+|---|---|
+| `billing_type` | `'recurring'` para ativar o rastreio |
+| `billing_interval` | `'monthly'`, `'yearly'` ou `'weekly'` |
+| `subscription_id` | ID único da assinatura — chave de upsert, deve ser estável |
+| `plan_id` | ID do plano no seu sistema |
+| `plan_name` | Nome legível do plano |
+| `gross_value` | Valor cobrado em reais |
+| `customer_id` | Hash anônimo do cliente |
+
+### Tabela `subscriptions`
+
+```
+subscriptions
+├── id                   UUID, PK
+├── organization_id      UUID, FK → organizations
+├── subscription_id      text UNIQUE
+├── customer_id          text
+├── plan_id              text
+├── plan_name            text
+├── status               text (active | canceled | past_due | trialing)
+├── value_in_cents       integer
+├── billing_interval     text (monthly | yearly | weekly)
+├── started_at           timestamptz
+├── canceled_at          timestamptz
+├── created_at           timestamptz
+└── updated_at           timestamptz
+```
+
+Upsert automático: quando chega `event_type = 'payment'` com `billing_type = 'recurring'`, o `/api/track` faz upsert em `subscriptions` (conflito por `subscription_id`). Ao receber `subscription_canceled`, marca como cancelada. Ao receber `subscription_changed`, atualiza valor e plano.
+
+### Tela Recorrência (`/[slug]/mrr`)
+
+A tela **só aparece no sidebar** quando `organizations.has_recurring_revenue = true`, que é automaticamente ativado na primeira renovação recebida.
+
+#### KPI Cards
+
+| KPI | Fórmula |
+|---|---|
+| MRR | `SUM(normalizeMonthly(valueInCents, interval))` de subs ativas |
+| ARR | MRR × 12 |
+| Assinantes Ativos | `COUNT(*)` WHERE status IN ('active', 'trialing') |
+| ARPU | MRR ÷ Assinantes Ativos |
+| Churn Rate | Cancelados no período ÷ (Ativos + Cancelados) × 100 |
+| Revenue Churn | MRR cancelado ÷ (MRR atual + MRR cancelado) × 100 |
+| LTV Estimado | ARPU ÷ Churn Rate mensal (ou ARPU × 24 se churn = 0) |
+
+Normalização de intervalo: yearly ÷ 12, weekly × 4,33.
+
+#### MRR Movimentação (stacked bar + line)
+
+- **New MRR**: primeira aparição de cada `subscription_id` no período
+- **Expansion MRR**: `subscription_changed` com valor maior
+- **Contraction MRR**: `subscription_changed` com valor menor
+- **Churned MRR**: MRR de assinaturas com `subscription_canceled` no período
+- **Net MRR**: New + Expansion − Contraction − Churned
+
+#### Evolução do MRR (area chart)
+
+MRR acumulado em cada ponto do período, calculado a partir de `startedAt` e `canceledAt` das assinaturas.
+
+#### Tabela de Assinaturas Ativas
+
+Paginada, ordenada por `startedAt DESC`. Colunas: Customer ID, Plano, Valor/mês (normalizado), Ciclo, Status, Desde.
+
+---
+
 ## 6. Resumo por Tela
 
 | Tela | Checkout Iniciado | Abandonos | Funil Dinâmico |
@@ -307,6 +386,7 @@ Seções disponíveis para comparação entre dois períodos:
 | Canais | Coluna se houver dados | Coluna se houver dados | Sim |
 | Landing Pages | Coluna se houver dados | Coluna se houver dados | Sim |
 | Custos & P&L (IA) | No payload do Gemini se houver dados | No payload do Gemini se houver dados | Sim |
+| Recorrência | Não | Não | Não (tela específica de MRR) |
 
 ---
 
@@ -335,3 +415,4 @@ Todos os dados são isolados por `organization_id`. Um usuário pode pertencer a
 - API Keys próprias para integração do tracker
 - Custos fixos e variáveis próprios
 - Dados de eventos completamente isolados
+- Flag `has_recurring_revenue` — ativada automaticamente na primeira renovação recorrente recebida

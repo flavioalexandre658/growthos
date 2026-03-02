@@ -422,11 +422,202 @@ const API_RESPONSES_ROWS = [
   },
 ];
 
-export function DocsContent() {
+function buildServerNodeCode(appUrl: string) {
+  return `// Node.js / Next.js API Route / Server Action
+const res = await fetch('${appUrl}/api/track', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    key: process.env.GROWTHOS_API_KEY,
+    event_type: 'payment',
+    gross_value: 97.00,
+    net_value: 90.00,
+    gateway_fee: 7.00,
+    payment_method: 'credit_card',
+    billing_type: 'recurring',
+    billing_interval: 'monthly',
+    subscription_id: 'sub_stripe_abc123',
+    plan_id: 'plan_pro',
+    plan_name: 'Pro Mensal',
+    customer_id: 'hash_anonimo_cliente',
+    timestamp: new Date().toISOString(),
+  }),
+})`;
+}
+
+function buildServerCurlCode(appUrl: string) {
+  return `curl -X POST ${appUrl}/api/track \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "key": "tok_xxx",
+    "event_type": "payment",
+    "gross_value": 97.00,
+    "billing_type": "recurring",
+    "billing_interval": "monthly",
+    "subscription_id": "sub_stripe_abc123",
+    "plan_name": "Pro Mensal",
+    "customer_id": "hash_cliente",
+    "timestamp": "2025-01-15T10:30:00Z"
+  }'`;
+}
+
+function buildServerPythonCode(appUrl: string) {
+  return `import requests, os
+
+requests.post(
+    "${appUrl}/api/track",
+    json={
+        "key": os.environ["GROWTHOS_API_KEY"],
+        "event_type": "payment",
+        "gross_value": 97.00,
+        "billing_type": "recurring",
+        "billing_interval": "monthly",
+        "subscription_id": "sub_stripe_abc123",
+        "plan_name": "Pro Mensal",
+        "customer_id": "hash_cliente",
+    }
+)`;
+}
+
+function buildServerPhpCode(appUrl: string) {
+  return `<?php
+$payload = [
+    'key'             => getenv('GROWTHOS_API_KEY'),
+    'event_type'      => 'payment',
+    'gross_value'     => 97.00,
+    'billing_type'    => 'recurring',
+    'billing_interval'=> 'monthly',
+    'subscription_id' => 'sub_stripe_abc123',
+    'plan_name'       => 'Pro Mensal',
+    'customer_id'     => 'hash_cliente',
+];
+
+$ch = curl_init('${appUrl}/api/track');
+curl_setopt($ch, CURLOPT_POST, true);
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+curl_exec($ch);
+curl_close($ch);`;
+}
+
+const SERVER_STRIPE_WEBHOOK_CODE = `// pages/api/webhooks/stripe.ts (ou app/api/webhooks/stripe/route.ts)
+import Stripe from 'stripe'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+
+export async function POST(req: Request) {
+  const sig = req.headers.get('stripe-signature')!
+  const body = await req.text()
+  const event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
+
+  if (event.type === 'invoice.payment_succeeded') {
+    const invoice = event.data.object as Stripe.Invoice
+
+    await fetch(process.env.GROWTHOS_API_URL + '/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        key: process.env.GROWTHOS_API_KEY,
+        event_type: 'payment',
+        gross_value: invoice.amount_paid / 100,
+        billing_type: 'recurring',
+        billing_interval: invoice.lines.data[0]?.plan?.interval ?? 'monthly',
+        subscription_id: invoice.subscription as string,
+        plan_id: invoice.lines.data[0]?.plan?.id ?? '',
+        plan_name: invoice.lines.data[0]?.description ?? '',
+        customer_id: invoice.customer as string,
+        timestamp: new Date(invoice.created * 1000).toISOString(),
+      }),
+    })
+  }
+
+  if (event.type === 'customer.subscription.deleted') {
+    const sub = event.data.object as Stripe.Subscription
+
+    await fetch(process.env.GROWTHOS_API_URL + '/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        key: process.env.GROWTHOS_API_KEY,
+        event_type: 'subscription_canceled',
+        subscription_id: sub.id,
+        customer_id: sub.customer as string,
+        timestamp: new Date().toISOString(),
+      }),
+    })
+  }
+
+  return new Response(null, { status: 200 })
+}`;
+
+const RECURRING_PAYMENT_CODE = `// Renovação mensal (via webhook do seu gateway)
+window.GrowthOS.track('payment', {
+  gross_value: 97.00,
+  net_value: 90.00,
+  gateway_fee: 7.00,
+  payment_method: 'credit_card',
+
+  // campos de recorrência obrigatórios
+  billing_type: 'recurring',        // 'recurring' | 'one_time'
+  billing_interval: 'monthly',      // 'monthly' | 'yearly' | 'weekly'
+  subscription_id: 'sub_abc123',    // ID único da assinatura no seu sistema
+  plan_id: 'plan_pro',
+  plan_name: 'Pro Mensal',
+  customer_id: 'hash_cliente',
+})`;
+
+const RECURRING_CANCEL_CODE = `// Cancelamento de assinatura
+window.GrowthOS.track('subscription_canceled', {
+  subscription_id: 'sub_abc123',
+  customer_id: 'hash_cliente',
+})
+
+// Ou via servidor (webhook do Stripe, por exemplo)
+await fetch('/api/track', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    key: process.env.GROWTHOS_API_KEY,
+    event_type: 'subscription_canceled',
+    subscription_id: 'sub_abc123',
+    customer_id: 'hash_cliente',
+  }),
+})`;
+
+const RECURRING_CHANGED_CODE = `// Upgrade ou downgrade de plano
+window.GrowthOS.track('subscription_changed', {
+  subscription_id: 'sub_abc123',
+  plan_id: 'plan_enterprise',
+  plan_name: 'Enterprise Anual',
+  gross_value: 197.00,
+  billing_interval: 'yearly',
+  customer_id: 'hash_cliente',
+})`;
+
+const RECURRING_TYPES_CODE = `export type GrowthOSRecurringEventType =
+  | 'payment'              // com billing_type: 'recurring'
+  | 'subscription_canceled'
+  | 'subscription_changed'
+
+export type GrowthOSBillingType = 'recurring' | 'one_time'
+export type GrowthOSBillingInterval = 'monthly' | 'yearly' | 'weekly'
+
+// Campos adicionais no GrowthOSEventData para recorrência:
+export interface GrowthOSRecurringData {
+  billing_type?: GrowthOSBillingType
+  billing_interval?: GrowthOSBillingInterval
+  subscription_id?: string
+  plan_id?: string
+  plan_name?: string
+}`;
+
+interface DocsContentProps {
+  serverUrl: string;
+}
+
+export function DocsContent({ serverUrl }: DocsContentProps) {
   const appUrl =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://seu-dominio.com";
+    typeof window !== "undefined" ? window.location.origin : serverUrl;
 
   return (
     <Tabs defaultValue="install" className="flex gap-0 h-full">
@@ -442,6 +633,8 @@ export function DocsContent() {
             { value: "dedupe", label: "Deduplicação" },
             { value: "typescript", label: "TypeScript" },
             { value: "api", label: "API Reference" },
+            { value: "serverside", label: "Server-Side" },
+            { value: "recurring", label: "Recorrência" },
             { value: "debug", label: "Debug" },
           ].map((tab) => (
             <TabsTrigger
@@ -1403,6 +1596,328 @@ export function DocsContent() {
             <strong>Nunca envie PII no customer_id.</strong> Use sempre um hash
             anônimo gerado pelo seu sistema. Ex:{" "}
             <code className="font-mono text-xs">sha256(user.id + salt)</code>
+          </Callout>
+        </TabsContent>
+
+        {/* Server-Side */}
+        <TabsContent value="serverside" className="space-y-8 mt-0">
+          <div>
+            <h2 className="text-xl font-bold">Server-Side Tracking</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Envie eventos diretamente do seu servidor — sem browser, sem tracker.js
+            </p>
+          </div>
+
+          <Callout type="info">
+            <strong>Por que server-side?</strong> Renovações automáticas de assinatura
+            acontecem sem o usuário no browser. Webhooks do Stripe/Pagar.me chegam no seu
+            servidor. Crons e workers processam eventos assíncronos. Nesses casos o
+            tracker.js não está disponível — você chama o{" "}
+            <code className="font-mono text-xs">/api/track</code> diretamente.
+          </Callout>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Como funciona
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Mesmo endpoint <code className="font-mono text-xs">/api/track</code>, mesma API key.
+              A diferença é que o servidor <strong>não tem contexto automático</strong>: UTMs,
+              device, referrer e landing_page serão <code className="font-mono text-xs">null</code>.
+              Isso afeta os relatórios de Canais e Landing Pages para esses eventos, mas não afeta
+              Financeiro, Recorrência ou P&L.
+            </p>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Campo</th>
+                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Browser (tracker.js)</th>
+                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Server-side</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {[
+                    ["key", "data-key do script", "Variável de ambiente"],
+                    ["event_type", "automático / manual", "Você define"],
+                    ["source / medium / campaign", "UTMs da URL capturados", "null"],
+                    ["device", "navigator.userAgent", "null"],
+                    ["landing_page / referrer", "window.location / document.referrer", "null"],
+                    ["session_id", "sessionStorage (gerado)", "null (opcional: gerar no server)"],
+                    ["timestamp", "new Date().toISOString()", "Você define (webhook timestamp)"],
+                  ].map(([field, browser, server]) => (
+                    <tr key={field} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-2 font-mono text-foreground">{field}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{browser}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{server}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Node.js / Next.js
+            </h3>
+            <CodeBlock code={buildServerNodeCode(appUrl)} lang="ts" />
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              curl (bash / cron)
+            </h3>
+            <CodeBlock code={buildServerCurlCode(appUrl)} lang="bash" />
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Python
+            </h3>
+            <CodeBlock code={buildServerPythonCode(appUrl)} lang="python" />
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              PHP
+            </h3>
+            <CodeBlock code={buildServerPhpCode(appUrl)} lang="php" />
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Webhook Stripe (exemplo completo)
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              O caso de uso mais comum: capturar renovações e cancelamentos via webhook do Stripe
+              e enviá-los ao GrowthOS para calcular MRR e Churn automaticamente.
+            </p>
+            <CodeBlock code={SERVER_STRIPE_WEBHOOK_CODE} lang="ts" />
+          </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Casos de uso obrigatórios (server-side)
+            </h3>
+            {[
+              {
+                title: "Renovação de assinatura",
+                desc: "O gateway processa o pagamento recorrente sem o usuário na tela. Use webhook + event_type: 'payment' + billing_type: 'recurring'.",
+              },
+              {
+                title: "Cancelamento automático por inadimplência",
+                desc: "Quando o gateway cancela a assinatura após falhas de pagamento. Use event_type: 'subscription_canceled'.",
+              },
+              {
+                title: "Upgrade/Downgrade via painel admin",
+                desc: "Mudança de plano feita por um admin no seu dashboard. Use event_type: 'subscription_changed'.",
+              },
+              {
+                title: "Migração de dados históricos",
+                desc: "Importar assinaturas existentes antes de integrar o GrowthOS. Envie cada registro com o timestamp correto.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="flex items-start gap-3 rounded-lg border border-border px-4 py-3"
+              >
+                <IconCheck className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium">{item.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+
+        {/* Recorrência */}
+        <TabsContent value="recurring" className="space-y-8 mt-0">
+          <div>
+            <h2 className="text-xl font-bold">Recorrência (MRR)</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Rastreie assinaturas, MRR, Churn e LTV com 3 tipos de evento
+            </p>
+          </div>
+
+          <Callout type="info">
+            Quando o GrowthOS recebe um <code className="font-mono text-xs">payment</code> com{" "}
+            <code className="font-mono text-xs">billing_type: &apos;recurring&apos;</code>, ele
+            automaticamente atualiza a tabela de assinaturas e habilita a tela{" "}
+            <strong>Recorrência</strong> no sidebar para sua organização.
+          </Callout>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Eventos disponíveis
+            </h3>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Evento</th>
+                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Quando disparar</th>
+                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Efeito no dashboard</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {[
+                    ["payment + billing_type: recurring", "Renovação ou nova assinatura paga", "Upsert na tabela subscriptions, incrementa MRR"],
+                    ["subscription_canceled", "Assinatura cancelada", "Marca como cancelada, incrementa Churn"],
+                    ["subscription_changed", "Upgrade ou downgrade de plano", "Atualiza valor/plano, calcula Expansão/Contração"],
+                  ].map(([event, when, effect]) => (
+                    <tr key={event} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-2 font-mono text-foreground">{event}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{when}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{effect}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Campos obrigatórios para recorrência
+            </h3>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/40">
+                  <tr>
+                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Campo</th>
+                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Tipo</th>
+                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Descrição</th>
+                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Exemplo</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {[
+                    ["billing_type", "string", "'recurring' | 'one_time'", "'recurring'"],
+                    ["billing_interval", "string", "'monthly' | 'yearly' | 'weekly'", "'monthly'"],
+                    ["subscription_id", "string", "ID único da assinatura no seu sistema", "'sub_stripe_abc123'"],
+                    ["plan_id", "string", "ID do plano", "'plan_pro'"],
+                    ["plan_name", "string", "Nome legível do plano", "'Pro Mensal'"],
+                    ["gross_value", "number", "Valor bruto em reais", "97.00"],
+                    ["customer_id", "string", "Hash anônimo do cliente", "'hash_cliente'"],
+                  ].map(([field, type, desc, example]) => (
+                    <tr key={field} className="hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-2 font-mono text-foreground">{field}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{type}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{desc}</td>
+                      <td className="px-4 py-2 font-mono text-muted-foreground">{example}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Pagamento recorrente
+            </h3>
+            <CodeBlock code={RECURRING_PAYMENT_CODE} lang="js" />
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Cancelamento de assinatura
+            </h3>
+            <CodeBlock code={RECURRING_CANCEL_CODE} lang="js" />
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Upgrade / Downgrade
+            </h3>
+            <CodeBlock code={RECURRING_CHANGED_CODE} lang="js" />
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Como o GrowthOS calcula as métricas
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                {
+                  metric: "MRR",
+                  desc: "Soma de todos os valueInCents das assinaturas ativas, normalizado para mensal (yearly /12, weekly ×4.33).",
+                },
+                {
+                  metric: "ARR",
+                  desc: "MRR × 12.",
+                },
+                {
+                  metric: "ARPU",
+                  desc: "MRR ÷ número de assinantes ativos.",
+                },
+                {
+                  metric: "Churn Rate",
+                  desc: "Cancelamentos no período ÷ (ativos + cancelados). Em %.",
+                },
+                {
+                  metric: "Revenue Churn",
+                  desc: "MRR cancelado ÷ (MRR atual + MRR cancelado). Em %.",
+                },
+                {
+                  metric: "LTV Estimado",
+                  desc: "ARPU ÷ Churn Rate mensal. Se churn = 0, usa 24× ARPU.",
+                },
+                {
+                  metric: "MRR Movimentação",
+                  desc: "New MRR (novas subs), Expansion (upgrades), Contraction (downgrades), Churned (cancelamentos).",
+                },
+                {
+                  metric: "MRR Growth Rate",
+                  desc: "(MRR atual − MRR início período) ÷ MRR início período. Em %.",
+                },
+              ].map((item) => (
+                <div key={item.metric} className="rounded-lg border border-border px-4 py-3">
+                  <p className="text-sm font-semibold text-foreground">{item.metric}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              TypeScript types
+            </h3>
+            <CodeBlock code={RECURRING_TYPES_CODE} lang="ts" />
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Webhook Stripe (integração completa)
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Veja a aba <strong>Server-Side</strong> para o exemplo completo de webhook do Stripe
+              capturando renovações e cancelamentos automaticamente.
+            </p>
+          </div>
+
+          <Callout type="warn">
+            O campo <code className="font-mono text-xs">subscription_id</code> deve ser o ID
+            único da assinatura no seu gateway (ex: <code className="font-mono text-xs">sub_stripe_xxx</code>).
+            Nunca reutilize o mesmo ID para assinaturas diferentes — ele é a chave de upsert que
+            garante idempotência dos eventos.
           </Callout>
         </TabsContent>
       </div>

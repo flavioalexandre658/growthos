@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
 
 export interface IFunnelStepConfig {
   eventType: string;
@@ -17,6 +17,7 @@ export const organizations = pgTable("organizations", {
       { eventType: "signup", label: "Cadastros" },
       { eventType: "payment", label: "Pagamentos" },
     ]),
+  hasRecurringRevenue: boolean("has_recurring_revenue").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

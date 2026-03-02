@@ -23,6 +23,7 @@ import {
   IconCheck,
   IconSelector,
   IconPlus,
+  IconRepeat,
 } from "@tabler/icons-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,7 @@ interface NavItemDef {
 function buildNavItems(slug: string): NavItemDef[] {
   return [
     { href: `/${slug}`, label: "Visão Geral", icon: IconLayoutDashboard, exact: true },
+    { href: `/${slug}/mrr`, label: "Recorrência", icon: IconRepeat, exact: false },
     { href: `/${slug}/channels`, label: "Canais", icon: IconBrandGoogle, exact: false },
     { href: `/${slug}/finance`, label: "Financeiro", icon: IconCurrencyDollar, exact: false },
     { href: `/${slug}/landing-pages`, label: "Landing Pages", icon: IconWorldWww, exact: false },

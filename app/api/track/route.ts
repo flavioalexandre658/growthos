@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
-import { apiKeys, events } from "@/db/schema";
+import { apiKeys, events, subscriptions, organizations } from "@/db/schema";
 import { checkRateLimit } from "@/utils/rate-limiter";
 
 const MAX_PAYLOAD_BYTES = 64 * 1024;
@@ -64,6 +64,102 @@ function sanitizeMetadata(raw: unknown): Record<string, unknown> | null {
     }
   }
   return Object.keys(clean).length > 0 ? clean : null;
+}
+
+async function handleSubscriptionUpsert(
+  organizationId: string,
+  eventType: string,
+  body: Record<string, unknown>
+) {
+  const subscriptionId = toString(body.subscription_id);
+  if (!subscriptionId) return;
+
+  const billingType = toString(body.billing_type);
+
+  if (eventType === "payment" && billingType === "recurring") {
+    const customerId = toString(body.customer_id) ?? "unknown";
+    const planId = toString(body.plan_id) ?? "unknown";
+    const planName = toString(body.plan_name) ?? "Unknown Plan";
+    const billingInterval = toString(body.billing_interval);
+    const validInterval = ["monthly", "yearly", "weekly"].includes(billingInterval ?? "")
+      ? (billingInterval as "monthly" | "yearly" | "weekly")
+      : "monthly";
+    const grossValueCents = toCents(body.gross_value) ?? 0;
+    const startedAt = body.timestamp
+      ? new Date(String(body.timestamp))
+      : new Date();
+
+    await db
+      .insert(subscriptions)
+      .values({
+        organizationId,
+        subscriptionId,
+        customerId,
+        planId,
+        planName,
+        status: "active",
+        valueInCents: grossValueCents,
+        billingInterval: validInterval,
+        startedAt,
+      })
+      .onConflictDoUpdate({
+        target: subscriptions.subscriptionId,
+        set: {
+          status: "active",
+          valueInCents: grossValueCents,
+          planId,
+          planName,
+          updatedAt: new Date(),
+        },
+      });
+
+    db.update(organizations)
+      .set({ hasRecurringRevenue: true })
+      .where(
+        and(
+          eq(organizations.id, organizationId),
+          eq(organizations.hasRecurringRevenue, false)
+        )
+      )
+      .execute()
+      .catch(() => {});
+
+    return;
+  }
+
+  if (eventType === "subscription_canceled") {
+    await db
+      .update(subscriptions)
+      .set({ status: "canceled", canceledAt: new Date(), updatedAt: new Date() })
+      .where(
+        and(
+          eq(subscriptions.subscriptionId, subscriptionId),
+          eq(subscriptions.organizationId, organizationId)
+        )
+      );
+    return;
+  }
+
+  if (eventType === "subscription_changed") {
+    const planId = toString(body.plan_id) ?? "unknown";
+    const planName = toString(body.plan_name) ?? "Unknown Plan";
+    const grossValueCents = toCents(body.gross_value) ?? 0;
+
+    await db
+      .update(subscriptions)
+      .set({
+        planId,
+        planName,
+        valueInCents: grossValueCents,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(subscriptions.subscriptionId, subscriptionId),
+          eq(subscriptions.organizationId, organizationId)
+        )
+      );
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -144,8 +240,20 @@ export async function POST(req: NextRequest) {
     customerId: toString(body.customer_id),
     sessionId: toString(body.session_id),
 
+    billingType: toString(body.billing_type),
+    billingInterval: toString(body.billing_interval),
+    subscriptionId: toString(body.subscription_id),
+    planId: toString(body.plan_id),
+    planName: toString(body.plan_name),
+
     metadata: sanitizeMetadata(body.metadata),
   });
+
+  await handleSubscriptionUpsert(
+    apiKey.organizationId,
+    eventType,
+    body as Record<string, unknown>
+  );
 
   return new NextResponse(null, { status: 204, headers: buildCorsHeaders(origin) });
 }

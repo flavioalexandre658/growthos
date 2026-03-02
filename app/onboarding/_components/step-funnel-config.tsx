@@ -37,6 +37,16 @@ const PRESETS: { label: string; description: string; steps: IFunnelStepConfig[] 
     ],
   },
   {
+    label: "SaaS Recorrente",
+    description: "signup → trial → payment → churn",
+    steps: [
+      { eventType: "signup", label: "Cadastros" },
+      { eventType: "trial_started", label: "Trials" },
+      { eventType: "payment", label: "Pagamentos" },
+      { eventType: "subscription_canceled", label: "Churn" },
+    ],
+  },
+  {
     label: "Simples",
     description: "signup → payment",
     steps: [

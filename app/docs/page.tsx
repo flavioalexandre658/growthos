@@ -6,6 +6,8 @@ export const metadata = {
 };
 
 export default function DocsPage() {
+  const serverUrl = process.env.NEXTAUTH_URL ?? "https://growthos.app";
+
   return (
     <div className="flex flex-col" style={{ height: "calc(100vh - 57px)" }}>
       <div className="border-b border-zinc-800/60 px-8 py-4 flex items-center justify-between shrink-0">
@@ -29,7 +31,7 @@ export default function DocsPage() {
       </div>
 
       <div className="flex-1 overflow-hidden px-8">
-        <DocsContent />
+        <DocsContent serverUrl={serverUrl} />
       </div>
     </div>
   );
