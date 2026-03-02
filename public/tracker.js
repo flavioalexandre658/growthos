@@ -155,18 +155,17 @@
 
   function sendPayload(payload) {
     var url = API_BASE + "/api/track";
-    var body = JSON.stringify(payload);
+    var blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
 
     if (navigator.sendBeacon) {
-      var blob = new Blob([body], { type: "application/json" });
-      var sent = navigator.sendBeacon(url, blob);
-      if (sent) return Promise.resolve();
+      navigator.sendBeacon(url, blob);
+      return Promise.resolve();
     }
 
     return fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: body,
+      body: JSON.stringify(payload),
       keepalive: true,
     }).catch(function () {});
   }

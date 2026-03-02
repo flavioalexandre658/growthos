@@ -4,23 +4,33 @@ import { db } from "@/db";
 import { apiKeys, events } from "@/db/schema";
 import { checkRateLimit } from "@/utils/rate-limiter";
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Max-Age": "86400",
-};
-
 const MAX_PAYLOAD_BYTES = 64 * 1024;
 
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+function buildCorsHeaders(origin: string | null) {
+  return {
+    "Access-Control-Allow-Origin": origin ?? "*",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Max-Age": "86400",
+  };
 }
 
-function jsonError(message: string, status: number) {
+export async function OPTIONS(req: NextRequest) {
+  const origin = req.headers.get("origin");
+  return new NextResponse(null, {
+    status: 204,
+    headers: buildCorsHeaders(origin),
+  });
+}
+
+function jsonError(message: string, status: number, origin: string | null) {
   return new NextResponse(JSON.stringify({ error: message }), {
     status,
-    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+    headers: {
+      ...buildCorsHeaders(origin),
+      "Content-Type": "application/json",
+    },
   });
 }
 
@@ -57,31 +67,33 @@ function sanitizeMetadata(raw: unknown): Record<string, unknown> | null {
 }
 
 export async function POST(req: NextRequest) {
+  const origin = req.headers.get("origin");
+
   const contentLength = req.headers.get("content-length");
   if (contentLength && parseInt(contentLength, 10) > MAX_PAYLOAD_BYTES) {
-    return jsonError("Payload too large", 413);
+    return jsonError("Payload too large", 413, origin);
   }
 
   const body = await req.json().catch(() => null);
 
   if (!body || typeof body !== "object") {
-    return jsonError("Invalid payload", 400);
+    return jsonError("Invalid payload", 400, origin);
   }
 
   const rawBody = JSON.stringify(body);
   if (rawBody.length > MAX_PAYLOAD_BYTES) {
-    return jsonError("Payload too large", 413);
+    return jsonError("Payload too large", 413, origin);
   }
 
   const key = toString(body.key);
   const eventType = toString(body.event_type);
 
   if (!key || !eventType) {
-    return jsonError("Missing key or event_type", 400);
+    return jsonError("Missing key or event_type", 400, origin);
   }
 
   if (!checkRateLimit(key)) {
-    return jsonError("Rate limit exceeded", 429);
+    return jsonError("Rate limit exceeded", 429, origin);
   }
 
   const [apiKey] = await db
@@ -91,11 +103,11 @@ export async function POST(req: NextRequest) {
     .limit(1);
 
   if (!apiKey || !apiKey.isActive) {
-    return jsonError("Invalid API key", 401);
+    return jsonError("Invalid API key", 401, origin);
   }
 
   if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
-    return jsonError("API key expired", 401);
+    return jsonError("API key expired", 401, origin);
   }
 
   db.update(apiKeys)
@@ -134,5 +146,5 @@ export async function POST(req: NextRequest) {
     metadata: sanitizeMetadata(body.metadata),
   });
 
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+  return new NextResponse(null, { status: 204, headers: buildCorsHeaders(origin) });
 }
