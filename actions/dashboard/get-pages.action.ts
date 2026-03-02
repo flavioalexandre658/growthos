@@ -19,7 +19,7 @@ import type {
 } from "@/interfaces/dashboard.interface";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
-export async function getLandingPages(
+export async function getPages(
   organizationId: string,
   params: ILandingPageParams = {}
 ): Promise<ILandingPagesResult> {
@@ -45,7 +45,7 @@ export async function getLandingPages(
 
   const rawRows = await db
     .select({
-      page: events.entryPage,
+      page: events.landingPage,
       eventType: events.eventType,
       total: sql<number>`COUNT(*)`,
       uniqueTotal: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
@@ -57,11 +57,11 @@ export async function getLandingPages(
         eq(events.organizationId, organizationId),
         gte(events.createdAt, startDate),
         lte(events.createdAt, endDate),
-        sql`${events.entryPage} IS NOT NULL`,
+        sql`${events.landingPage} IS NOT NULL`,
         inArray(events.eventType, allEventTypes)
       )
     )
-    .groupBy(events.entryPage, events.eventType);
+    .groupBy(events.landingPage, events.eventType);
 
   const globalCountMap = new Map<string, { total: number; uniqueTotal: number }>();
   for (const row of rawRows) {

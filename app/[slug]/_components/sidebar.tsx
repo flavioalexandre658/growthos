@@ -19,6 +19,7 @@ import {
   IconBuilding,
   IconSettings,
   IconBook,
+  IconFile,
   IconCheck,
   IconSelector,
   IconPlus,
@@ -57,6 +58,7 @@ function buildNavItems(slug: string): NavItemDef[] {
     { href: `/${slug}/channels`, label: "Canais", icon: IconBrandGoogle, exact: false },
     { href: `/${slug}/finance`, label: "Financeiro", icon: IconCurrencyDollar, exact: false },
     { href: `/${slug}/landing-pages`, label: "Landing Pages", icon: IconWorldWww, exact: false },
+    { href: `/${slug}/pages`, label: "Pages", icon: IconFile, exact: false },
     { href: `/${slug}/costs`, label: "Custos & P&L", icon: IconCalculator, exact: false },
     { href: "/docs", label: "Documentação", icon: IconBook, exact: false },
   ];

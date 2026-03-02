@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import type { IDailyData, IStepMeta } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtInt, fmtBRL } from "@/utils/format";
+import { fmtInt, fmtBRLDecimal } from "@/utils/format";
 
 const STEP_COLORS = [
   "#6366f1",
@@ -81,7 +81,7 @@ export function DailyChart({ data, stepMeta, isLoading }: DailyChartProps) {
                   tick={{ fontSize: 10, fill: "#52525b" }}
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(v) => fmtBRL(v)}
+                  tickFormatter={(v) => fmtBRLDecimal(v / 100)}
                 />
               )}
               <Tooltip
@@ -94,7 +94,7 @@ export function DailyChart({ data, stepMeta, isLoading }: DailyChartProps) {
                 }}
                 labelStyle={{ color: "#a1a1aa", marginBottom: 4 }}
                 formatter={(v: number, name: string) => {
-                  if (name === "Receita") return [fmtBRL(v), name];
+                  if (name === "Receita") return [fmtBRLDecimal(v / 100), name];
                   return [fmtInt(v), name];
                 }}
                 cursor={{ fill: "#ffffff08" }}

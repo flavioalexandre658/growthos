@@ -26,6 +26,7 @@ export const events = pgTable(
     campaign: text("campaign"),
     content: text("content"),
     landingPage: text("landing_page"),
+    entryPage: text("entry_page"),
     referrer: text("referrer"),
 
     device: text("device"),

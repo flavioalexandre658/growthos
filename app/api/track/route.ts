@@ -136,6 +136,7 @@ export async function POST(req: NextRequest) {
     campaign: toString(body.campaign),
     content: toString(body.content),
     landingPage: toString(body.landing_page),
+    entryPage: toString(body.entry_page),
     referrer: toString(body.referrer),
 
     device: toString(body.device),

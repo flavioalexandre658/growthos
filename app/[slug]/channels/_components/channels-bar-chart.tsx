@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { IChannelData } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRL } from "@/utils/format";
+import { fmtBRLDecimal } from "@/utils/format";
 
 const CHANNEL_COLORS: Record<string, string> = {
   organic_google: "#16a34a",
@@ -141,7 +141,7 @@ export function ChannelsBarChart({ data, isLoading }: ChannelsBarChartProps) {
                 tick={<CustomXAxisTick />}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(v) => fmtBRL(v)}
+                tickFormatter={(v) => fmtBRLDecimal(v / 100)}
               />
               <YAxis
                 type="category"
@@ -161,7 +161,7 @@ export function ChannelsBarChart({ data, isLoading }: ChannelsBarChartProps) {
                 }}
                 labelStyle={{ color: "#a1a1aa" }}
                 itemStyle={{ color: "#e4e4e7" }}
-                formatter={(v: number) => [fmtBRL(v), "Receita"]}
+                formatter={(v: number) => [fmtBRLDecimal(v / 100), "Receita"]}
                 cursor={{ fill: "#ffffff08" }}
               />
               <Bar dataKey="revenue" radius={[0, 6, 6, 0]}>

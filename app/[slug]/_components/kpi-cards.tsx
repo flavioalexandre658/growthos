@@ -1,7 +1,7 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtInt, fmtBRL, fmtBRLDecimal } from "@/utils/format";
+import { fmtInt, fmtBRLDecimal } from "@/utils/format";
 import {
   IconCurrencyDollar,
   IconReceipt,
@@ -84,10 +84,7 @@ interface KpiCardsProps {
 
 export function KpiCards({ data, isLoading }: KpiCardsProps) {
   const stepCount = data?.steps.length ?? 3;
-  const extraCards =
-    ((data?.checkoutStarted ?? 0) > 0 ? 1 : 0) +
-    ((data?.checkoutAbandoned ?? 0) > 0 ? 1 : 0);
-  const totalCards = stepCount + 3 + extraCards;
+  const totalCards = stepCount + 3 + ((data?.checkoutAbandoned ?? 0) > 0 ? 1 : 0);
 
   if (isLoading) {
     return (
@@ -113,39 +110,26 @@ export function KpiCards({ data, isLoading }: KpiCardsProps) {
   const metricCards: KpiCardProps[] = [
     {
       label: "Receita",
-      value: fmtBRL(data?.revenue),
+      value: fmtBRLDecimal((data?.revenue ?? 0) / 100),
       icon: IconCurrencyDollar,
       color: "text-emerald-400",
       bgColor: "bg-emerald-600/20",
     },
     {
       label: "Ticket Médio",
-      value: fmtBRLDecimal(data?.ticketMedio),
+      value: data?.ticketMedio ?? "R$ 0,00",
       icon: IconReceipt,
       color: "text-amber-400",
       bgColor: "bg-amber-600/20",
     },
     {
       label: "Margem",
-      value: `${data?.margin ?? 0}%`,
+      value: data?.margin ?? "0%",
       icon: IconTrendingUp,
       color: "text-cyan-400",
       bgColor: "bg-cyan-600/20",
     },
   ];
-
-  const checkoutStartedCards: KpiCardProps[] =
-    (data?.checkoutStarted ?? 0) > 0
-      ? [
-          {
-            label: "Checkout Iniciado",
-            value: fmtInt(data?.checkoutStarted ?? 0),
-            icon: IconShoppingCart,
-            color: "text-orange-400",
-            bgColor: "bg-orange-600/20",
-          },
-        ]
-      : [];
 
   const abandonedCards: KpiCardProps[] =
     (data?.checkoutAbandoned ?? 0) > 0
@@ -160,7 +144,7 @@ export function KpiCards({ data, isLoading }: KpiCardsProps) {
         ]
       : [];
 
-  const allCards = [...stepCards, ...metricCards, ...checkoutStartedCards, ...abandonedCards];
+  const allCards = [...stepCards, ...metricCards, ...abandonedCards];
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">

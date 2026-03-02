@@ -6,6 +6,7 @@
   var SESSION_KEY = "growthos_sid";
   var CHECKOUT_KEY = "growthos_checkout";
   var DEDUP_KEY = "growthos_dedup";
+  var ENTRY_KEY = "growthos_entry";
 
   var script = document.currentScript || (function () {
     var scripts = document.getElementsByTagName("script");
@@ -131,6 +132,18 @@
     }
   }
 
+  function getEntryPage() {
+    try {
+      var stored = sessionStorage.getItem(ENTRY_KEY);
+      if (stored) return stored;
+      var entry = window.location.pathname;
+      sessionStorage.setItem(ENTRY_KEY, entry);
+      return entry;
+    } catch (_) {
+      return window.location.pathname;
+    }
+  }
+
   function getAutoContext() {
     var params = new URLSearchParams(window.location.search);
     var storedUtms = getStoredUtms();
@@ -164,6 +177,7 @@
       campaign: campaign,
       content: content,
       landing_page: window.location.pathname,
+      entry_page: getEntryPage(),
       referrer: referrer,
       device: device,
       session_id: getSessionId(),
@@ -358,12 +372,18 @@
 
   flushQueue();
 
-  window.addEventListener("load", function () {
+  function init() {
     track("pageview", {});
     setupDataAttrTracking();
     setupSpaTracking();
     setupCheckoutAbandon();
-  });
+  }
+
+  if (document.readyState === "complete") {
+    init();
+  } else {
+    window.addEventListener("load", init);
+  }
 
   window.GrowthOS = {
     track: track,

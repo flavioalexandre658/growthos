@@ -115,7 +115,6 @@ export async function getFunnel(
     ? ((netRevenue / grossRevenue) * 100).toFixed(1) + "%"
     : "0%";
 
-  const checkoutStarted = countMap.get("checkout_started")?.total ?? 0;
   const checkoutAbandoned = countMap.get("checkout_abandoned")?.total ?? 0;
 
   return {
@@ -125,7 +124,6 @@ export async function getFunnel(
     netRevenue,
     ticketMedio,
     margin,
-    checkoutStarted: checkoutStarted > 0 ? checkoutStarted : undefined,
     checkoutAbandoned: checkoutAbandoned > 0 ? checkoutAbandoned : undefined,
   };
 }

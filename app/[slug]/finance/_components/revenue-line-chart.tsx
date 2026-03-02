@@ -12,7 +12,7 @@ import {
 } from "recharts";
 import { IDailyData } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRL } from "@/utils/format";
+import { fmtBRLDecimal } from "@/utils/format";
 
 interface RevenueLineChartProps {
   data: IDailyData[] | undefined;
@@ -28,8 +28,8 @@ export function RevenueLineChart({ data, isLoading }: RevenueLineChartProps) {
   const chartData = (data ?? []).map((d) => ({
     ...d,
     label: formatDateLabel(d.date),
-    revenue: parseFloat(String(d.revenue ?? 0)),
-    net_revenue: parseFloat(String(d.net_revenue ?? 0)),
+    revenue: (d.revenue ?? 0) / 100,
+    net_revenue: (d.net_revenue ?? 0) / 100,
   }));
 
   return (
@@ -58,7 +58,7 @@ export function RevenueLineChart({ data, isLoading }: RevenueLineChartProps) {
                 tick={{ fontSize: 10, fill: "#52525b" }}
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(v) => fmtBRL(v)}
+                tickFormatter={(v) => fmtBRLDecimal(v)}
               />
               <Tooltip
                 contentStyle={{
@@ -68,7 +68,7 @@ export function RevenueLineChart({ data, isLoading }: RevenueLineChartProps) {
                   fontSize: 12,
                   color: "#e4e4e7",
                 }}
-                formatter={(v: number) => fmtBRL(v)}
+                formatter={(v: number) => fmtBRLDecimal(v)}
                 cursor={{ stroke: "#3f3f46" }}
               />
               <Legend

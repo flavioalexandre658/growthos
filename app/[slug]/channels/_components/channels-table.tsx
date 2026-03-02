@@ -10,7 +10,7 @@ import { ResponsiveTable, TableColumn, ServerPaginationConfig } from "@/componen
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { getChannelName, getChannelColor } from "./channels-bar-chart";
-import { fmtInt, fmtBRL, fmtBRLDecimal } from "@/utils/format";
+import { fmtInt, fmtBRLDecimal } from "@/utils/format";
 
 function conversionColor(value: string) {
   const n = parseFloat(value);
@@ -131,7 +131,7 @@ export function ChannelsTable({
       align: "right",
       render: (c) => (
         <span className="font-mono text-sm font-bold text-emerald-400">
-          {fmtBRL(c.revenue)}
+          {fmtBRLDecimal(c.revenue / 100)}
         </span>
       ),
     },
@@ -141,7 +141,7 @@ export function ChannelsTable({
       align: "right",
       render: (c) => (
         <span className="font-mono text-sm text-zinc-300">
-          {fmtBRLDecimal(c.ticket_medio)}
+          {fmtBRLDecimal(c.ticket_medio / 100)}
         </span>
       ),
     },

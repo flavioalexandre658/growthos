@@ -18,7 +18,7 @@ function conversionColor(value: string) {
   return "text-red-400";
 }
 
-interface LandingPagesTableProps {
+interface PagesTableProps {
   data: ILandingPageData[];
   stepMeta: IStepMeta[];
   pagination: IPaginationMeta;
@@ -31,7 +31,7 @@ interface LandingPagesTableProps {
   onPageSizeChange: (size: number) => void;
 }
 
-export function LandingPagesTable({
+export function PagesTable({
   data,
   stepMeta,
   pagination,
@@ -42,7 +42,7 @@ export function LandingPagesTable({
   onOrderDir,
   onPageChange,
   onPageSizeChange,
-}: LandingPagesTableProps) {
+}: PagesTableProps) {
   const handleSort = (key: string) => {
     if (key === orderBy) {
       onOrderDir(orderDir === "DESC" ? "ASC" : "DESC");
@@ -79,9 +79,9 @@ export function LandingPagesTable({
     key: step.key,
     header: step.label,
     align: "right" as const,
-    render: (lp: ILandingPageData) => (
+    render: (p: ILandingPageData) => (
       <span className="font-mono text-sm text-zinc-400">
-        {fmtInt(lp.steps[step.key] ?? 0)}
+        {fmtInt(p.steps[step.key] ?? 0)}
       </span>
     ),
   }));
@@ -89,14 +89,14 @@ export function LandingPagesTable({
   const columns: TableColumn<ILandingPageData>[] = [
     {
       key: "page",
-      header: "Landing Page",
+      header: "Página",
       mobilePrimary: true,
-      render: (lp) => (
+      render: (p) => (
         <span
           className="font-mono text-xs text-zinc-300 truncate max-w-[280px] block"
-          title={lp.page}
+          title={p.page}
         >
-          {lp.page}
+          {p.page}
         </span>
       ),
     },
@@ -105,14 +105,14 @@ export function LandingPagesTable({
       key: "conversion_rate",
       header: "Conversão",
       align: "right",
-      render: (lp) => (
+      render: (p) => (
         <span
           className={cn(
             "font-mono text-sm font-semibold",
-            conversionColor(String(lp.conversion_rate))
+            conversionColor(String(p.conversion_rate))
           )}
         >
-          {lp.conversion_rate}
+          {p.conversion_rate}
         </span>
       ),
     },
@@ -120,9 +120,9 @@ export function LandingPagesTable({
       key: "revenue",
       header: "Receita",
       align: "right",
-      render: (lp) => (
+      render: (p) => (
         <span className="font-mono text-sm font-bold text-emerald-400">
-          {fmtBRLDecimal(lp.revenue / 100)}
+          {fmtBRLDecimal(p.revenue / 100)}
         </span>
       ),
     },
@@ -132,16 +132,16 @@ export function LandingPagesTable({
     <ResponsiveTable
       columns={columns}
       data={data}
-      getRowKey={(lp) => lp.page}
+      getRowKey={(p) => p.page}
       isLoading={isLoading}
       serverPagination={serverPagination}
-      emptyMessage="Nenhuma landing page encontrada no período"
+      emptyMessage="Nenhuma página encontrada no período"
       header={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h3 className="text-sm font-bold text-zinc-100">Landing Pages por Receita</h3>
+            <h3 className="text-sm font-bold text-zinc-100">Páginas por Receita</h3>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Páginas de entrada que mais convertem e geram receita
+              URL exata onde cada evento foi disparado
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5 shrink-0">
