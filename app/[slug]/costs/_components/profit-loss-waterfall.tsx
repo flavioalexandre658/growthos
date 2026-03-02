@@ -2,7 +2,7 @@
 
 import { ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, Tooltip, ReferenceLine } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRL } from "@/utils/format";
+import { fmtBRLDecimal } from "@/utils/format";
 import type { IProfitAndLoss } from "@/interfaces/cost.interface";
 
 interface WaterfallEntry {
@@ -37,7 +37,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   return (
     <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs">
       <p className="text-zinc-400 mb-1">{entry.name}</p>
-      <p className="font-bold font-mono text-zinc-100">{fmtBRL(entry.value)}</p>
+      <p className="font-bold font-mono text-zinc-100">{fmtBRLDecimal(entry.value)}</p>
     </div>
   );
 }

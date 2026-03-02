@@ -2,7 +2,7 @@
 
 import { IFinancialData } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRL, fmtBRLDecimal } from "@/utils/format";
+import { fmtBRLDecimal } from "@/utils/format";
 import {
   IconCurrencyDollar,
   IconWallet,
@@ -65,35 +65,35 @@ export function FinanceKpiCards({ data, isLoading }: FinanceKpiCardsProps) {
   const cards: FinanceKpiCardProps[] = [
     {
       label: "Receita Bruta",
-      value: fmtBRL(grossCents / 100),
+      value: fmtBRLDecimal(grossCents / 100),
       icon: IconCurrencyDollar,
       color: "text-emerald-400",
       bgColor: "bg-emerald-600/20",
     },
     {
       label: "Receita Líquida",
-      value: fmtBRL(netCents / 100),
+      value: fmtBRLDecimal(netCents / 100),
       icon: IconWallet,
       color: "text-cyan-400",
       bgColor: "bg-cyan-600/20",
     },
     {
       label: "Taxas Gateway",
-      value: fmtBRL((data?.totalGatewayFeesInCents ?? 0) / 100),
+      value: fmtBRLDecimal((data?.totalGatewayFeesInCents ?? 0) / 100),
       icon: IconMinus,
       color: "text-red-400",
       bgColor: "bg-red-600/20",
     },
     {
       label: "Descontos",
-      value: fmtBRL((data?.totalDiscountsInCents ?? 0) / 100),
+      value: fmtBRLDecimal((data?.totalDiscountsInCents ?? 0) / 100),
       icon: IconCreditCard,
       color: "text-orange-400",
       bgColor: "bg-orange-600/20",
     },
     {
       label: "Receita Perdida",
-      value: fmtBRL((data?.lostRevenueInCents ?? 0) / 100),
+      value: fmtBRLDecimal((data?.lostRevenueInCents ?? 0) / 100),
       icon: IconAlertTriangle,
       color: "text-rose-400",
       bgColor: "bg-rose-600/20",

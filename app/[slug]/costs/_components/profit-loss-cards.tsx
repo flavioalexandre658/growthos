@@ -1,7 +1,7 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRL } from "@/utils/format";
+import { fmtBRLDecimal } from "@/utils/format";
 import {
   IconTrendingUp,
   IconTrendingDown,
@@ -67,14 +67,14 @@ export function ProfitLossCards({ pl, isLoading }: ProfitLossCardsProps) {
   const cards: PLCardProps[] = [
     {
       label: "Receita Bruta",
-      value: fmtBRL((pl?.grossRevenueInCents ?? 0) / 100),
+      value: fmtBRLDecimal((pl?.grossRevenueInCents ?? 0) / 100),
       icon: IconCurrencyDollar,
       color: "text-emerald-400",
       bgColor: "bg-emerald-600/20",
     },
     {
       label: "Custos Fixos",
-      value: fmtBRL((pl?.totalFixedCostsInCents ?? 0) / 100),
+      value: fmtBRLDecimal((pl?.totalFixedCostsInCents ?? 0) / 100),
       icon: IconTrendingDown,
       color: "text-red-400",
       bgColor: "bg-red-600/20",
@@ -82,7 +82,7 @@ export function ProfitLossCards({ pl, isLoading }: ProfitLossCardsProps) {
     },
     {
       label: "Custos Variáveis",
-      value: fmtBRL((pl?.totalVariableCostsInCents ?? 0) / 100),
+      value: fmtBRLDecimal((pl?.totalVariableCostsInCents ?? 0) / 100),
       icon: IconReceipt,
       color: "text-orange-400",
       bgColor: "bg-orange-600/20",
@@ -90,7 +90,7 @@ export function ProfitLossCards({ pl, isLoading }: ProfitLossCardsProps) {
     },
     {
       label: "Lucro Bruto",
-      value: fmtBRL((pl?.grossProfitInCents ?? 0) / 100),
+      value: fmtBRLDecimal((pl?.grossProfitInCents ?? 0) / 100),
       icon: IconWallet,
       color: "text-cyan-400",
       bgColor: "bg-cyan-600/20",
@@ -98,7 +98,7 @@ export function ProfitLossCards({ pl, isLoading }: ProfitLossCardsProps) {
     },
     {
       label: "Lucro Real",
-      value: fmtBRL((pl?.realProfitInCents ?? 0) / 100),
+      value: fmtBRLDecimal((pl?.realProfitInCents ?? 0) / 100),
       icon: (pl?.realProfitInCents ?? 0) >= 0 ? IconTrendingUp : IconTrendingDown,
       color: (pl?.realProfitInCents ?? 0) >= 0 ? "text-indigo-400" : "text-red-400",
       bgColor: (pl?.realProfitInCents ?? 0) >= 0 ? "bg-indigo-600/20" : "bg-red-600/20",

@@ -1,7 +1,7 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtInt, fmtBRL } from "@/utils/format";
+import { fmtInt, fmtBRLDecimal } from "@/utils/format";
 
 interface BreakdownRow {
   name: string;
@@ -53,7 +53,7 @@ export function FinanceBreakdownTable({
               </div>
               <div className="text-right shrink-0">
                 <p className="text-sm font-bold font-mono text-emerald-400">
-                  {fmtBRL(row.revenue / 100)}
+                  {fmtBRLDecimal(row.revenue / 100)}
                 </p>
                 <p className="text-[11px] text-zinc-500 mt-0.5">{row.percentage}</p>
               </div>
