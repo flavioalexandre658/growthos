@@ -49,6 +49,7 @@ export function MetricFiltersPanel({ fields, values, onChange }: MetricFiltersPa
 
   useEffect(() => {
     if (isOpen) setDraft({ ...values });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const activeCount = Object.values(values).filter((v) => v !== "").length;

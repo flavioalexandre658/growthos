@@ -59,7 +59,7 @@ interface StepTourProps {
   onComplete: () => void;
 }
 
-export function StepTour({ onComplete }: StepTourProps) {
+export function StepTour({ onComplete: _onComplete }: StepTourProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { update } = useSession();
 
@@ -127,7 +127,7 @@ export function StepTour({ onComplete }: StepTourProps) {
         <div>
           <p className="text-xs font-bold text-indigo-300">IA Comparativa</p>
           <p className="text-xs text-zinc-500 leading-relaxed mt-0.5">
-            Compare qualquer período com IA: "Compare Canais esta semana vs semana passada"
+            {`Compare qualquer período com IA: "Compare Canais esta semana vs semana passada"`}
             e receba um relatório detalhado de oportunidades.
           </p>
         </div>
