@@ -6,6 +6,12 @@ import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import {
+  buildFunnelSteps,
+  getAllQueryEventTypes,
+  injectCheckoutSteps,
+  buildExtendedStepMeta,
+} from "@/utils/build-funnel-steps";
 import type { IDateFilter, IDailyData, IDailyResult } from "@/interfaces/dashboard.interface";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
@@ -24,11 +30,8 @@ export async function getDaily(
     .where(eq(organizations.id, organizationId))
     .limit(1);
 
-  const funnelSteps: IFunnelStepConfig[] = org?.funnelSteps ?? [];
-  const stepEventTypes = funnelSteps.map((s) => s.eventType);
-  const allEventTypes = [...new Set([...stepEventTypes, "payment"])];
-
-  const stepMeta = funnelSteps.map((s) => ({ key: s.eventType, label: s.label }));
+  const baseFunnelSteps: IFunnelStepConfig[] = buildFunnelSteps(org?.funnelSteps ?? []);
+  const allEventTypes = getAllQueryEventTypes(baseFunnelSteps);
 
   const rawRows = await db
     .select({
@@ -51,6 +54,20 @@ export async function getDaily(
     .groupBy(sql`DATE(${events.createdAt})`, events.eventType)
     .orderBy(sql`DATE(${events.createdAt}) ASC`);
 
+  const globalCountMap = new Map<string, { total: number; uniqueTotal: number }>();
+  for (const row of rawRows) {
+    const existing = globalCountMap.get(row.eventType) ?? { total: 0, uniqueTotal: 0 };
+    globalCountMap.set(row.eventType, {
+      total: existing.total + Number(row.total),
+      uniqueTotal: existing.uniqueTotal + Number(row.uniqueTotal),
+    });
+  }
+
+  const funnelSteps = injectCheckoutSteps(baseFunnelSteps, globalCountMap);
+  const stepMeta = buildExtendedStepMeta(funnelSteps, globalCountMap);
+  const stepConfigMap = new Map(funnelSteps.map((s) => [s.eventType, s]));
+  const trackedInMeta = new Set(stepMeta.map((m) => m.key));
+
   const dateMap = new Map<
     string,
     { steps: Record<string, number>; revenue: number; net_revenue: number }
@@ -62,12 +79,14 @@ export async function getDaily(
     }
     const entry = dateMap.get(row.date)!;
 
-    const stepConfig = funnelSteps.find((s) => s.eventType === row.eventType);
+    const stepConfig = stepConfigMap.get(row.eventType);
     if (stepConfig) {
       const count = stepConfig.countUnique
         ? Number(row.uniqueTotal)
         : Number(row.total);
       entry.steps[row.eventType] = count;
+    } else if (row.eventType === "checkout_abandoned" && trackedInMeta.has("checkout_abandoned")) {
+      entry.steps["checkout_abandoned"] = Number(row.total);
     }
 
     if (row.eventType === "payment") {

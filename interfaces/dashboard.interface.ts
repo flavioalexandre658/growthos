@@ -56,6 +56,8 @@ export interface IGenericFunnelData {
   netRevenue: number;
   ticketMedio: string;
   margin: string;
+  checkoutStarted?: number;
+  checkoutAbandoned?: number;
 }
 
 export interface IDailyData {

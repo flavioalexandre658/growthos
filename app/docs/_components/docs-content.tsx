@@ -616,8 +616,9 @@ export function DocsContent() {
               <Badge variant="secondary">zero config</Badge>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              O tracker detecta e envia alguns eventos automaticamente , sem
-              nenhum código adicional.
+              O tracker detecta e envia alguns eventos automaticamente, sem
+              nenhum código adicional. Esses eventos aparecem em todas as
+              métricas do dashboard assim que o script está instalado.
             </p>
           </div>
 
@@ -635,7 +636,7 @@ export function DocsContent() {
               ],
               [
                 "pageview",
-                "Navegação SPA , history.pushState, replaceState ou popstate",
+                "Navegação SPA — history.pushState, replaceState ou popstate",
                 "nova landing_page, mantém session_id e UTMs da sessão",
               ],
               [
@@ -656,6 +657,25 @@ export function DocsContent() {
               </div>
             ))}
           </div>
+
+          <Callout type="tip">
+            O evento{" "}
+            <code className="font-mono text-xs">pageview</code> é injetado
+            automaticamente como a primeira etapa do funil em{" "}
+            <strong>todas as métricas</strong> — Visão Geral, Gráfico Diário,
+            Canais e Landing Pages. A coluna{" "}
+            <strong>Visitas</strong> aparece sem nenhuma configuração extra,
+            e a taxa de conversão{" "}
+            <strong>Visitas → Cadastros</strong> é calculada automaticamente.
+          </Callout>
+
+          <Callout type="info">
+            O evento{" "}
+            <code className="font-mono text-xs">checkout_abandoned</code>{" "}
+            aparece como o card{" "}
+            <strong>Abandonos</strong> nos KPIs da Visão Geral, visível sempre
+            que houver ao menos um abandono no período selecionado.
+          </Callout>
 
           <Callout type="info">
             Você nunca precisa passar manualmente:{" "}

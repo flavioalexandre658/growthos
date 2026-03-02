@@ -6,6 +6,12 @@ import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import {
+  buildFunnelSteps,
+  getAllQueryEventTypes,
+  injectCheckoutSteps,
+  buildExtendedStepMeta,
+} from "@/utils/build-funnel-steps";
 import type {
   IDateFilter,
   IChannelParams,
@@ -34,11 +40,8 @@ export async function getChannels(
     .where(eq(organizations.id, organizationId))
     .limit(1);
 
-  const funnelSteps: IFunnelStepConfig[] = org?.funnelSteps ?? [];
-  const stepEventTypes = funnelSteps.map((s) => s.eventType);
-  const allEventTypes = [...new Set([...stepEventTypes, "payment"])];
-
-  const stepMeta = funnelSteps.map((s) => ({ key: s.eventType, label: s.label }));
+  const baseFunnelSteps: IFunnelStepConfig[] = buildFunnelSteps(org?.funnelSteps ?? []);
+  const allEventTypes = getAllQueryEventTypes(baseFunnelSteps);
 
   const rawRows = await db
     .select({
@@ -59,6 +62,20 @@ export async function getChannels(
     )
     .groupBy(sql`COALESCE(${events.source}, 'direct')`, events.eventType);
 
+  const globalCountMap = new Map<string, { total: number; uniqueTotal: number }>();
+  for (const row of rawRows) {
+    const existing = globalCountMap.get(row.eventType) ?? { total: 0, uniqueTotal: 0 };
+    globalCountMap.set(row.eventType, {
+      total: existing.total + Number(row.total),
+      uniqueTotal: existing.uniqueTotal + Number(row.uniqueTotal),
+    });
+  }
+
+  const funnelSteps = injectCheckoutSteps(baseFunnelSteps, globalCountMap);
+  const stepMeta = buildExtendedStepMeta(funnelSteps, globalCountMap);
+  const stepConfigMap = new Map(funnelSteps.map((s) => [s.eventType, s]));
+  const trackedInMeta = new Set(stepMeta.map((m) => m.key));
+
   const channelMap = new Map<
     string,
     { steps: Record<string, number>; revenue: number; paymentCount: number }
@@ -70,12 +87,14 @@ export async function getChannels(
     }
     const entry = channelMap.get(row.channel)!;
 
-    const stepConfig = funnelSteps.find((s) => s.eventType === row.eventType);
+    const stepConfig = stepConfigMap.get(row.eventType);
     if (stepConfig) {
       const count = stepConfig.countUnique
         ? Number(row.uniqueTotal)
         : Number(row.total);
       entry.steps[row.eventType] = count;
+    } else if (row.eventType === "checkout_abandoned" && trackedInMeta.has("checkout_abandoned")) {
+      entry.steps["checkout_abandoned"] = Number(row.total);
     }
 
     if (row.eventType === "payment") {

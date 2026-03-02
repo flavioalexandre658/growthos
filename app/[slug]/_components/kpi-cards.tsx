@@ -10,21 +10,32 @@ import {
   IconEdit,
   IconCreditCard,
   IconChartBar,
+  IconEye,
+  IconShoppingCart,
+  IconShoppingCartX,
 } from "@tabler/icons-react";
 import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
 
 const STEP_ICON_MAP: Record<string, React.ElementType> = {
+  pageview: IconEye,
+  signup: IconUsers,
   signups: IconUsers,
   edits: IconEdit,
+  payment: IconCreditCard,
   payments: IconCreditCard,
   campaigns: IconChartBar,
+  checkout_started: IconShoppingCart,
 };
 
 const STEP_COLOR_MAP: Record<string, { color: string; bgColor: string }> = {
+  pageview: { color: "text-blue-400", bgColor: "bg-blue-600/20" },
+  signup: { color: "text-indigo-400", bgColor: "bg-indigo-600/20" },
   signups: { color: "text-indigo-400", bgColor: "bg-indigo-600/20" },
   edits: { color: "text-violet-400", bgColor: "bg-violet-600/20" },
+  payment: { color: "text-emerald-400", bgColor: "bg-emerald-600/20" },
   payments: { color: "text-emerald-400", bgColor: "bg-emerald-600/20" },
   campaigns: { color: "text-amber-400", bgColor: "bg-amber-600/20" },
+  checkout_started: { color: "text-orange-400", bgColor: "bg-orange-600/20" },
 };
 
 const FALLBACK_ICON = IconChartBar;
@@ -73,7 +84,10 @@ interface KpiCardsProps {
 
 export function KpiCards({ data, isLoading }: KpiCardsProps) {
   const stepCount = data?.steps.length ?? 3;
-  const totalCards = stepCount + 3;
+  const extraCards =
+    ((data?.checkoutStarted ?? 0) > 0 ? 1 : 0) +
+    ((data?.checkoutAbandoned ?? 0) > 0 ? 1 : 0);
+  const totalCards = stepCount + 3 + extraCards;
 
   if (isLoading) {
     return (
@@ -120,7 +134,33 @@ export function KpiCards({ data, isLoading }: KpiCardsProps) {
     },
   ];
 
-  const allCards = [...stepCards, ...metricCards];
+  const checkoutStartedCards: KpiCardProps[] =
+    (data?.checkoutStarted ?? 0) > 0
+      ? [
+          {
+            label: "Checkout Iniciado",
+            value: fmtInt(data?.checkoutStarted ?? 0),
+            icon: IconShoppingCart,
+            color: "text-orange-400",
+            bgColor: "bg-orange-600/20",
+          },
+        ]
+      : [];
+
+  const abandonedCards: KpiCardProps[] =
+    (data?.checkoutAbandoned ?? 0) > 0
+      ? [
+          {
+            label: "Abandonos",
+            value: fmtInt(data?.checkoutAbandoned ?? 0),
+            icon: IconShoppingCartX,
+            color: "text-rose-400",
+            bgColor: "bg-rose-600/20",
+          },
+        ]
+      : [];
+
+  const allCards = [...stepCards, ...metricCards, ...checkoutStartedCards, ...abandonedCards];
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">

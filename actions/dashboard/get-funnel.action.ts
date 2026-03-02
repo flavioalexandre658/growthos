@@ -6,6 +6,11 @@ import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import {
+  buildFunnelSteps,
+  getAllQueryEventTypes,
+  injectCheckoutSteps,
+} from "@/utils/build-funnel-steps";
 import type { IDateFilter, IGenericFunnelData } from "@/interfaces/dashboard.interface";
 
 export async function getFunnel(
@@ -25,8 +30,8 @@ export async function getFunnel(
 
   if (!org) return null;
 
-  const funnelSteps = org.funnelSteps;
-  const allEventTypes = funnelSteps.map((s) => s.eventType);
+  const baseFunnelSteps = buildFunnelSteps(org.funnelSteps);
+  const allEventTypes = getAllQueryEventTypes(baseFunnelSteps);
 
   const eventRows = await db
     .select({
@@ -51,6 +56,8 @@ export async function getFunnel(
       { total: Number(r.total), uniqueTotal: Number(r.uniqueTotal) },
     ])
   );
+
+  const funnelSteps = injectCheckoutSteps(baseFunnelSteps, countMap);
 
   const revenueResult = await db
     .select({
@@ -108,6 +115,9 @@ export async function getFunnel(
     ? ((netRevenue / grossRevenue) * 100).toFixed(1) + "%"
     : "0%";
 
+  const checkoutStarted = countMap.get("checkout_started")?.total ?? 0;
+  const checkoutAbandoned = countMap.get("checkout_abandoned")?.total ?? 0;
+
   return {
     steps,
     rates,
@@ -115,5 +125,7 @@ export async function getFunnel(
     netRevenue,
     ticketMedio,
     margin,
+    checkoutStarted: checkoutStarted > 0 ? checkoutStarted : undefined,
+    checkoutAbandoned: checkoutAbandoned > 0 ? checkoutAbandoned : undefined,
   };
 }

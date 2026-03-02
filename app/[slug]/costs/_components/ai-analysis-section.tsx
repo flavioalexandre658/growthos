@@ -57,6 +57,8 @@ export function AiAnalysisSection({
         taxas: funnel.rates.map((r) => ({ taxa: r.label, valor: r.value })),
         ticket_medio: funnel.ticketMedio,
         margem_api: funnel.margin,
+        ...(funnel.checkoutStarted !== undefined && { checkout_iniciado: funnel.checkoutStarted }),
+        ...(funnel.checkoutAbandoned !== undefined && { checkout_abandonado: funnel.checkoutAbandoned }),
       },
       periodo: filter,
     };
