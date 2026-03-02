@@ -22,7 +22,7 @@ export default async function RegisterPage() {
 
   return (
     <main className="min-h-screen bg-zinc-950 flex">
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-zinc-900/50 border-r border-zinc-800/50 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12 bg-zinc-900/50 border-r border-zinc-800/50 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/40 via-transparent to-violet-950/20" />
         <div
           className="absolute inset-0 opacity-[0.03]"
@@ -33,18 +33,14 @@ export default async function RegisterPage() {
           }}
         />
 
-        <div className="relative z-10">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
-              <IconChartBar size={18} className="text-white" />
-            </div>
-            <span className="text-sm font-bold text-zinc-100 tracking-tight">
-              GrowthOS
-            </span>
+        <div className="absolute top-10 left-10 z-10 flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
+            <IconChartBar size={18} className="text-white" />
           </div>
+          <span className="text-sm font-bold text-zinc-100 tracking-tight">GrowthOS</span>
         </div>
 
-        <div className="relative z-10 space-y-8">
+        <div className="relative z-10 w-full max-w-md space-y-8">
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400">
               Inteligência de Crescimento
@@ -56,7 +52,7 @@ export default async function RegisterPage() {
               <br />
               crescimento.
             </h1>
-            <p className="text-zinc-500 text-sm leading-relaxed max-w-xs">
+            <p className="text-zinc-500 text-sm leading-relaxed">
               Descubra onde está o lucro, onde está o desperdício e o que
               otimizar primeiro — com dados e análise inteligente.
             </p>
@@ -107,9 +103,7 @@ export default async function RegisterPage() {
               </div>
             ))}
           </div>
-        </div>
 
-        <div className="relative z-10">
           <p className="text-xs text-zinc-700">
             © {new Date().getFullYear()} GrowthOS · Decisões melhores, crescimento consistente.
           </p>

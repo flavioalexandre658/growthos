@@ -19,7 +19,7 @@ export default async function LoginPage() {
   return (
     <main className="min-h-screen bg-zinc-950 flex">
       {/* Left panel — branding */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-zinc-900/50 border-r border-zinc-800/50 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 items-center justify-center p-12 bg-zinc-900/50 border-r border-zinc-800/50 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/40 via-transparent to-violet-950/20" />
 
         {/* Grid pattern */}
@@ -32,18 +32,14 @@ export default async function LoginPage() {
           }}
         />
 
-        <div className="relative z-10">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
-              <IconChartBar size={18} className="text-white" />
-            </div>
-            <span className="text-sm font-bold text-zinc-100 tracking-tight">
-              GrowthOS
-            </span>
+        <div className="absolute top-10 left-10 z-10 flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
+            <IconChartBar size={18} className="text-white" />
           </div>
+          <span className="text-sm font-bold text-zinc-100 tracking-tight">GrowthOS</span>
         </div>
 
-        <div className="relative z-10 space-y-8">
+        <div className="relative z-10 w-full max-w-md space-y-8">
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400">
               Growth · Analytics · IA
@@ -53,7 +49,7 @@ export default async function LoginPage() {
               <br />
               transformam decisões.
             </h1>
-            <p className="text-zinc-500 text-sm leading-relaxed max-w-xs">
+            <p className="text-zinc-500 text-sm leading-relaxed">
               Visualize receita, custos e conversão em tempo real. Identifique
               oportunidades com análise inteligente.
             </p>
@@ -115,9 +111,7 @@ export default async function LoginPage() {
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="relative z-10">
           <p className="text-xs text-zinc-700">
             © {new Date().getFullYear()} GrowthOS · Acompanhamento em tempo real de receita, funil e canais.
           </p>

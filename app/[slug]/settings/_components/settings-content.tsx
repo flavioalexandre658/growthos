@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useOrganization } from "@/components/providers/organization-provider";
-import { useOrganizations } from "@/hooks/queries/use-organizations";
 import { useApiKeys } from "@/hooks/queries/use-api-keys";
 import { useCreateApiKey } from "@/hooks/mutations/use-create-api-key";
 import { useDeleteApiKey } from "@/hooks/mutations/use-delete-api-key";
@@ -316,14 +315,13 @@ function OrgApiKeysSection({ orgId, orgName }: { orgId: string; orgName: string 
 }
 
 export function SettingsContent() {
-  const { organizations } = useOrganization();
-  const { isLoading } = useOrganizations();
+  const { organization, isLoading } = useOrganization();
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-lg font-bold text-zinc-100">Configurações</h1>
-        <p className="text-xs text-zinc-500">Gerencie organizações, API keys e instalação do tracker</p>
+        <p className="text-xs text-zinc-500">Gerencie API keys e instalação do tracker</p>
       </div>
 
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
@@ -347,12 +345,10 @@ export function SettingsContent() {
 
       {isLoading ? (
         <Skeleton className="h-48 w-full rounded-xl bg-zinc-800" />
+      ) : organization ? (
+        <OrgApiKeysSection orgId={organization.id} orgName={organization.name} />
       ) : (
-        <div className="space-y-4">
-          {organizations.map((org) => (
-            <OrgApiKeysSection key={org.id} orgId={org.id} orgName={org.name} />
-          ))}
-        </div>
+        <p className="text-center py-8 text-zinc-600 text-sm">Organização não encontrada.</p>
       )}
     </div>
   );
