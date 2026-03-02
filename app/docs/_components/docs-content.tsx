@@ -424,17 +424,6 @@ export function DocsContent() {
             desempenho do site.
           </Callout>
 
-          <Callout type="warn">
-            Os snippets acima usam{" "}
-            <code className="font-mono text-xs">{appUrl}</code> como base , este
-            é o domínio onde o seu GrowthOS está hospedado. Certifique-se de que
-            este endereço está correto antes de copiar. O tracker extrai
-            automaticamente o endpoint a partir do{" "}
-            <code className="font-mono text-xs">src</code> , eventos são
-            enviados para{" "}
-            <code className="font-mono text-xs">{appUrl}/api/track</code>.
-          </Callout>
-
           <Callout type="info">
             Instale <strong>antes</strong> de qualquer outro script para
             garantir que UTMs e referrer sejam capturados desde o primeiro

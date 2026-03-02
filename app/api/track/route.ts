@@ -8,12 +8,20 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Max-Age": "86400",
 };
 
 const MAX_PAYLOAD_BYTES = 64 * 1024;
 
 export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
+function jsonError(message: string, status: number) {
+  return new NextResponse(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+  });
 }
 
 function toCents(value: unknown): number | null {
@@ -51,44 +59,29 @@ function sanitizeMetadata(raw: unknown): Record<string, unknown> | null {
 export async function POST(req: NextRequest) {
   const contentLength = req.headers.get("content-length");
   if (contentLength && parseInt(contentLength, 10) > MAX_PAYLOAD_BYTES) {
-    return NextResponse.json(
-      { error: "Payload too large" },
-      { status: 413, headers: CORS_HEADERS }
-    );
+    return jsonError("Payload too large", 413);
   }
 
   const body = await req.json().catch(() => null);
 
   if (!body || typeof body !== "object") {
-    return NextResponse.json(
-      { error: "Invalid payload" },
-      { status: 400, headers: CORS_HEADERS }
-    );
+    return jsonError("Invalid payload", 400);
   }
 
   const rawBody = JSON.stringify(body);
   if (rawBody.length > MAX_PAYLOAD_BYTES) {
-    return NextResponse.json(
-      { error: "Payload too large" },
-      { status: 413, headers: CORS_HEADERS }
-    );
+    return jsonError("Payload too large", 413);
   }
 
   const key = toString(body.key);
   const eventType = toString(body.event_type);
 
   if (!key || !eventType) {
-    return NextResponse.json(
-      { error: "Missing key or event_type" },
-      { status: 400, headers: CORS_HEADERS }
-    );
+    return jsonError("Missing key or event_type", 400);
   }
 
   if (!checkRateLimit(key)) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded" },
-      { status: 429, headers: CORS_HEADERS }
-    );
+    return jsonError("Rate limit exceeded", 429);
   }
 
   const [apiKey] = await db
@@ -98,17 +91,11 @@ export async function POST(req: NextRequest) {
     .limit(1);
 
   if (!apiKey || !apiKey.isActive) {
-    return NextResponse.json(
-      { error: "Invalid API key" },
-      { status: 401, headers: CORS_HEADERS }
-    );
+    return jsonError("Invalid API key", 401);
   }
 
   if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
-    return NextResponse.json(
-      { error: "API key expired" },
-      { status: 401, headers: CORS_HEADERS }
-    );
+    return jsonError("API key expired", 401);
   }
 
   db.update(apiKeys)
