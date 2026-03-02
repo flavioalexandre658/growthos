@@ -6,14 +6,8 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    if (token?.role !== "ADMIN") {
-      const loginUrl = new URL("/login", req.url);
-      loginUrl.searchParams.set("error", "AccessDenied");
-      return NextResponse.redirect(loginUrl);
-    }
-
     const isNewOrg = req.nextUrl.searchParams.get("new-org") === "1";
-    if (path.startsWith("/onboarding") && token.onboardingCompleted && !isNewOrg) {
+    if (path.startsWith("/onboarding") && token?.onboardingCompleted && !isNewOrg) {
       return NextResponse.redirect(new URL("/organizations", req.url));
     }
 
