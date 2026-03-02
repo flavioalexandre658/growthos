@@ -35,7 +35,11 @@ function CopyButton({ text }: { text: string }) {
       onClick={handleCopy}
       className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-100 text-xs transition-colors"
     >
-      {copied ? <IconCheck size={12} className="text-emerald-400" /> : <IconCopy size={12} />}
+      {copied ? (
+        <IconCheck size={12} className="text-emerald-400" />
+      ) : (
+        <IconCopy size={12} />
+      )}
       {copied ? "Copiado" : "Copiar"}
     </button>
   );
@@ -80,7 +84,9 @@ export function StepApiKey({
   const [apiKey, setApiKey] = useState<string | null>(existingKey ?? null);
   const [isGenerating, setIsGenerating] = useState(!existingKey);
   const [baseUrl, setBaseUrl] = useState(
-    typeof window !== "undefined" ? window.location.origin : "https://seudominio.com"
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://growthos.dev",
   );
   const [copied, setCopied] = useState(false);
 
@@ -105,7 +111,7 @@ export function StepApiKey({
   }, [organizationId, organizationName, existingKey]);
 
   const snippet = apiKey
-    ? `<script src="${baseUrl}/tracker.js" data-key="${apiKey}"></script>`
+    ? `<script async src="${baseUrl}/tracker.js" data-key="${apiKey}"></script>`
     : "";
 
   const copyKey = () => {
@@ -123,7 +129,9 @@ export function StepApiKey({
           <IconKey size={18} className="text-amber-400" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-zinc-100">API key + Instalação</h2>
+          <h2 className="text-lg font-bold text-zinc-100">
+            API key + Instalação
+          </h2>
           <p className="text-xs text-zinc-500">
             Cole um script no seu site e os dados chegam automaticamente
           </p>
@@ -162,7 +170,8 @@ export function StepApiKey({
 
         <div className="rounded-md bg-amber-900/20 border border-amber-800/30 px-3 py-2">
           <p className="text-[11px] text-amber-400">
-            Guarde esta chave em segurança. Ela autentica os eventos do seu site.
+            Guarde esta chave em segurança. Ela autentica os eventos do seu
+            site.
           </p>
         </div>
       </div>
@@ -176,21 +185,18 @@ export function StepApiKey({
             value={baseUrl}
             onChange={(e) => setBaseUrl(e.target.value)}
             className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 font-mono focus:border-indigo-500 focus:outline-none"
-            placeholder="https://seudominio.com"
+            placeholder="https://growthos.dev"
           />
         </div>
 
         {apiKey && (
-          <CodeBlock
-            title="index.html"
-            language="html"
-            code={snippet}
-          />
+          <CodeBlock title="index.html" language="html" code={snippet} />
         )}
 
         <p className="text-[11px] text-zinc-600 leading-relaxed">
-          Cole no <code className="text-zinc-400">&lt;head&gt;</code> de qualquer página.
-          O tracker captura UTMs, device, referrer e pageviews automaticamente.
+          Cole no <code className="text-zinc-400">&lt;head&gt;</code> de
+          qualquer página. O tracker captura UTMs, device, referrer e pageviews
+          automaticamente.
         </p>
       </div>
 

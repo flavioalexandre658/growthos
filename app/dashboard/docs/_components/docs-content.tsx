@@ -40,14 +40,37 @@ const AUTO_CONTEXT_ROWS = [
   {
     name: "session_id",
     source: "sessionStorage (anônimo, gerado)",
-    example: "sess_abc123",
+    example: "s_abc123",
   },
 ];
 
 const INSTALL_HTML = `<script
-  src="https://growthos.com.br/tracker.js"
+  async
+  src="https://growthos.dev/tracker.js"
   data-key="tok_xxx"
 ></script>`;
+
+const SCRIPT_ATTRS_ROWS = [
+  {
+    name: "data-key",
+    required: "sim",
+    description: "API key da organização. Obtida em Configurações.",
+    example: "tok_convitede_xxx",
+  },
+  {
+    name: "data-debug",
+    required: "não",
+    description: 'Habilita logs no console: "[GrowthOS] track: evento {...}".',
+    example: "true",
+  },
+  {
+    name: "data-auto-abandon",
+    required: "não",
+    description:
+      "Desabilita a detecção automática de checkout_abandoned no beforeunload. Padrão: habilitado.",
+    example: "false",
+  },
+];
 
 const INSTALL_NEXTJS = `import Script from 'next/script'
 
@@ -58,7 +81,7 @@ export default function RootLayout({ children }) {
       <body>
         {children}
         <Script
-          src="https://growthos.com.br/tracker.js"
+          src="https://growthos.dev/tracker.js"
           data-key={process.env.NEXT_PUBLIC_GROWTHOS_KEY}
           strategy="afterInteractive"
         />
@@ -125,16 +148,31 @@ const PAYMENT_CODE = `window.GrowthOS.track('payment', {
   customer_id: 'hash_anonimo_cliente',
 })`;
 
+const CHECKOUT_STARTED_CODE = `window.GrowthOS.track('checkout_started', {
+  gross_value: 89.00,
+  product_id: 'template-aniversario-002',
+  product_name: 'Convite Aniversário Standard',
+})
+
+// A partir desse momento, se o usuário fechar a aba/navegador
+// antes de um evento 'payment', o tracker envia automaticamente
+// um 'checkout_abandoned' via beforeunload + navigator.sendBeacon`;
+
 const SIGNUP_CODE = `window.GrowthOS.track('signup', {
   customer_type: 'new',
   customer_id: 'hash_anonimo',
 })`;
 
-const ABANDONED_CODE = `window.GrowthOS.track('checkout_abandoned', {
+const ABANDONED_CODE = `// Disparo manual — quando você sabe o motivo exato
+window.GrowthOS.track('checkout_abandoned', {
   gross_value: 89.00,
   product_id: 'template-aniversario-002',
-  reason: 'exit',  // exit | payment_failed | timeout
-})`;
+  reason: 'payment_failed',  // exit | payment_failed | timeout
+})
+
+// Disparo automático — pelo tracker via beforeunload
+// Não é necessário nenhum código adicional.
+// O tracker usa os dados do último checkout_started salvo em sessionStorage.`;
 
 const DATA_ATTRS_CODE = `<!-- Botão de pagamento -->
 <button
@@ -204,13 +242,26 @@ window.GrowthOS.track('pageview')
 // Verificar no Network: POST /api/track → 204`;
 
 const DEBUG_ATTRS_CODE = `<script
-  src="https://growthos.com.br/tracker.js"
+  async
+  src="https://growthos.dev/tracker.js"
   data-key="tok_xxx"
   data-debug="true"
 ></script>
 
 // Console vai mostrar:
 // [GrowthOS] track: payment { gross_value: 150, source: "google", ... }`;
+
+const DEBUG_QUEUE_CODE = `// Verificar eventos na fila offline (pendentes de envio)
+JSON.parse(localStorage.getItem('growthos_queue') || '[]')
+
+// Verificar UTMs persistidos na sessão atual
+JSON.parse(sessionStorage.getItem('growthos_utm') || 'null')
+
+// Verificar checkout em andamento
+JSON.parse(sessionStorage.getItem('growthos_checkout') || 'null')
+
+// Limpar a fila manualmente (em caso de eventos inválidos presos)
+localStorage.removeItem('growthos_queue')`;
 
 const CHECKLIST_ITEMS = [
   {
@@ -236,10 +287,75 @@ const CHECKLIST_ITEMS = [
   },
 ];
 
+const API_PAYLOAD_CODE = `POST /api/track
+Content-Type: application/json
+
+{
+  "key": "tok_xxx",            // obrigatório — API key
+  "event_type": "payment",     // obrigatório — tipo do evento
+
+  // valores monetários — enviar em reais, a API converte para centavos
+  "gross_value": 150.00,
+  "net_value": 140.00,
+  "discount": 10.00,
+  "gateway_fee": 4.50,
+  "installments": 1,
+  "payment_method": "pix",
+
+  // produto
+  "product_id": "template-001",
+  "product_name": "Convite Casamento",
+  "category": "casamento",
+
+  // atribuição — preenchido automaticamente pelo tracker
+  "source": "google",
+  "medium": "organic",
+  "campaign": "val2024",
+  "content": "banner-topo",
+  "landing_page": "/convite/casamento",
+  "referrer": "https://google.com",
+
+  // contexto — preenchido automaticamente pelo tracker
+  "device": "mobile",
+  "customer_type": "new",
+  "customer_id": "hash_anonimo",
+  "session_id": "s_abc123",
+
+  // extra livre — max 20 chaves, strings max 500 chars
+  "metadata": { "promo_code": "VERAO10" }
+}`;
+
+const API_RESPONSES_ROWS = [
+  {
+    status: "204",
+    meaning: "No Content",
+    description: "Evento registrado com sucesso.",
+  },
+  {
+    status: "400",
+    meaning: "Bad Request",
+    description: "Payload inválido ou campos key / event_type ausentes.",
+  },
+  {
+    status: "401",
+    meaning: "Unauthorized",
+    description: "API key inválida, inativa ou expirada.",
+  },
+  {
+    status: "413",
+    meaning: "Payload Too Large",
+    description: "Payload excede 64KB.",
+  },
+  {
+    status: "429",
+    meaning: "Too Many Requests",
+    description: "Rate limit: 1.000 req/min por API key.",
+  },
+];
+
 export function DocsContent() {
   return (
     <Tabs defaultValue="install" className="flex gap-0 h-full">
-      {/* Sidebar nav */}
       <div className="w-52 shrink-0 border-r border-border pr-4 pt-6 sticky top-0 h-[calc(100vh-57px)] overflow-y-auto">
         <TabsList className="flex flex-col h-auto bg-transparent gap-0.5 items-start w-full p-0">
           {[
@@ -250,6 +366,7 @@ export function DocsContent() {
             { value: "reference", label: "Referência" },
             { value: "attributes", label: "Data Attributes" },
             { value: "typescript", label: "TypeScript" },
+            { value: "api", label: "API Reference" },
             { value: "debug", label: "Debug" },
           ].map((tab) => (
             <TabsTrigger
@@ -263,7 +380,6 @@ export function DocsContent() {
         </TabsList>
       </div>
 
-      {/* Content */}
       <div className="flex-1 min-w-0 pl-10 pt-6 pb-20 overflow-y-auto">
         {/* Instalação */}
         <TabsContent value="install" className="mt-0 space-y-6">
@@ -280,10 +396,10 @@ export function DocsContent() {
                 {"<head>"}
               </code>{" "}
               de qualquer página. Substitua{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-green-400">
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-green-600 dark:text-green-400">
                 tok_xxx
               </code>{" "}
-              pela API key disponível em Settings.
+              pela API key disponível em Configurações.
             </p>
           </div>
 
@@ -294,6 +410,23 @@ export function DocsContent() {
           />
 
           <Callout type="tip">
+            O atributo{" "}
+            <code className="font-mono text-xs">async</code> garante que o
+            script é carregado em paralelo, sem bloquear o parsing do HTML nem
+            atrasar o{" "}
+            <code className="font-mono text-xs">LCP</code> da página. O
+            tracker só executa após o download, sem nenhum impacto no
+            desempenho do site.
+          </Callout>
+
+          <Callout type="tip">
+            O <code className="font-mono text-xs">API_BASE</code> é inferido
+            automaticamente a partir do atributo{" "}
+            <code className="font-mono text-xs">src</code> do script — não há
+            nenhum domínio fixo. Qualquer URL de hospedagem funciona.
+          </Callout>
+
+          <Callout type="info">
             Instale <strong>antes</strong> de qualquer outro script para
             garantir que UTMs e referrer sejam capturados desde o primeiro
             carregamento.
@@ -302,7 +435,41 @@ export function DocsContent() {
           <Separator />
 
           <div>
-            <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider text-xs">
+            <h3 className="text-xs font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
+              Atributos do script
+            </h3>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <div className="grid grid-cols-4 text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-2.5 bg-muted/40 border-b border-border">
+                <span>atributo</span>
+                <span>obrigatório</span>
+                <span className="col-span-2">descrição / exemplo</span>
+              </div>
+              {SCRIPT_ATTRS_ROWS.map((row) => (
+                <div
+                  key={row.name}
+                  className="grid grid-cols-4 text-sm px-4 py-3 border-b border-border last:border-0 hover:bg-muted/20"
+                >
+                  <code className="font-mono text-xs text-blue-600 dark:text-blue-400">
+                    {row.name}
+                  </code>
+                  <span className="text-xs text-muted-foreground">
+                    {row.required}
+                  </span>
+                  <span className="col-span-2 text-xs text-muted-foreground">
+                    {row.description}{" "}
+                    <code className="font-mono text-xs text-green-600 dark:text-green-400">
+                      {row.example}
+                    </code>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          <div>
+            <h3 className="text-xs font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
               O que é capturado automaticamente
             </h3>
             <AutoPropTable rows={AUTO_CONTEXT_ROWS} />
@@ -393,20 +560,27 @@ export function DocsContent() {
             {[
               [
                 "pageview",
-                "Carregamento inicial da página",
-                "landing_page, referrer, device, UTMs",
+                "Carregamento inicial da página (window load)",
+                "landing_page, referrer, device, UTMs, session_id",
               ],
               [
                 "pageview",
-                "Navegação SPA (history.pushState)",
-                "nova landing_page, mantém session_id",
+                "Navegação SPA — history.pushState, replaceState ou popstate",
+                "nova landing_page, mantém session_id e UTMs da sessão",
+              ],
+              [
+                "checkout_abandoned",
+                "Fechamento de aba/navegador após checkout_started (beforeunload + sendBeacon)",
+                "dados do último checkout_started + reason: 'exit'",
               ],
             ].map(([event, when, data], i) => (
               <div
                 key={i}
                 className="grid grid-cols-3 text-sm px-4 py-3 border-b border-border last:border-0 hover:bg-muted/20"
               >
-                <code className="font-mono text-xs text-blue-400">{event}</code>
+                <code className="font-mono text-xs text-blue-600 dark:text-blue-400">
+                  {event}
+                </code>
                 <span className="text-muted-foreground text-xs">{when}</span>
                 <span className="text-xs text-muted-foreground">{data}</span>
               </div>
@@ -422,8 +596,91 @@ export function DocsContent() {
             <code className="font-mono text-xs">device</code>,{" "}
             <code className="font-mono text-xs">referrer</code> ou{" "}
             <code className="font-mono text-xs">session_id</code>. O tracker já
-            os captura e merge automaticamente.
+            os captura e faz merge automaticamente em todo evento.
           </Callout>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              SPA Tracking — como funciona
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              O tracker intercepta{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                history.pushState
+              </code>
+              ,{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                history.replaceState
+              </code>{" "}
+              e o evento{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                popstate
+              </code>
+              . Um{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                pageview
+              </code>{" "}
+              é disparado automaticamente sempre que o pathname muda — sem
+              nenhuma configuração extra.
+            </p>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Auto-detecção de checkout_abandoned
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Quando{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                checkout_started
+              </code>{" "}
+              é disparado, o tracker salva os dados em{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                sessionStorage
+              </code>
+              . Se o usuário fechar a aba antes de um{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                payment
+              </code>
+              , o listener{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                beforeunload
+              </code>{" "}
+              envia o evento via{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                navigator.sendBeacon
+              </code>
+              . Para desabilitar, use{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                data-auto-abandon="false"
+              </code>{" "}
+              no script.
+            </p>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Fila offline
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Se o envio falhar por queda de rede, o evento é salvo em{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                localStorage
+              </code>{" "}
+              (chave{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                growthos_queue
+              </code>
+              , máximo 50 itens). No próximo carregamento de página o tracker
+              faz flush automático da fila antes de registrar novos eventos.
+            </p>
+          </div>
         </TabsContent>
 
         {/* Eventos Manuais */}
@@ -448,6 +705,26 @@ export function DocsContent() {
             lang="js"
             title="payment — mais importante"
           />
+
+          <Callout type="tip">
+            Dispare <code className="font-mono text-xs">payment</code> somente
+            após confirmação do servidor. Disparar no clique do botão gera dados
+            incorretos caso o pagamento seja recusado.
+          </Callout>
+
+          <CodeBlock
+            code={CHECKOUT_STARTED_CODE}
+            lang="js"
+            title="checkout_started — habilita auto-abandon"
+          />
+
+          <Callout type="info">
+            <code className="font-mono text-xs">checkout_started</code> é o
+            pré-requisito para o auto-abandonment funcionar. Sem ele, o tracker
+            não tem dados para enviar no{" "}
+            <code className="font-mono text-xs">beforeunload</code>.
+          </Callout>
+
           <CodeBlock code={SIGNUP_CODE} lang="js" title="signup" />
           <CodeBlock
             code={ABANDONED_CODE}
@@ -470,6 +747,13 @@ export function DocsContent() {
 
           <div className="space-y-5">
             <EventCard
+              name="pageview"
+              description="Visualização de página. Disparado automaticamente pelo tracker — manual só se necessário."
+              variant="secondary"
+              props={[]}
+            />
+
+            <EventCard
               name="payment"
               description="Pagamento confirmado. Alimenta faturamento, margem, ticket médio e ROAS."
               variant="default"
@@ -478,7 +762,7 @@ export function DocsContent() {
                   name: "gross_value",
                   type: "number",
                   required: true,
-                  description: "Valor bruto cobrado",
+                  description: "Valor bruto cobrado (em reais)",
                   example: "150.00",
                 },
                 {
@@ -496,7 +780,7 @@ export function DocsContent() {
                 {
                   name: "gateway_fee",
                   type: "number",
-                  description: "Taxa da gateway",
+                  description: "Taxa da gateway (em reais)",
                   example: "4.50",
                 },
                 {
@@ -566,13 +850,13 @@ export function DocsContent() {
 
             <EventCard
               name="checkout_started"
-              description="Início do checkout. Par com checkout_abandoned para calcular abandono."
+              description="Início do checkout. Habilita detecção automática de abandono via beforeunload."
               variant="outline"
               props={[
                 {
                   name: "gross_value",
                   type: "number",
-                  description: "Valor no carrinho",
+                  description: "Valor no carrinho (em reais)",
                   example: "89.00",
                 },
                 {
@@ -581,18 +865,24 @@ export function DocsContent() {
                   description: "ID do produto",
                   example: "'template-001'",
                 },
+                {
+                  name: "product_name",
+                  type: "string",
+                  description: "Nome do produto",
+                  example: "'Convite Casamento'",
+                },
               ]}
             />
 
             <EventCard
               name="checkout_abandoned"
-              description="Checkout não concluído. Representa receita perdida no P&L."
+              description="Checkout não concluído. Representa receita perdida no P&L. Pode ser disparado automaticamente."
               variant="destructive"
               props={[
                 {
                   name: "gross_value",
                   type: "number",
-                  description: "Valor que não converteu",
+                  description: "Valor que não converteu (em reais)",
                   example: "89.00",
                 },
                 {
@@ -674,8 +964,12 @@ export function DocsContent() {
                 key={attr}
                 className="grid grid-cols-3 text-sm px-4 py-3 border-b border-border last:border-0 hover:bg-muted/20"
               >
-                <code className="font-mono text-xs text-blue-400">{attr}</code>
-                <code className="font-mono text-xs text-green-400">{js}</code>
+                <code className="font-mono text-xs text-blue-600 dark:text-blue-400">
+                  {attr}
+                </code>
+                <code className="font-mono text-xs text-green-600 dark:text-green-400">
+                  {js}
+                </code>
                 <span className="text-xs text-muted-foreground">{note}</span>
               </div>
             ))}
@@ -704,6 +998,125 @@ export function DocsContent() {
           />
         </TabsContent>
 
+        {/* API Reference */}
+        <TabsContent value="api" className="mt-0 space-y-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-xl font-semibold tracking-tight">
+                API Reference
+              </h2>
+              <Badge variant="outline" className="font-mono text-xs">
+                POST /api/track
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Endpoint que recebe eventos do{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                tracker.js
+              </code>
+              . Pode ser chamado diretamente se necessário — por exemplo, para
+              importar dados históricos ou disparar eventos server-side.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-border overflow-hidden">
+            <div className="grid grid-cols-3 text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-2.5 bg-muted/40 border-b border-border">
+              <span>Limite</span>
+              <span>Valor</span>
+              <span>Comportamento ao exceder</span>
+            </div>
+            {[
+              ["Rate limit", "1.000 req/min por API key", "HTTP 429"],
+              ["Tamanho do payload", "64 KB", "HTTP 413"],
+              [
+                "Chaves em metadata",
+                "20 chaves máximo",
+                "Excedentes são descartados",
+              ],
+              [
+                "Tamanho de string em metadata",
+                "500 caracteres",
+                "Truncado silenciosamente",
+              ],
+              [
+                "Tipos aceitos em metadata",
+                "string, number, boolean, null",
+                "Outros tipos são descartados",
+              ],
+            ].map(([limit, value, behavior]) => (
+              <div
+                key={limit}
+                className="grid grid-cols-3 text-sm px-4 py-3 border-b border-border last:border-0 hover:bg-muted/20"
+              >
+                <span className="text-xs font-medium">{limit}</span>
+                <code className="font-mono text-xs text-yellow-600 dark:text-yellow-400">
+                  {value}
+                </code>
+                <span className="text-xs text-muted-foreground">
+                  {behavior}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <Callout type="tip">
+            Valores monetários devem ser enviados em <strong>reais</strong> (ex:{" "}
+            <code className="font-mono text-xs">150.00</code>). A API converte
+            automaticamente para centavos antes de armazenar no banco.
+          </Callout>
+
+          <CodeBlock
+            code={API_PAYLOAD_CODE}
+            lang="http"
+            title="Payload completo"
+          />
+
+          <div>
+            <h3 className="text-xs font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
+              Respostas
+            </h3>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <div className="grid grid-cols-3 text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-2.5 bg-muted/40 border-b border-border">
+                <span>Status</span>
+                <span>Significado</span>
+                <span>Descrição</span>
+              </div>
+              {API_RESPONSES_ROWS.map((row) => (
+                <div
+                  key={row.status}
+                  className="grid grid-cols-3 text-sm px-4 py-3 border-b border-border last:border-0 hover:bg-muted/20"
+                >
+                  <code
+                    className={`font-mono text-xs font-semibold ${
+                      row.status === "204"
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}
+                  >
+                    {row.status}
+                  </code>
+                  <span className="text-xs text-muted-foreground">
+                    {row.meaning}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {row.description}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Callout type="info">
+            CORS está habilitado para qualquer origem (
+            <code className="font-mono text-xs">
+              Access-Control-Allow-Origin: *
+            </code>
+            ). Requests <code className="font-mono text-xs">OPTIONS</code> de
+            preflight retornam <code className="font-mono text-xs">204</code>{" "}
+            automaticamente.
+          </Callout>
+        </TabsContent>
+
         {/* Debug */}
         <TabsContent value="debug" className="mt-0 space-y-6">
           <div>
@@ -722,6 +1135,23 @@ export function DocsContent() {
             lang="html"
             title="Modo debug — data-debug=true"
           />
+
+          <Separator />
+
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Fila offline e estado da sessão
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Use os comandos abaixo no DevTools para inspecionar o estado
+              interno do tracker sem precisar disparar novos eventos.
+            </p>
+            <CodeBlock
+              code={DEBUG_QUEUE_CODE}
+              lang="js"
+              title="DevTools — inspecionar estado"
+            />
+          </div>
 
           <Separator />
 

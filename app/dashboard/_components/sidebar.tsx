@@ -18,6 +18,7 @@ import {
   IconCalculator,
   IconBuilding,
   IconSettings,
+  IconBook,
 } from "@tabler/icons-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -60,6 +61,12 @@ const NAV_ITEMS: NavItemDef[] = [
     href: "/dashboard/costs",
     label: "Custos & P&L",
     icon: IconCalculator,
+    exact: false,
+  },
+  {
+    href: "/dashboard/docs",
+    label: "Documentação",
+    icon: IconBook,
     exact: false,
   },
 ];
@@ -108,14 +115,14 @@ function NavItem({
         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
         isActive
           ? "bg-indigo-600/20 text-indigo-400 border border-indigo-600/30"
-          : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100 border border-transparent"
+          : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100 border border-transparent",
       )}
     >
       <Icon
         size={18}
         className={cn(
           "shrink-0",
-          isActive ? "text-indigo-400" : "text-zinc-500"
+          isActive ? "text-indigo-400" : "text-zinc-500",
         )}
       />
       {!collapsed && <span>{label}</span>}
@@ -124,7 +131,8 @@ function NavItem({
 }
 
 function OrgSwitcher({ collapsed }: { collapsed?: boolean }) {
-  const { organization, organizations, switchOrganization, isLoading } = useOrganization();
+  const { organization, organizations, switchOrganization, isLoading } =
+    useOrganization();
 
   if (isLoading || organizations.length <= 1) return null;
 
@@ -170,7 +178,7 @@ function SidebarContent({
       <div
         className={cn(
           "flex items-center border-b border-zinc-800/60 h-14",
-          collapsed ? "justify-center px-2" : "justify-between px-4"
+          collapsed ? "justify-center px-2" : "justify-between px-4",
         )}
       >
         {!collapsed && (
@@ -238,19 +246,20 @@ function SidebarContent({
         </Suspense>
       </nav>
 
-      <div className={cn("border-t border-zinc-800/60 p-3 space-y-1", collapsed && "flex flex-col items-center")}>
+      <div
+        className={cn(
+          "border-t border-zinc-800/60 p-3 space-y-1",
+          collapsed && "flex flex-col items-center",
+        )}
+      >
         <Suspense>
-          <NavItem
-            {...SETTINGS_ITEM}
-            collapsed={collapsed}
-            onClick={onClose}
-          />
+          <NavItem {...SETTINGS_ITEM} collapsed={collapsed} onClick={onClose} />
         </Suspense>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-500 hover:bg-zinc-800/60 hover:text-zinc-100 transition-all w-full border border-transparent",
-            collapsed && "justify-center w-auto"
+            collapsed && "justify-center w-auto",
           )}
         >
           <IconLogout size={18} className="shrink-0" />
@@ -270,7 +279,7 @@ export function Sidebar() {
       <aside
         className={cn(
           "hidden md:flex flex-col h-screen sticky top-0 transition-all duration-200 shrink-0",
-          collapsed ? "w-16" : "w-56"
+          collapsed ? "w-16" : "w-56",
         )}
       >
         <SidebarContent
@@ -292,7 +301,10 @@ export function Sidebar() {
               <IconMenu2 size={20} />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-56 bg-zinc-950 border-zinc-800">
+          <SheetContent
+            side="left"
+            className="p-0 w-56 bg-zinc-950 border-zinc-800"
+          >
             <SidebarContent onClose={() => setMobileOpen(false)} />
           </SheetContent>
         </Sheet>

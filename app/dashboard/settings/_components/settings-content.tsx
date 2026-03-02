@@ -138,7 +138,7 @@ function ApiKeyRow({
 
 function InstallSnippet({ apiKey, baseUrl }: { apiKey: string; baseUrl: string }) {
   const [copied, setCopied] = useState(false);
-  const snippet = `<script src="${baseUrl}/tracker.js" data-key="${apiKey}"></script>`;
+  const snippet = `<script async src="${baseUrl}/tracker.js" data-key="${apiKey}"></script>`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(snippet);
