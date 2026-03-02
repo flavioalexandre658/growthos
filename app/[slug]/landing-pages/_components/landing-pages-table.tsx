@@ -2,7 +2,6 @@
 
 import {
   ILandingPageData,
-  ILandingPageParams,
   IStepMeta,
   OrderDirection,
   IPaginationMeta,

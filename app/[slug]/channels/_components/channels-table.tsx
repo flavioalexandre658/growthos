@@ -2,7 +2,6 @@
 
 import {
   IChannelData,
-  IChannelParams,
   IStepMeta,
   OrderDirection,
   IPaginationMeta,
