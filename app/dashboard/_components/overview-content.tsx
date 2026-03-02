@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { useFunnel } from "@/hooks/queries/use-funnel";
 import { useDaily } from "@/hooks/queries/use-daily";
+import { useOrganization } from "@/components/providers/organization-provider";
 import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { KpiCards } from "./kpi-cards";
 import { FunnelSection } from "./funnel-section";
@@ -14,8 +15,11 @@ interface OverviewContentProps {
 }
 
 export function OverviewContent({ filter }: OverviewContentProps) {
-  const { data: funnel, isLoading: funnelLoading } = useFunnel(filter);
-  const { data: daily, isLoading: dailyLoading } = useDaily(filter);
+  const { organization } = useOrganization();
+  const orgId = organization?.id;
+
+  const { data: funnel, isLoading: funnelLoading } = useFunnel(orgId, filter);
+  const { data: daily, isLoading: dailyLoading } = useDaily(orgId, filter);
 
   return (
     <div className="space-y-4">

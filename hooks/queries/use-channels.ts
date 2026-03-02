@@ -1,13 +1,19 @@
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getChannels } from "@/actions/dashboard/get-channels.action";
-import { IChannelParams } from "@/interfaces/dashboard.interface";
+import type { IChannelParams } from "@/interfaces/dashboard.interface";
 
-export const getChannelsQueryKey = (params: IChannelParams) => ["dashboard", "channels", params];
+export const getChannelsQueryKey = (organizationId: string, params: IChannelParams) => [
+  "dashboard",
+  "channels",
+  organizationId,
+  params,
+];
 
-export function useChannels(params: IChannelParams = {}) {
+export function useChannels(organizationId: string | undefined, params: IChannelParams = {}) {
   return useQuery({
-    queryKey: getChannelsQueryKey(params),
-    queryFn: () => getChannels(params),
-    placeholderData: keepPreviousData,
+    queryKey: getChannelsQueryKey(organizationId ?? "", params),
+    queryFn: () => getChannels(organizationId!, params),
+    enabled: !!organizationId,
+    placeholderData: (prev) => prev,
   });
 }

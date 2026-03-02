@@ -1,13 +1,15 @@
 "use client";
 
-import { IFunnelData } from "@/interfaces/dashboard.interface";
+import { IFinancialData } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtBRL, fmtBRLDecimal } from "@/utils/format";
 import {
   IconCurrencyDollar,
   IconWallet,
-  IconPercentage,
+  IconAlertTriangle,
   IconReceipt,
+  IconMinus,
+  IconCreditCard,
 } from "@tabler/icons-react";
 
 interface FinanceKpiCardProps {
@@ -35,15 +37,15 @@ function FinanceKpiCard({ label, value, icon: Icon, color, bgColor }: FinanceKpi
 }
 
 interface FinanceKpiCardsProps {
-  data: IFunnelData | null | undefined;
+  data: IFinancialData | null | undefined;
   isLoading: boolean;
 }
 
 export function FinanceKpiCards({ data, isLoading }: FinanceKpiCardsProps) {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
               <Skeleton className="h-3 w-24 bg-zinc-800" />
@@ -56,39 +58,64 @@ export function FinanceKpiCards({ data, isLoading }: FinanceKpiCardsProps) {
     );
   }
 
+  const grossCents = data?.grossRevenueInCents ?? 0;
+  const netCents = data?.netRevenueInCents ?? 0;
+  const margin = grossCents > 0 ? ((netCents / grossCents) * 100).toFixed(1) + "%" : "0%";
+
   const cards: FinanceKpiCardProps[] = [
     {
       label: "Receita Bruta",
-      value: fmtBRL(data?.revenue),
+      value: fmtBRL(grossCents / 100),
       icon: IconCurrencyDollar,
       color: "text-emerald-400",
       bgColor: "bg-emerald-600/20",
     },
     {
       label: "Receita Líquida",
-      value: fmtBRL(data?.net_revenue),
+      value: fmtBRL(netCents / 100),
       icon: IconWallet,
       color: "text-cyan-400",
       bgColor: "bg-cyan-600/20",
     },
     {
-      label: "Margem",
-      value: `${data?.margin ?? 0}%`,
-      icon: IconPercentage,
-      color: "text-amber-400",
-      bgColor: "bg-amber-600/20",
+      label: "Taxas Gateway",
+      value: fmtBRL((data?.totalGatewayFeesInCents ?? 0) / 100),
+      icon: IconMinus,
+      color: "text-red-400",
+      bgColor: "bg-red-600/20",
+    },
+    {
+      label: "Descontos",
+      value: fmtBRL((data?.totalDiscountsInCents ?? 0) / 100),
+      icon: IconCreditCard,
+      color: "text-orange-400",
+      bgColor: "bg-orange-600/20",
+    },
+    {
+      label: "Receita Perdida",
+      value: fmtBRL((data?.lostRevenueInCents ?? 0) / 100),
+      icon: IconAlertTriangle,
+      color: "text-rose-400",
+      bgColor: "bg-rose-600/20",
     },
     {
       label: "Ticket Médio",
-      value: fmtBRLDecimal(data?.ticket_medio),
+      value: fmtBRLDecimal((data?.averageTicketInCents ?? 0) / 100),
       icon: IconReceipt,
       color: "text-violet-400",
       bgColor: "bg-violet-600/20",
     },
+    {
+      label: "Margem",
+      value: margin,
+      icon: IconWallet,
+      color: "text-amber-400",
+      bgColor: "bg-amber-600/20",
+    },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
       {cards.map((card) => (
         <FinanceKpiCard key={card.label} {...card} />
       ))}

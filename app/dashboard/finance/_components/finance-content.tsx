@@ -1,91 +1,55 @@
 "use client";
 
-import { useState, Suspense } from "react";
-import { useCategories } from "@/hooks/queries/use-categories";
-import { useFunnel } from "@/hooks/queries/use-funnel";
+import { Suspense } from "react";
+import { useFinancial } from "@/hooks/queries/use-financial";
 import { useDaily } from "@/hooks/queries/use-daily";
-import { IDateFilter, ICategoryParams, OrderDirection } from "@/interfaces/dashboard.interface";
+import { useOrganization } from "@/components/providers/organization-provider";
+import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { PeriodFilter } from "@/app/dashboard/_components/period-filter";
-import { MetricFiltersPanel, MetricFilterField } from "@/components/ui/metric-filters";
-import { CategoriesTable } from "./categories-table";
 import { FinanceKpiCards } from "./finance-kpi-cards";
 import { RevenueLineChart } from "./revenue-line-chart";
-
-const EMPTY_PAGINATION = { page: 1, limit: 50, total: 0, total_pages: 0 };
-
-const METRIC_FIELDS: MetricFilterField[] = [
-  { key: "edits", label: "Edições" },
-  { key: "payments", label: "Pagamentos" },
-  { key: "revenue", label: "Receita", prefix: "R$" },
-  { key: "net_revenue", label: "Rec. Líq.", prefix: "R$" },
-  { key: "conversion_rate", label: "Conversão", suffix: "%" },
-  { key: "ticket_medio", label: "Ticket Médio", prefix: "R$" },
-];
+import { FinanceBreakdownTable } from "./finance-breakdown-table";
 
 interface FinanceContentProps {
   filter: IDateFilter;
 }
 
 export function FinanceContent({ filter }: FinanceContentProps) {
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(50);
-  const [orderBy, setOrderBy] = useState<NonNullable<ICategoryParams["order_by"]>>("revenue");
-  const [orderDir, setOrderDir] = useState<OrderDirection>("DESC");
-  const [metricFilters, setMetricFilters] = useState<Record<string, string>>({});
+  const { organization } = useOrganization();
+  const orgId = organization?.id;
 
-  const params: ICategoryParams = {
-    ...filter,
-    page,
-    limit,
-    order_by: orderBy,
-    order_dir: orderDir,
-    ...(metricFilters as Partial<ICategoryParams>),
-  };
-
-  const { data: resp, isLoading } = useCategories(params);
-  const { data: funnel, isLoading: funnelLoading } = useFunnel(filter);
-  const { data: daily, isLoading: dailyLoading } = useDaily(filter);
-
-  const categoriesData = resp?.data ?? [];
-  const pagination = resp?.pagination ?? EMPTY_PAGINATION;
-
-  const handleMetricChange = (values: Record<string, string>) => {
-    setMetricFilters(values);
-    setPage(1);
-  };
+  const { data: financial, isLoading: financialLoading } = useFinancial(orgId, filter);
+  const { data: daily, isLoading: dailyLoading } = useDaily(orgId, filter);
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-lg font-bold text-zinc-100">Financeiro</h1>
-          <p className="text-xs text-zinc-500">Receita bruta, líquida, margem e ticket médio por categoria</p>
+          <p className="text-xs text-zinc-500">Receita bruta, líquida, taxas e ticket médio</p>
         </div>
         <Suspense>
           <PeriodFilter filter={filter} />
         </Suspense>
       </div>
 
-      <FinanceKpiCards data={funnel} isLoading={funnelLoading} />
+      <FinanceKpiCards data={financial} isLoading={financialLoading} />
       <RevenueLineChart data={daily} isLoading={dailyLoading} />
 
-      <MetricFiltersPanel
-        fields={METRIC_FIELDS}
-        values={metricFilters}
-        onChange={handleMetricChange}
-      />
-
-      <CategoriesTable
-        data={categoriesData}
-        pagination={pagination}
-        isLoading={isLoading}
-        orderBy={orderBy}
-        orderDir={orderDir}
-        onOrderBy={(k) => { setOrderBy(k); setPage(1); }}
-        onOrderDir={setOrderDir}
-        onPageChange={setPage}
-        onPageSizeChange={(s) => { setLimit(s); setPage(1); }}
-      />
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <FinanceBreakdownTable
+          title="Receita por Método de Pagamento"
+          subtitle="Distribuição do faturamento por forma de pagamento"
+          rows={financial?.byPaymentMethod.map((r) => ({ name: r.method, payments: r.payments, revenue: r.revenue, percentage: r.percentage })) ?? []}
+          isLoading={financialLoading}
+        />
+        <FinanceBreakdownTable
+          title="Receita por Categoria"
+          subtitle="Distribuição do faturamento por categoria de produto"
+          rows={financial?.byCategory.map((r) => ({ name: r.category, payments: r.payments, revenue: r.revenue, percentage: r.percentage })) ?? []}
+          isLoading={financialLoading}
+        />
+      </div>
     </div>
   );
 }

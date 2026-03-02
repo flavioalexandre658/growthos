@@ -2,9 +2,8 @@
 
 import { ILandingPageData, ILandingPageParams, OrderDirection, IPaginationMeta } from "@/interfaces/dashboard.interface";
 import { ResponsiveTable, TableColumn, ServerPaginationConfig } from "@/components/ui/responsive-table";
-import { IconChevronDown, IconChevronUp, IconExternalLink } from "@tabler/icons-react";
+import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { fmtInt, fmtBRL } from "@/utils/format";
 
 type LandingOrderBy = NonNullable<ILandingPageParams["order_by"]>;
@@ -19,20 +18,9 @@ function conversionColor(value: string) {
 const SORT_OPTIONS: { key: LandingOrderBy; label: string }[] = [
   { key: "revenue", label: "Receita" },
   { key: "payments", label: "Pagamentos" },
-  { key: "edits", label: "Edições" },
+  { key: "pageviews", label: "Pageviews" },
   { key: "conversion_rate", label: "Conversão" },
 ];
-
-function PageLink({ url }: { url: string }) {
-  const href = url.startsWith("http") ? url : `https://convitede.com${url}`;
-  return (
-    <a href={href} target="_blank" rel="noopener noreferrer">
-      <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-500 hover:text-indigo-400 shrink-0" title={url}>
-        <IconExternalLink size={13} />
-      </Button>
-    </a>
-  );
-}
 
 interface LandingPagesTableProps {
   data: ILandingPageData[];
@@ -83,19 +71,22 @@ export function LandingPagesTable({
       header: "Landing Page",
       mobilePrimary: true,
       render: (lp) => (
-        <div className="flex items-center gap-1.5 min-w-0">
-          <span className="font-mono text-xs text-zinc-300 truncate max-w-[260px] block" title={lp.page}>
-            {lp.page}
-          </span>
-          <PageLink url={lp.page} />
-        </div>
+        <span className="font-mono text-xs text-zinc-300 truncate max-w-[280px] block" title={lp.page}>
+          {lp.page}
+        </span>
       ),
     },
     {
-      key: "edits",
-      header: "Edições",
+      key: "pageviews",
+      header: "Pageviews",
       align: "right",
-      render: (lp) => <span className="font-mono text-sm text-zinc-400">{fmtInt(lp.edits)}</span>,
+      render: (lp) => <span className="font-mono text-sm text-zinc-400">{fmtInt(lp.pageviews)}</span>,
+    },
+    {
+      key: "signups",
+      header: "Cadastros",
+      align: "right",
+      render: (lp) => <span className="font-mono text-sm text-zinc-400">{fmtInt(lp.signups)}</span>,
     },
     {
       key: "payments",
@@ -109,7 +100,7 @@ export function LandingPagesTable({
       align: "right",
       render: (lp) => (
         <span className={cn("font-mono text-sm font-semibold", conversionColor(String(lp.conversion_rate)))}>
-          {lp.conversion_rate}%
+          {lp.conversion_rate}
         </span>
       ),
     },
@@ -119,7 +110,7 @@ export function LandingPagesTable({
       align: "right",
       render: (lp) => (
         <span className="font-mono text-sm font-bold text-emerald-400">
-          {fmtBRL(lp.revenue)}
+          {fmtBRL(lp.revenue / 100)}
         </span>
       ),
     },

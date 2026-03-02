@@ -45,7 +45,7 @@ export default async function LoginPage() {
         <div className="relative z-10 space-y-6">
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400">
-              Convitede · Analytics
+              Growth · Analytics
             </p>
             <h1 className="text-4xl font-bold text-zinc-100 leading-tight">
               Entenda onde está
@@ -53,7 +53,7 @@ export default async function LoginPage() {
               o crescimento.
             </h1>
             <p className="text-zinc-500 text-sm leading-relaxed max-w-xs">
-              Receita por canal, templates que convertem, funil de pagamento e
+              Receita por canal, funil de conversão, análise financeira e
               comparativos de período — tudo em um lugar.
             </p>
           </div>
@@ -62,7 +62,7 @@ export default async function LoginPage() {
             {[
               { label: "Receita por canal", color: "bg-indigo-500/20 text-indigo-400 border-indigo-500/20" },
               { label: "Funil de conversão", color: "bg-violet-500/20 text-violet-400 border-violet-500/20" },
-              { label: "Top templates", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/20" },
+              { label: "Análise financeira", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/20" },
               { label: "Comparativo de período", color: "bg-amber-500/20 text-amber-400 border-amber-500/20" },
             ].map((item) => (
               <div
@@ -77,7 +77,7 @@ export default async function LoginPage() {
 
         <div className="relative z-10">
           <p className="text-xs text-zinc-700">
-            © {new Date().getFullYear()} Convitede. Acesso restrito.
+            © {new Date().getFullYear()} GrowthOS. Acesso restrito.
           </p>
         </div>
       </div>
@@ -107,8 +107,14 @@ export default async function LoginPage() {
             <LoginForm />
           </div>
 
-          <p className="text-center text-xs text-zinc-700">
-            Acesso restrito a administradores do sistema.
+          <p className="text-center text-xs text-zinc-600">
+            Não tem conta?{" "}
+            <a
+              href="/register"
+              className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+            >
+              Criar conta
+            </a>
           </p>
         </div>
       </div>

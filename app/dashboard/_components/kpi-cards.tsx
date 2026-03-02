@@ -1,16 +1,34 @@
 "use client";
 
-import { IFunnelData } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtInt, fmtBRL, fmtBRLDecimal } from "@/utils/format";
 import {
-  IconUsers,
-  IconEdit,
-  IconCreditCard,
   IconCurrencyDollar,
   IconReceipt,
   IconTrendingUp,
+  IconUsers,
+  IconEdit,
+  IconCreditCard,
+  IconChartBar,
 } from "@tabler/icons-react";
+import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
+
+const STEP_ICON_MAP: Record<string, React.ElementType> = {
+  signups: IconUsers,
+  edits: IconEdit,
+  payments: IconCreditCard,
+  campaigns: IconChartBar,
+};
+
+const STEP_COLOR_MAP: Record<string, { color: string; bgColor: string }> = {
+  signups: { color: "text-indigo-400", bgColor: "bg-indigo-600/20" },
+  edits: { color: "text-violet-400", bgColor: "bg-violet-600/20" },
+  payments: { color: "text-emerald-400", bgColor: "bg-emerald-600/20" },
+  campaigns: { color: "text-amber-400", bgColor: "bg-amber-600/20" },
+};
+
+const FALLBACK_ICON = IconChartBar;
+const FALLBACK_COLORS = { color: "text-zinc-400", bgColor: "bg-zinc-700/30" };
 
 interface KpiCardProps {
   label: string;
@@ -49,43 +67,36 @@ function KpiCardSkeleton() {
 }
 
 interface KpiCardsProps {
-  data: IFunnelData | null | undefined;
+  data: IGenericFunnelData | null | undefined;
   isLoading: boolean;
 }
 
 export function KpiCards({ data, isLoading }: KpiCardsProps) {
+  const stepCount = data?.steps.length ?? 3;
+  const totalCards = stepCount + 3;
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {Array.from({ length: totalCards }).map((_, i) => (
           <KpiCardSkeleton key={i} />
         ))}
       </div>
     );
   }
 
-  const cards: KpiCardProps[] = [
-    {
-      label: "Cadastros",
-      value: fmtInt(data?.signups),
-      icon: IconUsers,
-      color: "text-indigo-400",
-      bgColor: "bg-indigo-600/20",
-    },
-    {
-      label: "Edições",
-      value: fmtInt(data?.edits),
-      icon: IconEdit,
-      color: "text-violet-400",
-      bgColor: "bg-violet-600/20",
-    },
-    {
-      label: "Pagamentos",
-      value: fmtInt(data?.payments),
-      icon: IconCreditCard,
-      color: "text-emerald-400",
-      bgColor: "bg-emerald-600/20",
-    },
+  const stepCards: KpiCardProps[] = (data?.steps ?? []).map((step) => {
+    const colors = STEP_COLOR_MAP[step.key] ?? FALLBACK_COLORS;
+    const Icon = STEP_ICON_MAP[step.key] ?? FALLBACK_ICON;
+    return {
+      label: step.label,
+      value: fmtInt(step.value),
+      icon: Icon,
+      ...colors,
+    };
+  });
+
+  const metricCards: KpiCardProps[] = [
     {
       label: "Receita",
       value: fmtBRL(data?.revenue),
@@ -95,7 +106,7 @@ export function KpiCards({ data, isLoading }: KpiCardsProps) {
     },
     {
       label: "Ticket Médio",
-      value: fmtBRLDecimal(data?.ticket_medio),
+      value: fmtBRLDecimal(data?.ticketMedio),
       icon: IconReceipt,
       color: "text-amber-400",
       bgColor: "bg-amber-600/20",
@@ -109,9 +120,11 @@ export function KpiCards({ data, isLoading }: KpiCardsProps) {
     },
   ];
 
+  const allCards = [...stepCards, ...metricCards];
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-      {cards.map((card) => (
+      {allCards.map((card) => (
         <KpiCard key={card.label} {...card} />
       ))}
     </div>

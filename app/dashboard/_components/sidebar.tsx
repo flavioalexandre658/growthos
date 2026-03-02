@@ -6,7 +6,6 @@ import { useState, Suspense } from "react";
 import { signOut } from "next-auth/react";
 import {
   IconLayoutDashboard,
-  IconTemplate,
   IconBrandGoogle,
   IconCurrencyDollar,
   IconChartBar,
@@ -16,23 +15,28 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconWorldWww,
+  IconCalculator,
+  IconBuilding,
+  IconSettings,
 } from "@tabler/icons-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useOrganization } from "@/components/providers/organization-provider";
 
-const navItems = [
+interface NavItemDef {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  exact: boolean;
+}
+
+const NAV_ITEMS: NavItemDef[] = [
   {
     href: "/dashboard",
     label: "Visão Geral",
     icon: IconLayoutDashboard,
     exact: true,
-  },
-  {
-    href: "/dashboard/templates",
-    label: "Templates",
-    icon: IconTemplate,
-    exact: false,
   },
   {
     href: "/dashboard/channels",
@@ -52,7 +56,20 @@ const navItems = [
     icon: IconWorldWww,
     exact: false,
   },
+  {
+    href: "/dashboard/costs",
+    label: "Custos & P&L",
+    icon: IconCalculator,
+    exact: false,
+  },
 ];
+
+const SETTINGS_ITEM: NavItemDef = {
+  href: "/dashboard/settings",
+  label: "Configurações",
+  icon: IconSettings,
+  exact: false,
+};
 
 const DATE_PARAMS = ["period", "start_date", "end_date"];
 
@@ -106,6 +123,37 @@ function NavItem({
   );
 }
 
+function OrgSwitcher({ collapsed }: { collapsed?: boolean }) {
+  const { organization, organizations, switchOrganization, isLoading } = useOrganization();
+
+  if (isLoading || organizations.length <= 1) return null;
+
+  return (
+    <div className={cn("px-3 pb-2", collapsed && "px-2")}>
+      {!collapsed ? (
+        <select
+          value={organization?.slug ?? ""}
+          onChange={(e) => switchOrganization(e.target.value)}
+          className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-2 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/30"
+        >
+          {organizations.map((org) => (
+            <option key={org.slug} value={org.slug}>
+              {org.name}
+            </option>
+          ))}
+        </select>
+      ) : (
+        <button
+          title={organization?.name ?? "Org"}
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-400 hover:text-zinc-100 transition-colors"
+        >
+          <IconBuilding size={14} />
+        </button>
+      )}
+    </div>
+  );
+}
+
 function SidebarContent({
   collapsed,
   onCollapse,
@@ -115,6 +163,8 @@ function SidebarContent({
   onCollapse?: () => void;
   onClose?: () => void;
 }) {
+  const { organization } = useOrganization();
+
   return (
     <div className="flex h-full flex-col bg-zinc-950 border-r border-zinc-800/60">
       <div
@@ -130,9 +180,11 @@ function SidebarContent({
             </div>
             <div>
               <span className="text-sm font-bold text-zinc-100">GrowthOS</span>
-              <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-widest text-indigo-500">
-                Convitede
-              </span>
+              {organization && (
+                <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-widest text-indigo-500">
+                  {organization.name}
+                </span>
+              )}
             </div>
           </div>
         )}
@@ -163,6 +215,8 @@ function SidebarContent({
         )}
       </div>
 
+      <OrgSwitcher collapsed={collapsed} />
+
       {!collapsed && (
         <div className="px-4 py-2">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
@@ -173,7 +227,7 @@ function SidebarContent({
 
       <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
         <Suspense>
-          {navItems.map((item) => (
+          {NAV_ITEMS.map((item) => (
             <NavItem
               key={item.href}
               {...item}
@@ -184,7 +238,14 @@ function SidebarContent({
         </Suspense>
       </nav>
 
-      <div className={cn("border-t border-zinc-800/60 p-3", collapsed && "flex justify-center")}>
+      <div className={cn("border-t border-zinc-800/60 p-3 space-y-1", collapsed && "flex flex-col items-center")}>
+        <Suspense>
+          <NavItem
+            {...SETTINGS_ITEM}
+            collapsed={collapsed}
+            onClick={onClose}
+          />
+        </Suspense>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className={cn(
@@ -206,7 +267,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Desktop sidebar */}
       <aside
         className={cn(
           "hidden md:flex flex-col h-screen sticky top-0 transition-all duration-200 shrink-0",
@@ -219,7 +279,6 @@ export function Sidebar() {
         />
       </aside>
 
-      {/* Mobile: top bar with hamburger + Sheet drawer */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-14 px-4 bg-zinc-950 border-b border-zinc-800/60">
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600">

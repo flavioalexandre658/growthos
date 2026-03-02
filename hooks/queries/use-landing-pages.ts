@@ -1,13 +1,20 @@
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getLandingPages } from "@/actions/dashboard/get-landing-pages.action";
-import { ILandingPageParams } from "@/interfaces/dashboard.interface";
+import type { ILandingPageParams } from "@/interfaces/dashboard.interface";
 
-export const getLandingPagesQueryKey = (params: ILandingPageParams) => ["dashboard", "landing-pages", params];
+export const getLandingPagesQueryKey = (
+  organizationId: string,
+  params: ILandingPageParams
+) => ["dashboard", "landing-pages", organizationId, params];
 
-export function useLandingPages(params: ILandingPageParams = {}) {
+export function useLandingPages(
+  organizationId: string | undefined,
+  params: ILandingPageParams = {}
+) {
   return useQuery({
-    queryKey: getLandingPagesQueryKey(params),
-    queryFn: () => getLandingPages(params),
-    placeholderData: keepPreviousData,
+    queryKey: getLandingPagesQueryKey(organizationId ?? "", params),
+    queryFn: () => getLandingPages(organizationId!, params),
+    enabled: !!organizationId,
+    placeholderData: (prev) => prev,
   });
 }

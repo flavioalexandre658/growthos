@@ -42,7 +42,9 @@ src/
 ├── components/
 │   ├── ui/            # Componentes shadcn/ui e customizados
 │   └── providers/     # Context providers (QueryProvider, etc)
-├── form-schemas/      # Schemas Zod para formulários (*.schema.ts)
+├── db/
+│   ├── schema/        # Schemas Drizzle (*.schema.ts)
+│   └── seed.ts        # Script de seed para categorias
 ├── hooks/
 │   ├── queries/       # React Query hooks (use-*.ts)
 │   └── mutations/     # React Query mutations (use-*.ts)
@@ -50,6 +52,17 @@ src/
 ├── lib/               # Configurações (auth, safe-action, utils)
 └── utils/             # Funções utilitárias
 ```
+
+## Schemas do Banco (Drizzle)
+
+**Localização:** `src/db/schema/[entidade].schema.ts`
+
+**Padrões:**
+
+- IDs: `uuid("id").primaryKey().defaultRandom()`
+- Timestamps: `timestamp("created_at").notNull().defaultNow()`
+- Valores monetários: `integer("amount_in_cents")` (NUNCA numeric/decimal)
+- Enums: `text("status", { enum: ["ACTIVE", "INACTIVE"] })`
 
 ## Server Actions (Next Safe Action)
 

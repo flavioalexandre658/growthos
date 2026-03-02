@@ -1,5 +1,9 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { users } from "@/db/schema";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -33,74 +37,54 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
+        if (!credentials?.email || !credentials?.password) return null;
 
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/auth/signin`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            body: JSON.stringify({
-              email: credentials.email,
-              password: credentials.password,
-            }),
-          }
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(eq(users.email, credentials.email))
+          .limit(1);
+
+        if (!user) return null;
+
+        const isValidPassword = await bcrypt.compare(
+          credentials.password,
+          user.passwordHash
         );
 
-        if (!res.ok) return null;
-
-        const data = await res.json();
-
-        if (!data?.user || !data?.access_token) return null;
-
-        const user = data.user;
-        const rawRole = user.role ?? null;
-        const role = rawRole && typeof rawRole === "object" ? (rawRole.name ?? null) : rawRole;
-        const roleId = user.role_id ?? null;
-
-        const isAdmin = role === "admin" || roleId === 1;
-
-        if (!isAdmin) return null;
+        if (!isValidPassword) return null;
 
         return {
-          id: String(user.id ?? user.uuid),
-          uuid: user.uuid,
+          id: user.id,
           name: user.name,
           email: user.email,
-          access_token: data.access_token,
-          role: role,
-          role_id: roleId,
+          role: user.role,
+          onboardingCompleted: user.onboardingCompleted,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      if (trigger === "update" && session?.onboardingCompleted !== undefined) {
+        token.onboardingCompleted = session.onboardingCompleted as boolean;
+      }
       if (user) {
         token.id = user.id;
-        token.uuid = user.uuid;
         token.name = user.name;
         token.email = user.email ?? "";
-        token.access_token = user.access_token;
         token.role = user.role;
-        token.role_id = user.role_id;
+        token.onboardingCompleted = user.onboardingCompleted;
       }
       return token;
     },
     async session({ session, token }) {
       session.user = {
         id: token.id,
-        uuid: token.uuid,
         name: token.name,
         email: token.email ?? "",
-        access_token: token.access_token,
         role: token.role,
-        role_id: token.role_id,
+        onboardingCompleted: token.onboardingCompleted,
       };
       return session;
     },

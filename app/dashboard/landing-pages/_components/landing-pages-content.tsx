@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useLandingPages } from "@/hooks/queries/use-landing-pages";
 import { useDebounce } from "@/hooks/use-debounce";
+import { useOrganization } from "@/components/providers/organization-provider";
 import { IDateFilter, ILandingPageParams, OrderDirection } from "@/interfaces/dashboard.interface";
 import { PeriodFilter } from "@/app/dashboard/_components/period-filter";
 import { MetricFiltersPanel, MetricFilterField } from "@/components/ui/metric-filters";
@@ -13,7 +14,7 @@ import { IconSearch } from "@tabler/icons-react";
 const EMPTY_PAGINATION = { page: 1, limit: 30, total: 0, total_pages: 0 };
 
 const METRIC_FIELDS: MetricFilterField[] = [
-  { key: "edits", label: "Edições" },
+  { key: "pageviews", label: "Pageviews" },
   { key: "payments", label: "Pagamentos" },
   { key: "revenue", label: "Receita", prefix: "R$" },
   { key: "conversion_rate", label: "Conversão", suffix: "%" },
@@ -24,6 +25,9 @@ interface LandingPagesContentProps {
 }
 
 export function LandingPagesContent({ filter }: LandingPagesContentProps) {
+  const { organization } = useOrganization();
+  const orgId = organization?.id;
+
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 400);
   const [page, setPage] = useState(1);
@@ -42,7 +46,7 @@ export function LandingPagesContent({ filter }: LandingPagesContentProps) {
     ...(metricFilters as Partial<ILandingPageParams>),
   };
 
-  const { data: resp, isLoading } = useLandingPages(params);
+  const { data: resp, isLoading } = useLandingPages(orgId, params);
 
   const landingPagesData = resp?.data ?? [];
   const pagination = resp?.pagination ?? EMPTY_PAGINATION;

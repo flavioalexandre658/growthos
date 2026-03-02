@@ -50,6 +50,7 @@ export function LoginForm() {
       toast.success("Bem-vindo ao GrowthOS!");
       router.push("/dashboard");
       router.refresh();
+      return;
     } else {
       const message =
         result?.error === "CredentialsSignin"
@@ -74,7 +75,7 @@ export function LoginForm() {
           <Input
             id="email"
             type="email"
-            placeholder="admin@convitede.com"
+            placeholder="admin@growthos.com"
             autoComplete="email"
             className={cn(
               "pl-9 bg-zinc-900/50 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 h-11",

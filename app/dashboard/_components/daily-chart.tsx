@@ -34,7 +34,7 @@ export function DailyChart({ data, isLoading }: DailyChartProps) {
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <h3 className="text-sm font-bold text-zinc-100">Evolução Diária</h3>
       <p className="mt-0.5 text-xs text-zinc-500">
-        Cadastros, edições e pagamentos por dia
+        Cadastros e pagamentos por dia
       </p>
 
       <div className="mt-5">
@@ -74,12 +74,6 @@ export function DailyChart({ data, isLoading }: DailyChartProps) {
                 dataKey="signups"
                 name="Cadastros"
                 fill="#6366f1"
-                radius={[3, 3, 0, 0]}
-              />
-              <Bar
-                dataKey="edits"
-                name="Edições"
-                fill="#8b5cf6"
                 radius={[3, 3, 0, 0]}
               />
               <Bar

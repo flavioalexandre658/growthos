@@ -19,7 +19,7 @@ function conversionColor(value: string) {
 const SORT_OPTIONS: { key: ChannelOrderBy; label: string }[] = [
   { key: "revenue", label: "Receita" },
   { key: "payments", label: "Pagamentos" },
-  { key: "edits", label: "Edições" },
+  { key: "signups", label: "Cadastros" },
   { key: "conversion_rate", label: "Conversão" },
   { key: "ticket_medio", label: "Ticket" },
 ];
@@ -84,10 +84,10 @@ export function ChannelsTable({
       ),
     },
     {
-      key: "edits",
-      header: "Edições",
+      key: "signups",
+      header: "Cadastros",
       align: "right",
-      render: (c) => <span className="font-mono text-sm text-zinc-400">{fmtInt(c.edits)}</span>,
+      render: (c) => <span className="font-mono text-sm text-zinc-400">{fmtInt(c.signups)}</span>,
     },
     {
       key: "payments",
@@ -101,7 +101,7 @@ export function ChannelsTable({
       align: "right",
       render: (c) => (
         <span className={cn("font-mono text-sm font-semibold", conversionColor(String(c.conversion_rate)))}>
-          {c.conversion_rate}%
+          {c.conversion_rate}
         </span>
       ),
     },

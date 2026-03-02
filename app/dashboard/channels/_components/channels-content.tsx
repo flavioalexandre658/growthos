@@ -2,6 +2,7 @@
 
 import { useState, Suspense } from "react";
 import { useChannels } from "@/hooks/queries/use-channels";
+import { useOrganization } from "@/components/providers/organization-provider";
 import { IDateFilter, IChannelParams, OrderDirection } from "@/interfaces/dashboard.interface";
 import { PeriodFilter } from "@/app/dashboard/_components/period-filter";
 import { MetricFiltersPanel, MetricFilterField } from "@/components/ui/metric-filters";
@@ -11,7 +12,7 @@ import { ChannelsTable } from "./channels-table";
 const EMPTY_PAGINATION = { page: 1, limit: 30, total: 0, total_pages: 0 };
 
 const METRIC_FIELDS: MetricFilterField[] = [
-  { key: "edits", label: "Edições" },
+  { key: "signups", label: "Cadastros" },
   { key: "payments", label: "Pagamentos" },
   { key: "revenue", label: "Receita", prefix: "R$" },
   { key: "conversion_rate", label: "Conversão", suffix: "%" },
@@ -23,6 +24,9 @@ interface ChannelsContentProps {
 }
 
 export function ChannelsContent({ filter }: ChannelsContentProps) {
+  const { organization } = useOrganization();
+  const orgId = organization?.id;
+
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(30);
   const [orderBy, setOrderBy] = useState<NonNullable<IChannelParams["order_by"]>>("revenue");
@@ -38,7 +42,7 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
     ...(metricFilters as Partial<IChannelParams>),
   };
 
-  const { data: resp, isLoading } = useChannels(params);
+  const { data: resp, isLoading } = useChannels(orgId, params);
 
   const channelsData = resp?.data ?? [];
   const pagination = resp?.pagination ?? EMPTY_PAGINATION;
