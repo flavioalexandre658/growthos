@@ -13,7 +13,9 @@ import { getLandingPages } from "@/actions/dashboard/get-landing-pages.action";
 import { getFinancial } from "@/actions/dashboard/get-financial.action";
 import { getFixedCosts } from "@/actions/costs/get-fixed-costs.action";
 import { getVariableCosts } from "@/actions/costs/get-variable-costs.action";
+import { getRevenueSegments } from "@/actions/dashboard/get-revenue-segments.action";
 import { buildProfitAndLoss } from "@/utils/build-pl";
+import { resolvePeriodDays } from "@/utils/resolve-period-days";
 import type { IDateFilter, DashboardPeriod } from "@/interfaces/dashboard.interface";
 import type { IProfitAndLoss } from "@/interfaces/cost.interface";
 import type { IFixedCost, IVariableCost } from "@/interfaces/cost.interface";
@@ -124,16 +126,20 @@ async function fetchSectionData(orgId: string, section: string, filter: IDateFil
       return { channels: result.data, stepMeta: result.stepMeta };
     }
     case "finance": {
-      const [financial, funnel, fixed, variable] = await Promise.all([
+      const [financial, funnel, fixed, variable, segments] = await Promise.all([
         getFinancial(orgId, filter),
         getFunnel(orgId, filter),
         getFixedCosts(orgId),
         getVariableCosts(orgId),
+        getRevenueSegments(orgId, filter),
       ]);
+      const periodDays = resolvePeriodDays(filter);
       const pl = buildProfitAndLoss(
         funnel?.revenue ?? 0,
         (fixed ?? []) as IFixedCost[],
-        (variable ?? []) as IVariableCost[]
+        (variable ?? []) as IVariableCost[],
+        periodDays,
+        segments
       );
       return { financial, pl };
     }

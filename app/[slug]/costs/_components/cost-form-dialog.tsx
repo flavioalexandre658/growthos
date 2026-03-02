@@ -28,13 +28,29 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import type { IFixedCost, IVariableCost, CostValueType } from "@/interfaces/cost.interface";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import type { IFixedCost, IVariableCost, VariableCostApplyTo } from "@/interfaces/cost.interface";
+
+const PAYMENT_METHOD_OPTIONS = [
+  { value: "credit_card", label: "Cartão de crédito" },
+  { value: "debit_card", label: "Cartão de débito" },
+  { value: "pix", label: "PIX" },
+  { value: "boleto", label: "Boleto" },
+  { value: "other", label: "Outro" },
+];
+
+const BILLING_TYPE_OPTIONS = [
+  { value: "one_time", label: "Avulso (one_time)" },
+  { value: "recurring", label: "Recorrente (recurring)" },
+];
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   amountInCents: z.number({ required_error: "Valor é obrigatório" }).positive("Valor deve ser positivo"),
-  type: z.enum(["VALUE", "PERCENTAGE"]),
   description: z.string().optional(),
+  applyTo: z.enum(["all", "payment_method", "billing_type"]).optional(),
+  applyToValue: z.string().nullable().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -44,7 +60,14 @@ interface CostFormDialogProps {
   onOpenChange: (open: boolean) => void;
   costKind: "fixed" | "variable";
   initialData?: IFixedCost | IVariableCost | null;
-  onSubmit: (data: { name: string; amountInCents: number; type: CostValueType; description?: string }) => void;
+  onSubmit: (data: {
+    name: string;
+    amountInCents: number;
+    type: "VALUE" | "PERCENTAGE";
+    applyTo?: VariableCostApplyTo;
+    applyToValue?: string | null;
+    description?: string;
+  }) => void;
   isLoading?: boolean;
 }
 
@@ -56,43 +79,53 @@ export function CostFormDialog({
   onSubmit,
   isLoading,
 }: CostFormDialogProps) {
+  const isVariable = costKind === "variable";
+  const isEditing = !!initialData;
+  const title = `${isEditing ? "Editar" : "Adicionar"} Custo ${isVariable ? "Variável" : "Fixo"}`;
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       amountInCents: 0,
-      type: costKind === "variable" ? "PERCENTAGE" : "VALUE",
       description: "",
+      applyTo: "all",
+      applyToValue: null,
     },
   });
 
-  const watchType = form.watch("type");
-  const isEditing = !!initialData;
-  const title = `${isEditing ? "Editar" : "Adicionar"} Custo ${costKind === "fixed" ? "Fixo" : "Variável"}`;
+  const watchApplyTo = form.watch("applyTo");
 
   useEffect(() => {
     if (initialData) {
+      const varData = initialData as IVariableCost;
       form.reset({
         name: initialData.name,
         amountInCents: initialData.amountInCents,
-        type: initialData.type,
         description: initialData.description ?? "",
+        applyTo: varData.applyTo ?? "all",
+        applyToValue: varData.applyToValue ?? null,
       });
     } else {
       form.reset({
         name: "",
         amountInCents: 0,
-        type: costKind === "variable" ? "PERCENTAGE" : "VALUE",
         description: "",
+        applyTo: "all",
+        applyToValue: null,
       });
     }
-  }, [initialData, costKind, form]);
+  }, [initialData, open, form]);
 
   const handleSubmit = (data: FormData) => {
     onSubmit({
       name: data.name,
       amountInCents: data.amountInCents,
-      type: data.type,
+      type: isVariable ? "PERCENTAGE" : "VALUE",
+      ...(isVariable && {
+        applyTo: data.applyTo ?? "all",
+        applyToValue: data.applyTo !== "all" ? (data.applyToValue ?? null) : null,
+      }),
       description: data.description || undefined,
     });
   };
@@ -103,6 +136,18 @@ export function CostFormDialog({
         <DialogHeader>
           <DialogTitle className="text-zinc-100">{title}</DialogTitle>
         </DialogHeader>
+
+        {isVariable && (
+          <p className="text-xs text-zinc-500 -mt-1">
+            Percentual aplicado sobre a receita do período. Use para impostos, comissões e taxas de gateway.
+          </p>
+        )}
+        {!isVariable && (
+          <p className="text-xs text-zinc-500 -mt-1">
+            Valor mensal fixo, rateado automaticamente conforme o período selecionado.
+          </p>
+        )}
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
@@ -114,36 +159,10 @@ export function CostFormDialog({
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="Ex: Aluguel, Plataforma, Impostos..."
+                      placeholder={isVariable ? "Ex: Simples Nacional, Taxa Efibank..." : "Ex: Servidor, Salário, Aluguel..."}
                       className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600"
                     />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-zinc-300">Tipo</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <FormControl>
-                      <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100">
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent className="bg-zinc-900 border-zinc-700">
-                      <SelectItem value="VALUE" className="text-zinc-200 focus:bg-zinc-800">
-                        Valor fixo (R$)
-                      </SelectItem>
-                      <SelectItem value="PERCENTAGE" className="text-zinc-200 focus:bg-zinc-800">
-                        Porcentagem (%)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -155,10 +174,10 @@ export function CostFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-zinc-300">
-                    {watchType === "PERCENTAGE" ? "Porcentagem (ex: 15.5 = 15.5%)" : "Valor"}
+                    {isVariable ? "Percentual" : "Valor mensal"}
                   </FormLabel>
                   <FormControl>
-                    {watchType === "PERCENTAGE" ? (
+                    {isVariable ? (
                       <NumericFormat
                         value={field.value / 100}
                         onValueChange={(values) => {
@@ -168,7 +187,7 @@ export function CostFormDialog({
                         thousandSeparator="."
                         decimalScale={2}
                         suffix="%"
-                        placeholder="Ex: 15,50%"
+                        placeholder="Ex: 10,00%"
                         customInput={Input}
                         className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600"
                       />
@@ -192,6 +211,102 @@ export function CostFormDialog({
                 </FormItem>
               )}
             />
+
+            {isVariable && (
+              <FormField
+                control={form.control}
+                name="applyTo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-zinc-300">Aplicar sobre</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        value={field.value ?? "all"}
+                        onValueChange={(v) => {
+                          field.onChange(v);
+                          form.setValue("applyToValue", null);
+                        }}
+                        className="space-y-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="all" id="apply-all" className="border-zinc-600" />
+                          <Label htmlFor="apply-all" className="text-zinc-300 font-normal cursor-pointer">
+                            Toda receita
+                          </Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="payment_method" id="apply-payment" className="border-zinc-600" />
+                          <Label htmlFor="apply-payment" className="text-zinc-300 font-normal cursor-pointer">
+                            Método de pagamento
+                          </Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="billing_type" id="apply-billing" className="border-zinc-600" />
+                          <Label htmlFor="apply-billing" className="text-zinc-300 font-normal cursor-pointer">
+                            Tipo de cobrança
+                          </Label>
+                        </div>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {isVariable && watchApplyTo === "payment_method" && (
+              <FormField
+                control={form.control}
+                name="applyToValue"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-zinc-300">Método de pagamento</FormLabel>
+                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100">
+                          <SelectValue placeholder="Selecione o método..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-zinc-900 border-zinc-700">
+                        {PAYMENT_METHOD_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-zinc-200 focus:bg-zinc-800">
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {isVariable && watchApplyTo === "billing_type" && (
+              <FormField
+                control={form.control}
+                name="applyToValue"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-zinc-300">Tipo de cobrança</FormLabel>
+                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                      <FormControl>
+                        <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100">
+                          <SelectValue placeholder="Selecione o tipo..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-zinc-900 border-zinc-700">
+                        {BILLING_TYPE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value} className="text-zinc-200 focus:bg-zinc-800">
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

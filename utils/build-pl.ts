@@ -1,29 +1,55 @@
-import type { IFixedCost, IVariableCost, IProfitAndLoss, IPLCostBreakdown } from "@/interfaces/cost.interface";
+import type {
+  IFixedCost,
+  IVariableCost,
+  IProfitAndLoss,
+  IPLCostBreakdown,
+  IPLVariableBreakdown,
+  IRevenueBySegment,
+} from "@/interfaces/cost.interface";
 
 export function buildProfitAndLoss(
   grossRevenueInCents: number,
   fixedCosts: IFixedCost[],
-  variableCosts: IVariableCost[]
+  variableCosts: IVariableCost[],
+  periodDays: number,
+  revenueBySegment?: IRevenueBySegment
 ): IProfitAndLoss {
-  const fixedBreakdown: IPLCostBreakdown[] = fixedCosts.map((cost) => ({
-    name: cost.name,
-    amountInCents: cost.amountInCents,
-    calculatedInCents:
-      cost.type === "PERCENTAGE"
-        ? Math.round((grossRevenueInCents * cost.amountInCents) / 10000)
-        : cost.amountInCents,
-    type: cost.type,
-  }));
+  const fixedBreakdown: IPLCostBreakdown[] = fixedCosts.map((cost) => {
+    const monthly = cost.type === "PERCENTAGE"
+      ? Math.round((grossRevenueInCents * cost.amountInCents) / 10000)
+      : cost.amountInCents;
+    const calculatedInCents = Math.round((monthly * Math.min(periodDays, 30)) / 30);
+    return {
+      name: cost.name,
+      amountInCents: cost.amountInCents,
+      calculatedInCents,
+      type: cost.type,
+    };
+  });
 
-  const variableBreakdown: IPLCostBreakdown[] = variableCosts.map((cost) => ({
-    name: cost.name,
-    amountInCents: cost.amountInCents,
-    calculatedInCents:
-      cost.type === "PERCENTAGE"
-        ? Math.round((grossRevenueInCents * cost.amountInCents) / 10000)
-        : cost.amountInCents,
-    type: cost.type,
-  }));
+  const variableBreakdown: IPLVariableBreakdown[] = variableCosts.map((cost) => {
+    let appliedRevenueInCents = grossRevenueInCents;
+
+    if (cost.applyTo === "payment_method" && cost.applyToValue && revenueBySegment) {
+      appliedRevenueInCents = revenueBySegment.paymentMethod[cost.applyToValue] ?? 0;
+    } else if (cost.applyTo === "billing_type" && cost.applyToValue && revenueBySegment) {
+      appliedRevenueInCents = revenueBySegment.billingType[cost.applyToValue] ?? 0;
+    }
+
+    const calculatedInCents = cost.type === "PERCENTAGE"
+      ? Math.round((appliedRevenueInCents * cost.amountInCents) / 10000)
+      : cost.amountInCents;
+
+    return {
+      name: cost.name,
+      amountInCents: cost.amountInCents,
+      calculatedInCents,
+      type: cost.type,
+      applyTo: cost.applyTo,
+      applyToValue: cost.applyToValue,
+      appliedRevenueInCents,
+    };
+  });
 
   const totalFixedCostsInCents = fixedBreakdown.reduce(
     (sum, c) => sum + c.calculatedInCents,
@@ -34,21 +60,22 @@ export function buildProfitAndLoss(
     0
   );
 
-  const grossProfitInCents = grossRevenueInCents - totalVariableCostsInCents;
-  const realProfitInCents = grossRevenueInCents - totalFixedCostsInCents - totalVariableCostsInCents;
+  const operatingProfitInCents = grossRevenueInCents - totalVariableCostsInCents;
+  const netProfitInCents = grossRevenueInCents - totalFixedCostsInCents - totalVariableCostsInCents;
   const marginPercent =
     grossRevenueInCents > 0
-      ? Math.round((realProfitInCents / grossRevenueInCents) * 10000) / 100
+      ? Math.round((netProfitInCents / grossRevenueInCents) * 10000) / 100
       : 0;
 
   return {
     grossRevenueInCents,
     totalFixedCostsInCents,
     totalVariableCostsInCents,
-    grossProfitInCents,
-    realProfitInCents,
+    operatingProfitInCents,
+    netProfitInCents,
     marginPercent,
     fixedCostsBreakdown: fixedBreakdown,
     variableCostsBreakdown: variableBreakdown,
+    periodDays,
   };
 }

@@ -13,9 +13,29 @@ import { useVariableCosts } from "@/hooks/queries/use-variable-costs";
 import { useCreateVariableCost } from "@/hooks/mutations/use-create-variable-cost";
 import { useUpdateVariableCost } from "@/hooks/mutations/use-update-variable-cost";
 import { useDeleteVariableCost } from "@/hooks/mutations/use-delete-variable-cost";
-import { fmtBRLDecimal } from "@/utils/format";
-import type { IVariableCost, CostValueType } from "@/interfaces/cost.interface";
+import type { IVariableCost, VariableCostApplyTo } from "@/interfaces/cost.interface";
 import toast from "react-hot-toast";
+
+const APPLY_TO_LABELS: Record<string, string> = {
+  credit_card: "Cartão de crédito",
+  debit_card: "Cartão de débito",
+  pix: "PIX",
+  boleto: "Boleto",
+  one_time: "Avulso",
+  recurring: "Recorrente",
+  other: "Outro",
+};
+
+function formatApplyTo(applyTo: VariableCostApplyTo, applyToValue: string | null): string {
+  if (applyTo === "all") return "Toda receita";
+  if (applyTo === "payment_method" && applyToValue) {
+    return APPLY_TO_LABELS[applyToValue] ?? applyToValue;
+  }
+  if (applyTo === "billing_type" && applyToValue) {
+    return APPLY_TO_LABELS[applyToValue] ?? applyToValue;
+  }
+  return "Toda receita";
+}
 
 interface VariableCostsTableProps {
   organizationId: string;
@@ -45,14 +65,20 @@ export function VariableCostsTable({
   const handleSubmit = async (data: {
     name: string;
     amountInCents: number;
-    type: CostValueType;
+    type: "VALUE" | "PERCENTAGE";
+    applyTo?: VariableCostApplyTo;
+    applyToValue?: string | null;
     description?: string;
   }) => {
     if (editing) {
       await updateMutation.mutateAsync({ id: editing.id, ...data });
       toast.success("Custo variável atualizado!");
     } else {
-      await createMutation.mutateAsync({ organizationId, ...data });
+      await createMutation.mutateAsync({
+        organizationId,
+        ...data,
+        applyTo: data.applyTo ?? "all",
+      });
       toast.success("Custo variável adicionado!");
     }
     setDialogOpen(false);
@@ -73,38 +99,38 @@ export function VariableCostsTable({
       ),
     },
     {
-      key: "type",
-      header: "Tipo",
+      key: "amount",
+      header: "Percentual",
+      align: "right",
       render: (row) => (
-        <Badge
-          variant={row.type === "VALUE" ? "secondary" : "outline"}
-          className="text-[10px]"
-        >
-          {row.type === "VALUE" ? "R$" : "%"}
-        </Badge>
+        <span className="font-mono text-zinc-200">
+          {(row.amountInCents / 100).toFixed(2)}%
+        </span>
       ),
     },
     {
-      key: "amount",
-      header: "Valor",
-      align: "right",
-      render: (row) =>
-        row.type === "PERCENTAGE" ? (
-          <span className="font-mono text-zinc-200">
-            {(row.amountInCents / 100).toFixed(2)}%
-          </span>
-        ) : (
-          <span className="font-mono text-zinc-200">
-            {fmtBRLDecimal(row.amountInCents / 100)}
-          </span>
-        ),
+      key: "applyTo",
+      header: "Aplicar sobre",
+      mobileHide: false,
+      render: (row) => {
+        const label = formatApplyTo(row.applyTo ?? "all", row.applyToValue ?? null);
+        const isFiltered = (row.applyTo ?? "all") !== "all";
+        return (
+          <Badge
+            variant={isFiltered ? "outline" : "secondary"}
+            className="text-[10px] font-normal"
+          >
+            {label}
+          </Badge>
+        );
+      },
     },
     {
       key: "description",
       header: "Descrição",
       mobileHide: true,
       render: (row) => (
-        <span className="text-zinc-500 text-xs">{row.description ?? ","}</span>
+        <span className="text-zinc-500 text-xs">{row.description ?? ""}</span>
       ),
     },
     {
@@ -151,7 +177,7 @@ export function VariableCostsTable({
                 Custos Variáveis
               </h3>
               <p className="text-xs text-zinc-500">
-                Percentuais ou valores sobre a receita
+                Percentuais sobre a receita — impostos, comissões e taxas
               </p>
             </div>
             <Button

@@ -38,18 +38,23 @@ export function AiAnalysisSection({
     const data = {
       pl: {
         receita_bruta: `R$ ${(pl.grossRevenueInCents / 100).toFixed(2)}`,
-        custos_fixos: `R$ ${(pl.totalFixedCostsInCents / 100).toFixed(2)}`,
         custos_variaveis: `R$ ${(pl.totalVariableCostsInCents / 100).toFixed(2)}`,
-        lucro_bruto: `R$ ${(pl.grossProfitInCents / 100).toFixed(2)}`,
-        lucro_real: `R$ ${(pl.realProfitInCents / 100).toFixed(2)}`,
-        margem: `${pl.marginPercent}%`,
+        lucro_operacional: `R$ ${(pl.operatingProfitInCents / 100).toFixed(2)}`,
+        custos_fixos: `R$ ${(pl.totalFixedCostsInCents / 100).toFixed(2)}`,
+        lucro_liquido: `R$ ${(pl.netProfitInCents / 100).toFixed(2)}`,
+        margem_liquida: `${pl.marginPercent}%`,
+        periodo_dias: pl.periodDays,
         detalhamento_fixos: pl.fixedCostsBreakdown.map((c) => ({
           nome: c.name,
-          valor: c.type === "PERCENTAGE" ? `${(c.amountInCents / 100).toFixed(2)}%` : `R$ ${(c.calculatedInCents / 100).toFixed(2)}`,
+          valor_mensal: `R$ ${(c.amountInCents / 100).toFixed(2)}/mês`,
+          valor_periodo: `R$ ${(c.calculatedInCents / 100).toFixed(2)}`,
         })),
         detalhamento_variaveis: pl.variableCostsBreakdown.map((c) => ({
           nome: c.name,
-          valor: c.type === "PERCENTAGE" ? `${(c.amountInCents / 100).toFixed(2)}%` : `R$ ${(c.calculatedInCents / 100).toFixed(2)}`,
+          percentual: `${(c.amountInCents / 100).toFixed(2)}%`,
+          aplicado_sobre: c.applyTo === "all" ? "toda receita" : `${c.applyTo} = ${c.applyToValue}`,
+          receita_base: `R$ ${(c.appliedRevenueInCents / 100).toFixed(2)}`,
+          valor_calculado: `R$ ${(c.calculatedInCents / 100).toFixed(2)}`,
         })),
       },
       funil: {

@@ -14,15 +14,16 @@ interface WaterfallEntry {
 
 function buildWaterfallData(pl: IProfitAndLoss): WaterfallEntry[] {
   const gross = pl.grossRevenueInCents / 100;
-  const fixedTotal = pl.totalFixedCostsInCents / 100;
   const varTotal = pl.totalVariableCostsInCents / 100;
-  const real = pl.realProfitInCents / 100;
+  const fixedTotal = pl.totalFixedCostsInCents / 100;
+  const net = pl.netProfitInCents / 100;
 
   return [
     { name: "Receita Bruta", value: gross, base: 0, color: "#22c55e" },
-    { name: "- Custos Fixos", value: fixedTotal, base: gross - fixedTotal, color: "#ef4444" },
-    { name: "- Custos Var.", value: varTotal, base: gross - fixedTotal - varTotal, color: "#f97316" },
-    { name: "Lucro Real", value: Math.abs(real), base: 0, color: real >= 0 ? "#6366f1" : "#ef4444" },
+    { name: "- Custos Var.", value: varTotal, base: gross - varTotal, color: "#f97316" },
+    { name: "Lucro Operac.", value: Math.abs(pl.operatingProfitInCents / 100), base: 0, color: "#06b6d4" },
+    { name: "- Custos Fixos", value: fixedTotal, base: gross - varTotal - fixedTotal, color: "#ef4444" },
+    { name: "Lucro Líquido", value: Math.abs(net), base: 0, color: net >= 0 ? "#6366f1" : "#ef4444" },
   ];
 }
 
@@ -64,12 +65,14 @@ export function ProfitLossWaterfall({ pl, isLoading }: ProfitLossWaterfallProps)
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <h3 className="text-sm font-bold text-zinc-100 mb-1">Composição do Resultado</h3>
-      <p className="text-xs text-zinc-500 mb-4">Receita → Custos → Lucro Real</p>
+      <p className="text-xs text-zinc-500 mb-4">
+        Receita → Custos Variáveis → Lucro Operacional → Custos Fixos → Lucro Líquido
+      </p>
       <ResponsiveContainer width="100%" height={200}>
-        <BarChart data={data} barSize={48}>
+        <BarChart data={data} barSize={40}>
           <XAxis
             dataKey="name"
-            tick={{ fill: "#71717a", fontSize: 11 }}
+            tick={{ fill: "#71717a", fontSize: 10 }}
             axisLine={false}
             tickLine={false}
           />

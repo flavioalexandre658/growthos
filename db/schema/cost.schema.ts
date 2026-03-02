@@ -26,6 +26,12 @@ export const variableCosts = pgTable("variable_costs", {
   type: text("type", { enum: ["VALUE", "PERCENTAGE"] })
     .notNull()
     .default("PERCENTAGE"),
+  applyTo: text("apply_to", {
+    enum: ["all", "payment_method", "billing_type"],
+  })
+    .notNull()
+    .default("all"),
+  applyToValue: text("apply_to_value"),
   description: text("description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

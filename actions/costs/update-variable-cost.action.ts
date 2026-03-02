@@ -10,6 +10,8 @@ const schema = z.object({
   name: z.string().min(1).optional(),
   amountInCents: z.number().int().positive().optional(),
   type: z.enum(["VALUE", "PERCENTAGE"]).optional(),
+  applyTo: z.enum(["all", "payment_method", "billing_type"]).optional(),
+  applyToValue: z.string().nullable().optional(),
   description: z.string().optional().nullable(),
 });
 
