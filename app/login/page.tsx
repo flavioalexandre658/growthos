@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
@@ -150,12 +151,12 @@ export default async function LoginPage() {
 
           <p className="text-center text-xs text-zinc-600">
             Não tem conta?{" "}
-            <a
+            <Link
               href="/register"
               className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
             >
               Criar conta
-            </a>
+            </Link>
           </p>
         </div>
       </div>

@@ -660,7 +660,7 @@ export function DocsContent() {
               </code>
               . Para desabilitar, use{" "}
               <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                data-auto-abandon="false"
+                {`data-auto-abandon="false"`}
               </code>{" "}
               no script.
             </p>
