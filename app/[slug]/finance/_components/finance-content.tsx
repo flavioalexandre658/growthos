@@ -28,8 +28,8 @@ const PL_STEPS = [
     desc: "Total bruto de pagamentos confirmados no período.",
   },
   {
-    label: "− Taxas + Descontos",
-    desc: "Gateway fees e cupons enviados via evento de pagamento (gateway_fee + discount).",
+    label: "− Descontos",
+    desc: "Cupons e descontos enviados via campo discount no evento de pagamento.",
     positive: false,
   },
   {
@@ -39,7 +39,7 @@ const PL_STEPS = [
   },
   {
     label: "= Lucro Operacional",
-    desc: "Resultado após taxas de evento e custos variáveis configurados.",
+    desc: "Resultado após descontos e custos variáveis configurados.",
     highlight: true,
   },
   {

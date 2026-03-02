@@ -993,31 +993,16 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
           </Callout>
 
           <Callout type="info">
-            <strong>Esses campos alimentam o P&L automaticamente.</strong> Os
-            valores de{" "}
-            <code className="font-mono text-xs">gateway_fee</code> e{" "}
-            <code className="font-mono text-xs">discount</code> enviados em cada
-            evento são deduzidos da Receita Bruta em tempo real, aparecendo como{" "}
-            <em>Taxas + Descontos</em> nas telas{" "}
-            <strong>Financeiro</strong> e no gráfico de Receita Líquida. Para
-            custos recorrentes que não variam por transação — como impostos,
-            comissões de parceiros ou despesas fixas — acesse{" "}
+            <strong>O campo discount alimenta o P&L automaticamente.</strong> O
+            valor de{" "}
+            <code className="font-mono text-xs">discount</code> enviado em cada
+            evento é deduzido da Receita Bruta em tempo real, aparecendo como{" "}
+            <em>Descontos</em> nas telas <strong>Financeiro</strong> e{" "}
+            <strong>Custos</strong>. Para taxas de gateway, impostos, comissões
+            ou despesas fixas, acesse{" "}
             <strong>Custos</strong> no menu lateral e cadastre-os como custos
-            fixos ou variáveis. Eles serão combinados com os valores do evento
-            para compor o P&L completo.
-          </Callout>
-
-          <Callout type="warn">
-            <strong>Evite contabilizar o mesmo custo duas vezes.</strong> Se você
-            já envia{" "}
-            <code className="font-mono text-xs">gateway_fee</code> no evento de
-            pagamento, não cadastre a mesma taxa de gateway como custo variável
-            na plataforma — ambos serão somados e a margem ficará distorcida.
-            Uma boa regra prática: use os campos do evento para valores{" "}
-            <em>calculados dinamicamente por transação</em> (taxa exata cobrada
-            pelo gateway naquela venda), e a tela de <strong>Custos</strong>{" "}
-            para percentuais ou valores fixos que incidem de forma uniforme
-            sobre toda a receita, como alíquotas de imposto ou salários.
+            fixos ou variáveis — eles serão combinados com os descontos do
+            evento para compor o P&L completo.
           </Callout>
 
           <CodeBlock

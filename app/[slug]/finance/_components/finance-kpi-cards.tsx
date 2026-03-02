@@ -137,9 +137,9 @@ export function FinanceKpiCards({ data, isLoading }: FinanceKpiCardsProps) {
       <BlockHeader label="Custos" />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <KpiCard
-          label="Taxas + Descontos"
+          label="Descontos"
           value={fmtBRLDecimal((pl?.eventCostsInCents ?? 0) / 100)}
-          subLabel="gateway + cupons do período"
+          subLabel="cupons do período"
           icon={IconWallet}
           color="text-rose-400"
           bgColor="bg-rose-600/20"
@@ -167,7 +167,7 @@ export function FinanceKpiCards({ data, isLoading }: FinanceKpiCardsProps) {
         <KpiCard
           label="Lucro Operacional"
           value={fmtBRLDecimal((pl?.operatingProfitInCents ?? 0) / 100)}
-          subLabel="receita − taxas − variáveis"
+          subLabel="receita − descontos − variáveis"
           icon={IconTrendingUp}
           color={(pl?.operatingProfitInCents ?? 0) >= 0 ? "text-indigo-400" : "text-red-400"}
           bgColor={(pl?.operatingProfitInCents ?? 0) >= 0 ? "bg-indigo-600/20" : "bg-red-600/20"}

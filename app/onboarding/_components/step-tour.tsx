@@ -37,7 +37,7 @@ const SECTIONS = [
   {
     icon: IconCurrencyDollar,
     title: "Financeiro",
-    description: "Receita bruta, líquida, taxas de gateway e ticket médio",
+    description: "Receita bruta, descontos, P&L e ticket médio",
     color: "text-emerald-400",
     iconBg: "bg-emerald-500/15 border-emerald-500/25",
     cardBg: "hover:border-emerald-500/40",
