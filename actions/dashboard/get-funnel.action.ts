@@ -62,7 +62,6 @@ export async function getFunnel(
   const revenueResult = await db
     .select({
       grossRevenue: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
-      netRevenue: sql<number>`COALESCE(SUM(${events.netValueInCents}), 0)`,
       payments: sql<number>`COUNT(*)`,
     })
     .from(events)
@@ -75,9 +74,8 @@ export async function getFunnel(
       )
     );
 
-  const revenue = revenueResult[0] ?? { grossRevenue: 0, netRevenue: 0, payments: 0 };
+  const revenue = revenueResult[0] ?? { grossRevenue: 0, payments: 0 };
   const grossRevenue = Number(revenue.grossRevenue);
-  const netRevenue = Number(revenue.netRevenue);
   const paymentCount = Number(revenue.payments);
 
   const steps = funnelSteps.map((step) => {
@@ -111,19 +109,13 @@ export async function getFunnel(
     ? `R$ ${(grossRevenue / 100 / paymentCount).toFixed(2).replace(".", ",")}`
     : "R$ 0,00";
 
-  const margin = grossRevenue > 0
-    ? ((netRevenue / grossRevenue) * 100).toFixed(1) + "%"
-    : "0%";
-
   const checkoutAbandoned = countMap.get("checkout_abandoned")?.total ?? 0;
 
   return {
     steps,
     rates,
     revenue: grossRevenue,
-    netRevenue,
     ticketMedio,
-    margin,
     checkoutAbandoned: checkoutAbandoned > 0 ? checkoutAbandoned : undefined,
   };
 }

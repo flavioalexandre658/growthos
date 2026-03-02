@@ -53,9 +53,7 @@ export interface IGenericFunnelData {
   steps: IGenericFunnelStep[];
   rates: { key: string; label: string; value: string }[];
   revenue: number;
-  netRevenue: number;
   ticketMedio: string;
-  margin: string;
   checkoutAbandoned?: number;
 }
 
@@ -63,7 +61,6 @@ export interface IDailyData {
   date: string;
   steps: Record<string, number>;
   revenue: number;
-  net_revenue: number;
 }
 
 export interface IDailyResult {
@@ -112,14 +109,20 @@ export interface ICategoryBreakdown {
   percentage: string;
 }
 
+export interface IRevenueByBillingType {
+  recurring: number;
+  oneTime: number;
+}
+
 export interface IFinancialData {
   grossRevenueInCents: number;
-  netRevenueInCents: number;
-  totalGatewayFeesInCents: number;
   totalDiscountsInCents: number;
   lostRevenueInCents: number;
   averageTicketInCents: number;
   totalPayments: number;
   byPaymentMethod: IPaymentMethodBreakdown[];
   byCategory: ICategoryBreakdown[];
+  revenueByBillingType: IRevenueByBillingType;
+  pl: import("@/interfaces/cost.interface").IProfitAndLoss | null;
+  periodDays: number;
 }

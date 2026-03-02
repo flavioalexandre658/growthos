@@ -134,12 +134,14 @@ async function fetchSectionData(orgId: string, section: string, filter: IDateFil
         getRevenueSegments(orgId, filter),
       ]);
       const periodDays = resolvePeriodDays(filter);
+      const eventCosts = financial?.totalDiscountsInCents ?? 0;
       const pl = buildProfitAndLoss(
         funnel?.revenue ?? 0,
         (fixed ?? []) as IFixedCost[],
         (variable ?? []) as IVariableCost[],
         periodDays,
-        segments
+        segments,
+        eventCosts
       );
       return { financial, pl };
     }

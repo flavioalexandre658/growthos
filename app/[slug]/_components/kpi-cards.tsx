@@ -5,7 +5,6 @@ import { fmtInt, fmtBRLDecimal } from "@/utils/format";
 import {
   IconCurrencyDollar,
   IconReceipt,
-  IconTrendingUp,
   IconUsers,
   IconEdit,
   IconCreditCard,
@@ -121,13 +120,6 @@ export function KpiCards({ data, isLoading }: KpiCardsProps) {
       icon: IconReceipt,
       color: "text-amber-400",
       bgColor: "bg-amber-600/20",
-    },
-    {
-      label: "Margem",
-      value: data?.margin ?? "0%",
-      icon: IconTrendingUp,
-      color: "text-cyan-400",
-      bgColor: "bg-cyan-600/20",
     },
   ];
 

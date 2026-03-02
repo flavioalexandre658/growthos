@@ -66,6 +66,7 @@ export interface IRevenueBySegment {
 
 export interface IProfitAndLoss {
   grossRevenueInCents: number;
+  eventCostsInCents: number;
   totalFixedCostsInCents: number;
   totalVariableCostsInCents: number;
   operatingProfitInCents: number;

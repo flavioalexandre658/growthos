@@ -137,11 +137,9 @@ export function CheckoutButton({ product, price }) {
 }`;
 
 const PAYMENT_CODE = `window.GrowthOS.track('payment', {
-  gross_value: 150.00,      // valor bruto cobrado
-  net_value: 140.00,        // após desconto, antes das taxas
-  discount: 10.00,          // desconto em reais
-  gateway_fee: 4.50,        // taxa Pagar.me, Stripe...
-  installments: 1,          // número de parcelas
+  gross_value: 150.00,      // valor bruto cobrado (obrigatório)
+  discount: 10.00,          // desconto aplicado em reais (opcional)
+  installments: 1,          // número de parcelas (opcional)
   payment_method: 'pix',    // pix | credit_card | boleto | debit_card
   product_id: 'template-casamento-001',
   product_name: 'Convite Casamento Premium',
@@ -210,12 +208,12 @@ export type GrowthOSPaymentMethod =
   | 'boleto'
 
 export type GrowthOSCustomerType = 'new' | 'returning'
+export type GrowthOSBillingType = 'recurring' | 'one_time'
+export type GrowthOSBillingInterval = 'monthly' | 'yearly' | 'weekly'
 
 export interface GrowthOSEventData {
   gross_value?: number
-  net_value?: number
   discount?: number
-  gateway_fee?: number
   installments?: number
   payment_method?: GrowthOSPaymentMethod
   product_id?: string
@@ -223,6 +221,11 @@ export interface GrowthOSEventData {
   category?: string
   customer_type?: GrowthOSCustomerType
   customer_id?: string
+  billing_type?: GrowthOSBillingType
+  billing_interval?: GrowthOSBillingInterval
+  subscription_id?: string
+  plan_id?: string
+  plan_name?: string
   reason?: 'exit' | 'payment_failed' | 'timeout'
   metadata?: Record<string, unknown>
   dedupe?: boolean | string  // true = deduplica por event_type; string = chave customizada
@@ -365,9 +368,7 @@ Content-Type: application/json
 
   // valores monetários , enviar em reais, a API converte para centavos
   "gross_value": 150.00,
-  "net_value": 140.00,
   "discount": 10.00,
-  "gateway_fee": 4.50,
   "installments": 1,
   "payment_method": "pix",
 
@@ -431,8 +432,6 @@ const res = await fetch('${appUrl}/api/track', {
     key: process.env.GROWTHOS_API_KEY,
     event_type: 'payment',
     gross_value: 97.00,
-    net_value: 90.00,
-    gateway_fee: 7.00,
     payment_method: 'credit_card',
     billing_type: 'recurring',
     billing_interval: 'monthly',
@@ -553,11 +552,9 @@ export async function POST(req: Request) {
 const RECURRING_PAYMENT_CODE = `// Renovação mensal (via webhook do seu gateway)
 window.GrowthOS.track('payment', {
   gross_value: 97.00,
-  net_value: 90.00,
-  gateway_fee: 7.00,
   payment_method: 'credit_card',
 
-  // campos de recorrência obrigatórios
+  // campos de recorrência
   billing_type: 'recurring',        // 'recurring' | 'one_time'
   billing_interval: 'monthly',      // 'monthly' | 'yearly' | 'weekly'
   subscription_id: 'sub_abc123',    // ID único da assinatura no seu sistema
@@ -995,6 +992,34 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             incorretos caso o pagamento seja recusado.
           </Callout>
 
+          <Callout type="info">
+            <strong>Esses campos alimentam o P&L automaticamente.</strong> Os
+            valores de{" "}
+            <code className="font-mono text-xs">gateway_fee</code> e{" "}
+            <code className="font-mono text-xs">discount</code> enviados em cada
+            evento são deduzidos da Receita Bruta em tempo real, aparecendo como{" "}
+            <em>Taxas + Descontos</em> nas telas{" "}
+            <strong>Financeiro</strong> e no gráfico de Receita Líquida. Para
+            custos recorrentes que não variam por transação — como impostos,
+            comissões de parceiros ou despesas fixas — acesse{" "}
+            <strong>Custos</strong> no menu lateral e cadastre-os como custos
+            fixos ou variáveis. Eles serão combinados com os valores do evento
+            para compor o P&L completo.
+          </Callout>
+
+          <Callout type="warn">
+            <strong>Evite contabilizar o mesmo custo duas vezes.</strong> Se você
+            já envia{" "}
+            <code className="font-mono text-xs">gateway_fee</code> no evento de
+            pagamento, não cadastre a mesma taxa de gateway como custo variável
+            na plataforma — ambos serão somados e a margem ficará distorcida.
+            Uma boa regra prática: use os campos do evento para valores{" "}
+            <em>calculados dinamicamente por transação</em> (taxa exata cobrada
+            pelo gateway naquela venda), e a tela de <strong>Custos</strong>{" "}
+            para percentuais ou valores fixos que incidem de forma uniforme
+            sobre toda a receita, como alíquotas de imposto ou salários.
+          </Callout>
+
           <CodeBlock
             code={CHECKOUT_STARTED_CODE}
             lang="js"
@@ -1038,7 +1063,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
 
             <EventCard
               name="payment"
-              description="Pagamento confirmado. Alimenta faturamento, margem, ticket médio e ROAS."
+              description="Pagamento confirmado. Alimenta faturamento, P&L, ticket médio e ROAS."
               variant="default"
               props={[
                 {
@@ -1049,22 +1074,10 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   example: "150.00",
                 },
                 {
-                  name: "net_value",
-                  type: "number",
-                  description: "Após desconto, antes das taxas",
-                  example: "140.00",
-                },
-                {
                   name: "discount",
                   type: "number",
-                  description: "Desconto em reais",
+                  description: "Desconto aplicado (em reais). Deduzido automaticamente no P&L como evento de custo.",
                   example: "10.00",
-                },
-                {
-                  name: "gateway_fee",
-                  type: "number",
-                  description: "Taxa da gateway (em reais)",
-                  example: "4.50",
                 },
                 {
                   name: "installments",
@@ -1107,6 +1120,36 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   type: "string",
                   description: "Hash anônimo (nunca PII)",
                   example: "'hash_abc'",
+                },
+                {
+                  name: "billing_type",
+                  type: "string",
+                  description: "recurring | one_time. Use 'recurring' com subscription_id para assinaturas.",
+                  example: "'recurring'",
+                },
+                {
+                  name: "billing_interval",
+                  type: "string",
+                  description: "monthly | yearly | weekly. Obrigatório quando billing_type = 'recurring'.",
+                  example: "'monthly'",
+                },
+                {
+                  name: "subscription_id",
+                  type: "string",
+                  description: "ID único da assinatura no seu sistema. Obrigatório para recorrência.",
+                  example: "'sub_abc123'",
+                },
+                {
+                  name: "plan_id",
+                  type: "string",
+                  description: "ID do plano contratado",
+                  example: "'plan_pro'",
+                },
+                {
+                  name: "plan_name",
+                  type: "string",
+                  description: "Nome legível do plano",
+                  example: "'Pro Mensal'",
                 },
               ]}
             />

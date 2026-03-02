@@ -87,7 +87,7 @@ function buildEventExample(step: IFunnelStepConfig): string | null {
   }
 
   const examples: Record<string, string> = {
-    payment: `window.GrowthOS.track('payment', {\n  gross_value: 150.00,\n  net_value: 140.00,\n  payment_method: 'pix',  // pix | cartao | boleto\n  product_id: 'produto-001',\n  category: 'principal',\n  customer_type: 'new',   // new | returning\n})`,
+    payment: `window.GrowthOS.track('payment', {\n  gross_value: 150.00,\n  discount: 10.00,          // opcional: desconto aplicado\n  payment_method: 'pix',  // pix | credit_card | boleto\n  product_id: 'produto-001',\n  category: 'principal',\n  customer_type: 'new',   // new | returning\n})`,
     signup: `window.GrowthOS.track('signup', {\n  // contexto automático: source, medium, device, landing_page\n})`,
     trial_started: `window.GrowthOS.track('trial_started', {\n  product_id: 'plano-pro',\n  // contexto automático: source, medium, device\n})`,
     checkout_started: `window.GrowthOS.track('checkout_started', {\n  gross_value: 89.00,\n  product_id: 'produto-001',\n  // abandono automático detectado no beforeunload\n})`,

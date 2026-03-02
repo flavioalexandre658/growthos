@@ -12,7 +12,8 @@ export function buildProfitAndLoss(
   fixedCosts: IFixedCost[],
   variableCosts: IVariableCost[],
   periodDays: number,
-  revenueBySegment?: IRevenueBySegment
+  revenueBySegment?: IRevenueBySegment,
+  eventCostsInCents: number = 0
 ): IProfitAndLoss {
   const fixedBreakdown: IPLCostBreakdown[] = fixedCosts.map((cost) => {
     const monthly = cost.type === "PERCENTAGE"
@@ -60,8 +61,8 @@ export function buildProfitAndLoss(
     0
   );
 
-  const operatingProfitInCents = grossRevenueInCents - totalVariableCostsInCents;
-  const netProfitInCents = grossRevenueInCents - totalFixedCostsInCents - totalVariableCostsInCents;
+  const operatingProfitInCents = grossRevenueInCents - eventCostsInCents - totalVariableCostsInCents;
+  const netProfitInCents = grossRevenueInCents - eventCostsInCents - totalVariableCostsInCents - totalFixedCostsInCents;
   const marginPercent =
     grossRevenueInCents > 0
       ? Math.round((netProfitInCents / grossRevenueInCents) * 10000) / 100
@@ -69,6 +70,7 @@ export function buildProfitAndLoss(
 
   return {
     grossRevenueInCents,
+    eventCostsInCents,
     totalFixedCostsInCents,
     totalVariableCostsInCents,
     operatingProfitInCents,

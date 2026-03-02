@@ -11,9 +11,7 @@ export const events = pgTable(
     eventType: text("event_type").notNull(),
 
     grossValueInCents: integer("gross_value_in_cents"),
-    netValueInCents: integer("net_value_in_cents"),
     discountInCents: integer("discount_in_cents"),
-    gatewayFeeInCents: integer("gateway_fee_in_cents"),
     installments: integer("installments"),
     paymentMethod: text("payment_method"),
 

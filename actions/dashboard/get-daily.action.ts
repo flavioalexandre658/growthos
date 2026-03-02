@@ -40,7 +40,6 @@ export async function getDaily(
       total: sql<number>`COUNT(*)`,
       uniqueTotal: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
       grossRev: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
-      netRev: sql<number>`COALESCE(SUM(${events.netValueInCents}), 0)`,
     })
     .from(events)
     .where(
@@ -70,12 +69,12 @@ export async function getDaily(
 
   const dateMap = new Map<
     string,
-    { steps: Record<string, number>; revenue: number; net_revenue: number }
+    { steps: Record<string, number>; revenue: number }
   >();
 
   for (const row of rawRows) {
     if (!dateMap.has(row.date)) {
-      dateMap.set(row.date, { steps: {}, revenue: 0, net_revenue: 0 });
+      dateMap.set(row.date, { steps: {}, revenue: 0 });
     }
     const entry = dateMap.get(row.date)!;
 
@@ -91,7 +90,6 @@ export async function getDaily(
 
     if (row.eventType === "payment") {
       entry.revenue = Number(row.grossRev);
-      entry.net_revenue = Number(row.netRev);
     }
   }
 

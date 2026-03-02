@@ -217,9 +217,7 @@ export async function POST(req: NextRequest) {
     eventType,
 
     grossValueInCents: toCents(body.gross_value),
-    netValueInCents: toCents(body.net_value),
     discountInCents: toCents(body.discount),
-    gatewayFeeInCents: toCents(body.gateway_fee),
     installments: toInt(body.installments),
     paymentMethod: toString(body.payment_method),
 

@@ -11,11 +11,13 @@ import {
   Legend,
 } from "recharts";
 import { IDailyData } from "@/interfaces/dashboard.interface";
+import type { IProfitAndLoss } from "@/interfaces/cost.interface";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtBRLDecimal } from "@/utils/format";
 
 interface RevenueLineChartProps {
   data: IDailyData[] | undefined;
+  pl: IProfitAndLoss | null | undefined;
   isLoading: boolean;
 }
 
@@ -24,21 +26,39 @@ function formatDateLabel(dateStr: string) {
   return `${d.getDate()}/${d.getMonth() + 1}`;
 }
 
-export function RevenueLineChart({ data, isLoading }: RevenueLineChartProps) {
-  const chartData = (data ?? []).map((d) => ({
-    ...d,
-    label: formatDateLabel(d.date),
-    revenue: (d.revenue ?? 0) / 100,
-    net_revenue: (d.net_revenue ?? 0) / 100,
-  }));
+export function RevenueLineChart({ data, pl, isLoading }: RevenueLineChartProps) {
+  const rows = data ?? [];
+
+  const totalGross = rows.reduce((sum, d) => sum + (d.revenue ?? 0), 0);
+
+  const totalEventCosts = pl?.eventCostsInCents ?? 0;
+  const totalVariableCosts = pl?.totalVariableCostsInCents ?? 0;
+  const totalFixedCosts = pl?.totalFixedCostsInCents ?? 0;
+
+  const chartData = rows.map((d) => {
+    const gross = (d.revenue ?? 0) / 100;
+    const share = totalGross > 0 ? (d.revenue ?? 0) / totalGross : 0;
+    const eventCostDay = (totalEventCosts * share) / 100;
+    const variableCostDay = (totalVariableCosts * share) / 100;
+    const fixedCostDay = (totalFixedCosts * share) / 100;
+    const operatingProfit = gross - eventCostDay - variableCostDay;
+    const netProfit = operatingProfit - fixedCostDay;
+
+    return {
+      label: formatDateLabel(d.date),
+      gross,
+      operating_profit: operatingProfit,
+      net_profit: netProfit,
+    };
+  });
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <h3 className="text-sm font-bold text-zinc-100">
-        Receita Diária, Bruta vs Líquida
+        Evolução Diária do Resultado
       </h3>
       <p className="mt-0.5 text-xs text-zinc-500">
-        Evolução da receita no período selecionado
+        Receita bruta, lucro operacional e lucro líquido no período selecionado
       </p>
 
       <div className="mt-5">
@@ -68,7 +88,7 @@ export function RevenueLineChart({ data, isLoading }: RevenueLineChartProps) {
                   fontSize: 12,
                   color: "#e4e4e7",
                 }}
-                formatter={(v: number) => fmtBRLDecimal(v)}
+                formatter={(v: number) => [fmtBRLDecimal(v)]}
                 cursor={{ stroke: "#3f3f46" }}
               />
               <Legend
@@ -80,8 +100,8 @@ export function RevenueLineChart({ data, isLoading }: RevenueLineChartProps) {
               />
               <Line
                 type="monotone"
-                dataKey="revenue"
-                name="Bruta"
+                dataKey="gross"
+                name="Receita Bruta"
                 stroke="#22c55e"
                 strokeWidth={2}
                 dot={false}
@@ -89,13 +109,22 @@ export function RevenueLineChart({ data, isLoading }: RevenueLineChartProps) {
               />
               <Line
                 type="monotone"
-                dataKey="net_revenue"
-                name="Líquida"
+                dataKey="operating_profit"
+                name="Lucro Operacional"
                 stroke="#06b6d4"
                 strokeWidth={2}
                 dot={false}
-                strokeDasharray="5 5"
                 activeDot={{ r: 4, fill: "#06b6d4" }}
+              />
+              <Line
+                type="monotone"
+                dataKey="net_profit"
+                name="Lucro Líquido"
+                stroke="#a855f7"
+                strokeWidth={2}
+                dot={false}
+                strokeDasharray="5 5"
+                activeDot={{ r: 4, fill: "#a855f7" }}
               />
             </LineChart>
           </ResponsiveContainer>

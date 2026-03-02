@@ -45,9 +45,8 @@ export async function getRevenueSegments(
       paymentMethod[row.paymentMethod] = (paymentMethod[row.paymentMethod] ?? 0) + revenue;
     }
 
-    if (row.billingType) {
-      billingType[row.billingType] = (billingType[row.billingType] ?? 0) + revenue;
-    }
+    const effectiveBillingType = row.billingType ?? "one_time";
+    billingType[effectiveBillingType] = (billingType[effectiveBillingType] ?? 0) + revenue;
   }
 
   return { paymentMethod, billingType };
