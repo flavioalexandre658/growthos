@@ -225,12 +225,14 @@ export interface GrowthOSEventData {
   customer_id?: string
   reason?: 'exit' | 'payment_failed' | 'timeout'
   metadata?: Record<string, unknown>
+  dedupe?: boolean | string  // true = deduplica por event_type; string = chave customizada
 }
 
 declare global {
   interface Window {
     GrowthOS: {
       track: (eventType: GrowthOSEventType, data?: GrowthOSEventData) => void
+      clearDedupe: () => void
     }
   }
 }`;
@@ -262,8 +264,73 @@ JSON.parse(sessionStorage.getItem('growthos_utm') || 'null')
 // Verificar checkout em andamento
 JSON.parse(sessionStorage.getItem('growthos_checkout') || 'null')
 
+// Verificar chaves de deduplicação já enviadas nessa sessão
+JSON.parse(sessionStorage.getItem('growthos_dedup') || '[]')
+
 // Limpar a fila manualmente (em caso de eventos inválidos presos)
-localStorage.removeItem('growthos_queue')`;
+localStorage.removeItem('growthos_queue')
+
+// Resetar deduplicação da sessão atual
+window.GrowthOS.clearDedupe()`;
+
+const DEDUPE_BOOL_CODE = `// Dispara "signup" apenas 1x por sessão (aba/navegador)
+// Mesmo que o componente monte várias vezes (React StrictMode, re-renders),
+// o evento só é enviado na primeira vez.
+window.GrowthOS.track('signup', { dedupe: true })`;
+
+const DEDUPE_KEY_CODE = `// Deduplica por chave customizada — útil quando o mesmo evento
+// pode ocorrer para produtos diferentes e você quer deduplicar
+// apenas para um produto específico.
+window.GrowthOS.track('payment', {
+  gross_value: 150.00,
+  product_id: 'template-casamento-001',
+  dedupe: 'payment_order_abc123',  // chave única do pedido
+})`;
+
+const DEDUPE_HOOK_CODE = `'use client'
+
+import { useEffect } from 'react'
+import { useTracker } from '@/hooks/use-tracker'
+
+export function SignupSuccessPage() {
+  const { track } = useTracker()
+
+  // useEffect dispara 2x no React StrictMode (dev) — dedupe garante
+  // que o evento chegue ao GrowthOS apenas 1 vez.
+  useEffect(() => {
+    track('signup', {
+      customer_type: 'new',
+      dedupe: true,
+    })
+  }, [track])
+
+  return <h1>Bem-vindo!</h1>
+}`;
+
+const DEDUPE_ATTRS_CODE = `<!-- Botão de cadastro: envia "signup" só na 1ª vez que for clicado por sessão -->
+<button
+  data-growthos="signup"
+  data-growthos-customer_type="new"
+  data-growthos-dedupe="true"
+>
+  Criar conta grátis
+</button>
+
+<!-- Deduplicação por chave de pedido específico -->
+<button
+  data-growthos="payment"
+  data-growthos-value="89.90"
+  data-growthos-dedupe="payment_order_abc123"
+>
+  Confirmar pagamento
+</button>`;
+
+const DEDUPE_CLEAR_CODE = `// Limpar toda a deduplicação da sessão atual
+// (o usuário poderá disparar eventos já enviados novamente)
+window.GrowthOS.clearDedupe()
+
+// Verificar quais chaves já foram enviadas nessa sessão
+JSON.parse(sessionStorage.getItem('growthos_dedup') || '[]')`;
 
 const CHECKLIST_ITEMS = [
   {
@@ -372,6 +439,7 @@ export function DocsContent() {
             { value: "manual", label: "Eventos Manuais" },
             { value: "reference", label: "Referência" },
             { value: "attributes", label: "Data Attributes" },
+            { value: "dedupe", label: "Deduplicação" },
             { value: "typescript", label: "TypeScript" },
             { value: "api", label: "API Reference" },
             { value: "debug", label: "Debug" },
@@ -961,6 +1029,11 @@ export function DocsContent() {
               ["data-growthos-category", "category", ""],
               ["data-growthos-payment_method", "payment_method", ""],
               ["data-growthos-customer_type", "customer_type", ""],
+              [
+                "data-growthos-dedupe",
+                "dedupe",
+                "true = deduplica por event_type. String = chave customizada",
+              ],
             ].map(([attr, js, note]) => (
               <div
                 key={attr}
@@ -976,6 +1049,132 @@ export function DocsContent() {
               </div>
             ))}
           </div>
+        </TabsContent>
+
+        {/* Deduplicação */}
+        <TabsContent value="dedupe" className="mt-0 space-y-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-xl font-semibold tracking-tight">
+                Deduplicação de Eventos
+              </h2>
+              <Badge variant="secondary">session-scoped</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Em aplicações React, o{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                useEffect
+              </code>{" "}
+              pode disparar duas vezes no StrictMode (desenvolvimento) ou
+              sempre que um componente remonta. O campo{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                dedupe
+              </code>{" "}
+              garante que o evento chegue ao GrowthOS apenas uma vez por sessão
+              (aba/navegador).
+            </p>
+          </div>
+
+          <Callout type="info">
+            A chave de deduplicação é armazenada em{" "}
+            <code className="font-mono text-xs">sessionStorage</code> e nunca
+            enviada à API. Ela é descartada automaticamente quando a aba é
+            fechada.
+          </Callout>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              dedupe: true — deduplicar por tipo de evento
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Usa o próprio{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                event_type
+              </code>{" "}
+              como chave. Ideal quando cada tipo de evento deve ocorrer no
+              máximo uma vez por sessão.
+            </p>
+            <CodeBlock code={DEDUPE_BOOL_CODE} lang="js" title="Exemplo básico" />
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              dedupe: &quot;chave&quot; — deduplicar por chave customizada
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Passa uma string como chave. Útil quando o mesmo tipo de evento
+              pode ocorrer para diferentes produtos e você quer deduplicar
+              apenas um caso específico, como um pedido.
+            </p>
+            <CodeBlock code={DEDUPE_KEY_CODE} lang="js" title="Chave customizada" />
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Uso com React + useEffect
+            </h3>
+            <CodeBlock
+              code={DEDUPE_HOOK_CODE}
+              lang="tsx"
+              title="Componente Next.js / React"
+            />
+            <Callout type="tip">
+              <code className="font-mono text-xs">dedupe: true</code> é a
+              solução recomendada para qualquer{" "}
+              <code className="font-mono text-xs">track()</code> dentro de{" "}
+              <code className="font-mono text-xs">useEffect</code> sem
+              dependências ou com dependências estáveis que remontam.
+            </Callout>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Data Attributes
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Use{" "}
+              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
+                data-growthos-dedupe
+              </code>{" "}
+              em elementos HTML para deduplicar sem JavaScript.
+            </p>
+            <CodeBlock
+              code={DEDUPE_ATTRS_CODE}
+              lang="html"
+              title="HTML — data-growthos-dedupe"
+            />
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              GrowthOS.clearDedupe()
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Reseta todas as chaves de deduplicação da sessão atual. Útil em
+              testes ou quando o usuário realiza uma ação que permite reenvio
+              intencional de um evento.
+            </p>
+            <CodeBlock
+              code={DEDUPE_CLEAR_CODE}
+              lang="js"
+              title="Resetar e inspecionar"
+            />
+          </div>
+
+          <Callout type="warn">
+            <code className="font-mono text-xs">dedupe</code> é scoped por aba
+            — se o usuário abrir o site em duas abas diferentes, cada aba tem
+            seu próprio estado de deduplicação. Isso é o comportamento esperado:
+            cada sessão é independente.
+          </Callout>
         </TabsContent>
 
         {/* TypeScript */}
@@ -1109,12 +1308,15 @@ export function DocsContent() {
           </div>
 
           <Callout type="info">
-            CORS está habilitado para qualquer origem (
+            CORS está habilitado para qualquer origem. A API reflete a{" "}
+            <code className="font-mono text-xs">Origin</code> exata de quem
+            chamou (
             <code className="font-mono text-xs">
-              Access-Control-Allow-Origin: *
+              Access-Control-Allow-Origin: origem
             </code>
-            ). Requests <code className="font-mono text-xs">OPTIONS</code> de
-            preflight retornam <code className="font-mono text-xs">204</code>{" "}
+            ), compatível com qualquer modo de credenciais. Requests{" "}
+            <code className="font-mono text-xs">OPTIONS</code> de preflight
+            retornam <code className="font-mono text-xs">204</code>{" "}
             automaticamente.
           </Callout>
         </TabsContent>

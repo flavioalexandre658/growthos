@@ -5,6 +5,7 @@
   var UTM_KEY = "growthos_utm";
   var SESSION_KEY = "growthos_sid";
   var CHECKOUT_KEY = "growthos_checkout";
+  var DEDUP_KEY = "growthos_dedup";
 
   var script = document.currentScript || (function () {
     var scripts = document.getElementsByTagName("script");
@@ -41,6 +42,37 @@
     } catch (_) {
       return "s_" + generateId();
     }
+  }
+
+  function getDedup() {
+    try {
+      var raw = sessionStorage.getItem(DEDUP_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function isDuplicate(key) {
+    var set = getDedup();
+    for (var i = 0; i < set.length; i++) {
+      if (set[i] === key) return true;
+    }
+    return false;
+  }
+
+  function markDedup(key) {
+    try {
+      var set = getDedup();
+      set.push(key);
+      sessionStorage.setItem(DEDUP_KEY, JSON.stringify(set));
+    } catch (_) {}
+  }
+
+  function clearDedup() {
+    try {
+      sessionStorage.removeItem(DEDUP_KEY);
+    } catch (_) {}
   }
 
   var SOURCE_PATTERNS = [
@@ -213,15 +245,27 @@
   }
 
   function track(eventType, data) {
+    var rawData = data || {};
+    var dedupeOption = rawData.dedupe;
+
+    if (dedupeOption !== undefined) {
+      var dedupKey = dedupeOption === true ? eventType : String(dedupeOption);
+      if (isDuplicate(dedupKey)) return;
+      markDedup(dedupKey);
+    }
+
+    var cleanData = Object.assign({}, rawData);
+    delete cleanData.dedupe;
+
     var autoCtx = getAutoContext();
-    var payload = Object.assign({}, autoCtx, data || {}, {
+    var payload = Object.assign({}, autoCtx, cleanData, {
       key: API_KEY,
       event_type: eventType,
       timestamp: new Date().toISOString(),
     });
 
     if (eventType === "checkout_started") {
-      saveCheckout(Object.assign({}, data || {}));
+      saveCheckout(Object.assign({}, cleanData));
     }
 
     if (eventType === "payment") {
@@ -268,8 +312,12 @@
             if (attr.name.indexOf("data-growthos-") === 0) {
               var key = attr.name.replace("data-growthos-", "").replace(/-/g, "_");
               var val = attr.value;
-              var num = parseFloat(val);
-              data[key] = isNaN(num) ? val : num;
+              if (key === "dedupe") {
+                data.dedupe = val === "true" ? true : val;
+              } else {
+                var num = parseFloat(val);
+                data[key] = isNaN(num) ? val : num;
+              }
             }
           }
           track(eventType, data);
@@ -319,5 +367,6 @@
 
   window.GrowthOS = {
     track: track,
+    clearDedupe: clearDedup,
   };
 })();
