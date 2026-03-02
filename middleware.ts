@@ -12,12 +12,9 @@ export default withAuth(
       return NextResponse.redirect(loginUrl);
     }
 
-    if (path.startsWith("/dashboard") && !token.onboardingCompleted) {
-      return NextResponse.redirect(new URL("/onboarding", req.url));
-    }
-
-    if (path.startsWith("/onboarding") && token.onboardingCompleted) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+    const isNewOrg = req.nextUrl.searchParams.get("new-org") === "1";
+    if (path.startsWith("/onboarding") && token.onboardingCompleted && !isNewOrg) {
+      return NextResponse.redirect(new URL("/organizations", req.url));
     }
 
     return NextResponse.next();
@@ -33,5 +30,7 @@ export default withAuth(
 );
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/onboarding/:path*", "/onboarding"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|login|register|tracker\\.js|favicon\\.ico|$).*)",
+  ],
 };

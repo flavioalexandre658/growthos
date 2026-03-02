@@ -2,7 +2,12 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { RegisterForm } from "./_components/register-form";
-import { IconChartBar } from "@tabler/icons-react";
+import {
+  IconChartBar,
+  IconChartLine,
+  IconTargetArrow,
+  IconSparkles,
+} from "@tabler/icons-react";
 
 export const metadata = {
   title: "Criar conta — GrowthOS",
@@ -12,7 +17,7 @@ export default async function RegisterPage() {
   const session = await getServerSession(authOptions);
 
   if (session?.user) {
-    redirect("/dashboard");
+    redirect("/organizations");
   }
 
   return (
@@ -39,34 +44,66 @@ export default async function RegisterPage() {
           </div>
         </div>
 
-        <div className="relative z-10 space-y-6">
+        <div className="relative z-10 space-y-8">
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400">
-              Setup em minutos
+              Inteligência de Crescimento
             </p>
             <h1 className="text-4xl font-bold text-zinc-100 leading-tight">
-              Cole um script.
+              A inteligência
               <br />
-              Veja tudo crescer.
+              por trás do seu
+              <br />
+              crescimento.
             </h1>
             <p className="text-zinc-500 text-sm leading-relaxed max-w-xs">
-              Um tracker.js no seu site e você já tem receita por canal, funil
-              de conversão, análise financeira e IA comparando períodos.
+              Descubra onde está o lucro, onde está o desperdício e o que
+              otimizar primeiro — com dados e análise inteligente.
             </p>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             {[
-              { step: "01", label: "Crie sua organização" },
-              { step: "02", label: "Configure o funil de conversão" },
-              { step: "03", label: "Copie e cole o snippet no <head>" },
-              { step: "04", label: "Veja os dados chegando em tempo real" },
+              {
+                icon: IconChartLine,
+                title: "Receita em tempo real",
+                description:
+                  "Faturamento bruto, líquido, ticket médio e margem por canal — tudo atualizado automaticamente.",
+                color: "text-indigo-400",
+                bg: "bg-indigo-500/10 border-indigo-500/20",
+              },
+              {
+                icon: IconTargetArrow,
+                title: "Funil de conversão",
+                description:
+                  "Visualize cada etapa da jornada e identifique exatamente onde os clientes estão saindo.",
+                color: "text-violet-400",
+                bg: "bg-violet-500/10 border-violet-500/20",
+              },
+              {
+                icon: IconSparkles,
+                title: "Análise com IA",
+                description:
+                  "Compare períodos e receba relatórios automáticos sobre oportunidades de otimização de lucro.",
+                color: "text-emerald-400",
+                bg: "bg-emerald-500/10 border-emerald-500/20",
+              },
             ].map((item) => (
-              <div key={item.step} className="flex items-center gap-3">
-                <span className="text-xs font-mono text-indigo-500/60">
-                  {item.step}
-                </span>
-                <span className="text-sm text-zinc-400">{item.label}</span>
+              <div
+                key={item.title}
+                className={`flex gap-3.5 rounded-xl border p-4 ${item.bg}`}
+              >
+                <div className={`mt-0.5 shrink-0 ${item.color}`}>
+                  <item.icon size={18} />
+                </div>
+                <div className="space-y-0.5">
+                  <p className={`text-sm font-semibold ${item.color}`}>
+                    {item.title}
+                  </p>
+                  <p className="text-xs text-zinc-500 leading-relaxed">
+                    {item.description}
+                  </p>
+                </div>
               </div>
             ))}
           </div>
@@ -74,7 +111,7 @@ export default async function RegisterPage() {
 
         <div className="relative z-10">
           <p className="text-xs text-zinc-700">
-            © {new Date().getFullYear()} GrowthOS. Gratuito para começar.
+            © {new Date().getFullYear()} GrowthOS · Decisões melhores, crescimento consistente.
           </p>
         </div>
       </div>

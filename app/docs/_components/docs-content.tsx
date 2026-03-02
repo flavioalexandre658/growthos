@@ -419,11 +419,15 @@ export function DocsContent() {
             desempenho do site.
           </Callout>
 
-          <Callout type="tip">
-            O <code className="font-mono text-xs">API_BASE</code> é inferido
-            automaticamente a partir do atributo{" "}
-            <code className="font-mono text-xs">src</code> do script — não há
-            nenhum domínio fixo. Qualquer URL de hospedagem funciona.
+          <Callout type="warn">
+            Substitua{" "}
+            <code className="font-mono text-xs">https://growthos.dev</code>{" "}
+            pelo domínio onde o <strong>seu</strong> GrowthOS está hospedado. O
+            tracker extrai automaticamente o endpoint a partir do{" "}
+            <code className="font-mono text-xs">src</code> — eventos são
+            enviados para{" "}
+            <code className="font-mono text-xs">SEU_DOMINIO/api/track</code>.
+            O snippet correto já é gerado no passo de instalação do onboarding.
           </Callout>
 
           <Callout type="info">

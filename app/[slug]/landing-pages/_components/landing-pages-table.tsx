@@ -1,12 +1,16 @@
 "use client";
 
-import { ILandingPageData, ILandingPageParams, OrderDirection, IPaginationMeta } from "@/interfaces/dashboard.interface";
+import {
+  ILandingPageData,
+  ILandingPageParams,
+  IStepMeta,
+  OrderDirection,
+  IPaginationMeta,
+} from "@/interfaces/dashboard.interface";
 import { ResponsiveTable, TableColumn, ServerPaginationConfig } from "@/components/ui/responsive-table";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { fmtInt, fmtBRL } from "@/utils/format";
-
-type LandingOrderBy = NonNullable<ILandingPageParams["order_by"]>;
 
 function conversionColor(value: string) {
   const n = parseFloat(value);
@@ -15,20 +19,14 @@ function conversionColor(value: string) {
   return "text-red-400";
 }
 
-const SORT_OPTIONS: { key: LandingOrderBy; label: string }[] = [
-  { key: "revenue", label: "Receita" },
-  { key: "payments", label: "Pagamentos" },
-  { key: "pageviews", label: "Pageviews" },
-  { key: "conversion_rate", label: "Conversão" },
-];
-
 interface LandingPagesTableProps {
   data: ILandingPageData[];
+  stepMeta: IStepMeta[];
   pagination: IPaginationMeta;
   isLoading: boolean;
-  orderBy: LandingOrderBy;
+  orderBy: string;
   orderDir: OrderDirection;
-  onOrderBy: (key: LandingOrderBy) => void;
+  onOrderBy: (key: string) => void;
   onOrderDir: (dir: OrderDirection) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
@@ -36,6 +34,7 @@ interface LandingPagesTableProps {
 
 export function LandingPagesTable({
   data,
+  stepMeta,
   pagination,
   isLoading,
   orderBy,
@@ -45,7 +44,7 @@ export function LandingPagesTable({
   onPageChange,
   onPageSizeChange,
 }: LandingPagesTableProps) {
-  const handleSort = (key: LandingOrderBy) => {
+  const handleSort = (key: string) => {
     if (key === orderBy) {
       onOrderDir(orderDir === "DESC" ? "ASC" : "DESC");
     } else {
@@ -65,41 +64,55 @@ export function LandingPagesTable({
     pageSizeOptions: [15, 30, 50],
   };
 
+  const fixedSortOptions: { key: string; label: string }[] = [
+    { key: "revenue", label: "Receita" },
+    { key: "conversion_rate", label: "Conversão" },
+  ];
+
+  const stepSortOptions: { key: string; label: string }[] = stepMeta.map((s) => ({
+    key: s.key,
+    label: s.label,
+  }));
+
+  const allSortOptions = [...stepSortOptions, ...fixedSortOptions];
+
+  const stepColumns: TableColumn<ILandingPageData>[] = stepMeta.map((step) => ({
+    key: step.key,
+    header: step.label,
+    align: "right" as const,
+    render: (lp: ILandingPageData) => (
+      <span className="font-mono text-sm text-zinc-400">
+        {fmtInt(lp.steps[step.key] ?? 0)}
+      </span>
+    ),
+  }));
+
   const columns: TableColumn<ILandingPageData>[] = [
     {
       key: "page",
       header: "Landing Page",
       mobilePrimary: true,
       render: (lp) => (
-        <span className="font-mono text-xs text-zinc-300 truncate max-w-[280px] block" title={lp.page}>
+        <span
+          className="font-mono text-xs text-zinc-300 truncate max-w-[280px] block"
+          title={lp.page}
+        >
           {lp.page}
         </span>
       ),
     },
-    {
-      key: "pageviews",
-      header: "Pageviews",
-      align: "right",
-      render: (lp) => <span className="font-mono text-sm text-zinc-400">{fmtInt(lp.pageviews)}</span>,
-    },
-    {
-      key: "signups",
-      header: "Cadastros",
-      align: "right",
-      render: (lp) => <span className="font-mono text-sm text-zinc-400">{fmtInt(lp.signups)}</span>,
-    },
-    {
-      key: "payments",
-      header: "Pagamentos",
-      align: "right",
-      render: (lp) => <span className="font-mono text-sm font-semibold text-emerald-400">{fmtInt(lp.payments)}</span>,
-    },
+    ...stepColumns,
     {
       key: "conversion_rate",
       header: "Conversão",
       align: "right",
       render: (lp) => (
-        <span className={cn("font-mono text-sm font-semibold", conversionColor(String(lp.conversion_rate)))}>
+        <span
+          className={cn(
+            "font-mono text-sm font-semibold",
+            conversionColor(String(lp.conversion_rate))
+          )}
+        >
           {lp.conversion_rate}
         </span>
       ),
@@ -128,10 +141,12 @@ export function LandingPagesTable({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h3 className="text-sm font-bold text-zinc-100">Landing Pages por Receita</h3>
-            <p className="mt-0.5 text-xs text-zinc-500">Páginas de entrada que mais convertem e geram receita</p>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              Páginas de entrada que mais convertem e geram receita
+            </p>
           </div>
           <div className="flex flex-wrap gap-1.5 shrink-0">
-            {SORT_OPTIONS.map((s) => {
+            {allSortOptions.map((s) => {
               const isActive = orderBy === s.key;
               return (
                 <button
@@ -145,7 +160,12 @@ export function LandingPagesTable({
                   )}
                 >
                   {s.label}
-                  {isActive && (orderDir === "DESC" ? <IconChevronDown size={10} /> : <IconChevronUp size={10} />)}
+                  {isActive &&
+                    (orderDir === "DESC" ? (
+                      <IconChevronDown size={10} />
+                    ) : (
+                      <IconChevronUp size={10} />
+                    ))}
                 </button>
               );
             })}

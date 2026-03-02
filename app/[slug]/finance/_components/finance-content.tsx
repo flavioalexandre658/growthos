@@ -5,7 +5,7 @@ import { useFinancial } from "@/hooks/queries/use-financial";
 import { useDaily } from "@/hooks/queries/use-daily";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { IDateFilter } from "@/interfaces/dashboard.interface";
-import { PeriodFilter } from "@/app/dashboard/_components/period-filter";
+import { PeriodFilter } from "@/app/[slug]/_components/period-filter";
 import { FinanceKpiCards } from "./finance-kpi-cards";
 import { RevenueLineChart } from "./revenue-line-chart";
 import { FinanceBreakdownTable } from "./finance-breakdown-table";
@@ -19,7 +19,7 @@ export function FinanceContent({ filter }: FinanceContentProps) {
   const orgId = organization?.id;
 
   const { data: financial, isLoading: financialLoading } = useFinancial(orgId, filter);
-  const { data: daily, isLoading: dailyLoading } = useDaily(orgId, filter);
+  const { data: dailyResult, isLoading: dailyLoading } = useDaily(orgId, filter);
 
   return (
     <div className="space-y-4">
@@ -34,7 +34,7 @@ export function FinanceContent({ filter }: FinanceContentProps) {
       </div>
 
       <FinanceKpiCards data={financial} isLoading={financialLoading} />
-      <RevenueLineChart data={daily} isLoading={dailyLoading} />
+      <RevenueLineChart data={dailyResult?.rows} isLoading={dailyLoading} />
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <FinanceBreakdownTable

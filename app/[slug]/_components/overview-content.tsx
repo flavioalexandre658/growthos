@@ -19,7 +19,9 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   const orgId = organization?.id;
 
   const { data: funnel, isLoading: funnelLoading } = useFunnel(orgId, filter);
-  const { data: daily, isLoading: dailyLoading } = useDaily(orgId, filter);
+  const { data: dailyResult, isLoading: dailyLoading } = useDaily(orgId, filter);
+
+  const stepMeta = funnel?.steps.map((s) => ({ key: s.key, label: s.label })) ?? [];
 
   return (
     <div className="space-y-4">
@@ -35,7 +37,11 @@ export function OverviewContent({ filter }: OverviewContentProps) {
 
       <KpiCards data={funnel} isLoading={funnelLoading} />
       <FunnelSection data={funnel} isLoading={funnelLoading} />
-      <DailyChart data={daily} isLoading={dailyLoading} />
+      <DailyChart
+        data={dailyResult?.rows}
+        stepMeta={stepMeta}
+        isLoading={dailyLoading}
+      />
     </div>
   );
 }

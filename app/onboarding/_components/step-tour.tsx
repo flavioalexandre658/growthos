@@ -10,8 +10,8 @@ import {
   IconWorldWww,
   IconCalculator,
   IconLoader2,
-  IconArrowRight,
-  IconSparkles,
+  IconRocket,
+  IconCheck,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { completeOnboarding } from "@/actions/auth/complete-onboarding.action";
@@ -23,44 +23,50 @@ const SECTIONS = [
     title: "Visão Geral",
     description: "Funil de conversão, KPIs e evolução diária de receita",
     color: "text-indigo-400",
-    bg: "bg-indigo-600/10 border-indigo-600/20",
+    iconBg: "bg-indigo-500/15 border-indigo-500/25",
+    cardBg: "hover:border-indigo-500/40",
   },
   {
     icon: IconBrandGoogle,
     title: "Canais",
     description: "De onde vem sua receita — Google, Instagram, direto e mais",
     color: "text-violet-400",
-    bg: "bg-violet-600/10 border-violet-600/20",
+    iconBg: "bg-violet-500/15 border-violet-500/25",
+    cardBg: "hover:border-violet-500/40",
   },
   {
     icon: IconCurrencyDollar,
     title: "Financeiro",
     description: "Receita bruta, líquida, taxas de gateway e ticket médio",
     color: "text-emerald-400",
-    bg: "bg-emerald-600/10 border-emerald-600/20",
+    iconBg: "bg-emerald-500/15 border-emerald-500/25",
+    cardBg: "hover:border-emerald-500/40",
   },
   {
     icon: IconWorldWww,
     title: "Landing Pages",
     description: "Performance por página — pageviews, cadastros e conversão",
     color: "text-amber-400",
-    bg: "bg-amber-600/10 border-amber-600/20",
+    iconBg: "bg-amber-500/15 border-amber-500/25",
+    cardBg: "hover:border-amber-500/40",
   },
   {
     icon: IconCalculator,
     title: "Custos & P&L",
-    description: "Lucro real após custos fixos e variáveis + análise com IA",
+    description: "Lucro real após custos fixos e variáveis, com análise via IA",
     color: "text-rose-400",
-    bg: "bg-rose-600/10 border-rose-600/20",
+    iconBg: "bg-rose-500/15 border-rose-500/25",
+    cardBg: "hover:border-rose-500/40",
   },
 ];
 
 interface StepTourProps {
+  slug: string;
   onComplete: () => void;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function StepTour(_: StepTourProps) {
+export function StepTour({ slug, onComplete: _ }: StepTourProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { update } = useSession();
 
@@ -70,7 +76,7 @@ export function StepTour(_: StepTourProps) {
       await completeOnboarding();
       await update({ onboardingCompleted: true });
       toast.success("Tudo pronto! Bem-vindo ao GrowthOS.");
-      window.location.href = "/dashboard";
+      window.location.href = slug ? `/${slug}` : "/organizations";
     } catch {
       toast.error("Erro ao finalizar onboarding.");
       setIsLoading(false);
@@ -79,65 +85,76 @@ export function StepTour(_: StepTourProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600/20 border border-indigo-600/30">
-          <IconSparkles size={18} className="text-indigo-400" />
+      <div className="text-center space-y-4 pb-2">
+        <div className="flex justify-center">
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-indigo-500/20 animate-ping" />
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
+              <IconCheck size={30} className="text-white" strokeWidth={2.5} />
+            </div>
+          </div>
         </div>
-        <div>
-          <h2 className="text-lg font-bold text-zinc-100">Tudo pronto!</h2>
-          <p className="text-xs text-zinc-500">
-            Conheça o que você tem disponível no dashboard
+
+        <div className="space-y-1.5">
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
+            Tudo configurado!
+          </h2>
+          <p className="text-sm text-zinc-500 max-w-xs mx-auto leading-relaxed">
+            Sua organização está pronta. Explore o dashboard e comece a tomar
+            decisões baseadas em dados.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-2.5">
+      <div className="grid grid-cols-2 gap-2.5">
         {SECTIONS.map((section) => {
           const Icon = section.icon;
           return (
             <div
               key={section.title}
               className={cn(
-                "flex items-start gap-3 rounded-xl border p-3.5",
-                section.bg
+                "group flex flex-col gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4",
+                "transition-all duration-200 hover:scale-[1.02] hover:bg-zinc-900/60 cursor-default",
+                section.cardBg
               )}
             >
               <div
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900/60 shrink-0 mt-0.5",
-                  section.bg
+                  "flex h-9 w-9 items-center justify-center rounded-lg border",
+                  section.iconBg
                 )}
               >
-                <Icon size={15} className={section.color} />
+                <Icon size={17} className={section.color} />
               </div>
-              <div className="min-w-0">
-                <p className={cn("text-sm font-bold", section.color)}>
+              <div className="space-y-1">
+                <p className={cn("text-sm font-bold leading-none", section.color)}>
                   {section.title}
                 </p>
-                <p className="text-xs text-zinc-500 leading-relaxed mt-0.5">
+                <p className="text-xs text-zinc-600 leading-relaxed">
                   {section.description}
                 </p>
               </div>
             </div>
           );
         })}
-      </div>
 
-      <div className="rounded-xl border border-indigo-800/30 bg-indigo-950/20 p-4 flex items-start gap-3">
-        <IconSparkles size={16} className="text-indigo-400 mt-0.5 shrink-0" />
-        <div>
-          <p className="text-xs font-bold text-indigo-300">IA Comparativa</p>
-          <p className="text-xs text-zinc-500 leading-relaxed mt-0.5">
-            {`Compare qualquer período com IA: "Compare Canais esta semana vs semana passada"`}
-            e receba um relatório detalhado de oportunidades.
-          </p>
+        <div className="flex flex-col gap-3 rounded-xl border border-zinc-800/60 bg-gradient-to-br from-indigo-950/40 to-violet-950/30 p-4 transition-all duration-200 hover:scale-[1.02] hover:border-indigo-500/40 cursor-default">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg border bg-indigo-500/15 border-indigo-500/25">
+            <IconRocket size={17} className="text-indigo-400" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-indigo-400 leading-none">IA Comparativa</p>
+            <p className="text-xs text-zinc-600 leading-relaxed">
+              Compare períodos e receba relatórios automáticos de otimização
+            </p>
+          </div>
         </div>
       </div>
 
       <Button
         onClick={handleFinish}
         disabled={isLoading}
-        className="w-full h-12 bg-indigo-600 hover:bg-indigo-500 text-white font-bold gap-2 group text-sm"
+        className="w-full h-12 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold gap-2 group text-sm shadow-lg shadow-indigo-500/20 transition-all duration-200"
       >
         {isLoading ? (
           <>
@@ -146,11 +163,8 @@ export function StepTour(_: StepTourProps) {
           </>
         ) : (
           <>
-            Ir para o Dashboard
-            <IconArrowRight
-              size={16}
-              className="transition-transform group-hover:translate-x-0.5"
-            />
+            <IconRocket size={16} className="transition-transform group-hover:-translate-y-0.5" />
+            Explorar o Dashboard
           </>
         )}
       </Button>

@@ -5,20 +5,12 @@ import { useLandingPages } from "@/hooks/queries/use-landing-pages";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { IDateFilter, ILandingPageParams, OrderDirection } from "@/interfaces/dashboard.interface";
-import { PeriodFilter } from "@/app/dashboard/_components/period-filter";
-import { MetricFiltersPanel, MetricFilterField } from "@/components/ui/metric-filters";
+import { PeriodFilter } from "@/app/[slug]/_components/period-filter";
 import { LandingPagesTable } from "./landing-pages-table";
 import { Input } from "@/components/ui/input";
 import { IconSearch } from "@tabler/icons-react";
 
 const EMPTY_PAGINATION = { page: 1, limit: 30, total: 0, total_pages: 0 };
-
-const METRIC_FIELDS: MetricFilterField[] = [
-  { key: "pageviews", label: "Pageviews" },
-  { key: "payments", label: "Pagamentos" },
-  { key: "revenue", label: "Receita", prefix: "R$" },
-  { key: "conversion_rate", label: "Conversão", suffix: "%" },
-];
 
 interface LandingPagesContentProps {
   filter: IDateFilter;
@@ -32,9 +24,8 @@ export function LandingPagesContent({ filter }: LandingPagesContentProps) {
   const debouncedSearch = useDebounce(search, 400);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(30);
-  const [orderBy, setOrderBy] = useState<NonNullable<ILandingPageParams["order_by"]>>("revenue");
+  const [orderBy, setOrderBy] = useState<string>("revenue");
   const [orderDir, setOrderDir] = useState<OrderDirection>("DESC");
-  const [metricFilters, setMetricFilters] = useState<Record<string, string>>({});
 
   const params: ILandingPageParams = {
     ...filter,
@@ -43,18 +34,13 @@ export function LandingPagesContent({ filter }: LandingPagesContentProps) {
     order_by: orderBy,
     order_dir: orderDir,
     search: debouncedSearch || undefined,
-    ...(metricFilters as Partial<ILandingPageParams>),
   };
 
   const { data: resp, isLoading } = useLandingPages(orgId, params);
 
   const landingPagesData = resp?.data ?? [];
   const pagination = resp?.pagination ?? EMPTY_PAGINATION;
-
-  const handleMetricChange = (values: Record<string, string>) => {
-    setMetricFilters(values);
-    setPage(1);
-  };
+  const stepMeta = resp?.stepMeta ?? [];
 
   return (
     <div className="space-y-4">
@@ -65,11 +51,17 @@ export function LandingPagesContent({ filter }: LandingPagesContentProps) {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
-            <IconSearch size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <IconSearch
+              size={14}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"
+            />
             <Input
               placeholder="Buscar página..."
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               className="pl-8 h-8 w-44 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-600 text-sm"
             />
           </div>
@@ -79,14 +71,9 @@ export function LandingPagesContent({ filter }: LandingPagesContentProps) {
         </div>
       </div>
 
-      <MetricFiltersPanel
-        fields={METRIC_FIELDS}
-        values={metricFilters}
-        onChange={handleMetricChange}
-      />
-
       <LandingPagesTable
         data={landingPagesData}
+        stepMeta={stepMeta}
         pagination={pagination}
         isLoading={isLoading}
         orderBy={orderBy}

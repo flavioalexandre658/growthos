@@ -3,11 +3,10 @@
 import {
   createContext,
   useContext,
-  useState,
-  useEffect,
   useCallback,
   type ReactNode,
 } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { useOrganizations } from "@/hooks/queries/use-organizations";
 import type { IOrganization } from "@/interfaces/organization.interface";
 
@@ -29,27 +28,26 @@ const OrganizationContext = createContext<OrganizationContextValue>({
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
   const { data: orgs, isLoading } = useOrganizations();
-  const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const params = useParams<{ slug?: string }>();
+  const router = useRouter();
 
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) setActiveSlug(saved);
-  }, []);
+  const activeSlug = params?.slug ?? null;
 
-  useEffect(() => {
-    if (!orgs || orgs.length === 0) return;
-    if (!activeSlug) {
-      setActiveSlug(orgs[0].slug);
-    }
-  }, [orgs, activeSlug]);
-
-  const switchOrganization = useCallback((slug: string) => {
-    setActiveSlug(slug);
-    localStorage.setItem(STORAGE_KEY, slug);
-  }, []);
+  const switchOrganization = useCallback(
+    (newSlug: string) => {
+      try {
+        localStorage.setItem(STORAGE_KEY, newSlug);
+      } catch {
+      }
+      router.push(`/${newSlug}`);
+    },
+    [router]
+  );
 
   const organization =
-    orgs?.find((o) => o.slug === activeSlug) ?? orgs?.[0] ?? null;
+    (activeSlug ? orgs?.find((o) => o.slug === activeSlug) : null) ??
+    orgs?.[0] ??
+    null;
 
   return (
     <OrganizationContext.Provider

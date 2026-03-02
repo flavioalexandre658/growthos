@@ -2,88 +2,125 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { eq, and, gte, lte, sql, asc, desc } from "drizzle-orm";
+import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { events } from "@/db/schema";
+import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import type {
   ILandingPageParams,
   ILandingPageData,
-  IPaginatedResponse,
+  ILandingPagesResult,
 } from "@/interfaces/dashboard.interface";
+import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
 export async function getLandingPages(
   organizationId: string,
   params: ILandingPageParams = {}
-): Promise<IPaginatedResponse<ILandingPageData>> {
+): Promise<ILandingPagesResult> {
   const session = await getServerSession(authOptions);
-  if (!session?.user) return { data: [], pagination: { page: 1, limit: 20, total: 0, total_pages: 0 } };
+  if (!session?.user) {
+    return { data: [], pagination: { page: 1, limit: 30, total: 0, total_pages: 0 }, stepMeta: [] };
+  }
 
   const { startDate, endDate } = resolveDateRange(params);
   const page = params.page ?? 1;
-  const limit = params.limit ?? 20;
-  const offset = (page - 1) * limit;
-  const orderDir = params.order_dir ?? "DESC";
+  const limit = params.limit ?? 30;
   const orderBy = params.order_by ?? "revenue";
+  const search = params.search?.trim() ?? "";
 
-  const baseCondition = and(
-    eq(events.organizationId, organizationId),
-    gte(events.createdAt, startDate),
-    lte(events.createdAt, endDate),
-    sql`${events.landingPage} IS NOT NULL`
-  );
+  const [org] = await db
+    .select({ funnelSteps: organizations.funnelSteps })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1);
 
-  const orderExpr =
-    orderBy === "revenue"
-      ? sql`COALESCE(SUM(${events.grossValueInCents}) FILTER (WHERE ${events.eventType} = 'payment'), 0)`
-      : orderBy === "payments"
-      ? sql`COUNT(*) FILTER (WHERE ${events.eventType} = 'payment')`
-      : orderBy === "pageviews"
-      ? sql`COUNT(*) FILTER (WHERE ${events.eventType} = 'pageview')`
-      : orderBy === "conversion_rate"
-      ? sql`COUNT(*) FILTER (WHERE ${events.eventType} = 'payment')`
-      : sql`COALESCE(SUM(${events.grossValueInCents}) FILTER (WHERE ${events.eventType} = 'payment'), 0)`;
+  const funnelSteps: IFunnelStepConfig[] = org?.funnelSteps ?? [];
+  const stepEventTypes = funnelSteps.map((s) => s.eventType);
+  const allEventTypes = [...new Set([...stepEventTypes, "payment"])];
 
-  const rows = await db
+  const stepMeta = funnelSteps.map((s) => ({ key: s.eventType, label: s.label }));
+
+  const rawRows = await db
     .select({
       page: events.landingPage,
-      pageviews: sql<number>`COUNT(*) FILTER (WHERE ${events.eventType} = 'pageview')`,
-      signups: sql<number>`COUNT(*) FILTER (WHERE ${events.eventType} = 'signup')`,
-      payments: sql<number>`COUNT(*) FILTER (WHERE ${events.eventType} = 'payment')`,
-      revenue: sql<number>`COALESCE(SUM(${events.grossValueInCents}) FILTER (WHERE ${events.eventType} = 'payment'), 0)`,
+      eventType: events.eventType,
+      total: sql<number>`COUNT(*)`,
+      uniqueTotal: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
+      grossRev: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
     })
     .from(events)
-    .where(baseCondition)
-    .groupBy(events.landingPage)
-    .orderBy(orderDir === "DESC" ? desc(orderExpr) : asc(orderExpr))
-    .limit(limit)
-    .offset(offset);
+    .where(
+      and(
+        eq(events.organizationId, organizationId),
+        gte(events.createdAt, startDate),
+        lte(events.createdAt, endDate),
+        sql`${events.landingPage} IS NOT NULL`,
+        inArray(events.eventType, allEventTypes)
+      )
+    )
+    .groupBy(events.landingPage, events.eventType);
 
-  const totalRows = await db
-    .select({ total: sql<number>`COUNT(DISTINCT ${events.landingPage})` })
-    .from(events)
-    .where(baseCondition);
+  const pageMap = new Map<
+    string,
+    { steps: Record<string, number>; revenue: number; paymentCount: number }
+  >();
 
-  const total = Number(totalRows[0]?.total ?? 0);
+  for (const row of rawRows) {
+    if (!row.page) continue;
+    if (search && !row.page.toLowerCase().includes(search.toLowerCase())) continue;
 
-  const data: ILandingPageData[] = rows
-    .filter((row) => row.page !== null)
-    .map((row) => {
-      const paymentsNum = Number(row.payments);
-      const signupsNum = Number(row.signups);
-      const conversionRate = signupsNum > 0
-        ? ((paymentsNum / signupsNum) * 100).toFixed(1) + "%"
-        : "0%";
+    if (!pageMap.has(row.page)) {
+      pageMap.set(row.page, { steps: {}, revenue: 0, paymentCount: 0 });
+    }
+    const entry = pageMap.get(row.page)!;
+
+    const stepConfig = funnelSteps.find((s) => s.eventType === row.eventType);
+    if (stepConfig) {
+      const count = stepConfig.countUnique
+        ? Number(row.uniqueTotal)
+        : Number(row.total);
+      entry.steps[row.eventType] = count;
+    }
+
+    if (row.eventType === "payment") {
+      entry.revenue = Number(row.grossRev);
+      entry.paymentCount = Number(row.total);
+    }
+  }
+
+  const allPages: ILandingPageData[] = Array.from(pageMap.entries()).map(
+    ([pagePath, data]) => {
+      const firstStepKey = funnelSteps[0]?.eventType;
+      const lastStepKey = funnelSteps[funnelSteps.length - 1]?.eventType;
+      const firstCount = firstStepKey ? (data.steps[firstStepKey] ?? 0) : 0;
+      const lastCount = lastStepKey ? (data.steps[lastStepKey] ?? 0) : data.paymentCount;
+      const conversionRate =
+        firstCount > 0 ? ((lastCount / firstCount) * 100).toFixed(1) + "%" : "0%";
 
       return {
-        page: row.page as string,
-        pageviews: Number(row.pageviews),
-        signups: signupsNum,
-        payments: paymentsNum,
-        revenue: Number(row.revenue),
+        page: pagePath,
+        steps: data.steps,
+        revenue: data.revenue,
         conversion_rate: conversionRate,
       };
-    });
+    }
+  );
+
+  const sorted = [...allPages].sort((a, b) => {
+    if (orderBy === "revenue") return b.revenue - a.revenue;
+    if (orderBy === "conversion_rate") {
+      return parseFloat(b.conversion_rate) - parseFloat(a.conversion_rate);
+    }
+    const aVal = a.steps[orderBy] ?? 0;
+    const bVal = b.steps[orderBy] ?? 0;
+    return bVal - aVal;
+  });
+
+  if (params.order_dir === "ASC") sorted.reverse();
+
+  const total = sorted.length;
+  const offset = (page - 1) * limit;
+  const data = sorted.slice(offset, offset + limit);
 
   return {
     data,
@@ -93,5 +130,6 @@ export async function getLandingPages(
       total,
       total_pages: Math.ceil(total / limit),
     },
+    stepMeta,
   };
 }

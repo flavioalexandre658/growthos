@@ -1,6 +1,7 @@
 export interface IFunnelStep {
   eventType: string;
   label: string;
+  countUnique?: boolean;
 }
 
 export interface IOrganization {

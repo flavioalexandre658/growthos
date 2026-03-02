@@ -9,6 +9,7 @@ import { StepApiKey } from "./step-api-key";
 import { StepVerifyEvent } from "./step-verify-event";
 import { StepTour } from "./step-tour";
 import type { IOrganization } from "@/interfaces/organization.interface";
+import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
 const STEPS = [
   { number: 1, label: "Organização" },
@@ -49,6 +50,9 @@ export function OnboardingWizard({
   );
   const [org, setOrg] = useState<IOrganization | null>(existingOrg);
   const [apiKey, setApiKey] = useState<string>(existingApiKey ?? "");
+  const [funnelSteps, setFunnelSteps] = useState<IFunnelStepConfig[]>(
+    existingOrg?.funnelSteps ?? []
+  );
 
   const advance = () => {
     setCurrentStep((s) => {
@@ -132,13 +136,20 @@ export function OnboardingWizard({
         )}
 
         {currentStep === 2 && org && (
-          <StepFunnelConfig organizationId={org.id} onComplete={advance} />
+          <StepFunnelConfig
+            organizationId={org.id}
+            onComplete={(steps) => {
+              setFunnelSteps(steps);
+              advance();
+            }}
+          />
         )}
 
         {currentStep === 3 && org && (
           <StepApiKey
             organizationId={org.id}
             organizationName={org.name}
+            funnelSteps={funnelSteps}
             existingKey={existingApiKey ?? undefined}
             onComplete={(key) => {
               setApiKey(key);
@@ -155,7 +166,7 @@ export function OnboardingWizard({
           />
         )}
 
-        {currentStep === 5 && <StepTour onComplete={() => {}} />}
+        {currentStep === 5 && <StepTour slug={org?.slug ?? ""} onComplete={() => {}} />}
       </div>
 
       <p className="text-center text-xs text-zinc-700">

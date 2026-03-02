@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
@@ -10,34 +11,49 @@ export const metadata = {
   title: "Configuração inicial — GrowthOS",
 };
 
-export default async function OnboardingPage() {
+interface OnboardingPageProps {
+  searchParams: Promise<{ "new-org"?: string }>;
+}
+
+export default async function OnboardingPage({
+  searchParams,
+}: OnboardingPageProps) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
     redirect("/login");
   }
 
-  if (session.user.onboardingCompleted) {
-    redirect("/dashboard");
+  const resolvedParams = await searchParams;
+  const isNewOrg = resolvedParams["new-org"] === "1";
+
+  if (session.user.onboardingCompleted && !isNewOrg) {
+    redirect("/organizations");
   }
 
-  const orgs = await getOrganizations();
-  const existingOrg = (orgs[0] as IOrganization) ?? null;
-
+  let existingOrg: IOrganization | null = null;
   let existingApiKey: string | null = null;
-  if (existingOrg) {
-    const keys = await getApiKeys(existingOrg.id);
-    const activeKey = keys.find((k) => k.isActive);
-    existingApiKey = activeKey?.key ?? null;
+
+  if (!isNewOrg) {
+    const orgs = await getOrganizations();
+    existingOrg = (orgs[0] as IOrganization) ?? null;
+
+    if (existingOrg) {
+      const keys = await getApiKeys(existingOrg.id);
+      const activeKey = keys.find((k) => k.isActive);
+      existingApiKey = activeKey?.key ?? null;
+    }
   }
 
   return (
     <main className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center p-4">
-      <OnboardingWizard
-        userName={session.user.name}
-        existingOrg={existingOrg}
-        existingApiKey={existingApiKey}
-      />
+      <Suspense>
+        <OnboardingWizard
+          userName={session.user.name}
+          existingOrg={existingOrg}
+          existingApiKey={existingApiKey}
+        />
+      </Suspense>
     </main>
   );
 }

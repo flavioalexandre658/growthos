@@ -120,17 +120,19 @@ export function StepCreateOrg({ onComplete }: StepCreateOrgProps) {
           <Label className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">
             Slug (identificador único)
           </Label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-xs font-mono select-none">
-              growthos/
+          <div className={cn(
+            "flex items-stretch rounded-lg border overflow-hidden",
+            errors.slug ? "border-red-500/50" : "border-zinc-800"
+          )}>
+            <span className="flex items-center px-3 bg-zinc-800/70 text-zinc-500 text-xs font-mono select-none border-r border-zinc-800 whitespace-nowrap shrink-0">
+              org/
             </span>
             <Input
               type="text"
               placeholder="minha-loja"
               className={cn(
-                "pl-[4.5rem] font-mono",
-                inputClass,
-                errors.slug && "border-red-500/50"
+                "font-mono border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0",
+                inputClass
               )}
               {...register("slug", {
                 onChange: () => setSlugEdited(true),
@@ -141,7 +143,7 @@ export function StepCreateOrg({ onComplete }: StepCreateOrgProps) {
             <p className="text-xs text-red-400">{errors.slug.message}</p>
           ) : slugValue ? (
             <p className="text-xs text-zinc-600">
-              Seus dados serão armazenados sob{" "}
+              Identificador único:{" "}
               <code className="text-indigo-400 font-mono">{slugValue}</code>
             </p>
           ) : null}

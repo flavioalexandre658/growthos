@@ -9,13 +9,16 @@ import {
   IconCode,
   IconArrowRight,
   IconLoader2,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { createApiKey } from "@/actions/api-keys/create-api-key.action";
+import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
 interface StepApiKeyProps {
   organizationId: string;
   organizationName: string;
+  funnelSteps: IFunnelStepConfig[];
   existingKey?: string;
   onComplete: (apiKey: string) => void;
 }
@@ -75,9 +78,32 @@ function CodeBlock({
   );
 }
 
+function buildEventExample(step: IFunnelStepConfig): string | null {
+  const t = step.eventType.trim();
+  if (!t) return null;
+
+  if (step.countUnique) {
+    return `// '${t}' é rastreado automaticamente pelo tracker\n// Nenhuma chamada manual necessária`;
+  }
+
+  const examples: Record<string, string> = {
+    payment: `window.GrowthOS.track('payment', {\n  gross_value: 150.00,\n  net_value: 140.00,\n  payment_method: 'pix',  // pix | cartao | boleto\n  product_id: 'produto-001',\n  category: 'principal',\n  customer_type: 'new',   // new | returning\n})`,
+    signup: `window.GrowthOS.track('signup', {\n  // contexto automático: source, medium, device, landing_page\n})`,
+    trial_started: `window.GrowthOS.track('trial_started', {\n  product_id: 'plano-pro',\n  // contexto automático: source, medium, device\n})`,
+    checkout_started: `window.GrowthOS.track('checkout_started', {\n  gross_value: 89.00,\n  product_id: 'produto-001',\n  // abandono automático detectado no beforeunload\n})`,
+    checkout_abandoned: `window.GrowthOS.track('checkout_abandoned', {\n  gross_value: 89.00,\n  product_id: 'produto-001',\n  reason: 'exit',  // exit | payment_failed | timeout\n})`,
+    pageview: `// '${t}' é rastreado automaticamente pelo tracker\n// Nenhuma chamada manual necessária`,
+  };
+
+  if (examples[t]) return examples[t];
+
+  return `window.GrowthOS.track('${t}', {\n  // adicione os campos relevantes para esta etapa\n})`;
+}
+
 export function StepApiKey({
   organizationId,
   organizationName,
+  funnelSteps,
   existingKey,
   onComplete,
 }: StepApiKeyProps) {
@@ -201,26 +227,56 @@ export function StepApiKey({
       </div>
 
       <div className="space-y-3">
-        <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-          Eventos manuais (copie e use)
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+            Como rastrear seu funil
+          </p>
+          <span className="text-[10px] text-zinc-600 font-mono">
+            {funnelSteps.length} etapa{funnelSteps.length !== 1 ? "s" : ""}
+            {" "}configurada{funnelSteps.length !== 1 ? "s" : ""}
+          </span>
+        </div>
 
-        <CodeBlock
-          title="payment"
-          language="js"
-          code={`window.GrowthOS.track('payment', {
-  gross_value: 150.00,
-  product_id: 'produto-001',
-  payment_method: 'pix',
-  customer_type: 'new',
-})`}
-        />
-
-        <CodeBlock
-          title="signup"
-          language="js"
-          code={`window.GrowthOS.track('signup', {})`}
-        />
+        {funnelSteps.length === 0 ? (
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3 flex items-start gap-2">
+            <IconInfoCircle size={14} className="text-zinc-600 mt-0.5 shrink-0" />
+            <p className="text-xs text-zinc-500">
+              Nenhuma etapa de funil configurada. Volte ao passo anterior para
+              definir seu funil.
+            </p>
+          </div>
+        ) : (
+          funnelSteps.map((step, idx) => {
+            const example = buildEventExample(step);
+            const isAutoTracked =
+              step.countUnique === true ||
+              step.eventType === "pageview" ||
+              step.eventType === "";
+            if (!example) return null;
+            return (
+              <div key={idx} className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-800 text-[10px] font-bold text-zinc-400 shrink-0">
+                    {idx + 1}
+                  </span>
+                  <span className="text-xs font-semibold text-zinc-300">
+                    {step.label}
+                  </span>
+                  {isAutoTracked && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900/40 text-emerald-400 border border-emerald-800/40 font-mono">
+                      auto
+                    </span>
+                  )}
+                </div>
+                <CodeBlock
+                  title={step.eventType || "custom"}
+                  language="js"
+                  code={example}
+                />
+              </div>
+            );
+          })
+        )}
       </div>
 
       <Button

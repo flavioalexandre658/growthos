@@ -6,7 +6,7 @@ export default async function HomePage() {
   const session = await getServerSession(authOptions);
 
   if (session?.user) {
-    redirect("/dashboard");
+    redirect("/organizations");
   }
 
   redirect("/login");

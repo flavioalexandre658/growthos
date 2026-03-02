@@ -7,7 +7,7 @@ import { useVariableCosts } from "@/hooks/queries/use-variable-costs";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { buildProfitAndLoss } from "@/utils/build-pl";
-import { PeriodFilter } from "@/app/dashboard/_components/period-filter";
+import { PeriodFilter } from "@/app/[slug]/_components/period-filter";
 import { ProfitLossCards } from "./profit-loss-cards";
 import { ProfitLossWaterfall } from "./profit-loss-waterfall";
 import { FixedCostsTable } from "./fixed-costs-table";

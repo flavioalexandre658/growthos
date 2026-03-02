@@ -1,6 +1,11 @@
 export type DashboardPeriod = "today" | "yesterday" | "3d" | "7d" | "this_month" | "30d" | "90d";
 export type OrderDirection = "ASC" | "DESC";
 
+export interface IStepMeta {
+  key: string;
+  label: string;
+}
+
 export interface IDateFilter {
   period?: DashboardPeriod;
   start_date?: string;
@@ -26,16 +31,14 @@ export interface IBaseTableParams extends IDateFilter {
 }
 
 export interface IChannelParams extends IBaseTableParams {
-  order_by?: "revenue" | "signups" | "payments" | "conversion_rate" | "ticket_medio";
-  min_payments?: string; max_payments?: string;
+  order_by?: string;
   min_revenue?: string; max_revenue?: string;
   min_conversion_rate?: string; max_conversion_rate?: string;
 }
 
 export interface ILandingPageParams extends IBaseTableParams {
-  order_by?: "revenue" | "pageviews" | "payments" | "conversion_rate";
+  order_by?: string;
   search?: string;
-  min_payments?: string; max_payments?: string;
   min_revenue?: string; max_revenue?: string;
   min_conversion_rate?: string; max_conversion_rate?: string;
 }
@@ -57,28 +60,41 @@ export interface IGenericFunnelData {
 
 export interface IDailyData {
   date: string;
-  signups: number;
-  payments: number;
+  steps: Record<string, number>;
   revenue: number;
   net_revenue: number;
 }
 
+export interface IDailyResult {
+  rows: IDailyData[];
+  stepMeta: IStepMeta[];
+}
+
 export interface IChannelData {
   channel: string;
-  signups: number;
-  payments: number;
+  steps: Record<string, number>;
   revenue: number;
   ticket_medio: number;
   conversion_rate: string;
 }
 
+export interface IChannelsResult {
+  data: IChannelData[];
+  pagination: IPaginationMeta;
+  stepMeta: IStepMeta[];
+}
+
 export interface ILandingPageData {
   page: string;
-  pageviews: number;
-  signups: number;
-  payments: number;
+  steps: Record<string, number>;
   revenue: number;
   conversion_rate: string;
+}
+
+export interface ILandingPagesResult {
+  data: ILandingPageData[];
+  pagination: IPaginationMeta;
+  stepMeta: IStepMeta[];
 }
 
 export interface IPaymentMethodBreakdown {

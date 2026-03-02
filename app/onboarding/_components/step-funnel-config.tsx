@@ -53,7 +53,7 @@ const PRESETS: { label: string; description: string; steps: IFunnelStepConfig[] 
 
 interface StepFunnelConfigProps {
   organizationId: string;
-  onComplete: () => void;
+  onComplete: (steps: IFunnelStepConfig[]) => void;
 }
 
 export function StepFunnelConfig({ organizationId, onComplete }: StepFunnelConfigProps) {
@@ -120,7 +120,7 @@ export function StepFunnelConfig({ organizationId, onComplete }: StepFunnelConfi
     try {
       await updateFunnelSteps({ organizationId, funnelSteps: steps });
       toast.success("Funil configurado!");
-      onComplete();
+      onComplete(steps);
     } catch {
       toast.error("Erro ao salvar funil");
     } finally {

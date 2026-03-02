@@ -4,20 +4,11 @@ import { useState, Suspense } from "react";
 import { useChannels } from "@/hooks/queries/use-channels";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { IDateFilter, IChannelParams, OrderDirection } from "@/interfaces/dashboard.interface";
-import { PeriodFilter } from "@/app/dashboard/_components/period-filter";
-import { MetricFiltersPanel, MetricFilterField } from "@/components/ui/metric-filters";
+import { PeriodFilter } from "@/app/[slug]/_components/period-filter";
 import { ChannelsBarChart } from "./channels-bar-chart";
 import { ChannelsTable } from "./channels-table";
 
 const EMPTY_PAGINATION = { page: 1, limit: 30, total: 0, total_pages: 0 };
-
-const METRIC_FIELDS: MetricFilterField[] = [
-  { key: "signups", label: "Cadastros" },
-  { key: "payments", label: "Pagamentos" },
-  { key: "revenue", label: "Receita", prefix: "R$" },
-  { key: "conversion_rate", label: "Conversão", suffix: "%" },
-  { key: "ticket_medio", label: "Ticket Médio", prefix: "R$" },
-];
 
 interface ChannelsContentProps {
   filter: IDateFilter;
@@ -29,9 +20,8 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(30);
-  const [orderBy, setOrderBy] = useState<NonNullable<IChannelParams["order_by"]>>("revenue");
+  const [orderBy, setOrderBy] = useState<string>("revenue");
   const [orderDir, setOrderDir] = useState<OrderDirection>("DESC");
-  const [metricFilters, setMetricFilters] = useState<Record<string, string>>({});
 
   const params: IChannelParams = {
     ...filter,
@@ -39,18 +29,13 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
     limit,
     order_by: orderBy,
     order_dir: orderDir,
-    ...(metricFilters as Partial<IChannelParams>),
   };
 
   const { data: resp, isLoading } = useChannels(orgId, params);
 
   const channelsData = resp?.data ?? [];
   const pagination = resp?.pagination ?? EMPTY_PAGINATION;
-
-  const handleMetricChange = (values: Record<string, string>) => {
-    setMetricFilters(values);
-    setPage(1);
-  };
+  const stepMeta = resp?.stepMeta ?? [];
 
   return (
     <div className="space-y-4">
@@ -64,15 +49,10 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
         </Suspense>
       </div>
 
-      <MetricFiltersPanel
-        fields={METRIC_FIELDS}
-        values={metricFilters}
-        onChange={handleMetricChange}
-      />
-
       <ChannelsBarChart data={channelsData} isLoading={isLoading} />
       <ChannelsTable
         data={channelsData}
+        stepMeta={stepMeta}
         pagination={pagination}
         isLoading={isLoading}
         orderBy={orderBy}

@@ -48,7 +48,7 @@ export function LoginForm() {
 
     if (result?.ok) {
       toast.success("Bem-vindo ao GrowthOS!");
-      router.push("/dashboard");
+      router.push("/organizations");
       router.refresh();
       return;
     } else {

@@ -1,13 +1,17 @@
 "use client";
 
-import { IChannelData, IChannelParams, OrderDirection, IPaginationMeta } from "@/interfaces/dashboard.interface";
+import {
+  IChannelData,
+  IChannelParams,
+  IStepMeta,
+  OrderDirection,
+  IPaginationMeta,
+} from "@/interfaces/dashboard.interface";
 import { ResponsiveTable, TableColumn, ServerPaginationConfig } from "@/components/ui/responsive-table";
 import { IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { getChannelName, getChannelColor } from "./channels-bar-chart";
 import { fmtInt, fmtBRL, fmtBRLDecimal } from "@/utils/format";
-
-type ChannelOrderBy = NonNullable<IChannelParams["order_by"]>;
 
 function conversionColor(value: string) {
   const n = parseFloat(value);
@@ -16,23 +20,16 @@ function conversionColor(value: string) {
   return "text-red-400";
 }
 
-const SORT_OPTIONS: { key: ChannelOrderBy; label: string }[] = [
-  { key: "revenue", label: "Receita" },
-  { key: "payments", label: "Pagamentos" },
-  { key: "signups", label: "Cadastros" },
-  { key: "conversion_rate", label: "Conversão" },
-  { key: "ticket_medio", label: "Ticket" },
-];
-
 type ChannelRow = IChannelData & { colorIndex: number };
 
 interface ChannelsTableProps {
   data: IChannelData[];
+  stepMeta: IStepMeta[];
   pagination: IPaginationMeta;
   isLoading: boolean;
-  orderBy: ChannelOrderBy;
+  orderBy: string;
   orderDir: OrderDirection;
-  onOrderBy: (key: ChannelOrderBy) => void;
+  onOrderBy: (key: string) => void;
   onOrderDir: (dir: OrderDirection) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
@@ -40,6 +37,7 @@ interface ChannelsTableProps {
 
 export function ChannelsTable({
   data,
+  stepMeta,
   pagination,
   isLoading,
   orderBy,
@@ -51,7 +49,7 @@ export function ChannelsTable({
 }: ChannelsTableProps) {
   const rows: ChannelRow[] = data.map((c, i) => ({ ...c, colorIndex: i }));
 
-  const handleSort = (key: ChannelOrderBy) => {
+  const handleSort = (key: string) => {
     if (key === orderBy) {
       onOrderDir(orderDir === "DESC" ? "ASC" : "DESC");
     } else {
@@ -71,6 +69,30 @@ export function ChannelsTable({
     pageSizeOptions: [10, 30, 50],
   };
 
+  const fixedSortOptions: { key: string; label: string }[] = [
+    { key: "revenue", label: "Receita" },
+    { key: "conversion_rate", label: "Conversão" },
+    { key: "ticket_medio", label: "Ticket" },
+  ];
+
+  const stepSortOptions: { key: string; label: string }[] = stepMeta.map((s) => ({
+    key: s.key,
+    label: s.label,
+  }));
+
+  const allSortOptions = [...stepSortOptions, ...fixedSortOptions];
+
+  const stepColumns: TableColumn<ChannelRow>[] = stepMeta.map((step) => ({
+    key: step.key,
+    header: step.label,
+    align: "right" as const,
+    render: (c: ChannelRow) => (
+      <span className="font-mono text-sm text-zinc-400">
+        {fmtInt(c.steps[step.key] ?? 0)}
+      </span>
+    ),
+  }));
+
   const columns: TableColumn<ChannelRow>[] = [
     {
       key: "channel",
@@ -78,29 +100,28 @@ export function ChannelsTable({
       mobilePrimary: true,
       render: (c) => (
         <div className="flex items-center gap-2.5">
-          <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: getChannelColor(c.channel, c.colorIndex) }} />
-          <span className="font-semibold text-sm text-zinc-200">{getChannelName(c.channel)}</span>
+          <div
+            className="h-2.5 w-2.5 rounded-full shrink-0"
+            style={{ background: getChannelColor(c.channel, c.colorIndex) }}
+          />
+          <span className="font-semibold text-sm text-zinc-200">
+            {getChannelName(c.channel)}
+          </span>
         </div>
       ),
     },
-    {
-      key: "signups",
-      header: "Cadastros",
-      align: "right",
-      render: (c) => <span className="font-mono text-sm text-zinc-400">{fmtInt(c.signups)}</span>,
-    },
-    {
-      key: "payments",
-      header: "Pagamentos",
-      align: "right",
-      render: (c) => <span className="font-mono text-sm font-semibold text-emerald-400">{fmtInt(c.payments)}</span>,
-    },
+    ...stepColumns,
     {
       key: "conversion_rate",
       header: "Conversão",
       align: "right",
       render: (c) => (
-        <span className={cn("font-mono text-sm font-semibold", conversionColor(String(c.conversion_rate)))}>
+        <span
+          className={cn(
+            "font-mono text-sm font-semibold",
+            conversionColor(String(c.conversion_rate))
+          )}
+        >
           {c.conversion_rate}
         </span>
       ),
@@ -109,13 +130,21 @@ export function ChannelsTable({
       key: "revenue",
       header: "Receita",
       align: "right",
-      render: (c) => <span className="font-mono text-sm font-bold text-emerald-400">{fmtBRL(c.revenue)}</span>,
+      render: (c) => (
+        <span className="font-mono text-sm font-bold text-emerald-400">
+          {fmtBRL(c.revenue)}
+        </span>
+      ),
     },
     {
       key: "ticket_medio",
       header: "Ticket Médio",
       align: "right",
-      render: (c) => <span className="font-mono text-sm text-zinc-300">{fmtBRLDecimal(c.ticket_medio)}</span>,
+      render: (c) => (
+        <span className="font-mono text-sm text-zinc-300">
+          {fmtBRLDecimal(c.ticket_medio)}
+        </span>
+      ),
     },
   ];
 
@@ -134,7 +163,7 @@ export function ChannelsTable({
             <p className="mt-0.5 text-xs text-zinc-500">Conversão e ticket médio por canal</p>
           </div>
           <div className="flex flex-wrap gap-1.5 shrink-0">
-            {SORT_OPTIONS.map((s) => {
+            {allSortOptions.map((s) => {
               const isActive = orderBy === s.key;
               return (
                 <button
@@ -148,7 +177,12 @@ export function ChannelsTable({
                   )}
                 >
                   {s.label}
-                  {isActive && (orderDir === "DESC" ? <IconChevronDown size={10} /> : <IconChevronUp size={10} />)}
+                  {isActive &&
+                    (orderDir === "DESC" ? (
+                      <IconChevronDown size={10} />
+                    ) : (
+                      <IconChevronUp size={10} />
+                    ))}
                 </button>
               );
             })}

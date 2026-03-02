@@ -2,7 +2,7 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
@@ -40,7 +40,7 @@ export async function getFunnel(
         eq(events.organizationId, organizationId),
         gte(events.createdAt, startDate),
         lte(events.createdAt, endDate),
-        sql`${events.eventType} = ANY(${allEventTypes})`
+        inArray(events.eventType, allEventTypes)
       )
     )
     .groupBy(events.eventType);

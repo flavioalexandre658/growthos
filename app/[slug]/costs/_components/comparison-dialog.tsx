@@ -113,15 +113,15 @@ function getPeriodLabel(filter: IDateFilter): string {
 async function fetchSectionData(orgId: string, section: string, filter: IDateFilter) {
   switch (section) {
     case "overview": {
-      const [funnel, daily] = await Promise.all([
+      const [funnel, dailyResult] = await Promise.all([
         getFunnel(orgId, filter),
         getDaily(orgId, filter),
       ]);
-      return { funnel, daily };
+      return { funnel, daily: dailyResult.rows, stepMeta: dailyResult.stepMeta };
     }
     case "channels": {
-      const channels = await getChannels(orgId, { ...filter, limit: 999 });
-      return { channels: channels.data };
+      const result = await getChannels(orgId, { ...filter, limit: 999 });
+      return { channels: result.data, stepMeta: result.stepMeta };
     }
     case "finance": {
       const [financial, funnel, fixed, variable] = await Promise.all([
@@ -138,8 +138,8 @@ async function fetchSectionData(orgId: string, section: string, filter: IDateFil
       return { financial, pl };
     }
     case "landing-pages": {
-      const pages = await getLandingPages(orgId, { ...filter, limit: 50 });
-      return { landingPages: pages.data };
+      const result = await getLandingPages(orgId, { ...filter, limit: 50 });
+      return { landingPages: result.data, stepMeta: result.stepMeta };
     }
     default:
       return {};
