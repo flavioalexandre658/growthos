@@ -59,6 +59,7 @@ interface StepTourProps {
   onComplete: () => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function StepTour(_: StepTourProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { update } = useSession();
