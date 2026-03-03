@@ -20,6 +20,7 @@ import { useState } from "react";
 
 interface FinanceContentProps {
   filter: IDateFilter;
+  slug: string;
 }
 
 const PL_STEPS = [
@@ -55,7 +56,7 @@ const PL_STEPS = [
   { label: "Margem Líquida", desc: "Lucro Líquido ÷ Receita Bruta × 100." },
 ];
 
-export function FinanceContent({ filter }: FinanceContentProps) {
+export function FinanceContent({ filter, slug }: FinanceContentProps) {
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const [showExplanation, setShowExplanation] = useState(false);
@@ -102,7 +103,7 @@ export function FinanceContent({ filter }: FinanceContentProps) {
         </div>
       )}
 
-      <FinanceKpiCards data={financial} isLoading={financialLoading} />
+      <FinanceKpiCards data={financial} isLoading={financialLoading} slug={slug} />
 
       <ProfitLossWaterfall pl={pl} isLoading={financialLoading} />
 
@@ -131,9 +132,11 @@ export function FinanceContent({ filter }: FinanceContentProps) {
               payments: r.payments,
               revenue: r.revenue,
               percentage: r.percentage,
+              marginPercentage: r.marginPercentage,
             })) ?? []
           }
           isLoading={financialLoading}
+          showMargin
         />
       </div>
 

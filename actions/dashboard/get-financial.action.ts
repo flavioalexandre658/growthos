@@ -29,6 +29,10 @@ export async function getFinancial(
   const { startDate, endDate } = resolveDateRange(filter, tz);
   const periodDays = resolvePeriodDays(filter, tz);
 
+  const periodMs = endDate.getTime() - startDate.getTime();
+  const previousEndDate = new Date(startDate.getTime() - 1);
+  const previousStartDate = new Date(startDate.getTime() - periodMs);
+
   const baseCondition = and(
     eq(events.organizationId, organizationId),
     gte(events.createdAt, startDate),
@@ -96,14 +100,28 @@ export async function getFinancial(
     .groupBy(sql`COALESCE(${events.category}, 'sem categoria')`)
     .orderBy(sql`COALESCE(SUM(${events.grossValueInCents}), 0) DESC`);
 
-  const byCategory = categoryRows.map((row) => ({
-    category: row.category,
-    payments: Number(row.payments),
-    revenue: Number(row.revenue),
-    percentage: grossRevenue > 0
-      ? ((Number(row.revenue) / grossRevenue) * 100).toFixed(1) + "%"
-      : "0%",
-  }));
+  const totalVariableCostRate = grossRevenue > 0
+    ? (await db
+        .select({ rate: sql<number>`COALESCE(SUM(${variableCosts.amountInCents}), 0)` })
+        .from(variableCosts)
+        .where(and(eq(variableCosts.organizationId, organizationId), eq(variableCosts.type, "PERCENTAGE")))
+        .then((r) => Number(r[0]?.rate ?? 0) / 100))
+    : 0;
+
+  const byCategory = categoryRows.map((row) => {
+    const rev = Number(row.revenue);
+    const variableCostForCategory = rev * (totalVariableCostRate / 100);
+    const estimatedMargin = rev > 0 ? ((rev - variableCostForCategory) / rev) * 100 : 0;
+    return {
+      category: row.category,
+      payments: Number(row.payments),
+      revenue: rev,
+      percentage: grossRevenue > 0
+        ? ((rev / grossRevenue) * 100).toFixed(1) + "%"
+        : "0%",
+      marginPercentage: `${estimatedMargin.toFixed(1)}%`,
+    };
+  });
 
   const segmentRows = await db
     .select({
@@ -146,6 +164,40 @@ export async function getFinancial(
     eventCosts
   );
 
+  const prevBaseCondition = and(
+    eq(events.organizationId, organizationId),
+    gte(events.createdAt, previousStartDate),
+    lte(events.createdAt, previousEndDate)
+  );
+
+  const [prevSummary] = await db
+    .select({
+      grossRevenue: sql<number>`COALESCE(SUM(${events.grossValueInCents}) FILTER (WHERE ${events.eventType} = 'payment'), 0)`,
+      lostRevenue: sql<number>`COALESCE(SUM(${events.grossValueInCents}) FILTER (WHERE ${events.eventType} = 'checkout_abandoned'), 0)`,
+      totalPayments: sql<number>`COUNT(*) FILTER (WHERE ${events.eventType} = 'payment')`,
+      recurringRevenue: sql<number>`COALESCE(SUM(${events.grossValueInCents}) FILTER (WHERE ${events.eventType} = 'payment' AND ${events.billingType} = 'recurring'), 0)`,
+      oneTimeRevenue: sql<number>`COALESCE(SUM(${events.grossValueInCents}) FILTER (WHERE ${events.eventType} = 'payment' AND (${events.billingType} != 'recurring' OR ${events.billingType} IS NULL)), 0)`,
+      totalDiscounts: sql<number>`COALESCE(SUM(${events.discountInCents}) FILTER (WHERE ${events.eventType} = 'payment'), 0)`,
+    })
+    .from(events)
+    .where(prevBaseCondition);
+
+  const prevGrossRevenue = Number(prevSummary?.grossRevenue ?? 0);
+  const prevTotalPayments = Number(prevSummary?.totalPayments ?? 0);
+  const prevAverageTicket = prevTotalPayments > 0 ? Math.round(prevGrossRevenue / prevTotalPayments) : 0;
+  const prevLostRevenue = Number(prevSummary?.lostRevenue ?? 0);
+  const prevRecurringRevenue = Number(prevSummary?.recurringRevenue ?? 0);
+  const prevOneTimeRevenue = Number(prevSummary?.oneTimeRevenue ?? 0);
+
+  const prevPl = buildProfitAndLoss(
+    prevGrossRevenue,
+    orgFixedCosts,
+    orgVariableCosts,
+    periodDays,
+    { paymentMethod: {}, billingType: {} },
+    Number(prevSummary?.totalDiscounts ?? 0)
+  );
+
   return {
     grossRevenueInCents: grossRevenue,
     totalDiscountsInCents: totalDiscounts,
@@ -157,5 +209,13 @@ export async function getFinancial(
     revenueByBillingType: { recurring: recurringRevenue, oneTime: oneTimeRevenue },
     pl,
     periodDays,
+    previousGrossRevenueInCents: prevGrossRevenue,
+    previousTotalPayments: prevTotalPayments,
+    previousAverageTicketInCents: prevAverageTicket,
+    previousLostRevenueInCents: prevLostRevenue,
+    previousNetProfitInCents: prevPl?.netProfitInCents ?? 0,
+    previousMarginPercent: prevPl?.marginPercent ?? 0,
+    previousRecurringRevenueInCents: prevRecurringRevenue,
+    previousOneTimeRevenueInCents: prevOneTimeRevenue,
   };
 }

@@ -8,6 +8,7 @@ interface BreakdownRow {
   payments: number;
   revenue: number;
   percentage: string;
+  marginPercentage?: string;
 }
 
 interface FinanceBreakdownTableProps {
@@ -15,6 +16,7 @@ interface FinanceBreakdownTableProps {
   subtitle: string;
   rows: BreakdownRow[];
   isLoading: boolean;
+  showMargin?: boolean;
 }
 
 export function FinanceBreakdownTable({
@@ -22,6 +24,7 @@ export function FinanceBreakdownTable({
   subtitle,
   rows,
   isLoading,
+  showMargin = false,
 }: FinanceBreakdownTableProps) {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
@@ -31,42 +34,63 @@ export function FinanceBreakdownTable({
       <div className="mt-4 space-y-2">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} className="h-10 w-full rounded-lg bg-zinc-800" />
+            <Skeleton key={i} className="h-12 w-full rounded-lg bg-zinc-800" />
           ))
         ) : rows.length === 0 ? (
           <p className="text-center py-8 text-zinc-600 text-sm">
             Sem dados no período
           </p>
         ) : (
-          rows.map((row) => (
-            <div
-              key={row.name}
-              className="flex items-center gap-3 rounded-lg border border-zinc-800 px-3 py-2.5"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-zinc-200 capitalize truncate">
-                  {row.name}
-                </p>
-                <p className="text-[11px] text-zinc-500 mt-0.5">
-                  {fmtInt(row.payments)} pagamentos
-                </p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-bold font-mono text-emerald-400">
-                  {fmtBRLDecimal(row.revenue / 100)}
-                </p>
-                <p className="text-[11px] text-zinc-500 mt-0.5">{row.percentage}</p>
-              </div>
-              <div className="w-16 hidden sm:block">
-                <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-indigo-500/60"
-                    style={{ width: row.percentage }}
-                  />
+          rows.map((row) => {
+            const marginVal = row.marginPercentage ? parseFloat(row.marginPercentage) : null;
+            const marginPositive = marginVal !== null && marginVal >= 0;
+            return (
+              <div
+                key={row.name}
+                className="flex items-center gap-3 rounded-lg border border-zinc-800 px-3 py-2.5 hover:bg-zinc-800/30 transition-colors"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-zinc-200 capitalize truncate">
+                    {row.name}
+                  </p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">
+                    {fmtInt(row.payments)} pagamentos
+                  </p>
+                </div>
+
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-bold font-mono text-emerald-400">
+                    {fmtBRLDecimal(row.revenue / 100)}
+                  </p>
+                  <p className="text-[11px] text-zinc-500 mt-0.5">{row.percentage}</p>
+                </div>
+
+                {showMargin && row.marginPercentage && (
+                  <div className="shrink-0">
+                    <span
+                      className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-mono font-semibold ${
+                        marginPositive
+                          ? "bg-emerald-950/50 text-emerald-400"
+                          : "bg-rose-950/50 text-rose-400"
+                      }`}
+                    >
+                      {marginPositive ? "+" : ""}{row.marginPercentage}
+                    </span>
+                    <p className="text-[9px] text-zinc-700 text-center mt-0.5">margem</p>
+                  </div>
+                )}
+
+                <div className="w-16 hidden sm:block">
+                  <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-indigo-500/60"
+                      style={{ width: row.percentage }}
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

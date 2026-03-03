@@ -1,14 +1,14 @@
 "use client";
 
 import {
-  LineChart,
+  Area,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
+  ComposedChart,
 } from "recharts";
 import { IDailyData } from "@/interfaces/dashboard.interface";
 import type { IProfitAndLoss } from "@/interfaces/cost.interface";
@@ -24,6 +24,51 @@ interface RevenueLineChartProps {
 function formatDateLabel(dateStr: string) {
   const [, month, day] = dateStr.split("-");
   return `${parseInt(day)}/${parseInt(month)}`;
+}
+
+interface TooltipPayloadItem {
+  dataKey: string;
+  value: number;
+  color: string;
+  name: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  label?: string;
+  payload?: TooltipPayloadItem[];
+}
+
+const SERIES = [
+  { key: "gross", label: "Receita Bruta", color: "#22c55e" },
+  { key: "operating_profit", label: "Lucro Operacional", color: "#06b6d4" },
+  { key: "net_profit", label: "Lucro Líquido", color: "#a855f7" },
+];
+
+function CustomTooltip({ active, label, payload }: CustomTooltipProps) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-lg border border-zinc-700/80 bg-zinc-900/95 px-3.5 py-3 text-xs shadow-2xl min-w-[160px]">
+      <p className="text-zinc-500 font-medium mb-2">{label}</p>
+      <div className="space-y-1.5">
+        {SERIES.map(({ key, label: seriesLabel, color }) => {
+          const item = payload.find((p) => p.dataKey === key);
+          if (!item) return null;
+          return (
+            <div key={key} className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full shrink-0" style={{ background: color }} />
+                <span className="text-zinc-400">{seriesLabel}</span>
+              </div>
+              <span className="font-bold font-mono tabular-nums" style={{ color }}>
+                {fmtBRLDecimal(item.value)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 export function RevenueLineChart({ data, pl, isLoading }: RevenueLineChartProps) {
@@ -57,79 +102,77 @@ export function RevenueLineChart({ data, pl, isLoading }: RevenueLineChartProps)
       <h3 className="text-sm font-bold text-zinc-100">
         Evolução Diária do Resultado
       </h3>
-      <p className="mt-0.5 text-xs text-zinc-500">
+      <p className="mt-0.5 text-xs text-zinc-500 mb-5">
         Receita bruta, lucro operacional e lucro líquido no período selecionado
       </p>
 
-      <div className="mt-5">
-        {isLoading ? (
-          <Skeleton className="h-52 w-full rounded-lg bg-zinc-800" />
-        ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 10, fill: "#52525b" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 10, fill: "#52525b" }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => fmtBRLDecimal(v)}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: "#18181b",
-                  border: "1px solid #3f3f46",
-                  borderRadius: 8,
-                  fontSize: 12,
-                  color: "#e4e4e7",
-                }}
-                formatter={(v: number) => [fmtBRLDecimal(v)]}
-                cursor={{ stroke: "#3f3f46" }}
-              />
-              <Legend
-                wrapperStyle={{
-                  fontSize: 11,
-                  color: "#71717a",
-                  paddingTop: 12,
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="gross"
-                name="Receita Bruta"
-                stroke="#22c55e"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4, fill: "#22c55e" }}
-              />
-              <Line
-                type="monotone"
-                dataKey="operating_profit"
-                name="Lucro Operacional"
-                stroke="#06b6d4"
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4, fill: "#06b6d4" }}
-              />
-              <Line
-                type="monotone"
-                dataKey="net_profit"
-                name="Lucro Líquido"
-                stroke="#a855f7"
-                strokeWidth={2}
-                dot={false}
-                strokeDasharray="5 5"
-                activeDot={{ r: 4, fill: "#a855f7" }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        )}
+      <div className="flex items-center gap-4 flex-wrap mb-4">
+        {SERIES.map(({ key, label, color }) => (
+          <div key={key} className="flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full" style={{ background: color }} />
+            <span className="text-[11px] text-zinc-500">{label}</span>
+          </div>
+        ))}
       </div>
+
+      {isLoading ? (
+        <Skeleton className="h-52 w-full rounded-lg bg-zinc-800" />
+      ) : (
+        <ResponsiveContainer width="100%" height={220}>
+          <ComposedChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+            <defs>
+              <linearGradient id="grad-gross" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#22c55e" stopOpacity={0.25} />
+                <stop offset="95%" stopColor="#22c55e" stopOpacity={0.02} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+            <XAxis
+              dataKey="label"
+              tick={{ fontSize: 10, fill: "#52525b" }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <YAxis
+              tick={{ fontSize: 10, fill: "#52525b" }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`}
+              width={48}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#3f3f46", strokeWidth: 1 }} />
+            <Area
+              type="monotone"
+              dataKey="gross"
+              name="Receita Bruta"
+              stroke="#22c55e"
+              strokeWidth={2}
+              fill="url(#grad-gross)"
+              dot={false}
+              activeDot={{ r: 4, fill: "#22c55e", stroke: "#18181b", strokeWidth: 2 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="operating_profit"
+              name="Lucro Operacional"
+              stroke="#06b6d4"
+              strokeWidth={1.5}
+              dot={false}
+              activeDot={{ r: 4, fill: "#06b6d4", stroke: "#18181b", strokeWidth: 2 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="net_profit"
+              name="Lucro Líquido"
+              stroke="#a855f7"
+              strokeWidth={1.5}
+              dot={false}
+              strokeDasharray="5 4"
+              activeDot={{ r: 4, fill: "#a855f7", stroke: "#18181b", strokeWidth: 2 }}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      )}
     </div>
   );
 }

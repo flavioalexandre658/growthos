@@ -116,6 +116,7 @@ export interface ICategoryBreakdown {
   payments: number;
   revenue: number;
   percentage: string;
+  marginPercentage?: string;
 }
 
 export interface IRevenueByBillingType {
@@ -168,4 +169,12 @@ export interface IFinancialData {
   revenueByBillingType: IRevenueByBillingType;
   pl: import("@/interfaces/cost.interface").IProfitAndLoss | null;
   periodDays: number;
+  previousGrossRevenueInCents?: number;
+  previousTotalPayments?: number;
+  previousAverageTicketInCents?: number;
+  previousLostRevenueInCents?: number;
+  previousNetProfitInCents?: number;
+  previousMarginPercent?: number;
+  previousRecurringRevenueInCents?: number;
+  previousOneTimeRevenueInCents?: number;
 }

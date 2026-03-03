@@ -6,6 +6,7 @@ export const metadata = {
 };
 
 interface FinancePageProps {
+  params: Promise<{ slug: string }>;
   searchParams: Promise<{
     period?: string;
     start_date?: string;
@@ -13,16 +14,17 @@ interface FinancePageProps {
   }>;
 }
 
-export default async function FinancePage({ searchParams }: FinancePageProps) {
-  const params = await searchParams;
+export default async function FinancePage({ params, searchParams }: FinancePageProps) {
+  const { slug } = await params;
+  const sp = await searchParams;
   const filter: IDateFilter =
-    params.start_date && params.end_date
-      ? { start_date: params.start_date, end_date: params.end_date }
-      : { period: (params.period as IDateFilter["period"]) || "30d" };
+    sp.start_date && sp.end_date
+      ? { start_date: sp.start_date, end_date: sp.end_date }
+      : { period: (sp.period as IDateFilter["period"]) || "30d" };
 
   return (
     <div className="p-5 lg:p-6">
-      <FinanceContent filter={filter} />
+      <FinanceContent filter={filter} slug={slug} />
     </div>
   );
 }
