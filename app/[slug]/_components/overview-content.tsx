@@ -4,7 +4,7 @@ import { Suspense, useState, useCallback } from "react";
 import { useFunnel } from "@/hooks/queries/use-funnel";
 import { useDaily } from "@/hooks/queries/use-daily";
 import { useSourceDistribution } from "@/hooks/queries/use-source-distribution";
-import { useRevenueComparison } from "@/hooks/queries/use-revenue-comparison";
+import { useTopProducts } from "@/hooks/queries/use-top-products";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { KpiCards } from "./kpi-cards";
@@ -12,7 +12,8 @@ import { FunnelSection } from "./funnel-section";
 import { DailyChart } from "./daily-chart";
 import { PeriodFilter } from "./period-filter";
 import { SourceChart } from "./source-chart";
-import { RecentPayments } from "./recent-payments";
+import { TopProducts } from "./top-products";
+import { DashboardAlerts } from "./dashboard-alerts";
 import {
   Popover,
   PopoverContent,
@@ -146,7 +147,7 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   const { data: funnel, isPending: funnelLoading } = useFunnel(orgId, filter);
   const { data: dailyResult, isPending: dailyLoading } = useDaily(orgId, filter);
   const { data: sourceData, isPending: sourceLoading } = useSourceDistribution(orgId, filter);
-  const { data: revenueComparison, isPending: comparisonLoading } = useRevenueComparison(orgId);
+  const { data: topProducts, isPending: topProductsLoading } = useTopProducts(orgId, filter);
 
   const allSteps: StepOption[] = (funnel?.steps ?? [])
     .filter((s) => s.key !== "pageview")
@@ -177,7 +178,7 @@ export function OverviewContent({ filter }: OverviewContentProps) {
 
       <KpiCards data={funnel} isLoading={funnelLoading} hiddenKeys={hiddenKeys} />
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[55fr_45fr] gap-4">
         <FunnelSection
           data={funnel}
           isLoading={funnelLoading}
@@ -186,17 +187,17 @@ export function OverviewContent({ filter }: OverviewContentProps) {
         <SourceChart data={sourceData} isLoading={sourceLoading} />
       </div>
 
-      <RecentPayments
-        payments={revenueComparison?.recentPayments ?? []}
-        isLoading={comparisonLoading}
-      />
-
       <DailyChart
         data={dailyResult?.rows}
         stepMeta={stepMeta}
         isLoading={dailyLoading}
         hiddenKeys={hiddenKeys}
       />
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <TopProducts data={topProducts} isLoading={topProductsLoading} />
+        <DashboardAlerts data={funnel} isLoading={funnelLoading} />
+      </div>
     </div>
   );
 }

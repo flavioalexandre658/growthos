@@ -1,9 +1,8 @@
 "use client";
 
 import {
-  ComposedChart,
+  BarChart,
   Bar,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -13,7 +12,7 @@ import {
 } from "recharts";
 import type { IDailyData, IStepMeta } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtInt, fmtBRLDecimal } from "@/utils/format";
+import { fmtInt } from "@/utils/format";
 import { getStepColor } from "@/utils/step-colors";
 
 interface DailyChartProps {
@@ -39,25 +38,20 @@ export function DailyChart({ data, stepMeta, isLoading, hiddenKeys }: DailyChart
 
   const chartData = (data ?? []).map((d) => ({
     label: formatDateLabel(d.date),
-    revenue: d.revenue,
     ...d.steps,
   }));
-
-  const hasRevenue = (data ?? []).some((d) => d.revenue > 0);
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <h3 className="text-sm font-bold text-zinc-100">Evolução Diária</h3>
-      <p className="mt-0.5 text-xs text-zinc-500">
-        Progresso do funil por dia
-      </p>
+      <p className="mt-0.5 text-xs text-zinc-500">Progresso do funil por dia</p>
 
       <div className="mt-5">
         {isLoading ? (
           <Skeleton className="h-52 w-full rounded-lg bg-zinc-800" />
         ) : (
           <ResponsiveContainer width="100%" height={220}>
-            <ComposedChart data={chartData} barGap={2} barCategoryGap="25%">
+            <BarChart data={chartData} barGap={2} barCategoryGap="25%">
               <CartesianGrid
                 strokeDasharray="3 3"
                 stroke="#27272a"
@@ -70,21 +64,11 @@ export function DailyChart({ data, stepMeta, isLoading, hiddenKeys }: DailyChart
                 tickLine={false}
               />
               <YAxis
-                yAxisId="left"
                 tick={{ fontSize: 10, fill: "#52525b" }}
                 axisLine={false}
                 tickLine={false}
+                tickFormatter={(v) => fmtInt(v)}
               />
-              {hasRevenue && (
-                <YAxis
-                  yAxisId="right"
-                  orientation="right"
-                  tick={{ fontSize: 10, fill: "#52525b" }}
-                  axisLine={false}
-                  tickLine={false}
-                  tickFormatter={(v) => fmtBRLDecimal(v / 100)}
-                />
-              )}
               <Tooltip
                 contentStyle={{
                   background: "#18181b",
@@ -94,10 +78,7 @@ export function DailyChart({ data, stepMeta, isLoading, hiddenKeys }: DailyChart
                   color: "#e4e4e7",
                 }}
                 labelStyle={{ color: "#a1a1aa", marginBottom: 4 }}
-                formatter={(v: number, name: string) => {
-                  if (name === "Receita") return [fmtBRLDecimal(v / 100), name];
-                  return [fmtInt(v), name];
-                }}
+                formatter={(v: number, name: string) => [fmtInt(v), name]}
                 cursor={{ fill: "#ffffff08" }}
               />
               <Legend
@@ -106,26 +87,14 @@ export function DailyChart({ data, stepMeta, isLoading, hiddenKeys }: DailyChart
               {visibleStepMeta.map((step) => (
                 <Bar
                   key={step.key}
-                  yAxisId="left"
                   dataKey={step.key}
                   name={step.label}
                   fill={getStepColor(step.key, allStepKeys).hex}
                   radius={[3, 3, 0, 0]}
+                  opacity={0.85}
                 />
               ))}
-              {hasRevenue && (
-                <Line
-                  yAxisId="right"
-                  type="monotone"
-                  dataKey="revenue"
-                  name="Receita"
-                  stroke="#f59e0b"
-                  strokeWidth={2}
-                  strokeDasharray="4 2"
-                  dot={false}
-                />
-              )}
-            </ComposedChart>
+            </BarChart>
           </ResponsiveContainer>
         )}
       </div>

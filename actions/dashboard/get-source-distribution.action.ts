@@ -52,14 +52,40 @@ export async function getSourceDistribution(
 
   if (total === 0) return { sources: [], total: 0 };
 
+  const revenueRows = await db
+    .select({
+      source: sql<string>`COALESCE(${events.source}, 'direct')`,
+      revenueInCents: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
+    })
+    .from(events)
+    .where(
+      and(
+        eq(events.organizationId, organizationId),
+        eq(events.eventType, "payment"),
+        gte(events.createdAt, startDate),
+        lte(events.createdAt, endDate)
+      )
+    )
+    .groupBy(sql`COALESCE(${events.source}, 'direct')`);
+
+  const revenueMap = new Map(
+    revenueRows.map((r) => [r.source, Number(r.revenueInCents)])
+  );
+
   const TOP_N = 5;
   const topRows = rows.slice(0, TOP_N);
-  const othersCount = rows.slice(TOP_N).reduce((sum, r) => sum + Number(r.count), 0);
+  const othersRows = rows.slice(TOP_N);
+  const othersCount = othersRows.reduce((sum, r) => sum + Number(r.count), 0);
+  const othersRevenue = othersRows.reduce(
+    (sum, r) => sum + (revenueMap.get(r.source) ?? 0),
+    0
+  );
 
   const sources = topRows.map((r) => ({
     source: r.source,
     count: Number(r.count),
     percentage: Math.round((Number(r.count) / total) * 100),
+    revenueInCents: revenueMap.get(r.source) ?? 0,
   }));
 
   if (othersCount > 0) {
@@ -67,6 +93,7 @@ export async function getSourceDistribution(
       source: "outros",
       count: othersCount,
       percentage: Math.round((othersCount / total) * 100),
+      revenueInCents: othersRevenue,
     });
   }
 

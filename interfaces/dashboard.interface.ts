@@ -56,6 +56,14 @@ export interface IGenericFunnelData {
   revenue: number;
   ticketMedio: string;
   checkoutAbandoned?: number;
+  previousSteps?: { key: string; value: number }[];
+  previousRevenue?: number;
+}
+
+export interface ITopProduct {
+  productName: string;
+  payments: number;
+  revenueInCents: number;
 }
 
 export interface IDailyData {
@@ -119,6 +127,7 @@ export interface ISourceEntry {
   source: string;
   count: number;
   percentage: number;
+  revenueInCents: number;
 }
 
 export interface ISourceDistribution {

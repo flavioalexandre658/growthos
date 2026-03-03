@@ -15,9 +15,10 @@ const EMPTY_PAGINATION = { page: 1, limit: 25, total: 0, total_pages: 0 };
 
 interface EventsContentProps {
   filter: IDateFilter;
+  initialEventTypes?: string[];
 }
 
-export function EventsContent({ filter }: EventsContentProps) {
+export function EventsContent({ filter, initialEventTypes = [] }: EventsContentProps) {
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
@@ -27,7 +28,7 @@ export function EventsContent({ filter }: EventsContentProps) {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(25);
   const [orderDir] = useState<OrderDirection>("DESC");
-  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([]);
+  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>(initialEventTypes);
   const [selectedSource, setSelectedSource] = useState("");
   const [selectedDevice, setSelectedDevice] = useState("");
   const [minValue, setMinValue] = useState("");

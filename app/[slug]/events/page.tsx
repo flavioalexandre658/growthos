@@ -10,6 +10,7 @@ interface EventsPageProps {
     period?: string;
     start_date?: string;
     end_date?: string;
+    event_types?: string;
   }>;
 }
 
@@ -20,9 +21,13 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
       ? { start_date: params.start_date, end_date: params.end_date }
       : { period: (params.period as IDateFilter["period"]) || "today" };
 
+  const initialEventTypes = params.event_types
+    ? params.event_types.split(",").map((t) => t.trim()).filter(Boolean)
+    : [];
+
   return (
     <div className="p-5 lg:p-6">
-      <EventsContent filter={filter} />
+      <EventsContent filter={filter} initialEventTypes={initialEventTypes} />
     </div>
   );
 }
