@@ -299,7 +299,7 @@
     var dedupeOption = rawData.dedupe;
 
     if (dedupeOption !== undefined) {
-      var dedupKey = dedupeOption === true ? eventType : String(dedupeOption);
+      var dedupKey = dedupeOption === true ? eventType : eventType + ":" + String(dedupeOption);
       if (isDuplicate(dedupKey)) return;
       markDedup(dedupKey);
     }
