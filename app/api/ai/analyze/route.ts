@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
   }
 
   const model = genAI.getGenerativeModel({
-    model: "gemini-3-flash",
+    model: "gemini-3-flash-preview",
     // Opcional: Ajuste a temperatura para análises financeiras mais precisas
     generationConfig: {
       temperature: 0.2,
