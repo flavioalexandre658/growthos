@@ -18,8 +18,8 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
-  const { data: funnel, isLoading: funnelLoading } = useFunnel(orgId, filter);
-  const { data: dailyResult, isLoading: dailyLoading } = useDaily(orgId, filter);
+  const { data: funnel, isPending: funnelLoading } = useFunnel(orgId, filter);
+  const { data: dailyResult, isPending: dailyLoading } = useDaily(orgId, filter);
 
   const stepMeta = funnel?.steps.map((s) => ({ key: s.key, label: s.label })) ?? [];
 

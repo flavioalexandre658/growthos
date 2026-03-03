@@ -19,11 +19,11 @@ import {
   IconBuilding,
   IconSettings,
   IconBook,
-  IconFile,
   IconCheck,
   IconSelector,
   IconPlus,
   IconRepeat,
+  IconSparkles,
 } from "@tabler/icons-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -51,23 +51,57 @@ interface NavItemDef {
   label: string;
   icon: React.ElementType;
   exact: boolean;
+  highlight?: boolean;
 }
 
-function buildNavItems(slug: string): NavItemDef[] {
+interface NavSection {
+  title: string;
+  items: NavItemDef[];
+}
+
+function buildNavSections(slug: string): NavSection[] {
   return [
-    { href: `/${slug}`, label: "Visão Geral", icon: IconLayoutDashboard, exact: true },
-    { href: `/${slug}/mrr`, label: "Recorrência", icon: IconRepeat, exact: false },
-    { href: `/${slug}/channels`, label: "Canais", icon: IconBrandGoogle, exact: false },
-    { href: `/${slug}/finance`, label: "Financeiro", icon: IconCurrencyDollar, exact: false },
-    { href: `/${slug}/landing-pages`, label: "Landing Pages", icon: IconWorldWww, exact: false },
-    { href: `/${slug}/pages`, label: "Pages", icon: IconFile, exact: false },
-    { href: `/${slug}/costs`, label: "Custos", icon: IconCalculator, exact: false },
-    { href: "/docs", label: "Documentação", icon: IconBook, exact: false },
+    {
+      title: "Visão Geral",
+      items: [
+        { href: `/${slug}`, label: "Dashboard", icon: IconLayoutDashboard, exact: true },
+      ],
+    },
+    {
+      title: "Receita",
+      items: [
+        { href: `/${slug}/finance`, label: "Financeiro", icon: IconCurrencyDollar, exact: false },
+        { href: `/${slug}/costs`, label: "Custos", icon: IconCalculator, exact: false },
+        { href: `/${slug}/mrr`, label: "Recorrência", icon: IconRepeat, exact: false },
+      ],
+    },
+    {
+      title: "Aquisição",
+      items: [
+        { href: `/${slug}/channels`, label: "Canais", icon: IconBrandGoogle, exact: false },
+        { href: `/${slug}/pages`, label: "Páginas", icon: IconWorldWww, exact: false },
+      ],
+    },
+    {
+      title: "Inteligência",
+      items: [
+        { href: `/${slug}/ai`, label: "Análise com IA", icon: IconSparkles, exact: false, highlight: true },
+      ],
+    },
   ];
 }
 
-function buildSettingsItem(slug: string): NavItemDef {
-  return { href: `/${slug}/settings`, label: "Configurações", icon: IconSettings, exact: false };
+interface FooterNavSection {
+  items: NavItemDef[];
+}
+
+function buildFooterNav(slug: string): FooterNavSection {
+  return {
+    items: [
+      { href: "/docs", label: "Documentação", icon: IconBook, exact: false },
+      { href: `/${slug}/settings`, label: "Configurações", icon: IconSettings, exact: false },
+    ],
+  };
 }
 
 const DATE_PARAMS = ["period", "start_date", "end_date"];
@@ -78,6 +112,7 @@ function NavItem({
   icon: Icon,
   exact,
   collapsed,
+  highlight,
   onClick,
 }: {
   href: string;
@@ -85,6 +120,7 @@ function NavItem({
   icon: React.ElementType;
   exact: boolean;
   collapsed?: boolean;
+  highlight?: boolean;
   onClick?: () => void;
 }) {
   const pathname = usePathname();
@@ -104,21 +140,36 @@ function NavItem({
       href={resolvedHref}
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-150",
+        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
         isActive
-          ? "bg-indigo-600/20 text-indigo-400 border border-indigo-600/30"
-          : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100 border border-transparent",
+          ? highlight
+            ? "bg-indigo-600/20 text-indigo-300 border border-indigo-500/40"
+            : "bg-indigo-600/20 text-indigo-400 border border-indigo-600/30"
+          : highlight
+            ? "text-indigo-400/70 hover:bg-indigo-600/10 hover:text-indigo-300 border border-transparent"
+            : "text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-100 border border-transparent",
       )}
     >
       <Icon
         size={18}
         className={cn(
           "shrink-0",
-          isActive ? "text-indigo-400" : "text-zinc-500",
+          isActive
+            ? highlight ? "text-indigo-300" : "text-indigo-400"
+            : highlight ? "text-indigo-400/70" : "text-zinc-500",
         )}
       />
       {!collapsed && <span>{label}</span>}
     </Link>
+  );
+}
+
+function SectionLabel({ title, collapsed }: { title: string; collapsed?: boolean }) {
+  if (collapsed) return null;
+  return (
+    <p className="px-3 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+      {title}
+    </p>
   );
 }
 
@@ -256,8 +307,8 @@ function SidebarContent({
   onClose?: () => void;
 }) {
   const { organization } = useOrganization();
-  const navItems = buildNavItems(slug);
-  const settingsItem = buildSettingsItem(slug);
+  const sections = buildNavSections(slug);
+  const footerNav = buildFooterNav(slug);
 
   return (
     <div className="flex h-full flex-col bg-zinc-950 border-r border-zinc-800/60">
@@ -307,40 +358,41 @@ function SidebarContent({
 
       <OrgSwitcher slug={slug} collapsed={collapsed} />
 
-      {!collapsed && (
-        <div className="px-4 py-2">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
-            Análises
-          </p>
-        </div>
-      )}
-
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-1">
         <Suspense>
-          {navItems.map((item) => (
-            <NavItem
-              key={item.href}
-              {...item}
-              collapsed={collapsed}
-              onClick={onClose}
-            />
+          {sections.map((section) => (
+            <div key={section.title}>
+              <SectionLabel title={section.title} collapsed={collapsed} />
+              <div className="space-y-0.5">
+                {section.items.map((item) => (
+                  <NavItem
+                    key={item.href}
+                    {...item}
+                    collapsed={collapsed}
+                    onClick={onClose}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </Suspense>
       </nav>
 
       <div
         className={cn(
-          "border-t border-zinc-800/60 p-3 space-y-1",
+          "border-t border-zinc-800/60 p-3 space-y-0.5",
           collapsed && "flex flex-col items-center",
         )}
       >
         <Suspense>
-          <NavItem {...settingsItem} collapsed={collapsed} onClick={onClose} />
+          {footerNav.items.map((item) => (
+            <NavItem key={item.href} {...item} collapsed={collapsed} onClick={onClose} />
+          ))}
         </Suspense>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-500 hover:bg-zinc-800/60 hover:text-zinc-100 transition-all w-full border border-transparent",
+            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-500 hover:bg-zinc-800/60 hover:text-zinc-100 transition-all w-full border border-transparent",
             collapsed && "justify-center w-auto",
           )}
         >

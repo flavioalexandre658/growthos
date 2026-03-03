@@ -60,11 +60,11 @@ export function FinanceContent({ filter }: FinanceContentProps) {
   const orgId = organization?.id;
   const [showExplanation, setShowExplanation] = useState(false);
 
-  const { data: financial, isLoading: financialLoading } = useFinancial(
+  const { data: financial, isPending: financialLoading } = useFinancial(
     orgId,
     filter,
   );
-  const { data: dailyResult, isLoading: dailyLoading } = useDaily(
+  const { data: dailyResult, isPending: dailyLoading } = useDaily(
     orgId,
     filter,
   );

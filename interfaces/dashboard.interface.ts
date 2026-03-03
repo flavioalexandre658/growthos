@@ -32,6 +32,7 @@ export interface IBaseTableParams extends IDateFilter {
 
 export interface IChannelParams extends IBaseTableParams {
   order_by?: string;
+  search?: string;
   min_revenue?: string; max_revenue?: string;
   min_conversion_rate?: string; max_conversion_rate?: string;
 }

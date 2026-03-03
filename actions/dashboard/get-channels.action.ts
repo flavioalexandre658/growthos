@@ -6,7 +6,7 @@ import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
-import { getPageviewSessionsBySource } from "@/utils/get-pageview-counts";
+import { getPageviewSessionsByChannel } from "@/utils/get-pageview-counts";
 import {
   buildFunnelSteps,
   getAllQueryEventTypes,
@@ -47,9 +47,18 @@ export async function getChannels(
     (t) => t !== "pageview"
   );
 
+  const PAID_MEDIUMS = ["cpc", "ppc", "paid", "ads", "paid_social", "display", "cpv", "cpm"];
+  const paidList = PAID_MEDIUMS.map((m) => `'${m}'`).join(", ");
+
+  const channelExpr = sql.raw(`CASE
+    WHEN COALESCE("source", 'direct') = 'direct' AND COALESCE("medium", 'direct') = 'direct' THEN 'direct'
+    WHEN COALESCE("medium", '') IN (${paidList}) THEN COALESCE("source", 'direct') || '_paid'
+    ELSE COALESCE("source", 'direct') || '_organic'
+  END`);
+
   const rawRows = await db
     .select({
-      channel: sql<string>`COALESCE(${events.source}, 'direct')`,
+      channel: sql<string>`${channelExpr}`,
       eventType: events.eventType,
       total: sql<number>`COUNT(*)`,
       uniqueTotal: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
@@ -64,9 +73,9 @@ export async function getChannels(
         inArray(events.eventType, allEventTypes)
       )
     )
-    .groupBy(sql`COALESCE(${events.source}, 'direct')`, events.eventType);
+    .groupBy(sql`${channelExpr}`, events.eventType);
 
-  const pvBySource = await getPageviewSessionsBySource(
+  const pvBySource = await getPageviewSessionsByChannel(
     organizationId,
     startDate,
     endDate,
@@ -143,7 +152,12 @@ export async function getChannels(
     }
   );
 
-  const sorted = [...allChannels].sort((a, b) => {
+  const searchTerm = params.search?.toLowerCase().trim();
+  const filtered = searchTerm
+    ? allChannels.filter((c) => c.channel.toLowerCase().includes(searchTerm))
+    : allChannels;
+
+  const sorted = [...filtered].sort((a, b) => {
     if (orderBy === "revenue") return b.revenue - a.revenue;
     if (orderBy === "conversion_rate") {
       return parseFloat(b.conversion_rate) - parseFloat(a.conversion_rate);

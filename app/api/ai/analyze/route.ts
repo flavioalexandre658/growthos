@@ -48,7 +48,7 @@ function buildComparisonPrompt(
     channels: "Canais de Aquisição",
     finance: "Financeiro",
     templates: "Templates",
-    "landing-pages": "Landing Pages",
+    "pages": "Páginas",
   };
 
   return `Você é um analista de growth sênior comparando períodos da ${orgName}, uma ${context}.

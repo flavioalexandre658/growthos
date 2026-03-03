@@ -2,7 +2,7 @@ import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { PagesContent } from "./_components/pages-content";
 
 export const metadata = {
-  title: "Pages | GrowthOS",
+  title: "Páginas | GrowthOS",
 };
 
 interface PagesPageProps {
@@ -13,7 +13,9 @@ interface PagesPageProps {
   }>;
 }
 
-export default async function PagesPage({ searchParams }: PagesPageProps) {
+export default async function PagesPage({
+  searchParams,
+}: PagesPageProps) {
   const params = await searchParams;
   const filter: IDateFilter =
     params.start_date && params.end_date

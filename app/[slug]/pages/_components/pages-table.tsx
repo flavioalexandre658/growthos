@@ -79,9 +79,9 @@ export function PagesTable({
     key: step.key,
     header: step.label,
     align: "right" as const,
-    render: (p: ILandingPageData) => (
+    render: (lp: ILandingPageData) => (
       <span className="font-mono text-sm text-zinc-400">
-        {fmtInt(p.steps[step.key] ?? 0)}
+        {fmtInt(lp.steps[step.key] ?? 0)}
       </span>
     ),
   }));
@@ -91,12 +91,12 @@ export function PagesTable({
       key: "page",
       header: "Página",
       mobilePrimary: true,
-      render: (p) => (
+      render: (lp) => (
         <span
           className="font-mono text-xs text-zinc-300 truncate max-w-[280px] block"
-          title={p.page}
+          title={lp.page}
         >
-          {p.page}
+          {lp.page}
         </span>
       ),
     },
@@ -105,14 +105,14 @@ export function PagesTable({
       key: "conversion_rate",
       header: "Conversão",
       align: "right",
-      render: (p) => (
+      render: (lp) => (
         <span
           className={cn(
             "font-mono text-sm font-semibold",
-            conversionColor(String(p.conversion_rate))
+            conversionColor(String(lp.conversion_rate))
           )}
         >
-          {p.conversion_rate}
+          {lp.conversion_rate}
         </span>
       ),
     },
@@ -120,9 +120,9 @@ export function PagesTable({
       key: "revenue",
       header: "Receita",
       align: "right",
-      render: (p) => (
+      render: (lp) => (
         <span className="font-mono text-sm font-bold text-emerald-400">
-          {fmtBRLDecimal(p.revenue / 100)}
+          {fmtBRLDecimal(lp.revenue / 100)}
         </span>
       ),
     },
@@ -132,7 +132,7 @@ export function PagesTable({
     <ResponsiveTable
       columns={columns}
       data={data}
-      getRowKey={(p) => p.page}
+      getRowKey={(lp) => lp.page}
       isLoading={isLoading}
       serverPagination={serverPagination}
       emptyMessage="Nenhuma página encontrada no período"
@@ -141,7 +141,7 @@ export function PagesTable({
           <div>
             <h3 className="text-sm font-bold text-zinc-100">Páginas por Receita</h3>
             <p className="mt-0.5 text-xs text-zinc-500">
-              URL exata onde cada evento foi disparado
+              Páginas de entrada que mais convertem e geram receita
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5 shrink-0">

@@ -20,9 +20,9 @@ export function MrrContent({ filter }: MrrContentProps) {
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
-  const { data: overview, isLoading: overviewLoading } = useMrrOverview(orgId, filter);
-  const { data: movement, isLoading: movementLoading } = useMrrMovement(orgId, filter);
-  const { data: growth, isLoading: growthLoading } = useMrrGrowth(orgId, filter);
+  const { data: overview, isPending: overviewLoading } = useMrrOverview(orgId, filter);
+  const { data: movement, isPending: movementLoading } = useMrrMovement(orgId, filter);
+  const { data: growth, isPending: growthLoading } = useMrrGrowth(orgId, filter);
 
   return (
     <div className="space-y-6">

@@ -106,11 +106,44 @@
     }
   }
 
+  var CLICK_ID_MAP = [
+    { param: "gclid", source: "google", medium: "cpc" },
+    { param: "gbraid", source: "google", medium: "cpc" },
+    { param: "wbraid", source: "google", medium: "cpc" },
+    { param: "fbclid", source: "facebook", medium: "paid_social" },
+    { param: "msclkid", source: "bing", medium: "cpc" },
+    { param: "ttclid", source: "tiktok", medium: "paid_social" },
+    { param: "twclid", source: "twitter", medium: "paid_social" },
+    { param: "li_fat_id", source: "linkedin", medium: "paid_social" },
+    { param: "ScCid", source: "snapchat", medium: "paid_social" },
+    { param: "pclid", source: "pinterest", medium: "paid_social" },
+  ];
+
+  function detectClickId(params) {
+    for (var i = 0; i < CLICK_ID_MAP.length; i++) {
+      if (params.get(CLICK_ID_MAP[i].param)) {
+        return CLICK_ID_MAP[i];
+      }
+    }
+    return null;
+  }
+
   function persistUtms() {
     try {
       var params = new URLSearchParams(window.location.search);
+      var clickId = detectClickId(params);
       var utmSource = params.get("utm_source");
-      if (utmSource) {
+
+      if (clickId) {
+        var utms = {
+          source: utmSource || clickId.source,
+          medium: params.get("utm_medium") || clickId.medium,
+          campaign: params.get("utm_campaign") || null,
+          content: params.get("utm_content") || null,
+          term: params.get("utm_term") || null,
+        };
+        sessionStorage.setItem(UTM_KEY, JSON.stringify(utms));
+      } else if (utmSource) {
         var utms = {
           source: utmSource,
           medium: params.get("utm_medium") || "cpc",
@@ -148,12 +181,15 @@
     var params = new URLSearchParams(window.location.search);
     var storedUtms = getStoredUtms();
     var referrer = document.referrer || null;
+    var clickId = detectClickId(params);
 
     var source = params.get("utm_source") ||
+      (clickId && clickId.source) ||
       (storedUtms && storedUtms.source) ||
       inferSourceFromReferrer(referrer);
 
     var medium = params.get("utm_medium") ||
+      (clickId && clickId.medium) ||
       (storedUtms && storedUtms.medium) ||
       (referrer ? "referral" : "direct");
 

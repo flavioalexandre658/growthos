@@ -94,6 +94,46 @@ export async function getPageviewSessionsBySource(
   return map;
 }
 
+export async function getPageviewSessionsByChannel(
+  organizationId: string,
+  startDate: Date,
+  endDate: Date,
+  tz: string
+): Promise<Map<string, number>> {
+  const startStr = toDateStr(startDate, tz);
+  const endStr = toDateStr(endDate, tz);
+
+  const PAID_MEDIUMS = ["cpc", "ppc", "paid", "ads", "paid_social", "display", "cpv", "cpm"];
+  const paidList = PAID_MEDIUMS.map((m) => `'${m}'`).join(", ");
+
+  const channelExpr = sql.raw(`CASE
+    WHEN COALESCE("source", 'direct') = 'direct' AND COALESCE("medium", 'direct') = 'direct' THEN 'direct'
+    WHEN COALESCE("medium", '') IN (${paidList}) THEN COALESCE("source", 'direct') || '_paid'
+    ELSE COALESCE("source", 'direct') || '_organic'
+  END`);
+
+  const rows = await db
+    .select({
+      channel: sql<string>`${channelExpr}`,
+      sessions: sql<number>`COUNT(DISTINCT ${pageviewAggregates.sessionId})`,
+    })
+    .from(pageviewAggregates)
+    .where(
+      and(
+        eq(pageviewAggregates.organizationId, organizationId),
+        gte(pageviewAggregates.date, startStr),
+        lte(pageviewAggregates.date, endStr)
+      )
+    )
+    .groupBy(sql`${channelExpr}`);
+
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    map.set(row.channel, Number(row.sessions));
+  }
+  return map;
+}
+
 export async function getPageviewSessionsByEntryPage(
   organizationId: string,
   startDate: Date,

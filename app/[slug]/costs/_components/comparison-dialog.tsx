@@ -29,7 +29,7 @@ const ALL_SECTIONS: ComparisonSection[] = [
   { key: "overview", label: "Visão Geral" },
   { key: "channels", label: "Canais" },
   { key: "finance", label: "Financeiro" },
-  { key: "landing-pages", label: "Landing Pages" },
+  { key: "pages", label: "Páginas" },
 ];
 
 const PERIOD_PRESETS: { value: DashboardPeriod; label: string }[] = [
@@ -145,7 +145,7 @@ async function fetchSectionData(orgId: string, section: string, filter: IDateFil
       );
       return { financial, pl };
     }
-    case "landing-pages": {
+    case "pages": {
       const result = await getLandingPages(orgId, { ...filter, limit: 50 });
       return { landingPages: result.data, stepMeta: result.stepMeta };
     }

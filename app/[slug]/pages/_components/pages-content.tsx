@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { usePages } from "@/hooks/queries/use-pages";
+import { useLandingPages } from "@/hooks/queries/use-landing-pages";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { IDateFilter, ILandingPageParams, OrderDirection } from "@/interfaces/dashboard.interface";
@@ -36,7 +36,7 @@ export function PagesContent({ filter }: PagesContentProps) {
     search: debouncedSearch || undefined,
   };
 
-  const { data: resp, isLoading } = usePages(orgId, params);
+  const { data: resp, isPending: isLoading } = useLandingPages(orgId, params);
 
   const pagesData = resp?.data ?? [];
   const pagination = resp?.pagination ?? EMPTY_PAGINATION;
@@ -46,10 +46,8 @@ export function PagesContent({ filter }: PagesContentProps) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-bold text-zinc-100">Pages</h1>
-          <p className="text-xs text-zinc-500">
-            URL onde cada evento foi disparado — visão por página individual
-          </p>
+          <h1 className="text-lg font-bold text-zinc-100">Páginas</h1>
+          <p className="text-xs text-zinc-500">Conversão e receita por página de entrada</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">

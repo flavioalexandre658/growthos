@@ -2,11 +2,14 @@
 
 import { useState, Suspense } from "react";
 import { useChannels } from "@/hooks/queries/use-channels";
+import { useDebounce } from "@/hooks/use-debounce";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { IDateFilter, IChannelParams, OrderDirection } from "@/interfaces/dashboard.interface";
 import { PeriodFilter } from "@/app/[slug]/_components/period-filter";
 import { ChannelsBarChart } from "./channels-bar-chart";
 import { ChannelsTable } from "./channels-table";
+import { Input } from "@/components/ui/input";
+import { IconSearch } from "@tabler/icons-react";
 
 const EMPTY_PAGINATION = { page: 1, limit: 30, total: 0, total_pages: 0 };
 
@@ -18,6 +21,8 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 400);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(30);
   const [orderBy, setOrderBy] = useState<string>("revenue");
@@ -29,9 +34,10 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
     limit,
     order_by: orderBy,
     order_dir: orderDir,
+    search: debouncedSearch || undefined,
   };
 
-  const { data: resp, isLoading } = useChannels(orgId, params);
+  const { data: resp, isPending: isLoading } = useChannels(orgId, params);
 
   const channelsData = resp?.data ?? [];
   const pagination = resp?.pagination ?? EMPTY_PAGINATION;
@@ -44,9 +50,26 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
           <h1 className="text-lg font-bold text-zinc-100">Canais de Aquisição</h1>
           <p className="text-xs text-zinc-500">Receita, conversão e ticket médio por canal</p>
         </div>
-        <Suspense>
-          <PeriodFilter filter={filter} />
-        </Suspense>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <IconSearch
+              size={14}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"
+            />
+            <Input
+              placeholder="Buscar canal..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              className="pl-8 h-8 w-44 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-600 text-sm"
+            />
+          </div>
+          <Suspense>
+            <PeriodFilter filter={filter} />
+          </Suspense>
+        </div>
       </div>
 
       <ChannelsBarChart data={channelsData} isLoading={isLoading} />

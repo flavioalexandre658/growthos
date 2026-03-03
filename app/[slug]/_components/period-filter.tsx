@@ -2,9 +2,10 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { DashboardPeriod, IDateFilter } from "@/interfaces/dashboard.interface";
 import { cn } from "@/lib/utils";
-import { IconCalendar, IconX } from "@tabler/icons-react";
+import { IconCalendar, IconX, IconRefresh } from "@tabler/icons-react";
 
 const PERIOD_OPTIONS: { value: DashboardPeriod; label: string }[] = [
   { value: "today", label: "Hoje" },
@@ -24,6 +25,8 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const hasRange = !!(filter.start_date && filter.end_date);
   const [showCustom, setShowCustom] = useState(hasRange);
@@ -63,8 +66,22 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
 
   const activePeriod = !hasRange ? (filter.period ?? "30d") : null;
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    setIsRefreshing(false);
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <button
+        onClick={handleRefresh}
+        disabled={isRefreshing}
+        title="Atualizar dados"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600 transition-colors disabled:opacity-50"
+      >
+        <IconRefresh size={14} className={isRefreshing ? "animate-spin" : ""} />
+      </button>
       <div className="flex items-center gap-0.5 rounded-lg border border-zinc-800 bg-zinc-900/80 p-1">
         {PERIOD_OPTIONS.map((opt) => (
           <button
