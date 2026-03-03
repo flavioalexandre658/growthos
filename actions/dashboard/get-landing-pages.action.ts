@@ -17,6 +17,7 @@ import type {
   ILandingPageParams,
   ILandingPageData,
   ILandingPagesResult,
+  IPageScatterPoint,
 } from "@/interfaces/dashboard.interface";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
@@ -26,7 +27,19 @@ export async function getLandingPages(
 ): Promise<ILandingPagesResult> {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
-    return { data: [], pagination: { page: 1, limit: 30, total: 0, total_pages: 0 }, stepMeta: [] };
+    return {
+      data: [],
+      pagination: { page: 1, limit: 30, total: 0, total_pages: 0 },
+      stepMeta: [],
+      totalPages: 0,
+      pagesWithRevenue: 0,
+      totalRevenue: 0,
+      bestConversionPage: "",
+      bestConversionRate: "0%",
+      biggestOpportunityPage: "",
+      biggestOpportunityVisits: 0,
+      scatterData: [],
+    };
   }
 
   const [org] = await db
@@ -146,6 +159,52 @@ export async function getLandingPages(
     }
   );
 
+  const firstStepKeyForVisits = funnelSteps[0]?.eventType ?? "pageview";
+
+  const totalPages = allPages.length;
+  const pagesWithRevenue = allPages.filter((p) => p.revenue > 0).length;
+  const totalRevenue = allPages.reduce((s, p) => s + p.revenue, 0);
+
+  const qualifiedForConversion = allPages.filter(
+    (p) => (p.steps[firstStepKeyForVisits] ?? p.steps["pageview"] ?? 0) >= 5
+  );
+  const bestConversionPage = qualifiedForConversion.length > 0
+    ? qualifiedForConversion.reduce((best, p) =>
+        parseFloat(p.conversion_rate) > parseFloat(best.conversion_rate) ? p : best
+      ).page
+    : "";
+  const bestConversionRate = qualifiedForConversion.length > 0
+    ? qualifiedForConversion.reduce((best, p) =>
+        parseFloat(p.conversion_rate) > parseFloat(best.conversion_rate) ? p : best
+      ).conversion_rate
+    : "0%";
+
+  const opportunityCandidates = allPages.filter(
+    (p) => parseFloat(p.conversion_rate) < 1
+  );
+  const biggestOpportunity = opportunityCandidates.length > 0
+    ? opportunityCandidates.reduce((best, p) => {
+        const visits = p.steps[firstStepKeyForVisits] ?? p.steps["pageview"] ?? 0;
+        const bestVisits = best.steps[firstStepKeyForVisits] ?? best.steps["pageview"] ?? 0;
+        return visits > bestVisits ? p : best;
+      })
+    : null;
+  const biggestOpportunityPage = biggestOpportunity?.page ?? "";
+  const biggestOpportunityVisits = biggestOpportunity
+    ? (biggestOpportunity.steps[firstStepKeyForVisits] ?? biggestOpportunity.steps["pageview"] ?? 0)
+    : 0;
+
+  const scatterData: IPageScatterPoint[] = allPages
+    .map((p) => ({
+      page: p.page,
+      visits: p.steps[firstStepKeyForVisits] ?? p.steps["pageview"] ?? 0,
+      conversionRate: parseFloat(p.conversion_rate),
+      revenue: p.revenue,
+    }))
+    .filter((p) => p.visits > 0)
+    .sort((a, b) => b.visits - a.visits)
+    .slice(0, 150);
+
   const sorted = [...allPages].sort((a, b) => {
     if (orderBy === "revenue") return b.revenue - a.revenue;
     if (orderBy === "conversion_rate") {
@@ -171,5 +230,13 @@ export async function getLandingPages(
       total_pages: Math.ceil(total / limit),
     },
     stepMeta,
+    totalPages,
+    pagesWithRevenue,
+    totalRevenue,
+    bestConversionPage,
+    bestConversionRate,
+    biggestOpportunityPage,
+    biggestOpportunityVisits,
+    scatterData,
   };
 }

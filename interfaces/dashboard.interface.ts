@@ -103,10 +103,25 @@ export interface ILandingPageData {
   conversion_rate: string;
 }
 
+export interface IPageScatterPoint {
+  page: string;
+  visits: number;
+  conversionRate: number;
+  revenue: number;
+}
+
 export interface ILandingPagesResult {
   data: ILandingPageData[];
   pagination: IPaginationMeta;
   stepMeta: IStepMeta[];
+  totalPages: number;
+  pagesWithRevenue: number;
+  totalRevenue: number;
+  bestConversionPage: string;
+  bestConversionRate: string;
+  biggestOpportunityPage: string;
+  biggestOpportunityVisits: number;
+  scatterData: IPageScatterPoint[];
 }
 
 export interface IPaymentMethodBreakdown {
