@@ -1,5 +1,6 @@
 export type CostValueType = "VALUE" | "PERCENTAGE";
-export type VariableCostApplyTo = "all" | "payment_method" | "billing_type";
+export type VariableCostApplyTo = "all" | "payment_method" | "billing_type" | "category";
+export type FixedCostFrequency = "monthly" | "quarterly" | "semiannual" | "annual";
 
 export interface IFixedCost {
   id: string;
@@ -7,6 +8,7 @@ export interface IFixedCost {
   name: string;
   amountInCents: number;
   type: CostValueType;
+  frequency: FixedCostFrequency;
   description: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -30,6 +32,7 @@ export interface ICreateFixedCost {
   name: string;
   amountInCents: number;
   type: CostValueType;
+  frequency?: FixedCostFrequency;
   description?: string;
 }
 
@@ -47,6 +50,7 @@ export interface IUpdateFixedCost {
   name?: string;
   amountInCents?: number;
   type?: CostValueType;
+  frequency?: FixedCostFrequency;
   description?: string;
 }
 
@@ -62,6 +66,16 @@ export interface IUpdateVariableCost {
 export interface IRevenueBySegment {
   paymentMethod: Record<string, number>;
   billingType: Record<string, number>;
+  category?: Record<string, number>;
+}
+
+export interface ICostsSummary {
+  grossRevenueInCents: number;
+  totalFixedCostsInCents: number;
+  totalVariableCostsInCents: number;
+  totalCostsInCents: number;
+  impactPercent: number;
+  marginPercent: number;
 }
 
 export interface IProfitAndLoss {
@@ -82,6 +96,7 @@ export interface IPLCostBreakdown {
   amountInCents: number;
   calculatedInCents: number;
   type: CostValueType;
+  frequency?: FixedCostFrequency;
 }
 
 export interface IPLVariableBreakdown {

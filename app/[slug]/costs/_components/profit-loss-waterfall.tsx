@@ -1,6 +1,6 @@
 "use client";
 
-import { ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, Tooltip, LabelList } from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, LabelList } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtBRLDecimal } from "@/utils/format";
 import type { IProfitAndLoss } from "@/interfaces/cost.interface";
@@ -8,7 +8,6 @@ import type { IProfitAndLoss } from "@/interfaces/cost.interface";
 interface WaterfallEntry {
   name: string;
   value: number;
-  displayValue: number;
   color: string;
   isNegative: boolean;
 }
@@ -22,37 +21,95 @@ function buildData(pl: IProfitAndLoss): WaterfallEntry[] {
   const net = pl.netProfitInCents / 100;
 
   return [
-    { name: "Receita", value: gross, displayValue: gross, color: "#22c55e", isNegative: false },
-    { name: "Descontos", value: eventCosts, displayValue: eventCosts, color: "#f43f5e", isNegative: true },
-    { name: "Custos Var.", value: varTotal, displayValue: varTotal, color: "#f97316", isNegative: true },
-    { name: "Lucro Op.", value: Math.abs(opProfit), displayValue: opProfit, color: opProfit >= 0 ? "#06b6d4" : "#ef4444", isNegative: opProfit < 0 },
-    { name: "Custos Fixos", value: fixedTotal, displayValue: fixedTotal, color: "#ef4444", isNegative: true },
-    { name: "Lucro Líq.", value: Math.abs(net), displayValue: net, color: net >= 0 ? "#6366f1" : "#ef4444", isNegative: net < 0 },
-  ].filter((d) => d.value > 0);
+    { name: "Receita", value: gross, color: "#22c55e", isNegative: false },
+    { name: "Descontos", value: -eventCosts, color: "#f43f5e", isNegative: true },
+    { name: "Custos Var.", value: -varTotal, color: "#f97316", isNegative: true },
+    { name: "Lucro Op.", value: opProfit, color: opProfit >= 0 ? "#06b6d4" : "#ef4444", isNegative: opProfit < 0 },
+    { name: "Custos Fixos", value: -fixedTotal, color: "#ef4444", isNegative: true },
+    { name: "Lucro Líq.", value: net, color: net >= 0 ? "#6366f1" : "#ef4444", isNegative: net < 0 },
+  ].filter((d) => d.value !== 0);
+}
+
+function fmtCompact(v: number): string {
+  const abs = Math.abs(v);
+  const sign = v < 0 ? "-" : "";
+  if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${sign}${(abs / 1_000).toFixed(1)}k`;
+  return `${sign}${abs.toFixed(0)}`;
+}
+
+interface BarShapeProps {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  payload: WaterfallEntry;
+}
+
+function CustomBarShape(props: unknown) {
+  const { x, y, width, height, payload } = props as BarShapeProps;
+  if (!width || height === undefined || height === 0) return null;
+
+  const top = Math.min(y, y + height);
+  const h = Math.abs(height);
+  const w = width;
+  const r = Math.min(4, h / 2);
+  const isPositive = payload.value >= 0;
+
+  let d: string;
+
+  if (isPositive) {
+    d = `
+      M ${x},${top + h}
+      L ${x},${top + r}
+      Q ${x},${top} ${x + r},${top}
+      L ${x + w - r},${top}
+      Q ${x + w},${top} ${x + w},${top + r}
+      L ${x + w},${top + h}
+      Z
+    `;
+  } else {
+    d = `
+      M ${x},${top}
+      L ${x + w},${top}
+      L ${x + w},${top + h - r}
+      Q ${x + w},${top + h} ${x + w - r},${top + h}
+      L ${x + r},${top + h}
+      Q ${x},${top + h} ${x},${top + h - r}
+      Z
+    `;
+  }
+
+  return <path d={d} fill={payload.color} fillOpacity={0.85} />;
 }
 
 function makeLabel(data: WaterfallEntry[]) {
   return function CustomLabel(props: unknown) {
-    const { x, y, width, index } = props as {
+    const { x, y, width, height, index } = props as {
       x: number;
       y: number;
       width: number;
+      height: number;
       index: number;
     };
     const entry = data?.[index];
     if (!entry) return null;
-    const prefix = entry.isNegative ? "−" : "";
+    const absVal = Math.abs(entry.value);
+    const prefix = entry.isNegative ? "− " : "";
+    const top = Math.min(y, y + height);
+    const barH = Math.abs(height);
+    const labelY = entry.value >= 0 ? top - 12 : top + barH + 16;
     return (
       <text
         x={x + width / 2}
-        y={y - 8}
+        y={labelY}
         textAnchor="middle"
         fill={entry.color}
         fontSize={10}
         fontFamily="monospace"
         fontWeight={700}
       >
-        {prefix} {fmtBRLDecimal(entry.value)}
+        {prefix}{fmtBRLDecimal(absVal)}
       </text>
     );
   };
@@ -66,11 +123,12 @@ interface CustomTooltipProps {
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   const e = payload[0].payload;
+  const absVal = Math.abs(e.value);
   return (
     <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-xs shadow-xl">
       <p className="text-zinc-400 mb-1 font-medium">{e.name}</p>
       <p className="font-bold font-mono text-sm" style={{ color: e.color }}>
-        {e.isNegative ? "−" : ""} {fmtBRLDecimal(e.value)}
+        {e.isNegative ? "− " : ""}{fmtBRLDecimal(absVal)}
       </p>
     </div>
   );
@@ -96,6 +154,13 @@ export function ProfitLossWaterfall({ pl, isLoading }: ProfitLossWaterfallProps)
   const data = buildData(pl);
   const CustomLabel = makeLabel(data);
 
+  const allValues = data.map((d) => d.value);
+  const maxVal = Math.max(...allValues, 0);
+  const minVal = Math.min(...allValues, 0);
+  const range = maxVal - minVal || 1;
+  const domainMin = minVal - range * 0.25;
+  const domainMax = maxVal + range * 0.15;
+
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <h3 className="text-sm font-bold text-zinc-100 mb-1">Composição do Resultado</h3>
@@ -103,45 +168,44 @@ export function ProfitLossWaterfall({ pl, isLoading }: ProfitLossWaterfallProps)
         Receita → Descontos → Custos Variáveis → Lucro Operacional → Custos Fixos → Lucro Líquido
       </p>
 
-      <ResponsiveContainer width="100%" height={260}>
-        <BarChart data={data} barSize={52} margin={{ top: 28, right: 8, left: 8, bottom: 0 }}>
+      <ResponsiveContainer width="100%" height={340}>
+        <BarChart data={data} barSize={44} margin={{ top: 32, right: 12, left: 4, bottom: 44 }}>
           <XAxis
             dataKey="name"
             tick={{ fill: "#71717a", fontSize: 10 }}
             axisLine={false}
             tickLine={false}
+            dy={12}
           />
           <YAxis
-            tick={{ fill: "#52525b", fontSize: 10 }}
+            domain={[domainMin, domainMax]}
+            tick={{ fill: "#52525b", fontSize: 9 }}
             axisLine={false}
             tickLine={false}
-            tickFormatter={(v: number) => fmtBRLDecimal(v)}
-            width={64}
+            tickFormatter={fmtCompact}
+            width={48}
           />
           <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-          <Bar dataKey="value" radius={[5, 5, 0, 0]} isAnimationActive={false}>
-            {data.map((entry, i) => (
-              <Cell
-                key={i}
-                fill={entry.color}
-                fillOpacity={0.85}
-              />
-            ))}
+          <ReferenceLine y={0} stroke="#3f3f46" strokeWidth={1} />
+          <Bar dataKey="value" shape={<CustomBarShape />} isAnimationActive={false}>
             <LabelList content={CustomLabel} dataKey="value" />
           </Bar>
         </BarChart>
       </ResponsiveContainer>
 
-      <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 justify-center">
-        {data.map((entry) => (
-          <div key={entry.name} className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full shrink-0" style={{ background: entry.color }} />
-            <span className="text-[10px] text-zinc-500">{entry.name}</span>
-            <span className="text-[10px] font-mono font-semibold" style={{ color: entry.color }}>
-              {entry.isNegative ? "−" : ""} {fmtBRLDecimal(entry.value)}
-            </span>
-          </div>
-        ))}
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 justify-center">
+        {data.map((entry) => {
+          const absVal = Math.abs(entry.value);
+          return (
+            <div key={entry.name} className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full shrink-0" style={{ background: entry.color }} />
+              <span className="text-[10px] text-zinc-500">{entry.name}</span>
+              <span className="text-[10px] font-mono font-semibold" style={{ color: entry.color }}>
+                {entry.isNegative ? "− " : ""}{fmtBRLDecimal(absVal)}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

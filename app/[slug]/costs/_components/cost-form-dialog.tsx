@@ -30,7 +30,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import type { IFixedCost, IVariableCost, VariableCostApplyTo } from "@/interfaces/cost.interface";
+import type {
+  IFixedCost,
+  IVariableCost,
+  VariableCostApplyTo,
+  FixedCostFrequency,
+} from "@/interfaces/cost.interface";
 
 const PAYMENT_METHOD_OPTIONS = [
   { value: "credit_card", label: "Cartão de crédito" },
@@ -45,11 +50,23 @@ const BILLING_TYPE_OPTIONS = [
   { value: "recurring", label: "Recorrente (recurring)" },
 ];
 
+const FREQUENCY_OPTIONS: { value: FixedCostFrequency; label: string; sub: string }[] = [
+  { value: "monthly", label: "Mensal", sub: "pago todo mês" },
+  { value: "quarterly", label: "Trimestral", sub: "rateado em 3 meses" },
+  { value: "semiannual", label: "Semestral", sub: "rateado em 6 meses" },
+  { value: "annual", label: "Anual", sub: "rateado em 12 meses" },
+];
+
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
-  amountInCents: z.number({ required_error: "Valor é obrigatório" }).positive("Valor deve ser positivo"),
+  amountInCents: z
+    .number({ required_error: "Valor é obrigatório" })
+    .positive("Valor deve ser positivo"),
+  frequency: z
+    .enum(["monthly", "quarterly", "semiannual", "annual"])
+    .optional(),
   description: z.string().optional(),
-  applyTo: z.enum(["all", "payment_method", "billing_type"]).optional(),
+  applyTo: z.enum(["all", "payment_method", "billing_type", "category"]).optional(),
   applyToValue: z.string().nullable().optional(),
 });
 
@@ -64,6 +81,7 @@ interface CostFormDialogProps {
     name: string;
     amountInCents: number;
     type: "VALUE" | "PERCENTAGE";
+    frequency?: FixedCostFrequency;
     applyTo?: VariableCostApplyTo;
     applyToValue?: string | null;
     description?: string;
@@ -88,6 +106,7 @@ export function CostFormDialog({
     defaultValues: {
       name: "",
       amountInCents: 0,
+      frequency: "monthly",
       description: "",
       applyTo: "all",
       applyToValue: null,
@@ -99,9 +118,11 @@ export function CostFormDialog({
   useEffect(() => {
     if (initialData) {
       const varData = initialData as IVariableCost;
+      const fixedData = initialData as IFixedCost;
       form.reset({
         name: initialData.name,
         amountInCents: initialData.amountInCents,
+        frequency: fixedData.frequency ?? "monthly",
         description: initialData.description ?? "",
         applyTo: varData.applyTo ?? "all",
         applyToValue: varData.applyToValue ?? null,
@@ -110,6 +131,7 @@ export function CostFormDialog({
       form.reset({
         name: "",
         amountInCents: 0,
+        frequency: "monthly",
         description: "",
         applyTo: "all",
         applyToValue: null,
@@ -122,6 +144,9 @@ export function CostFormDialog({
       name: data.name,
       amountInCents: data.amountInCents,
       type: isVariable ? "PERCENTAGE" : "VALUE",
+      ...(!isVariable && {
+        frequency: data.frequency ?? "monthly",
+      }),
       ...(isVariable && {
         applyTo: data.applyTo ?? "all",
         applyToValue: data.applyTo !== "all" ? (data.applyToValue ?? null) : null,
@@ -144,7 +169,7 @@ export function CostFormDialog({
         )}
         {!isVariable && (
           <p className="text-xs text-zinc-500 -mt-1">
-            Valor mensal fixo, rateado automaticamente conforme o período selecionado.
+            Valor fixo rateado automaticamente conforme o período selecionado.
           </p>
         )}
 
@@ -159,7 +184,11 @@ export function CostFormDialog({
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder={isVariable ? "Ex: Simples Nacional, Taxa Efibank..." : "Ex: Servidor, Salário, Aluguel..."}
+                      placeholder={
+                        isVariable
+                          ? "Ex: Simples Nacional, Taxa Efibank..."
+                          : "Ex: Servidor, Salário, Aluguel..."
+                      }
                       className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600"
                     />
                   </FormControl>
@@ -174,7 +203,7 @@ export function CostFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-zinc-300">
-                    {isVariable ? "Percentual" : "Valor mensal"}
+                    {isVariable ? "Percentual" : "Valor"}
                   </FormLabel>
                   <FormControl>
                     {isVariable ? (
@@ -212,6 +241,36 @@ export function CostFormDialog({
               )}
             />
 
+            {!isVariable && (
+              <FormField
+                control={form.control}
+                name="frequency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-zinc-300">Frequência</FormLabel>
+                    <div className="grid grid-cols-2 gap-2">
+                      {FREQUENCY_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => field.onChange(opt.value)}
+                          className={`flex flex-col items-start gap-0.5 rounded-lg border px-3 py-2.5 text-left transition-all ${
+                            field.value === opt.value
+                              ? "border-indigo-500/60 bg-indigo-600/10 text-indigo-300"
+                              : "border-zinc-700 bg-zinc-900 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300"
+                          }`}
+                        >
+                          <span className="text-xs font-semibold">{opt.label}</span>
+                          <span className="text-[10px] opacity-70">{opt.sub}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
             {isVariable && (
               <FormField
                 control={form.control}
@@ -246,6 +305,12 @@ export function CostFormDialog({
                             Tipo de cobrança
                           </Label>
                         </div>
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="category" id="apply-category" className="border-zinc-600" />
+                          <Label htmlFor="apply-category" className="text-zinc-300 font-normal cursor-pointer">
+                            Por categoria
+                          </Label>
+                        </div>
                       </RadioGroup>
                     </FormControl>
                     <FormMessage />
@@ -269,7 +334,11 @@ export function CostFormDialog({
                       </FormControl>
                       <SelectContent className="bg-zinc-900 border-zinc-700">
                         {PAYMENT_METHOD_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value} className="text-zinc-200 focus:bg-zinc-800">
+                          <SelectItem
+                            key={opt.value}
+                            value={opt.value}
+                            className="text-zinc-200 focus:bg-zinc-800"
+                          >
                             {opt.label}
                           </SelectItem>
                         ))}
@@ -296,12 +365,40 @@ export function CostFormDialog({
                       </FormControl>
                       <SelectContent className="bg-zinc-900 border-zinc-700">
                         {BILLING_TYPE_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value} className="text-zinc-200 focus:bg-zinc-800">
+                          <SelectItem
+                            key={opt.value}
+                            value={opt.value}
+                            className="text-zinc-200 focus:bg-zinc-800"
+                          >
                             {opt.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {isVariable && watchApplyTo === "category" && (
+              <FormField
+                control={form.control}
+                name="applyToValue"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-zinc-300">Nome da categoria</FormLabel>
+                    <FormControl>
+                      <Input
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value || null)}
+                        placeholder="Ex: Casamento, Aniversário..."
+                        className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600"
+                      />
+                    </FormControl>
+                    <p className="text-[10px] text-zinc-600">
+                      Deve corresponder exatamente ao campo category enviado nos eventos de pagamento.
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}

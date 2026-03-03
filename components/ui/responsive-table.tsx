@@ -38,7 +38,7 @@ interface ResponsiveTableProps<T> {
   getRowKey: (row: T) => string;
   isLoading?: boolean;
   skeletonRows?: number;
-  emptyMessage?: string;
+  emptyMessage?: React.ReactNode;
   header?: React.ReactNode;
   serverPagination?: ServerPaginationConfig;
   initialPageSize?: number;
@@ -130,7 +130,7 @@ export function ResponsiveTable<T>({
   getRowKey,
   isLoading = false,
   skeletonRows = 8,
-  emptyMessage = "Nenhum dado encontrado",
+  emptyMessage = <span>Nenhum dado encontrado</span>,
   header,
   serverPagination,
   initialPageSize = 25,

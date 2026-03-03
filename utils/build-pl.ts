@@ -5,7 +5,15 @@ import type {
   IPLCostBreakdown,
   IPLVariableBreakdown,
   IRevenueBySegment,
+  FixedCostFrequency,
 } from "@/interfaces/cost.interface";
+
+const FREQUENCY_MONTHS: Record<FixedCostFrequency, number> = {
+  monthly: 1,
+  quarterly: 3,
+  semiannual: 6,
+  annual: 12,
+};
 
 export function buildProfitAndLoss(
   grossRevenueInCents: number,
@@ -16,15 +24,18 @@ export function buildProfitAndLoss(
   eventCostsInCents: number = 0
 ): IProfitAndLoss {
   const fixedBreakdown: IPLCostBreakdown[] = fixedCosts.map((cost) => {
+    const frequency: FixedCostFrequency = (cost.frequency as FixedCostFrequency) ?? "monthly";
+    const frequencyMonths = FREQUENCY_MONTHS[frequency];
     const monthly = cost.type === "PERCENTAGE"
       ? Math.round((grossRevenueInCents * cost.amountInCents) / 10000)
-      : cost.amountInCents;
+      : Math.round(cost.amountInCents / frequencyMonths);
     const calculatedInCents = Math.round((monthly * Math.min(periodDays, 30)) / 30);
     return {
       name: cost.name,
       amountInCents: cost.amountInCents,
       calculatedInCents,
       type: cost.type,
+      frequency,
     };
   });
 
@@ -35,6 +46,8 @@ export function buildProfitAndLoss(
       appliedRevenueInCents = revenueBySegment.paymentMethod[cost.applyToValue] ?? 0;
     } else if (cost.applyTo === "billing_type" && cost.applyToValue && revenueBySegment) {
       appliedRevenueInCents = revenueBySegment.billingType[cost.applyToValue] ?? 0;
+    } else if (cost.applyTo === "category" && cost.applyToValue && revenueBySegment?.category) {
+      appliedRevenueInCents = revenueBySegment.category[cost.applyToValue] ?? 0;
     }
 
     const calculatedInCents = cost.type === "PERCENTAGE"

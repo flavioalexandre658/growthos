@@ -127,6 +127,7 @@ export async function getFinancial(
     .select({
       paymentMethod: events.paymentMethod,
       billingType: events.billingType,
+      category: events.category,
       revenue: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
     })
     .from(events)
@@ -136,9 +137,9 @@ export async function getFinancial(
         eq(events.eventType, "payment")
       )
     )
-    .groupBy(events.paymentMethod, events.billingType);
+    .groupBy(events.paymentMethod, events.billingType, events.category);
 
-  const revenueBySegment: IRevenueBySegment = { paymentMethod: {}, billingType: {} };
+  const revenueBySegment: IRevenueBySegment = { paymentMethod: {}, billingType: {}, category: {} };
   for (const row of segmentRows) {
     const rev = Number(row.revenue);
     if (row.paymentMethod) {
@@ -146,6 +147,9 @@ export async function getFinancial(
     }
     if (row.billingType) {
       revenueBySegment.billingType[row.billingType] = (revenueBySegment.billingType[row.billingType] ?? 0) + rev;
+    }
+    if (row.category && revenueBySegment.category) {
+      revenueBySegment.category[row.category] = (revenueBySegment.category[row.category] ?? 0) + rev;
     }
   }
 

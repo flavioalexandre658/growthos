@@ -10,6 +10,7 @@ const schema = z.object({
   name: z.string().min(1).optional(),
   amountInCents: z.number().int().positive().optional(),
   type: z.enum(["VALUE", "PERCENTAGE"]).optional(),
+  frequency: z.enum(["monthly", "quarterly", "semiannual", "annual"]).optional(),
   description: z.string().optional().nullable(),
 });
 

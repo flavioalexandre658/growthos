@@ -9,6 +9,7 @@ const schema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   amountInCents: z.number().int().positive("Valor deve ser positivo"),
   type: z.enum(["VALUE", "PERCENTAGE"]),
+  frequency: z.enum(["monthly", "quarterly", "semiannual", "annual"]).optional().default("monthly"),
   description: z.string().optional(),
 });
 

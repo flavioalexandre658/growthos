@@ -11,6 +11,11 @@ export const fixedCosts = pgTable("fixed_costs", {
   type: text("type", { enum: ["VALUE", "PERCENTAGE"] })
     .notNull()
     .default("VALUE"),
+  frequency: text("frequency", {
+    enum: ["monthly", "quarterly", "semiannual", "annual"],
+  })
+    .notNull()
+    .default("monthly"),
   description: text("description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -27,7 +32,7 @@ export const variableCosts = pgTable("variable_costs", {
     .notNull()
     .default("PERCENTAGE"),
   applyTo: text("apply_to", {
-    enum: ["all", "payment_method", "billing_type"],
+    enum: ["all", "payment_method", "billing_type", "category"],
   })
     .notNull()
     .default("all"),
