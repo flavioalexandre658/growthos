@@ -73,46 +73,50 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <button
-        onClick={handleRefresh}
-        disabled={isRefreshing}
-        title="Atualizar dados"
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600 transition-colors disabled:opacity-50"
-      >
-        <IconRefresh size={14} className={isRefreshing ? "animate-spin" : ""} />
-      </button>
-      <div className="flex items-center gap-0.5 rounded-lg border border-zinc-800 bg-zinc-900/80 p-1">
-        {PERIOD_OPTIONS.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => handlePeriod(opt.value)}
-            className={cn(
-              "px-2 py-1 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
-              activePeriod === opt.value
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "text-zinc-400 hover:text-zinc-100"
-            )}
-          >
-            {opt.label}
-          </button>
-        ))}
-        <div className="mx-1 h-4 w-px bg-zinc-700" />
+    <div className="flex flex-col gap-2 w-full sm:w-auto">
+      <div className="flex items-center gap-2">
         <button
-          onClick={() => setShowCustom((v) => !v)}
-          className={cn(
-            "flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
-            hasRange
-              ? "bg-indigo-600 text-white shadow-sm"
-              : showCustom
-              ? "bg-zinc-700 text-zinc-100"
-              : "text-zinc-400 hover:text-zinc-100"
-          )}
-          title="Intervalo personalizado"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          title="Atualizar dados"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600 transition-colors disabled:opacity-50 shrink-0"
         >
-          <IconCalendar size={12} />
-          {hasRange ? "Personalizado" : "Datas"}
+          <IconRefresh size={14} className={isRefreshing ? "animate-spin" : ""} />
         </button>
+        <div className="overflow-x-auto -mx-1 px-1 scrollbar-none">
+          <div className="flex items-center gap-0.5 rounded-lg border border-zinc-800 bg-zinc-900/80 p-1 w-max">
+            {PERIOD_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handlePeriod(opt.value)}
+                className={cn(
+                  "px-2 py-1 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
+                  activePeriod === opt.value
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-zinc-400 hover:text-zinc-100"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+            <div className="mx-1 h-4 w-px bg-zinc-700" />
+            <button
+              onClick={() => setShowCustom((v) => !v)}
+              className={cn(
+                "flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
+                hasRange
+                  ? "bg-indigo-600 text-white shadow-sm"
+                  : showCustom
+                  ? "bg-zinc-700 text-zinc-100"
+                  : "text-zinc-400 hover:text-zinc-100"
+              )}
+              title="Intervalo personalizado"
+            >
+              <IconCalendar size={12} />
+              {hasRange ? "Custom" : "Datas"}
+            </button>
+          </div>
+        </div>
       </div>
 
       {showCustom && (
@@ -125,7 +129,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
               setLocalStart(e.target.value);
               if (localEnd && e.target.value) handleDateApply(e.target.value, localEnd);
             }}
-            className="h-8 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 text-[16px] sm:text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 [color-scheme:dark]"
+            className="h-8 flex-1 min-w-[130px] rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 text-[16px] sm:text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 [color-scheme:dark]"
           />
           <span className="text-xs text-zinc-600">→</span>
           <input
@@ -136,12 +140,12 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
               setLocalEnd(e.target.value);
               if (localStart && e.target.value) handleDateApply(localStart, e.target.value);
             }}
-            className="h-8 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 text-[16px] sm:text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 [color-scheme:dark]"
+            className="h-8 flex-1 min-w-[130px] rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 text-[16px] sm:text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 [color-scheme:dark]"
           />
           {hasRange && (
             <button
               onClick={handleClearCustom}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-500 hover:border-red-800 hover:text-red-400 transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-500 hover:border-red-800 hover:text-red-400 transition-colors shrink-0"
               title="Limpar intervalo"
             >
               <IconX size={13} />

@@ -19,6 +19,7 @@ import {
   IconAlertTriangle,
   IconWorld,
 } from "@tabler/icons-react";
+import { FunnelStepsSection } from "./funnel-steps-section";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -499,6 +500,10 @@ export function SettingsContent() {
           <TimezoneSection
             orgId={organization.id}
             currentTimezone={organization.timezone ?? "America/Sao_Paulo"}
+          />
+          <FunnelStepsSection
+            orgId={organization.id}
+            initialSteps={organization.funnelSteps}
           />
           <OrgApiKeysSection
             orgId={organization.id}

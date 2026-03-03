@@ -1,0 +1,138 @@
+"use client";
+
+import { useState } from "react";
+import { useOrganization } from "@/components/providers/organization-provider";
+import { useEvents } from "@/hooks/queries/use-events";
+import { useDebounce } from "@/hooks/use-debounce";
+import type { IDateFilter, OrderDirection } from "@/interfaces/dashboard.interface";
+import type { IEventParams } from "@/interfaces/event.interface";
+import { EventHealthStatus } from "./event-health-status";
+import { EventsFilters } from "./events-filters";
+import { EventsTable } from "./events-table";
+import { IconList } from "@tabler/icons-react";
+
+const EMPTY_PAGINATION = { page: 1, limit: 25, total: 0, total_pages: 0 };
+
+interface EventsContentProps {
+  filter: IDateFilter;
+}
+
+export function EventsContent({ filter }: EventsContentProps) {
+  const { organization } = useOrganization();
+  const orgId = organization?.id;
+
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 400);
+
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(25);
+  const [orderDir] = useState<OrderDirection>("DESC");
+  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([]);
+  const [selectedSource, setSelectedSource] = useState("");
+  const [selectedDevice, setSelectedDevice] = useState("");
+  const [minValue, setMinValue] = useState("");
+  const [maxValue, setMaxValue] = useState("");
+
+  const params: IEventParams = {
+    ...filter,
+    page,
+    limit,
+    order_dir: orderDir,
+    search: debouncedSearch || undefined,
+    event_types: selectedEventTypes.length > 0 ? selectedEventTypes : undefined,
+    source: selectedSource || undefined,
+    device: selectedDevice || undefined,
+    min_value: minValue ? Number(minValue) * 100 : undefined,
+    max_value: maxValue ? Number(maxValue) * 100 : undefined,
+  };
+
+  const { data: resp, isPending: isLoading } = useEvents(orgId, params);
+
+  const events = resp?.data ?? [];
+  const pagination = resp?.pagination ?? EMPTY_PAGINATION;
+  const distinctEventTypes = resp?.distinctEventTypes ?? [];
+  const distinctSources = resp?.distinctSources ?? [];
+  const distinctDevices = resp?.distinctDevices ?? [];
+
+  const toggleEventType = (et: string) => {
+    setSelectedEventTypes((prev) =>
+      prev.includes(et) ? prev.filter((t) => t !== et) : [...prev, et]
+    );
+    setPage(1);
+  };
+
+  const hasActiveFilters =
+    search.length > 0 ||
+    selectedEventTypes.length > 0 ||
+    !!selectedSource ||
+    !!selectedDevice ||
+    !!minValue ||
+    !!maxValue;
+
+  const handleClearFilters = () => {
+    setSearch("");
+    setSelectedEventTypes([]);
+    setSelectedSource("");
+    setSelectedDevice("");
+    setMinValue("");
+    setMaxValue("");
+    setPage(1);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600/20 border border-indigo-600/30 shrink-0">
+            <IconList size={16} className="text-indigo-400" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-zinc-100">Eventos</h1>
+            <p className="text-xs text-zinc-500">
+              Log em tempo real de todos os eventos recebidos
+            </p>
+          </div>
+        </div>
+        {pagination.total > 0 && (
+          <div className="text-xs text-zinc-600 font-mono bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 shrink-0">
+            {pagination.total.toLocaleString("pt-BR")} eventos
+          </div>
+        )}
+      </div>
+
+      <EventHealthStatus />
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 space-y-3">
+        <EventsFilters
+          filter={filter}
+          search={search}
+          selectedEventTypes={selectedEventTypes}
+          selectedSource={selectedSource}
+          selectedDevice={selectedDevice}
+          minValue={minValue}
+          maxValue={maxValue}
+          distinctEventTypes={distinctEventTypes}
+          distinctSources={distinctSources}
+          distinctDevices={distinctDevices}
+          onSearch={(v) => { setSearch(v); setPage(1); }}
+          onToggleEventType={toggleEventType}
+          onSource={(v) => { setSelectedSource(v); setPage(1); }}
+          onDevice={(v) => { setSelectedDevice(v); setPage(1); }}
+          onMinValue={(v) => { setMinValue(v); setPage(1); }}
+          onMaxValue={(v) => { setMaxValue(v); setPage(1); }}
+          onClear={handleClearFilters}
+          hasActiveFilters={hasActiveFilters}
+        />
+      </div>
+
+      <EventsTable
+        organizationId={orgId ?? ""}
+        data={events}
+        pagination={pagination}
+        isLoading={isLoading}
+        onPageChange={setPage}
+        onPageSizeChange={(s) => { setLimit(s); setPage(1); }}
+      />
+    </div>
+  );
+}

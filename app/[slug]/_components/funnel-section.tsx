@@ -24,10 +24,15 @@ interface FunnelSectionProps {
 }
 
 export function FunnelSection({ data, isLoading }: FunnelSectionProps) {
-  const firstStepValue = data?.steps[0]?.value ?? 1;
-  const stepCount = data?.steps.length ?? 3;
+  const visibleSteps = (data?.steps ?? []).filter((s) => s.key !== "pageview");
+  const visibleRates = (data?.rates ?? []).filter(
+    (r) => !r.key.startsWith("pageview_") && r.key !== "total_conversion"
+  );
 
-  const funnelLabel = data?.steps.map((s) => s.label).join(" → ") ?? "Funil de Conversão";
+  const firstStepValue = visibleSteps[0]?.value ?? 1;
+  const stepCount = visibleSteps.length || 3;
+
+  const funnelLabel = visibleSteps.map((s) => s.label).join(" → ") || "Funil de Conversão";
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
@@ -53,7 +58,7 @@ export function FunnelSection({ data, isLoading }: FunnelSectionProps) {
       ) : (
         <>
           <div className="mt-5 flex gap-3">
-            {data?.steps.map((step, idx) => {
+            {visibleSteps.map((step, idx) => {
               const style = STEP_COLORS[idx % STEP_COLORS.length];
               const pct = Math.max((step.value / firstStepValue) * 100, 4);
               return (
@@ -77,7 +82,7 @@ export function FunnelSection({ data, isLoading }: FunnelSectionProps) {
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2 justify-center">
-            {data?.rates.map((rate, idx) => {
+            {visibleRates.map((rate, idx) => {
               const style = RATE_STYLES[idx % RATE_STYLES.length];
               return (
                 <div

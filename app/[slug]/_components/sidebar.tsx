@@ -24,6 +24,8 @@ import {
   IconPlus,
   IconRepeat,
   IconSparkles,
+  IconList,
+  IconBug,
 } from "@tabler/icons-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -80,6 +82,13 @@ function buildNavSections(slug: string): NavSection[] {
       items: [
         { href: `/${slug}/channels`, label: "Canais", icon: IconBrandGoogle, exact: false },
         { href: `/${slug}/pages`, label: "Páginas", icon: IconWorldWww, exact: false },
+      ],
+    },
+    {
+      title: "Dados",
+      items: [
+        { href: `/${slug}/events`, label: "Eventos", icon: IconList, exact: true },
+        { href: `/${slug}/events/debug`, label: "Debug", icon: IconBug, exact: true },
       ],
     },
     {
@@ -245,7 +254,7 @@ function OrgSwitcher({ slug, collapsed }: { slug: string; collapsed?: boolean })
 
   if (collapsed) {
     return (
-      <div className="flex justify-center pb-2 pt-1">
+      <div className="flex justify-center pt-3 pb-2">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <button
@@ -269,7 +278,7 @@ function OrgSwitcher({ slug, collapsed }: { slug: string; collapsed?: boolean })
   }
 
   return (
-    <div className="px-3 pb-2">
+    <div className="px-3 pt-3 pb-2">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button className="flex w-full items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 py-2 text-left transition-colors hover:border-zinc-600 hover:bg-zinc-800 focus:outline-none focus:ring-1 focus:ring-indigo-500/30">

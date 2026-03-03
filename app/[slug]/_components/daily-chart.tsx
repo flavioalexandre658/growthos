@@ -36,6 +36,8 @@ function formatDateLabel(dateStr: string) {
 }
 
 export function DailyChart({ data, stepMeta, isLoading }: DailyChartProps) {
+  const visibleStepMeta = stepMeta.filter((s) => s.key !== "pageview");
+
   const chartData = (data ?? []).map((d) => ({
     label: formatDateLabel(d.date),
     revenue: d.revenue,
@@ -102,7 +104,7 @@ export function DailyChart({ data, stepMeta, isLoading }: DailyChartProps) {
               <Legend
                 wrapperStyle={{ fontSize: 11, color: "#71717a", paddingTop: 12 }}
               />
-              {stepMeta.map((step, idx) => (
+              {visibleStepMeta.map((step, idx) => (
                 <Bar
                   key={step.key}
                   yAxisId="left"
