@@ -277,7 +277,7 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
 
         {/* Center node — prominent subscriber count */}
         {(() => {
-          const centerH = logH(flow.center.value, maxLog);
+          //const centerH = logH(flow.center.value, maxLog);
           const dim = hovered !== null && hovered !== "active";
           const isActive = hovered === "active";
           const cardW = 96;
