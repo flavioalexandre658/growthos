@@ -9,18 +9,20 @@ import {
 import { useActiveSubscriptions } from "@/hooks/queries/use-active-subscriptions";
 import { fmtBRLDecimal } from "@/utils/format";
 import dayjs from "dayjs";
-import type { IActiveSubscription } from "@/interfaces/mrr.interface";
+import type { IActiveSubscription, SubscriptionStatusFilter } from "@/interfaces/mrr.interface";
 
 const STATUS_LABELS: Record<string, string> = {
   active: "Ativo",
   trialing: "Trial",
   past_due: "Em atraso",
+  canceled: "Cancelado",
 };
 
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   active: "default",
   trialing: "secondary",
   past_due: "destructive",
+  canceled: "outline",
 };
 
 const INTERVAL_LABELS: Record<string, string> = {
@@ -35,13 +37,28 @@ function normalizeToMonthly(valueInCents: number, interval: string): number {
   return valueInCents;
 }
 
+const STATUS_FILTERS: { label: string; value: SubscriptionStatusFilter }[] = [
+  { label: "Todos", value: "all" },
+  { label: "Ativo", value: "active" },
+  { label: "Trial", value: "trialing" },
+  { label: "Em atraso", value: "past_due" },
+  { label: "Cancelado", value: "canceled" },
+];
+
 interface ActiveSubscriptionsTableProps {
   organizationId: string;
 }
 
 export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptionsTableProps) {
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useActiveSubscriptions(organizationId, page);
+  const [statusFilter, setStatusFilter] = useState<SubscriptionStatusFilter>("all");
+
+  const { data, isLoading } = useActiveSubscriptions(organizationId, page, statusFilter);
+
+  const handleStatusChange = (status: SubscriptionStatusFilter) => {
+    setStatusFilter(status);
+    setPage(1);
+  };
 
   const columns: TableColumn<IActiveSubscription>[] = [
     {
@@ -70,12 +87,38 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
       ),
     },
     {
-      key: "interval",
-      header: "Ciclo",
+      key: "ltv",
+      header: "LTV Acum.",
+      align: "right",
+      mobileHide: true,
+      render: (row) => (
+        <span className="font-mono text-xs text-amber-400">
+          {fmtBRLDecimal(row.estimatedLtvInCents / 100)}
+        </span>
+      ),
+    },
+    {
+      key: "renewals",
+      header: "Renovações",
+      align: "right",
       mobileHide: true,
       render: (row) => (
         <span className="text-xs text-zinc-500">
-          {INTERVAL_LABELS[row.billingInterval] ?? row.billingInterval}
+          {row.renewalCount}× {INTERVAL_LABELS[row.billingInterval] ?? row.billingInterval}
+        </span>
+      ),
+    },
+    {
+      key: "nextBilling",
+      header: "Próx. cobrança",
+      mobileHide: true,
+      render: (row) => (
+        <span className="text-xs text-zinc-500">
+          {row.nextBillingAt
+            ? dayjs(row.nextBillingAt).format("DD/MM/YYYY")
+            : row.status === "canceled"
+              ? <span className="text-zinc-700">—</span>
+              : "—"}
         </span>
       ),
     },
@@ -100,6 +143,24 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
     },
   ];
 
+  const filterBar = (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {STATUS_FILTERS.map((f) => (
+        <button
+          key={f.value}
+          onClick={() => handleStatusChange(f.value)}
+          className={`rounded-md px-2.5 py-1 text-[11px] font-medium transition-colors ${
+            statusFilter === f.value
+              ? "bg-zinc-700 text-zinc-100"
+              : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800"
+          }`}
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <ResponsiveTable
       columns={columns}
@@ -107,7 +168,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
       getRowKey={(row) => row.subscriptionId}
       isLoading={isLoading}
       skeletonRows={5}
-      emptyMessage="Nenhuma assinatura ativa"
+      emptyMessage="Nenhuma assinatura encontrada"
       serverPagination={
         data
           ? {
@@ -121,11 +182,14 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
           : undefined
       }
       header={
-        <div>
-          <h3 className="text-sm font-bold text-zinc-100">Assinaturas Ativas</h3>
-          <p className="text-xs text-zinc-500">
-            {data?.pagination.total ?? 0} assinaturas no total
-          </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-zinc-100">Assinaturas</h3>
+            <p className="text-xs text-zinc-500">
+              {data?.pagination.total ?? 0} assinaturas no total
+            </p>
+          </div>
+          {filterBar}
         </div>
       }
     />

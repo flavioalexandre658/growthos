@@ -2,9 +2,8 @@
 
 import {
   ResponsiveContainer,
-  ComposedChart,
+  BarChart,
   Bar,
-  Line,
   XAxis,
   YAxis,
   Tooltip,
@@ -31,6 +30,7 @@ interface TooltipPayload {
   name: string;
   value: number;
   color: string;
+  dataKey: string;
 }
 
 function CustomTooltip({
@@ -43,17 +43,32 @@ function CustomTooltip({
   label?: string;
 }) {
   if (!active || !payload?.length) return null;
+
+  const netMrr = payload.find((p) => p.dataKey === "netMrr");
+  const others = payload.filter((p) => p.dataKey !== "netMrr" && p.value !== 0);
+
   return (
-    <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs space-y-1 min-w-[160px]">
+    <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-xs space-y-1 min-w-[170px]">
       <p className="text-zinc-400 font-medium mb-1.5">{label}</p>
-      {payload.map((p) => (
+      {others.map((p) => (
         <div key={p.name} className="flex items-center justify-between gap-4">
           <span style={{ color: p.color }}>{p.name}</span>
           <span className="font-mono font-bold text-zinc-100">
-            {fmtBRLDecimal(p.value / 100)}
+            {fmtBRLDecimal(Math.abs(p.value) / 100)}
           </span>
         </div>
       ))}
+      {netMrr && (
+        <>
+          <div className="border-t border-zinc-800 my-1" />
+          <div className="flex items-center justify-between gap-4">
+            <span style={{ color: netMrr.color }} className="font-semibold">{netMrr.name}</span>
+            <span className="font-mono font-bold" style={{ color: netMrr.color }}>
+              {netMrr.value >= 0 ? "+" : ""}{fmtBRLDecimal(netMrr.value / 100)}
+            </span>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -62,8 +77,8 @@ export function MrrMovementChart({ data, isLoading }: MrrMovementChartProps) {
   const chartData = (data ?? []).map((d) => ({
     ...d,
     label: formatDateLabel(d.date),
-    churnedMrr: -d.churnedMrr,
-    contractionMrr: -d.contractionMrr,
+    churnedMrr: -Math.abs(d.churnedMrr),
+    contractionMrr: -Math.abs(d.contractionMrr),
   }));
 
   return (
@@ -79,9 +94,9 @@ export function MrrMovementChart({ data, isLoading }: MrrMovementChartProps) {
           Sem dados de recorrência no período
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={240}>
-          <ComposedChart data={chartData} barSize={20}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={chartData} barSize={24} barCategoryGap="30%">
+            <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
             <XAxis
               dataKey="label"
               tick={{ fontSize: 10, fill: "#52525b" }}
@@ -93,25 +108,21 @@ export function MrrMovementChart({ data, isLoading }: MrrMovementChartProps) {
               axisLine={false}
               tickLine={false}
               tickFormatter={(v) => fmtBRLDecimal(Math.abs(v) / 100)}
-              width={72}
+              width={64}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
-            <Legend wrapperStyle={{ fontSize: 11, color: "#71717a", paddingTop: 12 }} />
-            <ReferenceLine y={0} stroke="#3f3f46" />
-            <Bar dataKey="newMrr" name="Novo MRR" fill="#22c55e" fillOpacity={0.8} stackId="positive" radius={[2, 2, 0, 0]} />
-            <Bar dataKey="expansionMrr" name="Expansão" fill="#06b6d4" fillOpacity={0.8} stackId="positive" />
-            <Bar dataKey="churnedMrr" name="Churn" fill="#ef4444" fillOpacity={0.8} stackId="negative" radius={[0, 0, 2, 2]} />
-            <Bar dataKey="contractionMrr" name="Contração" fill="#f97316" fillOpacity={0.8} stackId="negative" />
-            <Line
-              type="monotone"
-              dataKey="netMrr"
-              name="MRR Líquido"
-              stroke="#6366f1"
-              strokeWidth={2}
-              dot={false}
-              activeDot={{ r: 4 }}
+            <Legend
+              wrapperStyle={{ fontSize: 11, color: "#71717a", paddingTop: 14 }}
+              formatter={(value) => <span style={{ color: "#71717a" }}>{value}</span>}
             />
-          </ComposedChart>
+            <ReferenceLine y={0} stroke="#3f3f46" strokeWidth={1.5} />
+
+            <Bar dataKey="newMrr" name="Novo MRR" fill="#22c55e" fillOpacity={0.85} stackId="positive" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="expansionMrr" name="Expansão" fill="#06b6d4" fillOpacity={0.85} stackId="positive" />
+            <Bar dataKey="churnedMrr" name="Churn" fill="#ef4444" fillOpacity={0.85} stackId="negative" radius={[0, 0, 3, 3]} />
+            <Bar dataKey="contractionMrr" name="Contração" fill="#f97316" fillOpacity={0.85} stackId="negative" />
+            <Bar dataKey="netMrr" name="MRR Líquido" fill="#6366f1" fillOpacity={0} stackId="net" radius={[3, 3, 3, 3]} />
+          </BarChart>
         </ResponsiveContainer>
       )}
     </div>

@@ -7,6 +7,18 @@ export interface IMrrOverview {
   revenueChurnRate: number;
   estimatedLtv: number;
   mrrGrowthRate: number;
+  previousMrr?: number;
+  previousArr?: number;
+  previousArpu?: number;
+  previousChurnRate?: number;
+  previousRevenueChurnRate?: number;
+  previousEstimatedLtv?: number;
+  previousActiveSubscriptions?: number;
+  totalNewMrr?: number;
+  totalExpansionMrr?: number;
+  totalChurnedMrr?: number;
+  totalContractionMrr?: number;
+  pastDueSubscriptions?: number;
 }
 
 export interface IMrrMovementEntry {
@@ -23,6 +35,8 @@ export interface IMrrGrowthEntry {
   mrr: number;
 }
 
+export type SubscriptionStatusFilter = "all" | "active" | "trialing" | "past_due" | "canceled";
+
 export interface IActiveSubscription {
   subscriptionId: string;
   customerId: string;
@@ -32,4 +46,8 @@ export interface IActiveSubscription {
   billingInterval: string;
   status: string;
   startedAt: Date;
+  canceledAt?: Date | null;
+  renewalCount: number;
+  nextBillingAt: Date | null;
+  estimatedLtvInCents: number;
 }

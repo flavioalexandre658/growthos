@@ -7,6 +7,7 @@ import { MrrKpiCards } from "./mrr-kpi-cards";
 import { MrrMovementChart } from "./mrr-movement-chart";
 import { MrrGrowthChart } from "./mrr-growth-chart";
 import { ActiveSubscriptionsTable } from "./active-subscriptions-table";
+import { SubscriberFlowSankey } from "./subscriber-flow-sankey";
 import { useMrrOverview } from "@/hooks/queries/use-mrr-overview";
 import { useMrrMovement } from "@/hooks/queries/use-mrr-movement";
 import { useMrrGrowth } from "@/hooks/queries/use-mrr-growth";
@@ -39,6 +40,8 @@ export function MrrContent({ filter }: MrrContentProps) {
       </div>
 
       <MrrKpiCards data={overview} isLoading={overviewLoading} />
+
+      <SubscriberFlowSankey data={overview} isLoading={overviewLoading} />
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         <MrrGrowthChart data={growth} isLoading={growthLoading} />
