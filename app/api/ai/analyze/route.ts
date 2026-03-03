@@ -48,7 +48,7 @@ function buildComparisonPrompt(
     channels: "Canais de Aquisição",
     finance: "Financeiro",
     templates: "Templates",
-    "pages": "Páginas",
+    pages: "Páginas",
   };
 
   return `Você é um analista de growth sênior comparando períodos da ${orgName}, uma ${context}.
@@ -97,7 +97,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-preview-04-17" });
+  const model = genAI.getGenerativeModel({
+    model: "gemini-3-flash",
+    // Opcional: Ajuste a temperatura para análises financeiras mais precisas
+    generationConfig: {
+      temperature: 0.2,
+    },
+  });
 
   const stream = await model.generateContentStream(prompt);
 
