@@ -4,18 +4,42 @@ import { useState } from "react";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useEvents } from "@/hooks/queries/use-events";
 import { useDebounce } from "@/hooks/use-debounce";
+import { exportEvents } from "@/actions/events/export-events.action";
 import type { IDateFilter, OrderDirection } from "@/interfaces/dashboard.interface";
 import type { IEventParams } from "@/interfaces/event.interface";
 import { EventHealthStatus } from "./event-health-status";
 import { EventsFilters } from "./events-filters";
 import { EventsTable } from "./events-table";
-import { IconList } from "@tabler/icons-react";
+import { IconList, IconDownload, IconLoader2 } from "@tabler/icons-react";
+import dayjs from "dayjs";
+import "dayjs/locale/pt-br";
+
+dayjs.locale("pt-br");
 
 const EMPTY_PAGINATION = { page: 1, limit: 25, total: 0, total_pages: 0 };
 
 interface EventsContentProps {
   filter: IDateFilter;
   initialEventTypes?: string[];
+}
+
+function getFilterLabel(filter: IDateFilter): string {
+  if (filter.period) {
+    const labels: Record<string, string> = {
+      today: "hoje",
+      yesterday: "ontem",
+      "7d": "últimos 7 dias",
+      "30d": "últimos 30 dias",
+      "90d": "últimos 90 dias",
+    };
+    return labels[filter.period] ?? filter.period;
+  }
+  if (filter.start_date && filter.end_date) {
+    const from = dayjs(filter.start_date).format("D MMM");
+    const to = dayjs(filter.end_date).format("D MMM");
+    return `${from} – ${to}`;
+  }
+  return "período";
 }
 
 export function EventsContent({ filter, initialEventTypes = [] }: EventsContentProps) {
@@ -33,6 +57,7 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
   const [selectedDevice, setSelectedDevice] = useState("");
   const [minValue, setMinValue] = useState("");
   const [maxValue, setMaxValue] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
   const params: IEventParams = {
     ...filter,
@@ -80,6 +105,29 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
     setPage(1);
   };
 
+  const handleExport = async () => {
+    if (!orgId || isExporting) return;
+    setIsExporting(true);
+    try {
+      const exportParams: IEventParams = { ...params };
+      delete exportParams.page;
+      delete exportParams.limit;
+      const { csv, filename } = await exportEvents(orgId, exportParams);
+      if (!csv) return;
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const periodLabel = getFilterLabel(filter);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -94,11 +142,29 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
             </p>
           </div>
         </div>
-        {pagination.total > 0 && (
-          <div className="text-xs text-zinc-600 font-mono bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 shrink-0">
-            {pagination.total.toLocaleString("pt-BR")} eventos
-          </div>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {pagination.total > 0 && (
+            <div className="text-xs text-zinc-600 font-mono bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5">
+              <span className="text-zinc-400 font-semibold">{pagination.total.toLocaleString("pt-BR")}</span>
+              <span className="mx-1 text-zinc-700">·</span>
+              <span>{periodLabel}</span>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={isExporting || pagination.total === 0}
+            title="Exportar CSV"
+            className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-zinc-800 bg-zinc-900 text-xs text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {isExporting ? (
+              <IconLoader2 size={13} className="animate-spin" />
+            ) : (
+              <IconDownload size={13} />
+            )}
+            <span className="hidden sm:inline">CSV</span>
+          </button>
+        </div>
       </div>
 
       <EventHealthStatus />

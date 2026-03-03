@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { debugUrl } from "@/actions/events/debug-url.action";
 import { checkEvents } from "@/actions/dashboard/check-events.action";
+import { sendTestEvent } from "@/actions/events/send-test-event.action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -28,6 +30,12 @@ import {
   IconWorld,
   IconShieldCheck,
   IconClock,
+  IconBuilding,
+  IconFlask,
+  IconHistory,
+  IconChevronDown,
+  IconArrowRight,
+  IconCircleDot,
 } from "@tabler/icons-react";
 import type { IDebugResult } from "@/interfaces/event.interface";
 
@@ -43,6 +51,18 @@ interface CheckItem {
   icon: React.ElementType;
 }
 
+interface DiagnosticHistoryEntry {
+  url: string;
+  timestamp: string;
+  success: boolean;
+  errorCount: number;
+  warningCount: number;
+}
+
+function getStorageKey(key: string, orgId: string) {
+  return `growthOS:debug:${key}:${orgId}`;
+}
+
 function CheckRow({ item }: { item: CheckItem }) {
   const Icon = item.icon;
   return (
@@ -53,12 +73,12 @@ function CheckRow({ item }: { item: CheckItem }) {
           item.status === "ok" && "bg-emerald-600/20",
           item.status === "error" && "bg-red-600/20",
           item.status === "warning" && "bg-amber-600/20",
-          item.status === "pending" && "bg-zinc-800",
-          item.status === "idle" && "bg-zinc-800/60"
+          item.status === "pending" && "bg-indigo-600/20 border border-indigo-600/30",
+          item.status === "idle" && "bg-zinc-800/40"
         )}
       >
         {item.status === "pending" ? (
-          <IconLoader2 size={12} className="animate-spin text-zinc-400" />
+          <div className="h-2 w-2 rounded-full bg-indigo-400 animate-pulse" />
         ) : (
           <Icon
             size={12}
@@ -66,7 +86,7 @@ function CheckRow({ item }: { item: CheckItem }) {
               item.status === "ok" && "text-emerald-400",
               item.status === "error" && "text-red-400",
               item.status === "warning" && "text-amber-400",
-              item.status === "idle" && "text-zinc-600"
+              item.status === "idle" && "text-zinc-700"
             )}
           />
         )}
@@ -78,8 +98,8 @@ function CheckRow({ item }: { item: CheckItem }) {
             item.status === "ok" && "text-zinc-200",
             item.status === "error" && "text-red-300",
             item.status === "warning" && "text-amber-300",
-            item.status === "idle" && "text-zinc-600",
-            item.status === "pending" && "text-zinc-400"
+            item.status === "idle" && "text-zinc-700",
+            item.status === "pending" && "text-zinc-300"
           )}
         >
           {item.label}
@@ -112,6 +132,11 @@ function CheckRow({ item }: { item: CheckItem }) {
         {item.status === "warning" && (
           <span className="text-[10px] font-semibold text-amber-500 bg-amber-950/40 border border-amber-800/30 rounded px-1.5 py-0.5">
             AVISO
+          </span>
+        )}
+        {item.status === "pending" && (
+          <span className="text-[10px] font-semibold text-indigo-400 bg-indigo-950/30 border border-indigo-800/30 rounded px-1.5 py-0.5">
+            ...
           </span>
         )}
       </div>
@@ -166,7 +191,12 @@ interface LiveEvent {
   createdAt: Date;
 }
 
-function LiveMonitor({ organizationId }: { organizationId: string }) {
+interface LiveMonitorProps {
+  organizationId: string;
+  onLatestEvent?: (event: LiveEvent | null) => void;
+}
+
+function LiveMonitor({ organizationId, onLatestEvent }: LiveMonitorProps) {
   const [events, setEvents] = useState<LiveEvent[]>([]);
   const [isPolling, setIsPolling] = useState(true);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
@@ -192,13 +222,14 @@ function LiveMonitor({ organizationId }: { organizationId: string }) {
           return merged;
         });
         setNewCount((n) => n + fresh.length);
+        onLatestEvent?.(fresh[0] ?? null);
       }
     };
 
     poll();
     const interval = setInterval(poll, 5000);
     return () => clearInterval(interval);
-  }, [organizationId, isPolling]);
+  }, [organizationId, isPolling, onLatestEvent]);
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
@@ -252,12 +283,12 @@ function LiveMonitor({ organizationId }: { organizationId: string }) {
 
       <div className="divide-y divide-zinc-800/60">
         {events.length === 0 ? (
-          <div className="px-4 py-8 text-center">
+          <div className="px-4 py-6 text-center">
             <p className="text-sm text-zinc-600">
               Aguardando eventos nos últimos 5 minutos...
             </p>
             <p className="text-xs text-zinc-700 mt-1">
-              Dispare um evento no seu site para vê-lo aparecer aqui
+              Dispare um evento no seu site ou use o botão de evento de teste
             </p>
           </div>
         ) : (
@@ -284,7 +315,7 @@ function LiveMonitor({ organizationId }: { organizationId: string }) {
 }
 
 function buildChecklist(result: IDebugResult, orgName: string): CheckItem[] {
-  const checks: CheckItem[] = [
+  return [
     {
       icon: IconWorld,
       label: "Página acessível",
@@ -337,14 +368,133 @@ function buildChecklist(result: IDebugResult, orgName: string): CheckItem[] {
         : "idle",
     },
   ];
-
-  return checks;
 }
 
-import { IconBuilding } from "@tabler/icons-react";
+const PREVIEW_CHECKS = [
+  { icon: IconWorld, label: "Página acessível" },
+  { icon: IconCode, label: "Script tracker.js no HTML" },
+  { icon: IconKey, label: "Atributo data-key presente" },
+  { icon: IconShieldCheck, label: "API key válida no sistema" },
+  { icon: IconBuilding, label: "Pertence a esta organização" },
+  { icon: IconClock, label: "API key ativa e não expirada" },
+];
+
+function EmptyState() {
+  return (
+    <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-6 space-y-5">
+      <div className="text-center space-y-1">
+        <p className="text-sm font-semibold text-zinc-400">
+          Cole a URL do seu site acima e clique em Diagnosticar
+        </p>
+        <p className="text-xs text-zinc-600">
+          Verificaremos automaticamente se o tracker.js está instalado corretamente
+        </p>
+      </div>
+      <div className="space-y-1">
+        {PREVIEW_CHECKS.map(({ icon: Icon, label }) => (
+          <div key={label} className="flex items-center gap-3 py-2 border-b border-zinc-800/40 last:border-0">
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-800/40 shrink-0">
+              <Icon size={11} className="text-zinc-700" />
+            </div>
+            <p className="text-sm text-zinc-700">{label}</p>
+            <div className="ml-auto h-1.5 w-12 rounded-full bg-zinc-800/60" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function DiagnosticHistory({
+  orgId,
+  onRerun,
+}: {
+  orgId: string;
+  onRerun: (url: string) => void;
+}) {
+  const [entries, setEntries] = useState<DiagnosticHistoryEntry[]>([]);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(getStorageKey("history", orgId));
+      if (raw) setEntries(JSON.parse(raw));
+    } catch {
+      // ignore
+    }
+  }, [orgId]);
+
+  if (entries.length === 0) return null;
+
+  return (
+    <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-zinc-800/20 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <IconHistory size={14} className="text-zinc-500" />
+          <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
+            Histórico de diagnósticos
+          </span>
+          <span className="text-[10px] font-medium text-zinc-600 bg-zinc-800 rounded px-1.5 py-0.5">
+            {entries.length}
+          </span>
+        </div>
+        <IconChevronDown
+          size={14}
+          className={cn(
+            "text-zinc-600 transition-transform",
+            open && "rotate-180"
+          )}
+        />
+      </button>
+
+      {open && (
+        <div className="divide-y divide-zinc-800/40 border-t border-zinc-800/60">
+          {entries.map((entry, i) => (
+            <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+              <div className="shrink-0">
+                {entry.success ? (
+                  <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                ) : entry.errorCount > 0 ? (
+                  <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                ) : (
+                  <div className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-zinc-400 font-mono truncate">{entry.url}</p>
+                <p className="text-[10px] text-zinc-600 mt-0.5">
+                  {dayjs(entry.timestamp).fromNow()}
+                  {entry.errorCount > 0 && (
+                    <span className="ml-1.5 text-red-500">· {entry.errorCount} erro(s)</span>
+                  )}
+                  {entry.warningCount > 0 && (
+                    <span className="ml-1.5 text-amber-500">· {entry.warningCount} aviso(s)</span>
+                  )}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onRerun(entry.url)}
+                className="shrink-0 flex items-center gap-1 text-[10px] text-zinc-600 hover:text-indigo-400 transition-colors"
+              >
+                <IconRefresh size={11} />
+                Retestar
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function DebugContent() {
   const { organization } = useOrganization();
+  const router = useRouter();
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<IDebugResult | null>(null);
@@ -352,6 +502,19 @@ export function DebugContent() {
   const [baseUrl, setBaseUrl] = useState(
     typeof window !== "undefined" ? window.location.origin : ""
   );
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [latestLiveEvent, setLatestLiveEvent] = useState<{ createdAt: Date } | null>(null);
+  const [historyKey, setHistoryKey] = useState(0);
+
+  useEffect(() => {
+    if (!organization?.id) return;
+    try {
+      const stored = localStorage.getItem(getStorageKey("lastUrl", organization.id));
+      if (stored) setUrl(stored);
+    } catch {
+      // ignore
+    }
+  }, [organization?.id]);
 
   const isValid = (() => {
     try {
@@ -362,14 +525,58 @@ export function DebugContent() {
     }
   })();
 
-  const handleDiagnose = async () => {
-    if (!organization?.id || !isValid) return;
+  const saveHistory = (diagUrl: string, diagResult: IDebugResult) => {
+    if (!organization?.id) return;
+    try {
+      const key = getStorageKey("history", organization.id);
+      const raw = localStorage.getItem(key);
+      const existing: DiagnosticHistoryEntry[] = raw ? JSON.parse(raw) : [];
+      const entry: DiagnosticHistoryEntry = {
+        url: diagUrl,
+        timestamp: new Date().toISOString(),
+        success: diagResult.keyBelongsToOrg && !diagResult.keyExpired,
+        errorCount: diagResult.errors.length,
+        warningCount: diagResult.warnings.length,
+      };
+      const updated = [entry, ...existing.filter((e) => e.url !== diagUrl)].slice(0, 5);
+      localStorage.setItem(key, JSON.stringify(updated));
+      setHistoryKey((k) => k + 1);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleDiagnose = async (diagUrl?: string) => {
+    const targetUrl = diagUrl ?? url;
+    if (!organization?.id || !targetUrl) return;
+
+    try {
+      new URL(targetUrl);
+    } catch {
+      return;
+    }
+
+    if (diagUrl) setUrl(diagUrl);
+
     setIsLoading(true);
     setResult(null);
     setShowMonitor(false);
+    setLatestLiveEvent(null);
 
-    const res = await debugUrl({ url, organizationId: organization.id });
+    const res = await debugUrl({
+      url: targetUrl,
+      organizationId: organization.id,
+      orgSlug: organization.slug,
+    });
     setResult(res);
+
+    try {
+      localStorage.setItem(getStorageKey("lastUrl", organization.id), targetUrl);
+    } catch {
+      // ignore
+    }
+
+    saveHistory(targetUrl, res);
 
     if (res.keyBelongsToOrg && !res.keyExpired) {
       setShowMonitor(true);
@@ -378,9 +585,24 @@ export function DebugContent() {
     setIsLoading(false);
   };
 
+  const handleSendTest = async () => {
+    if (!organization?.id) return;
+    setIsSendingTest(true);
+    const start = Date.now();
+    try {
+      await sendTestEvent({ organizationId: organization.id });
+      const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+      toast.success(`Evento de teste recebido em ${elapsed}s`);
+    } catch {
+      toast.error("Erro ao enviar evento de teste");
+    }
+    setIsSendingTest(false);
+  };
+
   const overallOk = result?.keyBelongsToOrg && !result.keyExpired;
   const hasWarnings = (result?.warnings.length ?? 0) > 0;
   const hasErrors = (result?.errors.length ?? 0) > 0;
+  const errorCount = result?.errors.length ?? 0;
 
   return (
     <div className="space-y-5">
@@ -423,7 +645,7 @@ export function DebugContent() {
             />
           </div>
           <Button
-            onClick={handleDiagnose}
+            onClick={() => handleDiagnose()}
             disabled={!isValid || isLoading || !organization}
             className="h-10 px-5 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold gap-2 shrink-0"
           >
@@ -448,93 +670,140 @@ export function DebugContent() {
         )}
       </div>
 
+      {!result && !isLoading && <EmptyState />}
+
       {result && (
         <div className="space-y-4">
-          <div
-            className={cn(
-              "rounded-xl border p-4",
-              overallOk
-                ? "border-emerald-800/40 bg-emerald-950/20"
-                : hasErrors
-                ? "border-red-800/40 bg-red-950/20"
-                : "border-amber-800/40 bg-amber-950/20"
-            )}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              {overallOk ? (
-                <IconCircleCheck size={18} className="text-emerald-400 shrink-0" />
-              ) : hasErrors ? (
-                <IconCircleX size={18} className="text-red-400 shrink-0" />
-              ) : (
-                <IconAlertTriangle size={18} className="text-amber-400 shrink-0" />
-              )}
-              <p
-                className={cn(
-                  "text-sm font-bold",
-                  overallOk
-                    ? "text-emerald-300"
-                    : hasErrors
-                    ? "text-red-300"
-                    : "text-amber-300"
-                )}
-              >
-                {overallOk
-                  ? "Tracker instalado corretamente!"
-                  : hasErrors
-                  ? "Problemas encontrados na instalação"
-                  : "Instalação com avisos"}
-              </p>
-            </div>
-            <p
-              className={cn(
-                "text-xs font-mono break-all",
-                overallOk ? "text-emerald-700" : hasErrors ? "text-red-700" : "text-amber-700"
-              )}
-            >
-              {url}
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="ml-1.5 inline-flex items-center gap-0.5 hover:opacity-70"
-              >
-                <IconExternalLink size={11} />
-              </a>
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
-            <div className="space-y-4">
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-                <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/80">
-                  <h3 className="text-sm font-bold text-zinc-100">Checklist de instalação</h3>
+          {overallOk ? (
+            <div className="relative rounded-xl border border-emerald-800/40 bg-emerald-950/20 overflow-hidden">
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500 rounded-l-xl" />
+              <div className="pl-5 pr-4 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="relative shrink-0">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600/20 border border-emerald-600/30">
+                      <IconCircleCheck size={20} className="text-emerald-400" />
+                    </div>
+                    <div className="absolute inset-0 rounded-full border border-emerald-500/20 animate-ping" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-emerald-300">Tracker instalado corretamente!</p>
+                    <p className="text-xs text-emerald-700 font-mono truncate">
+                      pertence a: {organization?.name}
+                    </p>
+                    {latestLiveEvent && (
+                      <p className="text-[10px] text-emerald-800 mt-0.5">
+                        último evento {dayjs(latestLiveEvent.createdAt).fromNow()}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="px-4">
-                  {buildChecklist(result, organization?.name ?? "esta organização").map(
-                    (item, i) => (
-                      <CheckRow key={i} item={item} />
-                    )
+                <Button
+                  onClick={handleSendTest}
+                  disabled={isSendingTest}
+                  size="sm"
+                  className="shrink-0 h-8 gap-1.5 bg-emerald-700/40 hover:bg-emerald-700/60 border border-emerald-600/30 text-emerald-300 text-xs font-semibold"
+                >
+                  {isSendingTest ? (
+                    <IconLoader2 size={12} className="animate-spin" />
+                  ) : (
+                    <IconFlask size={12} />
                   )}
+                  Enviar evento de teste
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="relative rounded-xl overflow-hidden border border-red-800/40 bg-red-950/20">
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500 rounded-l-xl" />
+              <div className="pl-5 pr-4 py-4 flex items-center gap-3">
+                {hasErrors ? (
+                  <IconCircleX size={18} className="text-red-400 shrink-0" />
+                ) : (
+                  <IconAlertTriangle size={18} className="text-amber-400 shrink-0" />
+                )}
+                <div className="flex-1">
+                  <p className={cn("text-sm font-bold", hasErrors ? "text-red-300" : "text-amber-300")}>
+                    {hasErrors
+                      ? `${errorCount} problema${errorCount !== 1 ? "s" : ""} encontrado${errorCount !== 1 ? "s" : ""}`
+                      : "Instalação com avisos"}
+                  </p>
+                  <p className={cn("text-xs font-mono break-all mt-0.5", hasErrors ? "text-red-700" : "text-amber-700")}>
+                    {url}
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-1.5 inline-flex items-center gap-0.5 hover:opacity-70"
+                    >
+                      <IconExternalLink size={11} />
+                    </a>
+                  </p>
                 </div>
               </div>
+            </div>
+          )}
 
-              {(hasErrors || hasWarnings) && (
-                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 space-y-2">
-                  <h3 className="text-sm font-bold text-zinc-100">Detalhes</h3>
-                  {result.errors.map((e, i) => (
-                    <div key={i} className="flex items-start gap-2">
-                      <IconCircleX size={13} className="text-red-400 shrink-0 mt-0.5" />
-                      <p className="text-xs text-red-300">{e}</p>
-                    </div>
-                  ))}
-                  {result.warnings.map((w, i) => (
-                    <div key={i} className="flex items-start gap-2">
-                      <IconAlertTriangle size={13} className="text-amber-400 shrink-0 mt-0.5" />
-                      <p className="text-xs text-amber-300">{w}</p>
-                    </div>
-                  ))}
+          <div className={cn(
+            "grid gap-4 items-start",
+            showMonitor ? "grid-cols-1 xl:grid-cols-[1fr_380px]" : "grid-cols-1 xl:grid-cols-2"
+          )}>
+            <div className={cn("space-y-4", !showMonitor && "xl:col-span-2")}>
+              <div className={cn(
+                "grid gap-4",
+                !showMonitor && (hasErrors || hasWarnings) ? "grid-cols-1 xl:grid-cols-2" : "grid-cols-1"
+              )}>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/80">
+                    <h3 className="text-sm font-bold text-zinc-100">Checklist de instalação</h3>
+                  </div>
+                  <div className="px-4">
+                    {buildChecklist(result, organization?.name ?? "esta organização").map(
+                      (item, i) => (
+                        <CheckRow key={i} item={item} />
+                      )
+                    )}
+                  </div>
                 </div>
-              )}
+
+                {(hasErrors || hasWarnings) && (
+                  <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 space-y-3">
+                    <h3 className="text-sm font-bold text-zinc-100">Detalhes e soluções</h3>
+                    {result.errors.map((e, i) => (
+                      <div key={i} className="rounded-lg border border-red-900/30 bg-red-950/20 p-3 space-y-2">
+                        <div className="flex items-start gap-2">
+                          <IconCircleX size={13} className="text-red-400 shrink-0 mt-0.5" />
+                          <p className="text-xs text-red-300 font-medium">{e.message}</p>
+                        </div>
+                        <div className="flex items-start gap-2 pl-5">
+                          <IconArrowRight size={11} className="text-zinc-600 shrink-0 mt-0.5" />
+                          <p className="text-xs text-zinc-400">{e.suggestion}</p>
+                        </div>
+                        {e.link && (
+                          <div className="pl-5">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => router.push(e.link!.href)}
+                              className="h-6 px-2 text-[11px] text-indigo-400 hover:text-indigo-300 hover:bg-indigo-950/40 gap-1"
+                            >
+                              {e.link.label}
+                              <IconArrowRight size={10} />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                    {result.warnings.map((w, i) => (
+                      <div key={i} className="rounded-lg border border-amber-900/30 bg-amber-950/20 p-3">
+                        <div className="flex items-start gap-2">
+                          <IconAlertTriangle size={13} className="text-amber-400 shrink-0 mt-0.5" />
+                          <p className="text-xs text-amber-300">{w}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {!result.trackerFound && result.pageAccessible && (
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-3">
@@ -563,10 +832,38 @@ export function DebugContent() {
             </div>
 
             {showMonitor && organization?.id && (
-              <LiveMonitor organizationId={organization.id} />
+              <div className="space-y-3">
+                <LiveMonitor
+                  organizationId={organization.id}
+                  onLatestEvent={(ev) => ev && setLatestLiveEvent(ev)}
+                />
+                {overallOk && (
+                  <Button
+                    onClick={handleSendTest}
+                    disabled={isSendingTest}
+                    variant="outline"
+                    className="w-full h-9 gap-2 text-xs border-zinc-700 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                  >
+                    {isSendingTest ? (
+                      <IconLoader2 size={13} className="animate-spin" />
+                    ) : (
+                      <IconFlask size={13} />
+                    )}
+                    Enviar evento de teste
+                  </Button>
+                )}
+              </div>
             )}
           </div>
         </div>
+      )}
+
+      {organization?.id && (
+        <DiagnosticHistory
+          key={historyKey}
+          orgId={organization.id}
+          onRerun={handleDiagnose}
+        />
       )}
     </div>
   );

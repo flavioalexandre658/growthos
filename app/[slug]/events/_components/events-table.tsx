@@ -12,6 +12,10 @@ import {
   IconChevronLeft,
   IconLoader2,
   IconDots,
+  IconCopy,
+  IconCheck,
+  IconAlertTriangle,
+  IconX,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,61 +37,89 @@ import type { IPaginationMeta } from "@/interfaces/dashboard.interface";
 dayjs.extend(relativeTime);
 dayjs.locale("pt-br");
 
-function EventDetailGrid({ event }: { event: IEvent }) {
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(value).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   return (
-    <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-      {event.sessionId && (
-        <div>
-          <p className="text-[9px] text-zinc-700 uppercase tracking-wider mb-0.5">session_id</p>
-          <p className="text-xs font-mono text-zinc-400 truncate">{event.sessionId}</p>
-        </div>
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="ml-1.5 shrink-0 p-0.5 rounded text-zinc-700 hover:text-zinc-300 transition-colors"
+      title="Copiar"
+    >
+      {copied ? (
+        <IconCheck size={11} className="text-emerald-400" />
+      ) : (
+        <IconCopy size={11} />
       )}
-      {event.customerId && (
-        <div>
-          <p className="text-[9px] text-zinc-700 uppercase tracking-wider mb-0.5">customer_id</p>
-          <p className="text-xs font-mono text-zinc-400 truncate">{event.customerId}</p>
-        </div>
-      )}
-      {event.campaign && (
-        <div>
-          <p className="text-[9px] text-zinc-700 uppercase tracking-wider mb-0.5">campaign</p>
-          <p className="text-xs text-zinc-400 truncate">{event.campaign}</p>
-        </div>
-      )}
-      {event.medium && (
-        <div>
-          <p className="text-[9px] text-zinc-700 uppercase tracking-wider mb-0.5">medium</p>
-          <p className="text-xs text-zinc-400">{event.medium}</p>
-        </div>
-      )}
-      {event.landingPage && (
-        <div className="col-span-2">
-          <p className="text-[9px] text-zinc-700 uppercase tracking-wider mb-0.5">landing_page</p>
-          <p className="text-xs font-mono text-zinc-400 truncate">{event.landingPage}</p>
-        </div>
-      )}
-      {event.category && (
-        <div>
-          <p className="text-[9px] text-zinc-700 uppercase tracking-wider mb-0.5">category</p>
-          <p className="text-xs text-zinc-400">{event.category}</p>
-        </div>
-      )}
-      {event.paymentMethod && (
-        <div>
-          <p className="text-[9px] text-zinc-700 uppercase tracking-wider mb-0.5">payment_method</p>
-          <p className="text-xs text-zinc-400">{event.paymentMethod}</p>
-        </div>
-      )}
-      {event.productId && (
-        <div>
-          <p className="text-[9px] text-zinc-700 uppercase tracking-wider mb-0.5">product_id</p>
-          <p className="text-xs font-mono text-zinc-400 truncate">{event.productId}</p>
-        </div>
-      )}
-      <div>
-        <p className="text-[9px] text-zinc-700 uppercase tracking-wider mb-0.5">id</p>
-        <p className="text-xs font-mono text-zinc-700 truncate">{event.id}</p>
+    </button>
+  );
+}
+
+interface DetailFieldProps {
+  label: string;
+  value: string;
+  mono?: boolean;
+  copyable?: boolean;
+  dim?: boolean;
+}
+
+function DetailField({ label, value, mono = false, copyable = false, dim = false }: DetailFieldProps) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-3 py-2">
+      <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600 shrink-0 w-[100px]">
+        {label}
+      </span>
+      <div className="flex items-center gap-0 flex-1 min-w-0 justify-end">
+        <span
+          className={cn(
+            "text-xs truncate",
+            mono ? "font-mono" : "",
+            dim ? "text-zinc-700" : "text-zinc-300"
+          )}
+          title={value}
+        >
+          {value}
+        </span>
+        {copyable && <CopyButton value={value} />}
       </div>
+    </div>
+  );
+}
+
+function EventDetailGrid({ event }: { event: IEvent }) {
+  const fields: DetailFieldProps[] = [];
+
+  if (event.sessionId)
+    fields.push({ label: "session_id", value: event.sessionId, mono: true, copyable: true });
+  if (event.customerId)
+    fields.push({ label: "customer_id", value: event.customerId, mono: true, copyable: true });
+  if (event.productId)
+    fields.push({ label: "product_id", value: event.productId, mono: true, copyable: true });
+  if (event.landingPage)
+    fields.push({ label: "landing_page", value: event.landingPage, mono: true, copyable: true });
+  if (event.campaign)
+    fields.push({ label: "campaign", value: event.campaign, copyable: true });
+  if (event.medium)
+    fields.push({ label: "medium", value: event.medium });
+  if (event.category)
+    fields.push({ label: "category", value: event.category });
+  if (event.paymentMethod)
+    fields.push({ label: "payment_method", value: event.paymentMethod });
+  fields.push({ label: "event_id", value: event.id, mono: true, copyable: true, dim: true });
+
+  return (
+    <div className="rounded-lg border border-zinc-800/60 bg-zinc-950/50 divide-y divide-zinc-800/40 overflow-hidden">
+      {fields.map((f) => (
+        <DetailField key={f.label} {...f} />
+      ))}
     </div>
   );
 }
@@ -345,9 +377,11 @@ export function EventsTable({
   onPageSizeChange,
 }: EventsTableProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const batchDeleteMutation = useDeleteEventsBatch();
 
   const toggleSelect = (id: string) => {
+    setConfirmDelete(false);
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -357,6 +391,7 @@ export function EventsTable({
   };
 
   const toggleAll = () => {
+    setConfirmDelete(false);
     if (selectedIds.size === data.length && data.length > 0) {
       setSelectedIds(new Set());
     } else {
@@ -372,6 +407,7 @@ export function EventsTable({
       organizationId,
     });
     setSelectedIds(new Set());
+    setConfirmDelete(false);
     toast.success(`${count} evento(s) excluído(s)`);
   };
 
@@ -382,23 +418,69 @@ export function EventsTable({
   const paginationEnd = Math.min(pagination.page * pagination.limit, pagination.total);
 
   const selectionBar = selectedIds.size > 0 && (
-    <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800 bg-red-950/20">
-      <span className="text-xs text-red-300 font-medium">
-        {selectedIds.size} evento(s) selecionado(s)
-      </span>
-      <Button
-        size="sm"
-        onClick={handleBatchDelete}
-        disabled={batchDeleteMutation.isPending}
-        className="h-7 gap-1.5 text-xs bg-red-700 hover:bg-red-600 text-white"
-      >
-        {batchDeleteMutation.isPending ? (
-          <IconLoader2 size={12} className="animate-spin" />
+    <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-zinc-800 bg-zinc-950/60">
+      <div className="flex items-center gap-3 min-w-0">
+        {confirmDelete ? (
+          <div className="flex items-center gap-2">
+            <IconAlertTriangle size={13} className="text-red-400 shrink-0" />
+            <span className="text-xs text-red-300 font-medium whitespace-nowrap">
+              Excluir {selectedIds.size} evento{selectedIds.size > 1 ? "s" : ""}?
+            </span>
+          </div>
         ) : (
-          <IconTrash size={12} />
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs text-zinc-400 font-medium tabular-nums">
+              {selectedIds.size} de {data.length} selecionado{selectedIds.size > 1 ? "s" : ""}
+            </span>
+            <button
+              type="button"
+              onClick={() => { setSelectedIds(new Set()); setConfirmDelete(false); }}
+              className="text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
+            >
+              <IconX size={10} />
+              Desmarcar
+            </button>
+          </div>
         )}
-        Excluir
-      </Button>
+      </div>
+
+      <div className="flex items-center gap-1.5 shrink-0">
+        {confirmDelete ? (
+          <>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setConfirmDelete(false)}
+              className="h-7 px-3 text-xs text-zinc-400 hover:text-zinc-100"
+            >
+              Cancelar
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleBatchDelete}
+              disabled={batchDeleteMutation.isPending}
+              className="h-7 gap-1.5 text-xs bg-red-700 hover:bg-red-600 text-white"
+            >
+              {batchDeleteMutation.isPending ? (
+                <IconLoader2 size={12} className="animate-spin" />
+              ) : (
+                <IconTrash size={12} />
+              )}
+              Confirmar
+            </Button>
+          </>
+        ) : (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setConfirmDelete(true)}
+            className="h-7 gap-1.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-red-900/40"
+          >
+            <IconTrash size={12} />
+            Excluir
+          </Button>
+        )}
+      </div>
     </div>
   );
 

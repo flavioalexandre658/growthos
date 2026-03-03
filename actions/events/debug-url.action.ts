@@ -6,11 +6,12 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { apiKeys } from "@/db/schema";
-import type { IDebugResult } from "@/interfaces/event.interface";
+import type { IDebugResult, IDebugErrorHint } from "@/interfaces/event.interface";
 
 const schema = z.object({
   url: z.string().url(),
   organizationId: z.string().uuid(),
+  orgSlug: z.string().optional(),
 });
 
 export async function debugUrl(input: z.infer<typeof schema>): Promise<IDebugResult> {
@@ -18,6 +19,7 @@ export async function debugUrl(input: z.infer<typeof schema>): Promise<IDebugRes
   if (!session?.user) throw new Error("Unauthorized");
 
   const data = schema.parse(input);
+  const slug = data.orgSlug ?? "";
 
   const result: IDebugResult = {
     pageAccessible: false,
@@ -50,7 +52,10 @@ export async function debugUrl(input: z.infer<typeof schema>): Promise<IDebugRes
     result.httpStatus = response.status;
 
     if (!response.ok) {
-      result.errors.push(`Página retornou HTTP ${response.status}`);
+      result.errors.push({
+        message: `Página retornou HTTP ${response.status}`,
+        suggestion: "Verifique se a URL está correta e se a página está acessível publicamente.",
+      });
       return result;
     }
 
@@ -59,9 +64,15 @@ export async function debugUrl(input: z.infer<typeof schema>): Promise<IDebugRes
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erro desconhecido";
     if (message.includes("abort")) {
-      result.errors.push("Timeout: a página demorou mais de 10 segundos para responder");
+      result.errors.push({
+        message: "Timeout: a página demorou mais de 10 segundos para responder",
+        suggestion: "Verifique se o servidor do site está funcionando e acessível externamente.",
+      });
     } else {
-      result.errors.push(`Não foi possível acessar a página: ${message}`);
+      result.errors.push({
+        message: `Não foi possível acessar a página: ${message}`,
+        suggestion: "Confirme que a URL está correta, inclui o protocolo (https://) e é acessível publicamente.",
+      });
     }
     return result;
   }
@@ -89,7 +100,10 @@ export async function debugUrl(input: z.infer<typeof schema>): Promise<IDebugRes
     if (genericTrackerMatch) {
       result.warnings.push("tracker.js encontrado no HTML mas sem data-key visível");
     } else {
-      result.errors.push("tracker.js não encontrado no HTML da página");
+      result.errors.push({
+        message: "tracker.js não encontrado no HTML da página",
+        suggestion: "Instale o snippet do tracker.js no <head> de todas as páginas do seu site.",
+      });
     }
     return result;
   }
@@ -98,7 +112,11 @@ export async function debugUrl(input: z.infer<typeof schema>): Promise<IDebugRes
   result.scriptSrc = scriptSrc;
 
   if (!apiKeyValue) {
-    result.errors.push("Atributo data-key não encontrado no script do tracker.js");
+    result.errors.push({
+      message: "Atributo data-key não encontrado no script do tracker.js",
+      suggestion: "Adicione o atributo data-key com sua API key ao elemento <script> do tracker.js.",
+      ...(slug ? { link: { label: "Ver API Keys", href: `/${slug}/settings` } } : {}),
+    });
     return result;
   }
 
@@ -112,7 +130,11 @@ export async function debugUrl(input: z.infer<typeof schema>): Promise<IDebugRes
     .limit(1);
 
   if (!keyRow) {
-    result.errors.push("API key não encontrada no sistema");
+    result.errors.push({
+      message: "API key não encontrada no sistema",
+      suggestion: "Verifique se a API key no script corresponde a uma key criada nesta conta.",
+      ...(slug ? { link: { label: "Ir para Configurações", href: `/${slug}/settings` } } : {}),
+    });
     return result;
   }
 
@@ -121,15 +143,27 @@ export async function debugUrl(input: z.infer<typeof schema>): Promise<IDebugRes
   if (keyRow.organizationId === data.organizationId) {
     result.keyBelongsToOrg = true;
   } else {
-    result.errors.push("Esta API key pertence a outra organização");
+    result.errors.push({
+      message: "Esta API key pertence a outra organização",
+      suggestion: "Acesse Configurações → API Keys e copie a key correta desta organização.",
+      ...(slug ? { link: { label: "Ir para Configurações", href: `/${slug}/settings` } } : {}),
+    });
   }
 
   if (!keyRow.isActive) {
     result.keyExpired = true;
-    result.errors.push("A API key está inativa");
+    result.errors.push({
+      message: "A API key está inativa",
+      suggestion: "Ative esta key em Configurações ou crie uma nova key ativa.",
+      ...(slug ? { link: { label: "Gerenciar API Keys", href: `/${slug}/settings` } } : {}),
+    });
   } else if (keyRow.expiresAt && keyRow.expiresAt < new Date()) {
     result.keyExpired = true;
-    result.errors.push(`A API key expirou em ${keyRow.expiresAt.toLocaleDateString("pt-BR")}`);
+    result.errors.push({
+      message: `A API key expirou em ${keyRow.expiresAt.toLocaleDateString("pt-BR")}`,
+      suggestion: "Crie uma nova API key sem data de expiração ou com data futura.",
+      ...(slug ? { link: { label: "Criar nova key", href: `/${slug}/settings` } } : {}),
+    });
   }
 
   if (result.keyBelongsToOrg && !result.keyExpired) {

@@ -71,7 +71,7 @@ export function EventsFilters({
           className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"
         />
         <Input
-          placeholder="Buscar session_id, customer_id, product_id..."
+          placeholder="Buscar session_id, customer_id, product_id ou nome do produto..."
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           className="pl-8 h-8 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-600 text-xs font-mono"

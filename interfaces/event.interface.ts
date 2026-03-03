@@ -39,9 +39,17 @@ export interface IEventsResult {
 }
 
 export interface IEventHealth {
-  status: "receiving" | "idle" | "never";
+  status: "receiving" | "stale" | "idle" | "never";
   lastEventAt: Date | null;
   todayCount: number;
+  minutesSinceLastEvent?: number;
+  hourlyVolume: { hour: string; count: number }[];
+}
+
+export interface IDebugErrorHint {
+  message: string;
+  suggestion: string;
+  link?: { label: string; href: string };
 }
 
 export interface IDebugResult {
@@ -54,6 +62,6 @@ export interface IDebugResult {
   keyValid: boolean;
   keyBelongsToOrg: boolean;
   keyExpired: boolean;
-  errors: string[];
+  errors: IDebugErrorHint[];
   warnings: string[];
 }
