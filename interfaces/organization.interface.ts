@@ -2,6 +2,7 @@ export interface IFunnelStep {
   eventType: string;
   label: string;
   countUnique?: boolean;
+  hidden?: boolean;
 }
 
 export interface IOrganization {

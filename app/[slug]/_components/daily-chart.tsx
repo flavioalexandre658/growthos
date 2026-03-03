@@ -14,20 +14,13 @@ import {
 import type { IDailyData, IStepMeta } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtInt, fmtBRLDecimal } from "@/utils/format";
-
-const STEP_COLORS = [
-  "#6366f1",
-  "#8b5cf6",
-  "#22c55e",
-  "#06b6d4",
-  "#f59e0b",
-  "#f43f5e",
-];
+import { getStepColor } from "@/utils/step-colors";
 
 interface DailyChartProps {
   data: IDailyData[] | undefined;
   stepMeta: IStepMeta[];
   isLoading: boolean;
+  hiddenKeys?: Set<string>;
 }
 
 function formatDateLabel(dateStr: string) {
@@ -35,8 +28,14 @@ function formatDateLabel(dateStr: string) {
   return `${parseInt(day)}/${parseInt(month)}`;
 }
 
-export function DailyChart({ data, stepMeta, isLoading }: DailyChartProps) {
-  const visibleStepMeta = stepMeta.filter((s) => s.key !== "pageview");
+export function DailyChart({ data, stepMeta, isLoading, hiddenKeys }: DailyChartProps) {
+  const allStepKeys = stepMeta
+    .filter((s) => s.key !== "pageview")
+    .map((s) => s.key);
+
+  const visibleStepMeta = stepMeta.filter(
+    (s) => s.key !== "pageview" && !hiddenKeys?.has(s.key)
+  );
 
   const chartData = (data ?? []).map((d) => ({
     label: formatDateLabel(d.date),
@@ -104,13 +103,13 @@ export function DailyChart({ data, stepMeta, isLoading }: DailyChartProps) {
               <Legend
                 wrapperStyle={{ fontSize: 11, color: "#71717a", paddingTop: 12 }}
               />
-              {visibleStepMeta.map((step, idx) => (
+              {visibleStepMeta.map((step) => (
                 <Bar
                   key={step.key}
                   yAxisId="left"
                   dataKey={step.key}
                   name={step.label}
-                  fill={STEP_COLORS[idx % STEP_COLORS.length]}
+                  fill={getStepColor(step.key, allStepKeys).hex}
                   radius={[3, 3, 0, 0]}
                 />
               ))}

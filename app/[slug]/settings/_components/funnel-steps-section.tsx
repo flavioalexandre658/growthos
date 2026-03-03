@@ -13,6 +13,8 @@ import {
   IconSparkles,
   IconX,
   IconDeviceFloppy,
+  IconEye,
+  IconEyeOff,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -231,8 +233,10 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
               <div
                 key={index}
                 className={cn(
-                  "group flex items-center gap-2 rounded-lg border bg-zinc-950/60 p-2.5 transition-colors",
-                  step.eventType && step.label
+                  "group flex items-center gap-2 rounded-lg border bg-zinc-950/60 p-2.5 transition-all",
+                  step.hidden
+                    ? "border-zinc-800/40 opacity-50"
+                    : step.eventType && step.label
                     ? "border-zinc-800"
                     : "border-amber-900/40 bg-amber-950/10"
                 )}
@@ -264,14 +268,20 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
                   value={step.eventType}
                   onChange={(e) => updateStep(index, "eventType", e.target.value)}
                   placeholder="event_type"
-                  className="h-8 font-mono text-xs bg-zinc-900 border-zinc-700/80 text-indigo-300 placeholder:text-zinc-700 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-600/50 w-36 shrink-0"
+                  className={cn(
+                    "h-8 font-mono text-xs bg-zinc-900 border-zinc-700/80 placeholder:text-zinc-700 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-600/50 w-36 shrink-0",
+                    step.hidden ? "text-zinc-600" : "text-indigo-300"
+                  )}
                 />
 
                 <Input
                   value={step.label}
                   onChange={(e) => updateStep(index, "label", e.target.value)}
                   placeholder="Label exibida"
-                  className="h-8 text-xs bg-zinc-900 border-zinc-700/80 text-zinc-200 placeholder:text-zinc-700 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-600/50 flex-1 min-w-0"
+                  className={cn(
+                    "h-8 text-xs bg-zinc-900 border-zinc-700/80 placeholder:text-zinc-700 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-600/50 flex-1 min-w-0",
+                    step.hidden ? "text-zinc-600 line-through" : "text-zinc-200"
+                  )}
                 />
 
                 <label className="flex items-center gap-1.5 shrink-0 cursor-pointer group/cb">
@@ -285,6 +295,20 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
                     unique
                   </span>
                 </label>
+
+                <button
+                  type="button"
+                  onClick={() => updateStep(index, "hidden", !step.hidden)}
+                  title={step.hidden ? "Mostrar no dashboard" : "Ocultar do dashboard"}
+                  className={cn(
+                    "p-1.5 transition-colors shrink-0",
+                    step.hidden
+                      ? "text-zinc-600 hover:text-zinc-300"
+                      : "text-zinc-600 hover:text-amber-400 opacity-0 group-hover:opacity-100"
+                  )}
+                >
+                  {step.hidden ? <IconEyeOff size={13} /> : <IconEye size={13} />}
+                </button>
 
                 <button
                   type="button"
@@ -319,13 +343,23 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
               steps.map((step, i) => (
                 <div key={i} className="flex items-center gap-1.5">
                   <div className="flex items-center gap-1">
-                    <span className="text-xs font-mono text-indigo-300/80 bg-indigo-950/50 border border-indigo-900/50 px-2 py-0.5 rounded">
+                    <span
+                      className={cn(
+                        "text-xs font-mono px-2 py-0.5 rounded border",
+                        step.hidden
+                          ? "text-zinc-700 bg-zinc-900/40 border-zinc-800/50 line-through"
+                          : "text-indigo-300/80 bg-indigo-950/50 border-indigo-900/50"
+                      )}
+                    >
                       {step.eventType || "···"}
                     </span>
-                    {step.countUnique && (
+                    {step.countUnique && !step.hidden && (
                       <span className="text-[9px] font-semibold text-violet-400/80 bg-violet-950/40 border border-violet-900/30 px-1 py-0.5 rounded">
                         U
                       </span>
+                    )}
+                    {step.hidden && (
+                      <IconEyeOff size={10} className="text-zinc-700" />
                     )}
                   </div>
                   {i < steps.length - 1 && (

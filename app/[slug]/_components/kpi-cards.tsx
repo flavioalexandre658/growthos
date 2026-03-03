@@ -79,10 +79,12 @@ function KpiCardSkeleton() {
 interface KpiCardsProps {
   data: IGenericFunnelData | null | undefined;
   isLoading: boolean;
+  hiddenKeys?: Set<string>;
 }
 
-export function KpiCards({ data, isLoading }: KpiCardsProps) {
-  const stepCount = data?.steps.length ?? 3;
+export function KpiCards({ data, isLoading, hiddenKeys }: KpiCardsProps) {
+  const visibleSteps = (data?.steps ?? []).filter((s) => !hiddenKeys?.has(s.key));
+  const stepCount = visibleSteps.length || (data?.steps.length ?? 3);
   const totalCards = stepCount + 3 + ((data?.checkoutAbandoned ?? 0) > 0 ? 1 : 0);
 
   if (isLoading) {
@@ -95,7 +97,7 @@ export function KpiCards({ data, isLoading }: KpiCardsProps) {
     );
   }
 
-  const stepCards: KpiCardProps[] = (data?.steps ?? []).map((step) => {
+  const stepCards: KpiCardProps[] = visibleSteps.map((step) => {
     const colors = STEP_COLOR_MAP[step.key] ?? FALLBACK_COLORS;
     const Icon = STEP_ICON_MAP[step.key] ?? FALLBACK_ICON;
     return {

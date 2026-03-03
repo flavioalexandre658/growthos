@@ -2,14 +2,8 @@
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtInt } from "@/utils/format";
+import { getStepColor } from "@/utils/step-colors";
 import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
-
-const STEP_COLORS = [
-  { color: "#6366f1", text: "text-indigo-400" },
-  { color: "#8b5cf6", text: "text-violet-400" },
-  { color: "#22c55e", text: "text-emerald-400" },
-  { color: "#f59e0b", text: "text-amber-400" },
-];
 
 const RATE_STYLES = [
   { color: "text-violet-400", border: "border-violet-600/30", bg: "bg-violet-600/10" },
@@ -21,13 +15,26 @@ const RATE_STYLES = [
 interface FunnelSectionProps {
   data: IGenericFunnelData | null | undefined;
   isLoading: boolean;
+  hiddenKeys?: Set<string>;
 }
 
-export function FunnelSection({ data, isLoading }: FunnelSectionProps) {
-  const visibleSteps = (data?.steps ?? []).filter((s) => s.key !== "pageview");
-  const visibleRates = (data?.rates ?? []).filter(
-    (r) => !r.key.startsWith("pageview_") && r.key !== "total_conversion"
+export function FunnelSection({ data, isLoading, hiddenKeys }: FunnelSectionProps) {
+  const allStepKeys = (data?.steps ?? [])
+    .filter((s) => s.key !== "pageview")
+    .map((s) => s.key);
+
+  const visibleSteps = (data?.steps ?? []).filter(
+    (s) => s.key !== "pageview" && !hiddenKeys?.has(s.key)
   );
+  const visibleRates = visibleSteps.slice(1).map((step, idx) => {
+    const prev = visibleSteps[idx];
+    const rate = prev.value > 0 ? ((step.value / prev.value) * 100).toFixed(1) : "0.0";
+    return {
+      key: `${prev.key}_${step.key}`,
+      label: `${prev.label} → ${step.label}`,
+      value: `${rate}%`,
+    };
+  });
 
   const firstStepValue = visibleSteps[0]?.value ?? 1;
   const stepCount = visibleSteps.length || 3;
@@ -58,18 +65,18 @@ export function FunnelSection({ data, isLoading }: FunnelSectionProps) {
       ) : (
         <>
           <div className="mt-5 flex gap-3">
-            {visibleSteps.map((step, idx) => {
-              const style = STEP_COLORS[idx % STEP_COLORS.length];
+            {visibleSteps.map((step) => {
+              const style = getStepColor(step.key, allStepKeys);
               const pct = Math.max((step.value / firstStepValue) * 100, 4);
               return (
                 <div key={step.key} className="flex-1 text-center">
                   <div
                     className="relative flex h-10 items-center justify-center overflow-hidden rounded-lg"
-                    style={{ background: `${style.color}18` }}
+                    style={{ background: `${style.hex}18` }}
                   >
                     <div
                       className="absolute left-0 top-0 bottom-0 rounded-lg transition-all duration-500"
-                      style={{ width: `${pct}%`, background: `${style.color}35` }}
+                      style={{ width: `${pct}%`, background: `${style.hex}35` }}
                     />
                     <span className={`relative text-base font-bold font-mono ${style.text}`}>
                       {fmtInt(step.value)}

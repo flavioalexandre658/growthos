@@ -4,6 +4,7 @@ export interface IFunnelStepConfig {
   eventType: string;
   label: string;
   countUnique?: boolean;
+  hidden?: boolean;
 }
 
 export const organizations = pgTable("organizations", {

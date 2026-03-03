@@ -11,6 +11,7 @@ const funnelStepSchema = z.object({
   eventType: z.string().min(1),
   label: z.string().min(1),
   countUnique: z.boolean().optional(),
+  hidden: z.boolean().optional(),
 });
 
 const schema = z.object({
