@@ -13,6 +13,7 @@ import {
   injectCheckoutSteps,
   buildExtendedStepMeta,
 } from "@/utils/build-funnel-steps";
+import { getChannelName } from "@/utils/channel-colors";
 import type {
   IDateFilter,
   IChannelParams,
@@ -21,14 +22,52 @@ import type {
 } from "@/interfaces/dashboard.interface";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
+const SOURCE_ALIASES: Record<string, string> = {
+  fb: "facebook",
+  fbads: "facebook",
+  ig: "instagram",
+  yt: "youtube",
+  adwords: "google",
+  gads: "google",
+  tw: "twitter",
+  x: "twitter",
+};
+
+function normalizeSource(source: string): string {
+  const lower = source.toLowerCase().replace(/[\s-]/g, "_");
+  if (SOURCE_ALIASES[lower]) return SOURCE_ALIASES[lower];
+  for (const [alias, normalized] of Object.entries(SOURCE_ALIASES)) {
+    if (lower === alias) return normalized;
+  }
+  return lower;
+}
+
+function normalizeChannel(channel: string): string {
+  if (channel === "direct") return "direct";
+  const lastUnderscore = channel.lastIndexOf("_");
+  if (lastUnderscore === -1) return channel;
+  const suffix = channel.slice(lastUnderscore + 1);
+  const source = channel.slice(0, lastUnderscore);
+  if (suffix !== "paid" && suffix !== "organic") return channel;
+  return normalizeSource(source) + "_" + suffix;
+}
+
 export async function getChannels(
   organizationId: string,
   params: IChannelParams = {}
 ): Promise<IChannelsResult> {
+  const EMPTY: IChannelsResult = {
+    data: [],
+    pagination: { page: 1, limit: 20, total: 0, total_pages: 0 },
+    stepMeta: [],
+    totalRevenue: 0,
+    channelsWithRevenue: 0,
+    topChannel: "",
+    concentrationTop2: 0,
+  };
+
   const session = await getServerSession(authOptions);
-  if (!session?.user) {
-    return { data: [], pagination: { page: 1, limit: 20, total: 0, total_pages: 0 }, stepMeta: [] };
-  }
+  if (!session?.user) return EMPTY;
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
@@ -41,6 +80,10 @@ export async function getChannels(
   const page = params.page ?? 1;
   const limit = params.limit ?? 20;
   const orderBy = params.order_by ?? "revenue";
+
+  const periodMs = endDate.getTime() - startDate.getTime();
+  const previousEndDate = new Date(startDate.getTime() - 1);
+  const previousStartDate = new Date(startDate.getTime() - periodMs);
 
   const baseFunnelSteps: IFunnelStepConfig[] = buildFunnelSteps(org?.funnelSteps ?? []);
   const allEventTypes = getAllQueryEventTypes(baseFunnelSteps).filter(
@@ -56,24 +99,42 @@ export async function getChannels(
     ELSE COALESCE("source", 'direct') || '_organic'
   END`);
 
-  const rawRows = await db
-    .select({
-      channel: sql<string>`${channelExpr}`,
-      eventType: events.eventType,
-      total: sql<number>`COUNT(*)`,
-      uniqueTotal: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
-      grossRev: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
-    })
-    .from(events)
-    .where(
-      and(
-        eq(events.organizationId, organizationId),
-        gte(events.createdAt, startDate),
-        lte(events.createdAt, endDate),
-        inArray(events.eventType, allEventTypes)
+  const [rawRows, prevRawRows] = await Promise.all([
+    db
+      .select({
+        channel: sql<string>`${channelExpr}`,
+        eventType: events.eventType,
+        total: sql<number>`COUNT(*)`,
+        uniqueTotal: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
+        grossRev: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
+      })
+      .from(events)
+      .where(
+        and(
+          eq(events.organizationId, organizationId),
+          gte(events.createdAt, startDate),
+          lte(events.createdAt, endDate),
+          inArray(events.eventType, allEventTypes)
+        )
       )
-    )
-    .groupBy(sql`${channelExpr}`, events.eventType);
+      .groupBy(sql`${channelExpr}`, events.eventType),
+
+    db
+      .select({
+        channel: sql<string>`${channelExpr}`,
+        grossRev: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
+      })
+      .from(events)
+      .where(
+        and(
+          eq(events.organizationId, organizationId),
+          gte(events.createdAt, previousStartDate),
+          lte(events.createdAt, previousEndDate),
+          eq(events.eventType, "payment")
+        )
+      )
+      .groupBy(sql`${channelExpr}`),
+  ]);
 
   const pvBySource = await getPageviewSessionsByChannel(
     organizationId,
@@ -81,6 +142,13 @@ export async function getChannels(
     endDate,
     tz
   );
+
+  const previousRevenueMap = new Map<string, number>();
+  for (const row of prevRawRows) {
+    const normalized = normalizeChannel(row.channel);
+    const existing = previousRevenueMap.get(normalized) ?? 0;
+    previousRevenueMap.set(normalized, existing + Number(row.grossRev));
+  }
 
   const globalCountMap = new Map<string, { total: number; uniqueTotal: number }>();
   for (const row of rawRows) {
@@ -104,32 +172,34 @@ export async function getChannels(
   >();
 
   for (const row of rawRows) {
-    if (!channelMap.has(row.channel)) {
-      channelMap.set(row.channel, { steps: {}, revenue: 0, paymentCount: 0 });
+    const normalizedChannel = normalizeChannel(row.channel);
+    if (!channelMap.has(normalizedChannel)) {
+      channelMap.set(normalizedChannel, { steps: {}, revenue: 0, paymentCount: 0 });
     }
-    const entry = channelMap.get(row.channel)!;
+    const entry = channelMap.get(normalizedChannel)!;
 
     const stepConfig = stepConfigMap.get(row.eventType);
     if (stepConfig) {
       const count = stepConfig.countUnique
         ? Number(row.uniqueTotal)
         : Number(row.total);
-      entry.steps[row.eventType] = count;
+      entry.steps[row.eventType] = (entry.steps[row.eventType] ?? 0) + count;
     } else if (row.eventType === "checkout_abandoned" && trackedInMeta.has("checkout_abandoned")) {
-      entry.steps["checkout_abandoned"] = Number(row.total);
+      entry.steps["checkout_abandoned"] = (entry.steps["checkout_abandoned"] ?? 0) + Number(row.total);
     }
 
     if (row.eventType === "payment") {
-      entry.revenue = Number(row.grossRev);
-      entry.paymentCount = Number(row.total);
+      entry.revenue += Number(row.grossRev);
+      entry.paymentCount += Number(row.total);
     }
   }
 
   for (const [source, sessions] of pvBySource) {
-    if (!channelMap.has(source)) {
-      channelMap.set(source, { steps: {}, revenue: 0, paymentCount: 0 });
+    const normalizedSource = normalizeChannel(source === "direct" ? "direct" : source + "_organic");
+    if (!channelMap.has(normalizedSource)) {
+      channelMap.set(normalizedSource, { steps: {}, revenue: 0, paymentCount: 0 });
     }
-    channelMap.get(source)!.steps["pageview"] = sessions;
+    channelMap.get(normalizedSource)!.steps["pageview"] = sessions;
   }
 
   const allChannels: IChannelData[] = Array.from(channelMap.entries()).map(
@@ -148,13 +218,17 @@ export async function getChannels(
         revenue: data.revenue,
         ticket_medio: ticketMedio,
         conversion_rate: conversionRate,
+        previousRevenue: previousRevenueMap.get(channel),
       };
     }
   );
 
   const searchTerm = params.search?.toLowerCase().trim();
   const filtered = searchTerm
-    ? allChannels.filter((c) => c.channel.toLowerCase().includes(searchTerm))
+    ? allChannels.filter((c) => {
+        const name = getChannelName(c.channel).toLowerCase();
+        return c.channel.toLowerCase().includes(searchTerm) || name.includes(searchTerm);
+      })
     : allChannels;
 
   const sorted = [...filtered].sort((a, b) => {
@@ -174,6 +248,13 @@ export async function getChannels(
   const offset = (page - 1) * limit;
   const data = sorted.slice(offset, offset + limit);
 
+  const allSorted = [...allChannels].sort((a, b) => b.revenue - a.revenue);
+  const totalRevenue = allSorted.reduce((sum, c) => sum + c.revenue, 0);
+  const channelsWithRevenue = allSorted.filter((c) => c.revenue > 0).length;
+  const topChannel = allSorted[0]?.channel ?? "";
+  const top2Revenue = allSorted.slice(0, 2).reduce((sum, c) => sum + c.revenue, 0);
+  const concentrationTop2 = totalRevenue > 0 ? Math.round((top2Revenue / totalRevenue) * 100) : 0;
+
   return {
     data,
     pagination: {
@@ -183,5 +264,9 @@ export async function getChannels(
       total_pages: Math.ceil(total / limit),
     },
     stepMeta,
+    totalRevenue,
+    channelsWithRevenue,
+    topChannel,
+    concentrationTop2,
   };
 }

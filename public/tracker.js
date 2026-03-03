@@ -76,6 +76,8 @@
     } catch (_) {}
   }
 
+  var SEARCH_ENGINES = ["google", "bing", "yahoo", "duckduckgo", "baidu", "yandex", "ecosia"];
+
   var SOURCE_PATTERNS = [
     { pattern: /google/i, source: "google" },
     { pattern: /bing/i, source: "bing" },
@@ -90,10 +92,25 @@
     { pattern: /whatsapp/i, source: "whatsapp" },
     { pattern: /telegram/i, source: "telegram" },
     { pattern: /email|mail\./i, source: "email" },
+    { pattern: /pinterest/i, source: "pinterest" },
+    { pattern: /baidu/i, source: "baidu" },
+    { pattern: /yandex/i, source: "yandex" },
+    { pattern: /ecosia/i, source: "ecosia" },
   ];
 
+  function isSameSite(referrer) {
+    if (!referrer) return false;
+    try {
+      var refHost = new URL(referrer).hostname.replace("www.", "");
+      var curHost = window.location.hostname.replace("www.", "");
+      return refHost === curHost;
+    } catch (_) {
+      return false;
+    }
+  }
+
   function inferSourceFromReferrer(referrer) {
-    if (!referrer) return "direct";
+    if (!referrer || isSameSite(referrer)) return "direct";
     for (var i = 0; i < SOURCE_PATTERNS.length; i++) {
       if (SOURCE_PATTERNS[i].pattern.test(referrer)) {
         return SOURCE_PATTERNS[i].source;
@@ -104,6 +121,15 @@
     } catch (_) {
       return "referral";
     }
+  }
+
+  function inferMediumFromReferrer(referrer) {
+    if (!referrer || isSameSite(referrer)) return "direct";
+    var source = inferSourceFromReferrer(referrer);
+    for (var i = 0; i < SEARCH_ENGINES.length; i++) {
+      if (source === SEARCH_ENGINES[i]) return "organic";
+    }
+    return "referral";
   }
 
   var CLICK_ID_MAP = [
@@ -143,7 +169,10 @@
           term: params.get("utm_term") || null,
         };
         sessionStorage.setItem(UTM_KEY, JSON.stringify(utms));
-      } else if (utmSource) {
+        return;
+      }
+
+      if (utmSource) {
         var utms = {
           source: utmSource,
           medium: params.get("utm_medium") || "cpc",
@@ -152,6 +181,25 @@
           term: params.get("utm_term") || null,
         };
         sessionStorage.setItem(UTM_KEY, JSON.stringify(utms));
+        return;
+      }
+
+      var existing = sessionStorage.getItem(UTM_KEY);
+      if (existing) return;
+
+      var referrer = document.referrer || null;
+      if (referrer && !isSameSite(referrer)) {
+        var source = inferSourceFromReferrer(referrer);
+        var medium = inferMediumFromReferrer(referrer);
+        if (source !== "direct") {
+          sessionStorage.setItem(UTM_KEY, JSON.stringify({
+            source: source,
+            medium: medium,
+            campaign: null,
+            content: null,
+            term: null,
+          }));
+        }
       }
     } catch (_) {}
   }
@@ -180,18 +228,19 @@
   function getAutoContext() {
     var params = new URLSearchParams(window.location.search);
     var storedUtms = getStoredUtms();
-    var referrer = document.referrer || null;
+    var rawReferrer = document.referrer || null;
+    var externalReferrer = (rawReferrer && !isSameSite(rawReferrer)) ? rawReferrer : null;
     var clickId = detectClickId(params);
 
     var source = params.get("utm_source") ||
       (clickId && clickId.source) ||
       (storedUtms && storedUtms.source) ||
-      inferSourceFromReferrer(referrer);
+      inferSourceFromReferrer(externalReferrer);
 
     var medium = params.get("utm_medium") ||
       (clickId && clickId.medium) ||
       (storedUtms && storedUtms.medium) ||
-      (referrer ? "referral" : "direct");
+      inferMediumFromReferrer(externalReferrer);
 
     var campaign = params.get("utm_campaign") ||
       (storedUtms && storedUtms.campaign) ||
@@ -214,7 +263,7 @@
       content: content,
       landing_page: window.location.pathname,
       entry_page: getEntryPage(),
-      referrer: referrer,
+      referrer: rawReferrer,
       device: device,
       session_id: getSessionId(),
     };

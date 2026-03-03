@@ -83,12 +83,17 @@ export interface IChannelData {
   revenue: number;
   ticket_medio: number;
   conversion_rate: string;
+  previousRevenue?: number;
 }
 
 export interface IChannelsResult {
   data: IChannelData[];
   pagination: IPaginationMeta;
   stepMeta: IStepMeta[];
+  totalRevenue: number;
+  channelsWithRevenue: number;
+  topChannel: string;
+  concentrationTop2: number;
 }
 
 export interface ILandingPageData {

@@ -6,7 +6,8 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { IDateFilter, IChannelParams, OrderDirection } from "@/interfaces/dashboard.interface";
 import { PeriodFilter } from "@/app/[slug]/_components/period-filter";
-import { ChannelsBarChart } from "./channels-bar-chart";
+import { ChannelsTreemap } from "./channels-treemap";
+import { ChannelsKpiStrip } from "./channels-kpi-strip";
 import { ChannelsTable } from "./channels-table";
 import { Input } from "@/components/ui/input";
 import { IconSearch } from "@tabler/icons-react";
@@ -72,7 +73,10 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
         </div>
       </div>
 
-      <ChannelsBarChart data={channelsData} isLoading={isLoading} />
+      <ChannelsKpiStrip data={resp} isLoading={isLoading} />
+
+      <ChannelsTreemap data={channelsData} isLoading={isLoading} />
+
       <ChannelsTable
         data={channelsData}
         stepMeta={stepMeta}
