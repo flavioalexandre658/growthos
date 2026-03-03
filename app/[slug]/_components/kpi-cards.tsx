@@ -14,6 +14,7 @@ import {
   IconShoppingCartX,
 } from "@tabler/icons-react";
 import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
+import { getStepColor } from "@/utils/step-colors";
 
 const STEP_ICON_MAP: Record<string, React.ElementType> = {
   pageview: IconEye,
@@ -26,19 +27,7 @@ const STEP_ICON_MAP: Record<string, React.ElementType> = {
   checkout_started: IconShoppingCart,
 };
 
-const STEP_COLOR_MAP: Record<string, { color: string; bgColor: string }> = {
-  pageview: { color: "text-blue-400", bgColor: "bg-blue-600/20" },
-  signup: { color: "text-indigo-400", bgColor: "bg-indigo-600/20" },
-  signups: { color: "text-indigo-400", bgColor: "bg-indigo-600/20" },
-  edits: { color: "text-violet-400", bgColor: "bg-violet-600/20" },
-  payment: { color: "text-emerald-400", bgColor: "bg-emerald-600/20" },
-  payments: { color: "text-emerald-400", bgColor: "bg-emerald-600/20" },
-  campaigns: { color: "text-amber-400", bgColor: "bg-amber-600/20" },
-  checkout_started: { color: "text-orange-400", bgColor: "bg-orange-600/20" },
-};
-
 const FALLBACK_ICON = IconChartBar;
-const FALLBACK_COLORS = { color: "text-zinc-400", bgColor: "bg-zinc-700/30" };
 
 interface KpiCardProps {
   label: string;
@@ -97,14 +86,19 @@ export function KpiCards({ data, isLoading, hiddenKeys }: KpiCardsProps) {
     );
   }
 
+  const allStepKeys = (data?.steps ?? [])
+    .filter((s) => s.key !== "pageview")
+    .map((s) => s.key);
+
   const stepCards: KpiCardProps[] = visibleSteps.map((step) => {
-    const colors = STEP_COLOR_MAP[step.key] ?? FALLBACK_COLORS;
+    const { text, bg } = getStepColor(step.key, allStepKeys);
     const Icon = STEP_ICON_MAP[step.key] ?? FALLBACK_ICON;
     return {
       label: step.label,
       value: fmtInt(step.value),
       icon: Icon,
-      ...colors,
+      color: text,
+      bgColor: bg,
     };
   });
 

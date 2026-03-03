@@ -3,12 +3,16 @@
 import { Suspense, useState, useCallback } from "react";
 import { useFunnel } from "@/hooks/queries/use-funnel";
 import { useDaily } from "@/hooks/queries/use-daily";
+import { useSourceDistribution } from "@/hooks/queries/use-source-distribution";
+import { useRevenueComparison } from "@/hooks/queries/use-revenue-comparison";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { KpiCards } from "./kpi-cards";
 import { FunnelSection } from "./funnel-section";
 import { DailyChart } from "./daily-chart";
 import { PeriodFilter } from "./period-filter";
+import { SourceChart } from "./source-chart";
+import { RecentPayments } from "./recent-payments";
 import {
   Popover,
   PopoverContent,
@@ -16,6 +20,7 @@ import {
 } from "@/components/ui/popover";
 import { IconEye, IconEyeOff } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
+
 interface StepOption {
   eventType: string;
   label: string;
@@ -140,6 +145,8 @@ export function OverviewContent({ filter }: OverviewContentProps) {
 
   const { data: funnel, isPending: funnelLoading } = useFunnel(orgId, filter);
   const { data: dailyResult, isPending: dailyLoading } = useDaily(orgId, filter);
+  const { data: sourceData, isPending: sourceLoading } = useSourceDistribution(orgId, filter);
+  const { data: revenueComparison, isPending: comparisonLoading } = useRevenueComparison(orgId);
 
   const allSteps: StepOption[] = (funnel?.steps ?? [])
     .filter((s) => s.key !== "pageview")
@@ -169,7 +176,21 @@ export function OverviewContent({ filter }: OverviewContentProps) {
       </div>
 
       <KpiCards data={funnel} isLoading={funnelLoading} hiddenKeys={hiddenKeys} />
-      <FunnelSection data={funnel} isLoading={funnelLoading} hiddenKeys={hiddenKeys} />
+
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-4">
+        <FunnelSection
+          data={funnel}
+          isLoading={funnelLoading}
+          hiddenKeys={hiddenKeys}
+        />
+        <SourceChart data={sourceData} isLoading={sourceLoading} />
+      </div>
+
+      <RecentPayments
+        payments={revenueComparison?.recentPayments ?? []}
+        isLoading={comparisonLoading}
+      />
+
       <DailyChart
         data={dailyResult?.rows}
         stepMeta={stepMeta}

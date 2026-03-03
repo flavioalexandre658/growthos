@@ -115,6 +115,39 @@ export interface IRevenueByBillingType {
   oneTime: number;
 }
 
+export interface ISourceEntry {
+  source: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ISourceDistribution {
+  sources: ISourceEntry[];
+  total: number;
+}
+
+export interface IRevenueWindow {
+  label: string;
+  period: "7d" | "30d" | "90d";
+  current: number;
+  previous: number;
+  changePercent: number;
+  direction: "up" | "down" | "flat";
+}
+
+export interface IRecentPayment {
+  id: string;
+  productName: string | null;
+  grossValueInCents: number;
+  source: string | null;
+  createdAt: Date;
+}
+
+export interface IRevenueComparison {
+  windows: IRevenueWindow[];
+  recentPayments: IRecentPayment[];
+}
+
 export interface IFinancialData {
   grossRevenueInCents: number;
   totalDiscountsInCents: number;
