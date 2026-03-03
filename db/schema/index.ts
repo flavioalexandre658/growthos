@@ -4,3 +4,4 @@ export * from "./event.schema";
 export * from "./api-key.schema";
 export * from "./user.schema";
 export * from "./subscription.schema";
+export * from "./pageview-aggregate.schema";

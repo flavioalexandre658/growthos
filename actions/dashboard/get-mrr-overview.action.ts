@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { subscriptions } from "@/db/schema";
+import { subscriptions, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 import type { IMrrOverview } from "@/interfaces/mrr.interface";
@@ -22,7 +22,14 @@ export async function getMrrOverview(
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
 
-  const { startDate, endDate } = resolveDateRange(filter);
+  const [org] = await db
+    .select({ timezone: organizations.timezone })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1);
+
+  const tz = org?.timezone ?? "America/Sao_Paulo";
+  const { startDate, endDate } = resolveDateRange(filter, tz);
 
   const activeSubs = await db
     .select()

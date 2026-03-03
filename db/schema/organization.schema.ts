@@ -17,6 +17,7 @@ export const organizations = pgTable("organizations", {
       { eventType: "signup", label: "Cadastros" },
       { eventType: "payment", label: "Pagamentos" },
     ]),
+  timezone: text("timezone").notNull().default("America/Sao_Paulo"),
   hasRecurringRevenue: boolean("has_recurring_revenue").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

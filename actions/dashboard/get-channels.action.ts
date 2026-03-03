@@ -6,6 +6,7 @@ import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { getPageviewSessionsBySource } from "@/utils/get-pageview-counts";
 import {
   buildFunnelSteps,
   getAllQueryEventTypes,
@@ -29,19 +30,22 @@ export async function getChannels(
     return { data: [], pagination: { page: 1, limit: 20, total: 0, total_pages: 0 }, stepMeta: [] };
   }
 
-  const { startDate, endDate } = resolveDateRange(params);
-  const page = params.page ?? 1;
-  const limit = params.limit ?? 20;
-  const orderBy = params.order_by ?? "revenue";
-
   const [org] = await db
-    .select({ funnelSteps: organizations.funnelSteps })
+    .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
     .from(organizations)
     .where(eq(organizations.id, organizationId))
     .limit(1);
 
+  const tz = org?.timezone ?? "America/Sao_Paulo";
+  const { startDate, endDate } = resolveDateRange(params, tz);
+  const page = params.page ?? 1;
+  const limit = params.limit ?? 20;
+  const orderBy = params.order_by ?? "revenue";
+
   const baseFunnelSteps: IFunnelStepConfig[] = buildFunnelSteps(org?.funnelSteps ?? []);
-  const allEventTypes = getAllQueryEventTypes(baseFunnelSteps);
+  const allEventTypes = getAllQueryEventTypes(baseFunnelSteps).filter(
+    (t) => t !== "pageview"
+  );
 
   const rawRows = await db
     .select({
@@ -62,6 +66,13 @@ export async function getChannels(
     )
     .groupBy(sql`COALESCE(${events.source}, 'direct')`, events.eventType);
 
+  const pvBySource = await getPageviewSessionsBySource(
+    organizationId,
+    startDate,
+    endDate,
+    tz
+  );
+
   const globalCountMap = new Map<string, { total: number; uniqueTotal: number }>();
   for (const row of rawRows) {
     const existing = globalCountMap.get(row.eventType) ?? { total: 0, uniqueTotal: 0 };
@@ -70,6 +81,8 @@ export async function getChannels(
       uniqueTotal: existing.uniqueTotal + Number(row.uniqueTotal),
     });
   }
+  const totalPv = Array.from(pvBySource.values()).reduce((sum, n) => sum + n, 0);
+  globalCountMap.set("pageview", { total: totalPv, uniqueTotal: totalPv });
 
   const funnelSteps = injectCheckoutSteps(baseFunnelSteps, globalCountMap);
   const stepMeta = buildExtendedStepMeta(funnelSteps, globalCountMap);
@@ -101,6 +114,13 @@ export async function getChannels(
       entry.revenue = Number(row.grossRev);
       entry.paymentCount = Number(row.total);
     }
+  }
+
+  for (const [source, sessions] of pvBySource) {
+    if (!channelMap.has(source)) {
+      channelMap.set(source, { steps: {}, revenue: 0, paymentCount: 0 });
+    }
+    channelMap.get(source)!.steps["pageview"] = sessions;
   }
 
   const allChannels: IChannelData[] = Array.from(channelMap.entries()).map(

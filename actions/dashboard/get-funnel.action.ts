@@ -6,6 +6,7 @@ import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { getPageviewTotalSessions } from "@/utils/get-pageview-counts";
 import {
   buildFunnelSteps,
   getAllQueryEventTypes,
@@ -20,18 +21,21 @@ export async function getFunnel(
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
 
-  const { startDate, endDate } = resolveDateRange(filter);
-
   const [org] = await db
-    .select({ funnelSteps: organizations.funnelSteps })
+    .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
     .from(organizations)
     .where(eq(organizations.id, organizationId))
     .limit(1);
 
   if (!org) return null;
 
+  const tz = org.timezone ?? "America/Sao_Paulo";
+  const { startDate, endDate } = resolveDateRange(filter, tz);
+
   const baseFunnelSteps = buildFunnelSteps(org.funnelSteps);
-  const allEventTypes = getAllQueryEventTypes(baseFunnelSteps);
+  const allEventTypes = getAllQueryEventTypes(baseFunnelSteps).filter(
+    (t) => t !== "pageview"
+  );
 
   const eventRows = await db
     .select({
@@ -56,6 +60,14 @@ export async function getFunnel(
       { total: Number(r.total), uniqueTotal: Number(r.uniqueTotal) },
     ])
   );
+
+  const pvSessions = await getPageviewTotalSessions(
+    organizationId,
+    startDate,
+    endDate,
+    tz
+  );
+  countMap.set("pageview", { total: pvSessions, uniqueTotal: pvSessions });
 
   const funnelSteps = injectCheckoutSteps(baseFunnelSteps, countMap);
 

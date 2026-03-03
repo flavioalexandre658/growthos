@@ -1,9 +1,9 @@
-import dayjs from "dayjs";
+import dayjs from "@/utils/dayjs";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 
-export function resolvePeriodDays(filter: IDateFilter = {}): number {
+export function resolvePeriodDays(filter: IDateFilter = {}, tz = "America/Sao_Paulo"): number {
   if (filter.start_date && filter.end_date) {
-    const diff = dayjs(filter.end_date).diff(dayjs(filter.start_date), "day") + 1;
+    const diff = dayjs.tz(filter.end_date, tz).diff(dayjs.tz(filter.start_date, tz), "day") + 1;
     return Math.max(1, diff);
   }
 
@@ -18,7 +18,7 @@ export function resolvePeriodDays(filter: IDateFilter = {}): number {
     case "7d":
       return 7;
     case "this_month":
-      return dayjs().daysInMonth();
+      return dayjs().tz(tz).daysInMonth();
     case "90d":
       return 90;
     case "30d":

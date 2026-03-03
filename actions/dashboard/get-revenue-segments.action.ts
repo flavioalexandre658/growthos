@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { events } from "@/db/schema";
+import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 import type { IRevenueBySegment } from "@/interfaces/cost.interface";
@@ -16,7 +16,14 @@ export async function getRevenueSegments(
   const session = await getServerSession(authOptions);
   if (!session?.user) return { paymentMethod: {}, billingType: {} };
 
-  const { startDate, endDate } = resolveDateRange(filter);
+  const [org] = await db
+    .select({ timezone: organizations.timezone })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1);
+
+  const tz = org?.timezone ?? "America/Sao_Paulo";
+  const { startDate, endDate } = resolveDateRange(filter, tz);
 
   const rows = await db
     .select({

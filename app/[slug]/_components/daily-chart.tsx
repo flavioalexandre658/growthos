@@ -31,8 +31,8 @@ interface DailyChartProps {
 }
 
 function formatDateLabel(dateStr: string) {
-  const d = new Date(dateStr + "T00:00:00");
-  return `${d.getDate()}/${d.getMonth() + 1}`;
+  const [, month, day] = dateStr.split("-");
+  return `${parseInt(day)}/${parseInt(month)}`;
 }
 
 export function DailyChart({ data, stepMeta, isLoading }: DailyChartProps) {

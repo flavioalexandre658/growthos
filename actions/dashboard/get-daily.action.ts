@@ -6,6 +6,7 @@ import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { getPageviewSessionsByDate } from "@/utils/get-pageview-counts";
 import {
   buildFunnelSteps,
   getAllQueryEventTypes,
@@ -22,20 +23,26 @@ export async function getDaily(
   const session = await getServerSession(authOptions);
   if (!session?.user) return { rows: [], stepMeta: [] };
 
-  const { startDate, endDate } = resolveDateRange(filter);
-
   const [org] = await db
-    .select({ funnelSteps: organizations.funnelSteps })
+    .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
     .from(organizations)
     .where(eq(organizations.id, organizationId))
     .limit(1);
 
+  const tz = org?.timezone ?? "America/Sao_Paulo";
+  const { startDate, endDate } = resolveDateRange(filter, tz);
+
   const baseFunnelSteps: IFunnelStepConfig[] = buildFunnelSteps(org?.funnelSteps ?? []);
-  const allEventTypes = getAllQueryEventTypes(baseFunnelSteps);
+  const allEventTypes = getAllQueryEventTypes(baseFunnelSteps).filter(
+    (t) => t !== "pageview"
+  );
+
+  const tzLiteral = sql.raw(`'${tz.replace(/'/g, "")}'`);
+  const dateTzExpr = sql`DATE(${events.createdAt} AT TIME ZONE 'UTC' AT TIME ZONE ${tzLiteral})`;
 
   const rawRows = await db
     .select({
-      date: sql<string>`DATE(${events.createdAt})::text`,
+      date: sql<string>`${dateTzExpr}::text`,
       eventType: events.eventType,
       total: sql<number>`COUNT(*)`,
       uniqueTotal: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
@@ -50,8 +57,15 @@ export async function getDaily(
         inArray(events.eventType, allEventTypes)
       )
     )
-    .groupBy(sql`DATE(${events.createdAt})`, events.eventType)
-    .orderBy(sql`DATE(${events.createdAt}) ASC`);
+    .groupBy(dateTzExpr, events.eventType)
+    .orderBy(sql`${dateTzExpr} ASC`);
+
+  const pvByDate = await getPageviewSessionsByDate(
+    organizationId,
+    startDate,
+    endDate,
+    tz
+  );
 
   const globalCountMap = new Map<string, { total: number; uniqueTotal: number }>();
   for (const row of rawRows) {
@@ -61,6 +75,8 @@ export async function getDaily(
       uniqueTotal: existing.uniqueTotal + Number(row.uniqueTotal),
     });
   }
+  const totalPv = Array.from(pvByDate.values()).reduce((sum, n) => sum + n, 0);
+  globalCountMap.set("pageview", { total: totalPv, uniqueTotal: totalPv });
 
   const funnelSteps = injectCheckoutSteps(baseFunnelSteps, globalCountMap);
   const stepMeta = buildExtendedStepMeta(funnelSteps, globalCountMap);
@@ -91,6 +107,13 @@ export async function getDaily(
     if (row.eventType === "payment") {
       entry.revenue = Number(row.grossRev);
     }
+  }
+
+  for (const [date, sessions] of pvByDate) {
+    if (!dateMap.has(date)) {
+      dateMap.set(date, { steps: {}, revenue: 0 });
+    }
+    dateMap.get(date)!.steps["pageview"] = sessions;
   }
 
   const rows: IDailyData[] = Array.from(dateMap.entries())

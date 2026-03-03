@@ -4,9 +4,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, lte } from "drizzle-orm";
 import { db } from "@/db";
-import { subscriptions } from "@/db/schema";
+import { subscriptions, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
-import dayjs from "dayjs";
+import dayjs from "@/utils/dayjs";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 import type { IMrrGrowthEntry } from "@/interfaces/mrr.interface";
 
@@ -23,7 +23,14 @@ export async function getMrrGrowth(
   const session = await getServerSession(authOptions);
   if (!session?.user) return [];
 
-  const { startDate, endDate } = resolveDateRange(filter);
+  const [org] = await db
+    .select({ timezone: organizations.timezone })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1);
+
+  const tz = org?.timezone ?? "America/Sao_Paulo";
+  const { startDate, endDate } = resolveDateRange(filter, tz);
 
   const allSubs = await db
     .select()
@@ -38,9 +45,9 @@ export async function getMrrGrowth(
   const stepDays = totalDays <= 31 ? 1 : totalDays <= 90 ? 7 : 30;
 
   const entries: IMrrGrowthEntry[] = [];
-  let cursor = dayjs(startDate);
+  let cursor = dayjs(startDate).tz(tz);
 
-  while (cursor.isBefore(dayjs(endDate).add(1, "day"))) {
+  while (cursor.isBefore(dayjs(endDate).tz(tz).add(1, "day"))) {
     const pointDate = cursor.toDate();
 
     const mrr = orgSubs.reduce((sum, s) => {

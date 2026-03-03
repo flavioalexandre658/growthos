@@ -6,6 +6,7 @@ import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { getPageviewSessionsByLandingPage } from "@/utils/get-pageview-counts";
 import {
   buildFunnelSteps,
   getAllQueryEventTypes,
@@ -28,20 +29,23 @@ export async function getPages(
     return { data: [], pagination: { page: 1, limit: 30, total: 0, total_pages: 0 }, stepMeta: [] };
   }
 
-  const { startDate, endDate } = resolveDateRange(params);
+  const [org] = await db
+    .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1);
+
+  const tz = org?.timezone ?? "America/Sao_Paulo";
+  const { startDate, endDate } = resolveDateRange(params, tz);
   const page = params.page ?? 1;
   const limit = params.limit ?? 30;
   const orderBy = params.order_by ?? "revenue";
   const search = params.search?.trim() ?? "";
 
-  const [org] = await db
-    .select({ funnelSteps: organizations.funnelSteps })
-    .from(organizations)
-    .where(eq(organizations.id, organizationId))
-    .limit(1);
-
   const baseFunnelSteps: IFunnelStepConfig[] = buildFunnelSteps(org?.funnelSteps ?? []);
-  const allEventTypes = getAllQueryEventTypes(baseFunnelSteps);
+  const allEventTypes = getAllQueryEventTypes(baseFunnelSteps).filter(
+    (t) => t !== "pageview"
+  );
 
   const rawRows = await db
     .select({
@@ -63,6 +67,13 @@ export async function getPages(
     )
     .groupBy(events.landingPage, events.eventType);
 
+  const pvByLandingPage = await getPageviewSessionsByLandingPage(
+    organizationId,
+    startDate,
+    endDate,
+    tz
+  );
+
   const globalCountMap = new Map<string, { total: number; uniqueTotal: number }>();
   for (const row of rawRows) {
     const existing = globalCountMap.get(row.eventType) ?? { total: 0, uniqueTotal: 0 };
@@ -71,6 +82,8 @@ export async function getPages(
       uniqueTotal: existing.uniqueTotal + Number(row.uniqueTotal),
     });
   }
+  const totalPv = Array.from(pvByLandingPage.values()).reduce((sum, n) => sum + n, 0);
+  globalCountMap.set("pageview", { total: totalPv, uniqueTotal: totalPv });
 
   const funnelSteps = injectCheckoutSteps(baseFunnelSteps, globalCountMap);
   const stepMeta = buildExtendedStepMeta(funnelSteps, globalCountMap);
@@ -105,6 +118,14 @@ export async function getPages(
       entry.revenue = Number(row.grossRev);
       entry.paymentCount = Number(row.total);
     }
+  }
+
+  for (const [landingPage, sessions] of pvByLandingPage) {
+    if (search && !landingPage.toLowerCase().includes(search.toLowerCase())) continue;
+    if (!pageMap.has(landingPage)) {
+      pageMap.set(landingPage, { steps: {}, revenue: 0, paymentCount: 0 });
+    }
+    pageMap.get(landingPage)!.steps["pageview"] = sessions;
   }
 
   const allPages: ILandingPageData[] = Array.from(pageMap.entries()).map(

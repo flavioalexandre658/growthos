@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { apiKeys, events, subscriptions, organizations } from "@/db/schema";
+import { apiKeys, events, subscriptions, organizations, pageviewAggregates } from "@/db/schema";
 import { checkRateLimit } from "@/utils/rate-limiter";
+import dayjs from "@/utils/dayjs";
 
 const MAX_PAYLOAD_BYTES = 64 * 1024;
 
@@ -64,6 +65,43 @@ function sanitizeMetadata(raw: unknown): Record<string, unknown> | null {
     }
   }
   return Object.keys(clean).length > 0 ? clean : null;
+}
+
+async function handlePageview(
+  organizationId: string,
+  body: Record<string, unknown>,
+  tz: string
+) {
+  const sessionId = toString(body.session_id) ?? "unknown";
+  const localDate = dayjs().tz(tz).format("YYYY-MM-DD");
+
+  await db
+    .insert(pageviewAggregates)
+    .values({
+      organizationId,
+      date: localDate,
+      sessionId,
+      landingPage: toString(body.landing_page),
+      entryPage: toString(body.entry_page),
+      source: toString(body.source),
+      medium: toString(body.medium),
+      campaign: toString(body.campaign),
+      content: toString(body.content),
+      device: toString(body.device),
+      referrer: toString(body.referrer),
+      pageviews: 1,
+    })
+    .onConflictDoUpdate({
+      target: [
+        pageviewAggregates.organizationId,
+        pageviewAggregates.date,
+        pageviewAggregates.sessionId,
+        pageviewAggregates.landingPage,
+      ],
+      set: {
+        pageviews: sql`${pageviewAggregates.pageviews} + 1`,
+      },
+    });
 }
 
 async function handleSubscriptionUpsert(
@@ -211,6 +249,23 @@ export async function POST(req: NextRequest) {
     .where(eq(apiKeys.id, apiKey.id))
     .execute()
     .catch(() => {});
+
+  if (eventType === "pageview") {
+    const [org] = await db
+      .select({ timezone: organizations.timezone })
+      .from(organizations)
+      .where(eq(organizations.id, apiKey.organizationId))
+      .limit(1);
+
+    const tz = org?.timezone ?? "America/Sao_Paulo";
+    await handlePageview(
+      apiKey.organizationId,
+      body as Record<string, unknown>,
+      tz
+    );
+
+    return new NextResponse(null, { status: 204, headers: buildCorsHeaders(origin) });
+  }
 
   await db.insert(events).values({
     organizationId: apiKey.organizationId,

@@ -3,8 +3,9 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql } from "drizzle-orm";
+
 import { db } from "@/db";
-import { events, fixedCosts, variableCosts } from "@/db/schema";
+import { events, fixedCosts, variableCosts, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import { resolvePeriodDays } from "@/utils/resolve-period-days";
 import { buildProfitAndLoss } from "@/utils/build-pl";
@@ -18,8 +19,15 @@ export async function getFinancial(
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
 
-  const { startDate, endDate } = resolveDateRange(filter);
-  const periodDays = resolvePeriodDays(filter);
+  const [org] = await db
+    .select({ timezone: organizations.timezone })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1);
+
+  const tz = org?.timezone ?? "America/Sao_Paulo";
+  const { startDate, endDate } = resolveDateRange(filter, tz);
+  const periodDays = resolvePeriodDays(filter, tz);
 
   const baseCondition = and(
     eq(events.organizationId, organizationId),

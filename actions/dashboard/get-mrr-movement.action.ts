@@ -4,9 +4,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { events } from "@/db/schema";
+import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
-import dayjs from "dayjs";
+import dayjs from "@/utils/dayjs";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 import type { IMrrMovementEntry } from "@/interfaces/mrr.interface";
 
@@ -16,10 +16,11 @@ function normalizeToMonthly(valueInCents: number, interval: string): number {
   return valueInCents;
 }
 
-function bucketDate(date: Date, totalDays: number): string {
-  if (totalDays <= 31) return dayjs(date).format("YYYY-MM-DD");
-  if (totalDays <= 90) return dayjs(date).startOf("week").format("YYYY-MM-DD");
-  return dayjs(date).format("YYYY-MM");
+function bucketDate(date: Date, totalDays: number, tz: string): string {
+  const d = dayjs(date).tz(tz);
+  if (totalDays <= 31) return d.format("YYYY-MM-DD");
+  if (totalDays <= 90) return d.startOf("week").format("YYYY-MM-DD");
+  return d.format("YYYY-MM");
 }
 
 export async function getMrrMovement(
@@ -29,7 +30,14 @@ export async function getMrrMovement(
   const session = await getServerSession(authOptions);
   if (!session?.user) return [];
 
-  const { startDate, endDate } = resolveDateRange(filter);
+  const [org] = await db
+    .select({ timezone: organizations.timezone })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1);
+
+  const tz = org?.timezone ?? "America/Sao_Paulo";
+  const { startDate, endDate } = resolveDateRange(filter, tz);
   const totalDays = dayjs(endDate).diff(dayjs(startDate), "day") + 1;
 
   const relevantEvents = await db
@@ -52,7 +60,7 @@ export async function getMrrMovement(
   const seenSubscriptions = new Set<string>();
 
   for (const event of relevantEvents) {
-    const bucket = bucketDate(event.createdAt, totalDays);
+    const bucket = bucketDate(event.createdAt, totalDays, tz);
     if (!bucketMap.has(bucket)) {
       bucketMap.set(bucket, { newMrr: 0, expansionMrr: 0, contractionMrr: 0, churnedMrr: 0 });
     }

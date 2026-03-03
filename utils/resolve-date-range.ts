@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import dayjs from "@/utils/dayjs";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 
 export interface IDateRange {
@@ -6,13 +6,16 @@ export interface IDateRange {
   endDate: Date;
 }
 
-export function resolveDateRange(filter: IDateFilter = {}): IDateRange {
-  const now = dayjs();
+export function resolveDateRange(
+  filter: IDateFilter = {},
+  tz = "America/Sao_Paulo"
+): IDateRange {
+  const now = dayjs().tz(tz);
 
   if (filter.start_date && filter.end_date) {
     return {
-      startDate: dayjs(filter.start_date).startOf("day").toDate(),
-      endDate: dayjs(filter.end_date).endOf("day").toDate(),
+      startDate: dayjs.tz(filter.start_date, tz).startOf("day").toDate(),
+      endDate: dayjs.tz(filter.end_date, tz).endOf("day").toDate(),
     };
   }
 
