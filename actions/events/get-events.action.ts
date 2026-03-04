@@ -76,15 +76,19 @@ export async function getEvents(
 
   const whereClause = and(...baseConditions);
 
-  const dupWindowExpr = sql<number>`COUNT(*) OVER (
-    PARTITION BY
-      ${events.organizationId},
-      ${events.eventType},
-      ${events.customerId},
-      ${events.grossValueInCents}
-    ORDER BY ${events.createdAt}
-    RANGE BETWEEN INTERVAL '10 minutes' PRECEDING AND INTERVAL '10 minutes' FOLLOWING
-  )`;
+  const dupWindowExpr = sql<number>`CASE
+    WHEN ${events.customerId} IS NULL THEN 1
+    ELSE COUNT(*) OVER (
+      PARTITION BY
+        ${events.organizationId},
+        ${events.eventType},
+        ${events.customerId},
+        ${events.grossValueInCents},
+        ${events.productId}
+      ORDER BY ${events.createdAt}
+      RANGE BETWEEN INTERVAL '10 minutes' PRECEDING AND INTERVAL '10 minutes' FOLLOWING
+    )
+  END`;
 
   const [totalRow, rows] = await Promise.all([
     db
