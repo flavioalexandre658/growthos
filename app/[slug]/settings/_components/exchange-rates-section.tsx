@@ -5,7 +5,6 @@ import {
   IconCurrencyDollar,
   IconPlus,
   IconTrash,
-  IconPencil,
   IconLoader2,
   IconAlertTriangle,
   IconCheck,
@@ -32,21 +31,13 @@ interface ExchangeRatesSectionProps {
   baseCurrency: string;
 }
 
-interface RateFormState {
-  fromCurrency: string;
-  rate: string;
-  editingId?: string;
-}
-
 function RateForm({
   orgId,
   baseCurrency,
-  existingPairs,
   onSuccess,
 }: {
   orgId: string;
   baseCurrency: string;
-  existingPairs: string[];
   onSuccess: () => void;
 }) {
   const [fromCurrency, setFromCurrency] = useState("USD");
@@ -135,7 +126,6 @@ export function ExchangeRatesSection({ orgId, baseCurrency }: ExchangeRatesSecti
     toast.success(`Taxa ${from} removida.`);
   };
 
-  const existingPairs = rates?.map((r) => r.fromCurrency) ?? [];
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
@@ -180,7 +170,6 @@ export function ExchangeRatesSection({ orgId, baseCurrency }: ExchangeRatesSecti
             <RateForm
               orgId={orgId}
               baseCurrency={baseCurrency}
-              existingPairs={existingPairs}
               onSuccess={() => setShowForm(false)}
             />
           </div>

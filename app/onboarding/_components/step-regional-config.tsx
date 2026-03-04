@@ -171,7 +171,7 @@ export function StepRegionalConfig({ organizationId, onComplete }: StepRegionalC
             ))}
           </select>
           <p className="text-xs text-zinc-600">
-            Define como "hoje" e "esta semana" são interpretados nos relatórios
+            Define como &quot;hoje&quot; e &quot;esta semana&quot; são interpretados nos relatórios
           </p>
         </div>
 

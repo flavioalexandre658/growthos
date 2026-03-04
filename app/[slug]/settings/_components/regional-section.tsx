@@ -170,7 +170,7 @@ export function RegionalSection({
             </select>
           </div>
           <p className="text-xs text-zinc-600">
-            Define como "hoje" e filtros de data são interpretados nos relatórios
+            Define como &quot;hoje&quot; e filtros de data são interpretados nos relatórios
           </p>
         </div>
       </div>
