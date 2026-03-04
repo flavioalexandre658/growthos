@@ -76,6 +76,16 @@ export async function getEvents(
 
   const whereClause = and(...baseConditions);
 
+  const dupWindowExpr = sql<number>`COUNT(*) OVER (
+    PARTITION BY
+      ${events.organizationId},
+      ${events.eventType},
+      ${events.customerId},
+      ${events.grossValueInCents}
+    ORDER BY ${events.createdAt}
+    RANGE BETWEEN INTERVAL '10 minutes' PRECEDING AND INTERVAL '10 minutes' FOLLOWING
+  )`;
+
   const [totalRow, rows] = await Promise.all([
     db
       .select({ count: sql<number>`COUNT(*)` })
@@ -98,6 +108,7 @@ export async function getEvents(
         landingPage: events.landingPage,
         paymentMethod: events.paymentMethod,
         createdAt: events.createdAt,
+        dupCount: dupWindowExpr,
       })
       .from(events)
       .where(whereClause)
@@ -147,7 +158,24 @@ export async function getEvents(
   ]);
 
   return {
-    data: rows,
+    data: rows.map((r) => ({
+      id: r.id,
+      eventType: r.eventType,
+      grossValueInCents: r.grossValueInCents,
+      source: r.source,
+      medium: r.medium,
+      campaign: r.campaign,
+      productName: r.productName,
+      productId: r.productId,
+      category: r.category,
+      device: r.device,
+      customerId: r.customerId,
+      sessionId: r.sessionId,
+      landingPage: r.landingPage,
+      paymentMethod: r.paymentMethod,
+      createdAt: r.createdAt,
+      possibleDuplicate: Number(r.dupCount) > 1,
+    })),
     pagination: {
       page,
       limit,

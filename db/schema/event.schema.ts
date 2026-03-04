@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, real, timestamp, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, real, timestamp, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { organizations } from "./organization.schema";
 
 export const events = pgTable(
@@ -45,6 +45,7 @@ export const events = pgTable(
     planName: text("plan_name"),
 
     metadata: jsonb("metadata"),
+    eventHash: text("event_hash"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
@@ -54,5 +55,6 @@ export const events = pgTable(
       table.createdAt
     ),
     index("events_org_created_idx").on(table.organizationId, table.createdAt),
+    uniqueIndex("events_hash_unique_idx").on(table.organizationId, table.eventHash),
   ]
 );

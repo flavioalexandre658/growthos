@@ -7,6 +7,8 @@
   var CHECKOUT_KEY = "growthos_checkout";
   var DEDUP_KEY = "growthos_dedup";
   var ENTRY_KEY = "growthos_entry";
+  var FAILED_KEY = "growthos_failed_events";
+  var FAILED_MAX = 50;
 
   var script = document.currentScript || (function () {
     var scripts = document.getElementsByTagName("script");
@@ -289,21 +291,60 @@
     } catch (_) {}
   }
 
+  function readFailed() {
+    try {
+      var raw = localStorage.getItem(FAILED_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function writeFailed(list) {
+    try {
+      localStorage.setItem(FAILED_KEY, JSON.stringify(list.slice(-FAILED_MAX)));
+    } catch (_) {}
+  }
+
+  function logFailedEvent(payload, reason) {
+    var list = readFailed();
+    list.push({ payload: payload, reason: reason, failedAt: new Date().toISOString() });
+    writeFailed(list);
+  }
+
+  function retryFailedEvents() {
+    var list = readFailed();
+    if (list.length === 0) return;
+    writeFailed([]);
+    list.forEach(function (entry) {
+      fetch(API_BASE + "/api/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(entry.payload),
+        keepalive: true,
+      }).then(function (res) {
+        if (!res.ok) logFailedEvent(entry.payload, "http_" + res.status);
+      }).catch(function () {
+        logFailedEvent(entry.payload, "network");
+      });
+    });
+  }
+
   function sendPayload(payload) {
     var url = API_BASE + "/api/track";
-    var blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
-
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(url, blob);
-      return Promise.resolve();
-    }
 
     return fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
       keepalive: true,
-    }).catch(function () {});
+    }).then(function (res) {
+      if (!res.ok && res.status !== 429) {
+        logFailedEvent(payload, "http_" + res.status);
+      }
+    }).catch(function () {
+      logFailedEvent(payload, "network");
+    });
   }
 
   function flushQueue() {
@@ -312,11 +353,7 @@
     var batch = queue.slice();
     writeQueue([]);
     batch.forEach(function (item) {
-      sendPayload(item).catch(function () {
-        var q = readQueue();
-        q.unshift(item);
-        writeQueue(q);
-      });
+      sendPayload(item);
     });
   }
 
@@ -376,11 +413,7 @@
       clearCheckout();
     }
 
-    sendPayload(payload).catch(function () {
-      var queue = readQueue();
-      queue.push(payload);
-      writeQueue(queue);
-    });
+    sendPayload(payload);
   }
 
   function setupCheckoutAbandon() {
@@ -461,6 +494,7 @@
   persistUtms();
 
   flushQueue();
+  retryFailedEvents();
 
   function init() {
     track("pageview", {});
@@ -478,5 +512,7 @@
   window.GrowthOS = {
     track: track,
     clearDedupe: clearDedup,
+    failedEvents: function () { return readFailed(); },
+    clearFailedEvents: function () { writeFailed([]); },
   };
 })();

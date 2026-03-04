@@ -53,6 +53,30 @@ function toString(value: unknown): string | null {
   return String(value).slice(0, 1000);
 }
 
+function computeEventHash(parts: {
+  eventType: string;
+  customerId: string | null;
+  grossValueInCents: number | null;
+  productId: string | null;
+  subscriptionId: string | null;
+  timestamp: Date;
+}): string {
+  const bucket = Math.floor(parts.timestamp.getTime() / (5 * 60 * 1000));
+  const raw = [
+    parts.eventType,
+    parts.customerId ?? "",
+    parts.grossValueInCents ?? "",
+    parts.productId ?? "",
+    parts.subscriptionId ?? "",
+    bucket,
+  ].join("|");
+  let h = 0;
+  for (let i = 0; i < raw.length; i++) {
+    h = ((h << 5) - h + raw.charCodeAt(i)) | 0;
+  }
+  return h.toString(36);
+}
+
 function sanitizeMetadata(raw: unknown): Record<string, unknown> | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const entries = Object.entries(raw as Record<string, unknown>).slice(0, 20);
@@ -329,7 +353,17 @@ export async function POST(req: NextRequest) {
       ? baseGrossValueInCents - Math.round(discountInCents * resolvedRate)
       : baseGrossValueInCents;
 
-  await db.insert(events).values({
+  const eventTimestamp = body.timestamp ? new Date(String(body.timestamp)) : new Date();
+  const eventHash = computeEventHash({
+    eventType,
+    customerId: toString(body.customer_id),
+    grossValueInCents,
+    productId: toString(body.product_id),
+    subscriptionId: toString(body.subscription_id),
+    timestamp: eventTimestamp,
+  });
+
+  const inserted = await db.insert(events).values({
     organizationId: apiKey.organizationId,
     eventType,
 
@@ -368,7 +402,17 @@ export async function POST(req: NextRequest) {
     planName: toString(body.plan_name),
 
     metadata: sanitizeMetadata(body.metadata),
-  });
+    eventHash,
+  })
+    .onConflictDoNothing({ target: [events.organizationId, events.eventHash] })
+    .returning({ id: events.id });
+
+  if (inserted.length === 0) {
+    return new NextResponse(null, {
+      status: 204,
+      headers: { ...buildCorsHeaders(origin), "X-GrowthOS-Duplicate": "true" },
+    });
+  }
 
   await handleSubscriptionUpsert(
     apiKey.organizationId,

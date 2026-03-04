@@ -16,6 +16,7 @@ export interface IEvent {
   landingPage: string | null;
   paymentMethod: string | null;
   createdAt: Date;
+  possibleDuplicate: boolean;
 }
 
 export interface IEventParams extends IDateFilter {

@@ -16,6 +16,7 @@ import {
   IconCheck,
   IconAlertTriangle,
   IconX,
+  IconAlertCircle,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -173,14 +174,25 @@ function EventCard({
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1.5">
-            <span
-              className={cn(
-                "rounded-md border px-2 py-0.5 text-[11px] font-mono font-semibold shrink-0",
-                getEventTypeBadgeClass(event.eventType)
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span
+                className={cn(
+                  "rounded-md border px-2 py-0.5 text-[11px] font-mono font-semibold shrink-0",
+                  getEventTypeBadgeClass(event.eventType)
+                )}
+              >
+                {event.eventType}
+              </span>
+              {event.possibleDuplicate && (
+                <span
+                  title="Possível duplicata"
+                  className="flex items-center gap-0.5 rounded border border-amber-600/40 bg-amber-600/10 px-1 py-0.5 text-[9px] font-semibold text-amber-400 shrink-0"
+                >
+                  <IconAlertCircle size={9} />
+                  dup
+                </span>
               )}
-            >
-              {event.eventType}
-            </span>
+            </div>
             <div className="flex flex-col items-end gap-0.5 shrink-0">
               <span className="text-[10px] font-mono text-zinc-400">
                 {dayjs(event.createdAt).format("DD/MM/YYYY HH:mm")}
@@ -294,6 +306,15 @@ function EventRow({
             >
               {event.eventType}
             </span>
+            {event.possibleDuplicate && (
+              <span
+                title="Possível duplicata — outro evento idêntico foi detectado em até 10 minutos"
+                className="flex items-center gap-1 rounded border border-amber-600/40 bg-amber-600/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-400"
+              >
+                <IconAlertCircle size={10} />
+                duplicata
+              </span>
+            )}
           </div>
         </td>
         <td className="px-3 py-2.5 text-right">
