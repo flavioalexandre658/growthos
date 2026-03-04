@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, timestamp, jsonb, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, real, timestamp, jsonb, index } from "drizzle-orm/pg-core";
 import { organizations } from "./organization.schema";
 
 export const events = pgTable(
@@ -10,7 +10,13 @@ export const events = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" }),
     eventType: text("event_type").notNull(),
 
+    currency: text("currency").notNull().default("BRL"),
+    baseCurrency: text("base_currency").notNull().default("BRL"),
+    exchangeRate: real("exchange_rate").notNull().default(1),
+
     grossValueInCents: integer("gross_value_in_cents"),
+    baseGrossValueInCents: integer("base_gross_value_in_cents"),
+    baseNetValueInCents: integer("base_net_value_in_cents"),
     discountInCents: integer("discount_in_cents"),
     installments: integer("installments"),
     paymentMethod: text("payment_method"),

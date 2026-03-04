@@ -1,6 +1,7 @@
 export * from "./organization.schema";
 export * from "./cost.schema";
 export * from "./event.schema";
+export * from "./exchange-rate.schema";
 export * from "./api-key.schema";
 export * from "./user.schema";
 export * from "./subscription.schema";

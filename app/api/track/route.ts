@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { apiKeys, events, subscriptions, organizations, pageviewAggregates } from "@/db/schema";
+import { apiKeys, events, subscriptions, organizations, pageviewAggregates, exchangeRates } from "@/db/schema";
 import { checkRateLimit } from "@/utils/rate-limiter";
 import dayjs from "@/utils/dayjs";
 
@@ -102,6 +102,37 @@ async function handlePageview(
         pageviews: sql`${pageviewAggregates.pageviews} + 1`,
       },
     });
+}
+
+async function resolveExchangeRate(
+  organizationId: string,
+  fromCurrency: string,
+  toCurrency: string,
+  origin: string | null
+): Promise<{ rate: number } | NextResponse> {
+  if (fromCurrency === toCurrency) return { rate: 1 };
+
+  const [found] = await db
+    .select({ rate: exchangeRates.rate })
+    .from(exchangeRates)
+    .where(
+      and(
+        eq(exchangeRates.organizationId, organizationId),
+        eq(exchangeRates.fromCurrency, fromCurrency),
+        eq(exchangeRates.toCurrency, toCurrency),
+      )
+    )
+    .limit(1);
+
+  if (!found) {
+    return jsonError(
+      `Exchange rate ${fromCurrency}→${toCurrency} not configured. Set it in Settings → Exchange Rates.`,
+      400,
+      origin,
+    );
+  }
+
+  return { rate: found.rate };
 }
 
 async function handleSubscriptionUpsert(
@@ -250,29 +281,66 @@ export async function POST(req: NextRequest) {
     .execute()
     .catch(() => {});
 
-  if (eventType === "pageview") {
-    const [org] = await db
-      .select({ timezone: organizations.timezone })
-      .from(organizations)
-      .where(eq(organizations.id, apiKey.organizationId))
-      .limit(1);
+  const [org] = await db
+    .select({
+      timezone: organizations.timezone,
+      currency: organizations.currency,
+    })
+    .from(organizations)
+    .where(eq(organizations.id, apiKey.organizationId))
+    .limit(1);
 
-    const tz = org?.timezone ?? "America/Sao_Paulo";
+  const orgTimezone = org?.timezone ?? "America/Sao_Paulo";
+  const orgCurrency = org?.currency ?? "BRL";
+
+  if (eventType === "pageview") {
     await handlePageview(
       apiKey.organizationId,
       body as Record<string, unknown>,
-      tz
+      orgTimezone
     );
 
     return new NextResponse(null, { status: 204, headers: buildCorsHeaders(origin) });
   }
 
+  const grossValueInCents = toCents(body.gross_value);
+  const eventCurrency = (toString(body.currency) ?? orgCurrency).toUpperCase();
+
+  let baseGrossValueInCents: number | null = null;
+  let resolvedRate = 1;
+
+  if (grossValueInCents !== null) {
+    const rateResult = await resolveExchangeRate(
+      apiKey.organizationId,
+      eventCurrency,
+      orgCurrency,
+      origin,
+    );
+
+    if (rateResult instanceof NextResponse) return rateResult;
+
+    resolvedRate = rateResult.rate;
+    baseGrossValueInCents = Math.round(grossValueInCents * resolvedRate);
+  }
+
+  const discountInCents = toCents(body.discount);
+  const baseNetValueInCents =
+    baseGrossValueInCents !== null && discountInCents !== null
+      ? baseGrossValueInCents - Math.round(discountInCents * resolvedRate)
+      : baseGrossValueInCents;
+
   await db.insert(events).values({
     organizationId: apiKey.organizationId,
     eventType,
 
-    grossValueInCents: toCents(body.gross_value),
-    discountInCents: toCents(body.discount),
+    currency: eventCurrency,
+    baseCurrency: orgCurrency,
+    exchangeRate: resolvedRate,
+
+    grossValueInCents,
+    baseGrossValueInCents,
+    baseNetValueInCents,
+    discountInCents,
     installments: toInt(body.installments),
     paymentMethod: toString(body.payment_method),
 

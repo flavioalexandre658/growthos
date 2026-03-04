@@ -5,9 +5,6 @@ import { useOrganization } from "@/components/providers/organization-provider";
 import { useApiKeys } from "@/hooks/queries/use-api-keys";
 import { useCreateApiKey } from "@/hooks/mutations/use-create-api-key";
 import { useDeleteApiKey } from "@/hooks/mutations/use-delete-api-key";
-import { useQueryClient } from "@tanstack/react-query";
-import { updateOrganizationTimezone } from "@/actions/organizations/update-organization-timezone.action";
-import { getOrganizationsQueryKey } from "@/hooks/queries/use-organizations";
 import {
   IconPlus,
   IconTrash,
@@ -17,10 +14,12 @@ import {
   IconCode,
   IconClock,
   IconAlertTriangle,
-  IconWorld,
 } from "@tabler/icons-react";
+
 import { FunnelStepsSection } from "./funnel-steps-section";
 import { AiProfileSection } from "./ai-profile-section";
+import { RegionalSection } from "./regional-section";
+import { ExchangeRatesSection } from "./exchange-rates-section";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -31,37 +30,6 @@ import "dayjs/locale/pt-br";
 
 dayjs.extend(relativeTime);
 dayjs.locale("pt-br");
-
-const TIMEZONE_OPTIONS = [
-  { value: "America/Sao_Paulo", label: "Brasília (UTC-3)" },
-  { value: "America/Manaus", label: "Manaus (UTC-4)" },
-  { value: "America/Belem", label: "Belém (UTC-3)" },
-  { value: "America/Fortaleza", label: "Fortaleza (UTC-3)" },
-  { value: "America/Recife", label: "Recife (UTC-3)" },
-  { value: "America/Porto_Velho", label: "Porto Velho (UTC-4)" },
-  { value: "America/Boa_Vista", label: "Boa Vista (UTC-4)" },
-  { value: "America/Noronha", label: "Fernando de Noronha (UTC-2)" },
-  { value: "America/Rio_Branco", label: "Rio Branco (UTC-5)" },
-  { value: "America/New_York", label: "Nova York (UTC-5/4)" },
-  { value: "America/Chicago", label: "Chicago (UTC-6/5)" },
-  { value: "America/Denver", label: "Denver (UTC-7/6)" },
-  { value: "America/Los_Angeles", label: "Los Angeles (UTC-8/7)" },
-  { value: "America/Mexico_City", label: "Cidade do México (UTC-6)" },
-  { value: "America/Argentina/Buenos_Aires", label: "Buenos Aires (UTC-3)" },
-  { value: "America/Santiago", label: "Santiago (UTC-4/3)" },
-  { value: "America/Bogota", label: "Bogotá (UTC-5)" },
-  { value: "America/Lima", label: "Lima (UTC-5)" },
-  { value: "Europe/London", label: "Londres (UTC+0/1)" },
-  { value: "Europe/Paris", label: "Paris (UTC+1/2)" },
-  { value: "Europe/Berlin", label: "Berlim (UTC+1/2)" },
-  { value: "Europe/Lisbon", label: "Lisboa (UTC+0/1)" },
-  { value: "Europe/Madrid", label: "Madri (UTC+1/2)" },
-  { value: "Asia/Tokyo", label: "Tóquio (UTC+9)" },
-  { value: "Asia/Shanghai", label: "Xangai (UTC+8)" },
-  { value: "Asia/Dubai", label: "Dubai (UTC+4)" },
-  { value: "Australia/Sydney", label: "Sydney (UTC+10/11)" },
-  { value: "UTC", label: "UTC (UTC+0)" },
-];
 
 const EXPIRY_OPTIONS: { label: string; days: number | undefined }[] = [
   { label: "Nunca", days: undefined },
@@ -398,52 +366,6 @@ function OrgApiKeysSection({
   );
 }
 
-function TimezoneSection({ orgId, currentTimezone }: { orgId: string; currentTimezone: string }) {
-  const queryClient = useQueryClient();
-  const [saving, setSaving] = useState(false);
-  const [selected, setSelected] = useState(currentTimezone);
-
-  const handleSave = async () => {
-    setSaving(true);
-    await updateOrganizationTimezone({ organizationId: orgId, timezone: selected });
-    await queryClient.invalidateQueries({ queryKey: getOrganizationsQueryKey() });
-    toast.success("Fuso horário atualizado!");
-    setSaving(false);
-  };
-
-  return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-      <div className="flex items-center gap-2 mb-1">
-        <IconWorld size={15} className="text-indigo-400" />
-        <h3 className="text-sm font-bold text-zinc-100">Fuso Horário</h3>
-      </div>
-      <p className="text-xs text-zinc-500 mb-4">
-        Define como datas e filtros são interpretados em todo o painel. Escolha o fuso do seu mercado principal.
-      </p>
-      <div className="flex flex-wrap items-center gap-3">
-        <select
-          value={selected}
-          onChange={(e) => setSelected(e.target.value)}
-          className="h-9 flex-1 min-w-[240px] rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none"
-        >
-          {TIMEZONE_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <Button
-          size="sm"
-          onClick={handleSave}
-          disabled={saving || selected === currentTimezone}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white h-9 text-xs"
-        >
-          {saving ? "Salvando..." : "Salvar"}
-        </Button>
-      </div>
-    </div>
-  );
-}
 
 export function SettingsContent() {
   const { organization, isLoading } = useOrganization();
@@ -495,12 +417,21 @@ export function SettingsContent() {
         <>
           <Skeleton className="h-28 w-full rounded-xl bg-zinc-800" />
           <Skeleton className="h-48 w-full rounded-xl bg-zinc-800" />
+          <Skeleton className="h-48 w-full rounded-xl bg-zinc-800" />
         </>
       ) : organization ? (
         <>
-          <TimezoneSection
+          <RegionalSection
             orgId={organization.id}
             currentTimezone={organization.timezone ?? "America/Sao_Paulo"}
+            currentCurrency={organization.currency ?? "BRL"}
+            currentLocale={organization.locale ?? "pt-BR"}
+            currentCountry={organization.country ?? "BR"}
+            currentLanguage={organization.language ?? "pt-BR"}
+          />
+          <ExchangeRatesSection
+            orgId={organization.id}
+            baseCurrency={organization.currency ?? "BRL"}
           />
           <FunnelStepsSection
             orgId={organization.id}

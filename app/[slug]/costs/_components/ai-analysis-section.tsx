@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { IconSparkles, IconTrendingUp, IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
+import { useOrganization } from "@/components/providers/organization-provider";
 import type { IProfitAndLoss } from "@/interfaces/cost.interface";
 import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
@@ -24,6 +25,7 @@ export function AiAnalysisSection({
 }: AiAnalysisSectionProps) {
   const params = useParams<{ slug: string }>();
   const slug = params.slug ?? "";
+  const { organization } = useOrganization();
 
   const [analysis, setAnalysis] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -73,7 +75,14 @@ export function AiAnalysisSection({
       const res = await fetch("/api/ai/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "analysis", orgName, data }),
+        body: JSON.stringify({
+          type: "analysis",
+          orgName,
+          language: organization?.language ?? "pt-BR",
+          currency: organization?.currency ?? "BRL",
+          country: organization?.country ?? "BR",
+          data,
+        }),
         signal: abortRef.current.signal,
       });
 

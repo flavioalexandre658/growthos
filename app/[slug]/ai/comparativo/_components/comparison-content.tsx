@@ -681,6 +681,9 @@ export function ComparisonContent() {
       const payload = {
         type: "comparison",
         orgName: organization?.name ?? "sua empresa",
+        language: organization?.language ?? "pt-BR",
+        currency: organization?.currency ?? "BRL",
+        country: organization?.country ?? "BR",
         data: {
           contexto: {
             organizacao: organization?.name ?? "sua empresa",

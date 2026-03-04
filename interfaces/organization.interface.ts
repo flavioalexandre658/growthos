@@ -13,6 +13,10 @@ export interface IOrganization {
   slug: string;
   funnelSteps: IFunnelStep[];
   timezone: string;
+  currency: string;
+  locale: string;
+  country: string;
+  language: string;
   hasRecurringRevenue: boolean;
   aiProfile?: IAiProfile;
   createdAt: Date;

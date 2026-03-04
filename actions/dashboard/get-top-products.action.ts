@@ -30,7 +30,7 @@ export async function getTopProducts(
     .select({
       productName: events.productName,
       payments: sql<number>`COUNT(*)`,
-      revenueInCents: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
+      revenueInCents: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
     })
     .from(events)
     .where(
@@ -43,7 +43,7 @@ export async function getTopProducts(
       )
     )
     .groupBy(events.productName)
-    .orderBy(sql`SUM(${events.grossValueInCents}) DESC`)
+    .orderBy(sql`SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) DESC`)
     .limit(5);
 
   return rows.map((r) => ({

@@ -77,7 +77,7 @@ export async function getFunnel(
 
   const revenueResult = await db
     .select({
-      grossRevenue: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
+      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
       payments: sql<number>`COUNT(*)`,
     })
     .from(events)
@@ -120,7 +120,7 @@ export async function getFunnel(
 
   const prevRevenueResult = await db
     .select({
-      grossRevenue: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
+      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
     })
     .from(events)
     .where(

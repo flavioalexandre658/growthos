@@ -106,7 +106,7 @@ export async function getChannels(
         eventType: events.eventType,
         total: sql<number>`COUNT(*)`,
         uniqueTotal: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
-        grossRev: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
+        grossRev: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
       })
       .from(events)
       .where(
@@ -122,7 +122,7 @@ export async function getChannels(
     db
       .select({
         channel: sql<string>`${channelExpr}`,
-        grossRev: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
+        grossRev: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
       })
       .from(events)
       .where(

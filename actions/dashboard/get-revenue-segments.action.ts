@@ -29,7 +29,7 @@ export async function getRevenueSegments(
     .select({
       paymentMethod: events.paymentMethod,
       billingType: events.billingType,
-      revenue: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
+      revenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
     })
     .from(events)
     .where(

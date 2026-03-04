@@ -14,7 +14,7 @@ async function queryRevenue(
   endDate: Date
 ): Promise<number> {
   const [row] = await db
-    .select({ total: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)` })
+    .select({ total: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)` })
     .from(events)
     .where(
       and(

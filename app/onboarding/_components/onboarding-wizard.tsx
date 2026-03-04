@@ -4,6 +4,7 @@ import { useState } from "react";
 import { IconChartBar, IconCheck } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { StepCreateOrg } from "./step-create-org";
+import { StepRegionalConfig } from "./step-regional-config";
 import { StepFunnelConfig } from "./step-funnel-config";
 import { StepApiKey } from "./step-api-key";
 import { StepVerifyEvent } from "./step-verify-event";
@@ -13,10 +14,11 @@ import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
 const STEPS = [
   { number: 1, label: "Organização" },
-  { number: 2, label: "Funil" },
-  { number: 3, label: "API Key" },
-  { number: 4, label: "Verificar" },
-  { number: 5, label: "Dashboard" },
+  { number: 2, label: "Regional" },
+  { number: 3, label: "Funil" },
+  { number: 4, label: "API Key" },
+  { number: 5, label: "Verificar" },
+  { number: 6, label: "Dashboard" },
 ];
 
 const LS_KEY = "growthos_onboarding_step";
@@ -26,12 +28,12 @@ function calcInitialStep(
   existingApiKey: string | null
 ): number {
   if (!existingOrg) return 1;
-  if (!existingApiKey) return 2;
+  if (!existingApiKey) return 3;
   if (typeof window !== "undefined") {
     const saved = window.localStorage.getItem(LS_KEY);
-    if (saved === "5") return 5;
+    if (saved === "6") return 6;
   }
-  return 4;
+  return 5;
 }
 
 interface OnboardingWizardProps {
@@ -56,10 +58,10 @@ export function OnboardingWizard({
 
   const advance = () => {
     setCurrentStep((s) => {
-      const next = Math.min(s + 1, 5);
-      if (next === 5) {
+      const next = Math.min(s + 1, 6);
+      if (next === 6) {
         try {
-          localStorage.setItem(LS_KEY, "5");
+          localStorage.setItem(LS_KEY, "6");
         } catch {
         }
       }
@@ -136,6 +138,13 @@ export function OnboardingWizard({
         )}
 
         {currentStep === 2 && org && (
+          <StepRegionalConfig
+            organizationId={org.id}
+            onComplete={advance}
+          />
+        )}
+
+        {currentStep === 3 && org && (
           <StepFunnelConfig
             organizationId={org.id}
             onComplete={(steps) => {
@@ -145,7 +154,7 @@ export function OnboardingWizard({
           />
         )}
 
-        {currentStep === 3 && org && (
+        {currentStep === 4 && org && (
           <StepApiKey
             organizationId={org.id}
             organizationName={org.name}
@@ -158,7 +167,7 @@ export function OnboardingWizard({
           />
         )}
 
-        {currentStep === 4 && org && (
+        {currentStep === 5 && org && (
           <StepVerifyEvent
             organizationId={org.id}
             apiKey={apiKey}
@@ -166,12 +175,13 @@ export function OnboardingWizard({
           />
         )}
 
-        {currentStep === 5 && <StepTour slug={org?.slug ?? ""} onComplete={() => {}} />}
+        {currentStep === 6 && <StepTour slug={org?.slug ?? ""} onComplete={() => {}} />}
       </div>
 
       <p className="text-center text-xs text-zinc-700">
         Passo {currentStep} de {STEPS.length}
       </p>
+
     </div>
   );
 }

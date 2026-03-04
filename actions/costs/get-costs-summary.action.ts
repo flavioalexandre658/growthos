@@ -29,7 +29,7 @@ export async function getCostsSummary(organizationId: string): Promise<ICostsSum
 
   const [summary] = await db
     .select({
-      grossRevenue: sql<number>`COALESCE(SUM(${events.grossValueInCents}) FILTER (WHERE ${events.eventType} = 'payment'), 0)`,
+      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} = 'payment'), 0)`,
       totalDiscounts: sql<number>`COALESCE(SUM(${events.discountInCents}) FILTER (WHERE ${events.eventType} = 'payment'), 0)`,
     })
     .from(events)
@@ -40,7 +40,7 @@ export async function getCostsSummary(organizationId: string): Promise<ICostsSum
       paymentMethod: events.paymentMethod,
       billingType: events.billingType,
       category: events.category,
-      revenue: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
+      revenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
     })
     .from(events)
     .where(and(baseCondition, eq(events.eventType, "payment")))

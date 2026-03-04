@@ -62,17 +62,40 @@ const COMPARISON_JSON_SCHEMA = `{
   ]
 }`;
 
+const LANGUAGE_LABELS: Record<string, string> = {
+  "pt-BR": "português do Brasil",
+  "pt-PT": "português europeu",
+  "en-US": "English (US)",
+  "en-GB": "English (UK)",
+  "es-ES": "español",
+  "fr-FR": "français",
+  "de-DE": "Deutsch",
+};
+
+function getLanguageLabel(language: string): string {
+  return LANGUAGE_LABELS[language] ?? LANGUAGE_LABELS["pt-BR"];
+}
+
 function buildAnalysisPrompt(
   orgName: string,
   providerType: string,
   data: Record<string, unknown>,
+  language: string,
+  currency: string,
+  country: string,
 ): string {
+  const languageLabel = getLanguageLabel(language);
   const context =
     providerType === "RIFAS"
       ? "empresa de rifas online (métricas: tickets vendidos, campanhas ativas, prêmios)"
       : "plataforma de convites digitais (métricas: cadastros, edições, pagamentos)";
 
   return `Você é um analista financeiro sênior especializado em crescimento digital analisando dados da ${orgName}, uma ${context}.
+
+CONTEXTO DA ORGANIZAÇÃO:
+- País: ${country}
+- Moeda base: ${currency}
+- Responder em: ${languageLabel}
 
 DADOS DO PERÍODO:
 ${JSON.stringify(data, null, 2)}
@@ -84,25 +107,32 @@ INSTRUÇÕES:
 4. Gere 3-5 ações concretas e priorizadas com impacto estimado em receita/margem
 5. Seja direto e use números reais dos dados quando disponíveis
 6. Se houver dados do período anterior, compare e inclua % de variação no diagnóstico
+7. Valores monetários estão em ${currency} — use o símbolo correto desta moeda ao citar valores
 
 RESPONDA EXCLUSIVAMENTE EM JSON válido seguindo este schema exato:
 ${ANALYSIS_JSON_SCHEMA}
 
-IMPORTANTE: Responda em português do Brasil. Não inclua nenhum texto fora do JSON.`;
+IMPORTANTE: Responda em ${languageLabel}. Não inclua nenhum texto fora do JSON.`;
 }
 
 function buildComparisonPrompt(
   orgName: string,
   data: Record<string, unknown>,
+  language: string,
+  currency: string,
 ): string {
+  const languageLabel = getLanguageLabel(language);
+
   return `Você é o Analista de Growth Sênior da ${orgName}.
 
-DADOS COMPARATIVOS (valores em reais brasileiros, variações já calculadas):
+CONTEXTO: Moeda base ${currency}. Responder em ${languageLabel}.
+
+DADOS COMPARATIVOS (valores na moeda base ${currency}, variações já calculadas):
 ${JSON.stringify(data, null, 2)}
 
 REGRAS DE RESPOSTA:
 - Responda SOMENTE em JSON estruturado (sem markdown, sem texto livre fora do JSON)
-- Todos os valores monetários nos dados já estão em reais brasileiros — não converta
+- Todos os valores monetários nos dados já estão em ${currency} — não converta
 - As variações percentuais já foram calculadas pelo sistema — use-as, não recalcule
 - Seja específico: cite números reais dos dados, não generalize
 - Máximo 4 achados no campo "achados"
@@ -112,15 +142,27 @@ REGRAS DE RESPOSTA:
 RESPONDA EXCLUSIVAMENTE EM JSON válido seguindo este schema:
 ${COMPARISON_JSON_SCHEMA}
 
-IMPORTANTE: Responda em português do Brasil. Não inclua nenhum texto fora do JSON.`;
+IMPORTANTE: Responda em ${languageLabel}. Não inclua nenhum texto fora do JSON.`;
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { type, orgName, providerType } = body;
+  const {
+    type,
+    orgName,
+    providerType,
+    language = "pt-BR",
+    currency = "BRL",
+    country = "BR",
+  } = body;
 
   if (type === "comparison") {
-    const prompt = buildComparisonPrompt(orgName ?? "sua empresa", body.data);
+    const prompt = buildComparisonPrompt(
+      orgName ?? "sua empresa",
+      body.data,
+      language,
+      currency,
+    );
 
     const model = genAI.getGenerativeModel({
       model: "gemini-3-flash-preview",
@@ -152,6 +194,9 @@ export async function POST(req: NextRequest) {
     orgName ?? "sua empresa",
     providerType ?? "CONVITEDE",
     body.data,
+    language,
+    currency,
+    country,
   );
 
   const model = genAI.getGenerativeModel({

@@ -138,14 +138,23 @@ export function CheckoutButton({ product, price }) {
 
 const PAYMENT_CODE = `window.GrowthOS.track('payment', {
   gross_value: 150.00,      // valor bruto cobrado (obrigatório)
-  discount: 10.00,          // desconto aplicado em reais (opcional)
+  currency: 'BRL',          // moeda ISO 4217 (opcional, padrão: moeda da org)
+  discount: 10.00,          // desconto aplicado (opcional)
   installments: 1,          // número de parcelas (opcional)
-  payment_method: 'pix',    // pix | credit_card | boleto | debit_card
+  payment_method: 'pix',    // pix | credit_card | boleto | debit_card | mbway | ...
   product_id: 'template-casamento-001',
   product_name: 'Convite Casamento Premium',
   category: 'casamento',
   customer_type: 'new',     // new | returning
   customer_id: 'hash_anonimo_cliente',
+})
+
+// Venda em USD (org com moeda base BRL)
+// Requer taxa USD→BRL configurada em Configurações → Taxas de Câmbio
+window.GrowthOS.track('payment', {
+  gross_value: 15.00,
+  currency: 'USD',
+  product_name: 'International Plan',
 })`;
 
 const CHECKOUT_STARTED_CODE = `window.GrowthOS.track('checkout_started', {
@@ -633,6 +642,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             { value: "serverside", label: "Server-Side" },
             { value: "recurring", label: "Recorrência" },
             { value: "debug", label: "Debug" },
+            { value: "i18n", label: "Multi-moeda" },
           ].map((tab) => (
             <TabsTrigger
               key={tab.value}
@@ -1946,6 +1956,182 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             único da assinatura no seu gateway (ex: <code className="font-mono text-xs">sub_stripe_xxx</code>).
             Nunca reutilize o mesmo ID para assinaturas diferentes — ele é a chave de upsert que
             garante idempotência dos eventos.
+          </Callout>
+        </TabsContent>
+
+        {/* Multi-moeda */}
+        <TabsContent value="i18n" className="mt-0 space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight mb-1">Multi-moeda e Internacionalização</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              O GrowthOS suporta organizações que vendem em múltiplas moedas. Todos os valores são
+              convertidos para a moeda base da organização no momento da ingestão do evento.
+            </p>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Como funciona a conversão
+            </h3>
+            <div className="grid grid-cols-1 gap-3">
+              {[
+                {
+                  step: "1. Evento recebido",
+                  desc: 'O tracker envia gross_value: 15.00, currency: "USD".',
+                },
+                {
+                  step: "2. Moeda da org verificada",
+                  desc: "O servidor lê a moeda base da organização (ex: BRL).",
+                },
+                {
+                  step: "3. Taxa de câmbio consultada",
+                  desc: "Busca a taxa USD→BRL configurada manualmente em Configurações → Taxas de Câmbio.",
+                },
+                {
+                  step: "4. Ambos os valores salvos",
+                  desc: "gross_value_in_cents = 1500 (USD), base_gross_value_in_cents = 7800 (BRL) com rate = 5.20.",
+                },
+                {
+                  step: "5. Dashboard usa base_value",
+                  desc: "Todos os gráficos e P&L somam base_gross_value_in_cents, consolidando tudo na moeda base.",
+                },
+              ].map((item) => (
+                <div key={item.step} className="rounded-lg border border-border px-4 py-3">
+                  <p className="text-sm font-semibold text-foreground">{item.step}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Enviando eventos com moeda explícita
+            </h3>
+            <CodeBlock
+              code={`// Venda em BRL (mesma que a org) — currency é opcional, rate = 1
+window.GrowthOS.track('payment', {
+  gross_value: 89.00,
+  currency: 'BRL',  // ou omita — herda da organização
+  product_name: 'Plano Básico',
+})
+
+// Venda em USD (org com moeda base BRL)
+// Requer taxa USD→BRL configurada em Configurações → Taxas de Câmbio
+window.GrowthOS.track('payment', {
+  gross_value: 15.00,
+  currency: 'USD',
+  product_name: 'International Plan',
+})
+
+// Venda em EUR
+window.GrowthOS.track('payment', {
+  gross_value: 12.00,
+  currency: 'EUR',
+  product_name: 'Plano Europa',
+})`}
+              lang="js"
+              title="tracker.js"
+            />
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Configurando taxas de câmbio
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Acesse <strong>Configurações → Taxas de Câmbio</strong> para cadastrar as taxas que
+              sua organização pratica — não a taxa do banco central, mas a taxa real que você usa com clientes.
+            </p>
+            <Callout type="warn">
+              Se um evento chegar com uma moeda diferente da moeda base e não houver taxa configurada,
+              o evento será <strong>rejeitado com erro 400</strong>. Configure a taxa antes de começar a
+              enviar eventos nessa moeda.
+            </Callout>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Configurações regionais da organização
+            </h3>
+            <div className="grid grid-cols-1 gap-3">
+              {[
+                {
+                  field: "currency",
+                  desc: "Moeda base (ISO 4217). Todos os valores são convertidos para esta moeda.",
+                  example: "BRL, USD, EUR",
+                },
+                {
+                  field: "locale",
+                  desc: "Locale de formatação de números e datas no dashboard.",
+                  example: "pt-BR, en-US, pt-PT",
+                },
+                {
+                  field: "timezone",
+                  desc: "Fuso horário usado nos filtros de data e agrupamentos diários.",
+                  example: "America/Sao_Paulo, UTC",
+                },
+                {
+                  field: "language",
+                  desc: "Idioma das análises de IA (diagnósticos, recomendações).",
+                  example: "pt-BR, en-US, es-ES",
+                },
+                {
+                  field: "country",
+                  desc: "País da organização. Usado para contexto na IA.",
+                  example: "BR, US, PT",
+                },
+              ].map((item) => (
+                <div key={item.field} className="rounded-lg border border-border px-4 py-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-green-600 dark:text-green-400">
+                      {item.field}
+                    </code>
+                    <span className="text-xs text-muted-foreground">
+                      Ex: {item.example}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              Schema do evento (campos de câmbio)
+            </h3>
+            <CodeBlock
+              code={`// Campos salvos no banco para cada evento com moeda
+{
+  currency: "USD",                  // moeda do evento (ISO 4217)
+  base_currency: "BRL",             // moeda base da org
+  exchange_rate: 5.20,              // taxa aplicada no momento da ingestão
+  gross_value_in_cents: 1500,       // valor original ($15.00 USD)
+  base_gross_value_in_cents: 7800,  // valor convertido (R$78.00 BRL)
+  base_net_value_in_cents: 7800,    // líquido após desconto, em moeda base
+}`}
+              lang="json"
+              title="Evento no banco"
+            />
+          </div>
+
+          <Callout type="info">
+            Eventos históricos (antes da implementação de multi-moeda) têm{" "}
+            <code className="font-mono text-xs">base_gross_value_in_cents = null</code>.
+            O dashboard usa{" "}
+            <code className="font-mono text-xs">COALESCE(base_gross_value_in_cents, gross_value_in_cents)</code>{" "}
+            como fallback, garantindo compatibilidade retroativa.
           </Callout>
         </TabsContent>
       </div>

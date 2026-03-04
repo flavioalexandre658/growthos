@@ -594,6 +594,9 @@ export function AiContent() {
         body: JSON.stringify({
           type: "analysis",
           orgName: organization?.name ?? "",
+          language: organization?.language ?? "pt-BR",
+          currency: organization?.currency ?? "BRL",
+          country: organization?.country ?? "BR",
           data,
         }),
         signal: abortRef.current.signal,

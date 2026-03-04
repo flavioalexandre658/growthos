@@ -55,7 +55,7 @@ export async function getSourceDistribution(
   const revenueRows = await db
     .select({
       source: sql<string>`COALESCE(${events.source}, 'direct')`,
-      revenueInCents: sql<number>`COALESCE(SUM(${events.grossValueInCents}), 0)`,
+      revenueInCents: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
     })
     .from(events)
     .where(
