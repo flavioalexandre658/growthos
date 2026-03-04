@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
   IconKey,
@@ -115,9 +115,11 @@ export function StepApiKey({
       : "https://growthos.dev",
   );
   const [copied, setCopied] = useState(false);
+  const hasGeneratedRef = useRef(false);
 
   useEffect(() => {
-    if (existingKey) return;
+    if (existingKey || hasGeneratedRef.current) return;
+    hasGeneratedRef.current = true;
 
     async function generate() {
       try {
