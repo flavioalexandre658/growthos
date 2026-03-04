@@ -55,6 +55,7 @@ export function OnboardingWizard({
   const [funnelSteps, setFunnelSteps] = useState<IFunnelStepConfig[]>(
     existingOrg?.funnelSteps ?? []
   );
+  const [verified, setVerified] = useState(false);
 
   const advance = () => {
     setCurrentStep((s) => {
@@ -158,6 +159,8 @@ export function OnboardingWizard({
           <StepApiKey
             organizationId={org.id}
             organizationName={org.name}
+            currency={org.currency ?? "BRL"}
+            hasRecurringRevenue={org.hasRecurringRevenue}
             funnelSteps={funnelSteps}
             existingKey={existingApiKey ?? undefined}
             onComplete={(key) => {
@@ -171,11 +174,25 @@ export function OnboardingWizard({
           <StepVerifyEvent
             organizationId={org.id}
             apiKey={apiKey}
-            onComplete={advance}
+            onComplete={(didVerify) => {
+              setVerified(didVerify);
+              advance();
+            }}
           />
         )}
 
-        {currentStep === 6 && <StepTour slug={org?.slug ?? ""} onComplete={() => {}} />}
+        {currentStep === 6 && org && (
+          <StepTour
+            slug={org.slug}
+            userName={userName}
+            verified={verified}
+            currency={org.currency ?? "BRL"}
+            funnelSteps={funnelSteps}
+            hasRecurringRevenue={org.hasRecurringRevenue}
+            apiKey={apiKey}
+            onGoBack={() => setCurrentStep(5)}
+          />
+        )}
       </div>
 
       <p className="text-center text-xs text-zinc-700">

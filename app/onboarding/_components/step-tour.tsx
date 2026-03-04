@@ -5,77 +5,61 @@ import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import {
   IconLayoutDashboard,
-  IconBrandGoogle,
-  IconCurrencyDollar,
-  IconWorldWww,
-  IconCalculator,
   IconLoader2,
   IconRocket,
   IconCheck,
+  IconArrowRight,
+  IconBolt,
+  IconArrowBack,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { completeOnboarding } from "@/actions/auth/complete-onboarding.action";
-import { cn } from "@/lib/utils";
-
-const SECTIONS = [
-  {
-    icon: IconLayoutDashboard,
-    title: "Visão Geral",
-    description: "Funil de conversão, KPIs e evolução diária de receita",
-    color: "text-indigo-400",
-    iconBg: "bg-indigo-500/15 border-indigo-500/25",
-    cardBg: "hover:border-indigo-500/40",
-  },
-  {
-    icon: IconBrandGoogle,
-    title: "Canais",
-    description: "De onde vem sua receita, Google, Instagram, direto e mais",
-    color: "text-violet-400",
-    iconBg: "bg-violet-500/15 border-violet-500/25",
-    cardBg: "hover:border-violet-500/40",
-  },
-  {
-    icon: IconCurrencyDollar,
-    title: "Financeiro",
-    description: "Receita bruta, descontos, P&L e ticket médio",
-    color: "text-emerald-400",
-    iconBg: "bg-emerald-500/15 border-emerald-500/25",
-    cardBg: "hover:border-emerald-500/40",
-  },
-  {
-    icon: IconWorldWww,
-    title: "Landing Pages",
-    description: "Performance por página, pageviews, cadastros e conversão",
-    color: "text-amber-400",
-    iconBg: "bg-amber-500/15 border-amber-500/25",
-    cardBg: "hover:border-amber-500/40",
-  },
-  {
-    icon: IconCalculator,
-    title: "Custos & P&L",
-    description: "Lucro real após custos fixos e variáveis, com análise via IA",
-    color: "text-rose-400",
-    iconBg: "bg-rose-500/15 border-rose-500/25",
-    cardBg: "hover:border-rose-500/40",
-  },
-];
+import { buildPrompt } from "@/app/[slug]/settings/_components/ai-prompt-section";
+import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
 interface StepTourProps {
   slug: string;
-  onComplete: () => void;
+  userName: string;
+  verified: boolean;
+  currency: string;
+  funnelSteps: IFunnelStepConfig[];
+  hasRecurringRevenue: boolean;
+  apiKey: string;
+  onGoBack: () => void;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function StepTour({ slug, onComplete: _ }: StepTourProps) {
+export function StepTour({
+  slug,
+  userName,
+  verified,
+  currency,
+  funnelSteps,
+  hasRecurringRevenue,
+  apiKey,
+  onGoBack,
+}: StepTourProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
   const { update } = useSession();
+
+  const firstName = userName.split(" ")[0];
+
+  const funnelLabel = funnelSteps
+    .filter((s) => !s.hidden)
+    .map((s) => s.label)
+    .join(" → ");
+
+  const baseUrl =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://growthos.dev";
 
   const handleFinish = async () => {
     setIsLoading(true);
     try {
       await completeOnboarding();
       await update({ onboardingCompleted: true });
-      toast.success("Tudo pronto! Bem-vindo ao GrowthOS.");
+      toast.success("Bem-vindo ao GrowthOS!");
       window.location.href = slug ? `/${slug}` : "/organizations";
     } catch {
       toast.error("Erro ao finalizar onboarding.");
@@ -83,98 +67,152 @@ export function StepTour({ slug, onComplete: _ }: StepTourProps) {
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="text-center space-y-4 pb-2">
-        <div className="flex justify-center">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-indigo-500/20 animate-ping" />
-            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
-              <IconCheck size={30} className="text-white" strokeWidth={2.5} />
+  const handleCopyPrompt = () => {
+    const prompt = buildPrompt(
+      apiKey,
+      baseUrl,
+      slug,
+      currency,
+      funnelSteps,
+      hasRecurringRevenue,
+    );
+    navigator.clipboard.writeText(prompt);
+    setCopiedPrompt(true);
+    toast.success("Prompt copiado!");
+    setTimeout(() => setCopiedPrompt(false), 2500);
+  };
+
+  if (verified) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center space-y-3">
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg shadow-emerald-500/30">
+                <IconCheck size={30} className="text-white" strokeWidth={2.5} />
+              </div>
             </div>
+          </div>
+          <div className="space-y-1.5">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
+              Tudo configurado, {firstName}!
+            </h2>
+            {funnelLabel && (
+              <p className="text-xs text-zinc-600 font-mono">
+                {funnelLabel} · {currency}
+              </p>
+            )}
+            <p className="text-sm text-zinc-500 max-w-xs mx-auto leading-relaxed">
+              Eventos chegando. Seu dashboard está pronto para uso.
+            </p>
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
-            Tudo configurado!
+        <Button
+          onClick={handleFinish}
+          disabled={isLoading}
+          className="w-full h-12 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold gap-2 group text-sm shadow-lg shadow-emerald-500/20 transition-all duration-200"
+        >
+          {isLoading ? (
+            <>
+              <IconLoader2 size={16} className="animate-spin" />
+              Entrando...
+            </>
+          ) : (
+            <>
+              <IconRocket
+                size={16}
+                className="transition-transform group-hover:-translate-y-0.5"
+              />
+              Ir para Visão Geral
+              <IconArrowRight size={15} className="ml-auto opacity-60 group-hover:translate-x-0.5 transition-transform" />
+            </>
+          )}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="text-center space-y-3">
+        <div className="flex justify-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/30">
+            <IconCheck size={26} className="text-white" strokeWidth={2.5} />
+          </div>
+        </div>
+        <div className="space-y-1">
+          <h2 className="text-xl font-bold text-zinc-100">
+            Quase lá, {firstName}!
           </h2>
-          <p className="text-sm text-zinc-500 max-w-xs mx-auto leading-relaxed">
-            Sua organização está pronta. Explore o dashboard e comece a tomar
-            decisões baseadas em dados.
-          </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5">
-        {SECTIONS.map((section) => {
-          const Icon = section.icon;
-          return (
-            <div
-              key={section.title}
-              className={cn(
-                "group flex flex-col gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4",
-                "transition-all duration-200 hover:scale-[1.02] hover:bg-zinc-900/60 cursor-default",
-                section.cardBg,
-              )}
-            >
-              <div
-                className={cn(
-                  "flex h-9 w-9 items-center justify-center rounded-lg border",
-                  section.iconBg,
-                )}
-              >
-                <Icon size={17} className={section.color} />
-              </div>
-              <div className="space-y-1">
-                <p
-                  className={cn(
-                    "text-sm font-bold leading-none",
-                    section.color,
-                  )}
-                >
-                  {section.title}
-                </p>
-                <p className="text-xs text-zinc-600 leading-relaxed">
-                  {section.description}
-                </p>
-              </div>
-            </div>
-          );
-        })}
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
+        <div className="space-y-1">
+          {funnelLabel && (
+            <p className="text-xs font-mono text-zinc-400">
+              {funnelLabel} · {currency}
+            </p>
+          )}
+          <div className="flex items-center gap-1.5">
+            <IconCheck size={13} className="text-emerald-400 shrink-0" />
+            <p className="text-sm font-semibold text-zinc-200">
+              Configuração concluída
+            </p>
+          </div>
+        </div>
 
-        <div className="flex flex-col gap-3 rounded-xl border border-zinc-800/60 bg-gradient-to-br from-indigo-950/40 to-violet-950/30 p-4 transition-all duration-200 hover:scale-[1.02] hover:border-indigo-500/40 cursor-default">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg border bg-indigo-500/15 border-indigo-500/25">
-            <IconRocket size={17} className="text-indigo-400" />
-          </div>
-          <div className="space-y-1">
-            <p className="text-sm font-bold text-indigo-400 leading-none">
-              IA Comparativa
-            </p>
-            <p className="text-xs text-zinc-600 leading-relaxed">
-              Compare períodos e receba relatórios automáticos de otimização
-            </p>
-          </div>
+        <div className="h-px bg-zinc-800" />
+
+        <div className="space-y-1.5">
+          <p className="text-xs font-semibold text-zinc-400">Próximo passo</p>
+          <p className="text-sm text-zinc-500 leading-relaxed">
+            Instale o tracker no seu projeto e volte para ver seus dados.
+            Use o prompt abaixo para integrar com IA em segundos.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={handleCopyPrompt}
+            className="flex items-center justify-center gap-2 rounded-lg border border-indigo-700/50 bg-indigo-950/40 hover:bg-indigo-950/70 hover:border-indigo-600/60 px-4 py-2.5 text-sm font-medium text-indigo-300 transition-all"
+          >
+            {copiedPrompt ? (
+              <IconCheck size={15} className="text-emerald-400" />
+            ) : (
+              <IconBolt size={15} />
+            )}
+            {copiedPrompt ? "Prompt copiado!" : "Copiar prompt para IA"}
+          </button>
+
+          <button
+            type="button"
+            onClick={onGoBack}
+            className="flex items-center justify-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-400 transition-colors py-1"
+          >
+            <IconArrowBack size={12} />
+            Voltar e verificar instalação agora
+          </button>
         </div>
       </div>
 
       <Button
         onClick={handleFinish}
         disabled={isLoading}
-        className="w-full h-12 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold gap-2 group text-sm shadow-lg shadow-indigo-500/20 transition-all duration-200"
+        className="w-full h-11 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold gap-2 group text-sm transition-all duration-200"
       >
         {isLoading ? (
           <>
             <IconLoader2 size={16} className="animate-spin" />
-            Entrando no dashboard...
+            Entrando...
           </>
         ) : (
           <>
-            <IconRocket
-              size={16}
-              className="transition-transform group-hover:-translate-y-0.5"
-            />
-            Explorar o Dashboard
+            <IconLayoutDashboard size={15} />
+            Ir para o Dashboard
           </>
         )}
       </Button>

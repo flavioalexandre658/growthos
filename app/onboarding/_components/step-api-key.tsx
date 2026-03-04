@@ -13,11 +13,14 @@ import {
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { createApiKey } from "@/actions/api-keys/create-api-key.action";
+import { AiPromptSection } from "@/app/[slug]/settings/_components/ai-prompt-section";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
 interface StepApiKeyProps {
   organizationId: string;
   organizationName: string;
+  currency: string;
+  hasRecurringRevenue: boolean;
   funnelSteps: IFunnelStepConfig[];
   existingKey?: string;
   onComplete: (apiKey: string) => void;
@@ -78,38 +81,39 @@ function CodeBlock({
   );
 }
 
-function buildEventExample(step: IFunnelStepConfig): string | null {
+function buildEventExample(step: IFunnelStepConfig, currency: string): string | null {
   const t = step.eventType.trim();
   if (!t) return null;
 
-  if (step.countUnique) {
+  if (step.countUnique || t === "pageview") {
     return `// '${t}' é rastreado automaticamente pelo tracker\n// Nenhuma chamada manual necessária`;
   }
 
   const examples: Record<string, string> = {
-    payment: `window.GrowthOS.track('payment', {\n  gross_value: 150.00,\n  discount: 10.00,          // opcional: desconto aplicado\n  payment_method: 'pix',  // pix | credit_card | boleto\n  product_id: 'produto-001',\n  category: 'principal',\n  customer_type: 'new',   // new | returning\n})`,
-    signup: `window.GrowthOS.track('signup', {\n  // contexto automático: source, medium, device, landing_page\n})`,
-    trial_started: `window.GrowthOS.track('trial_started', {\n  product_id: 'plano-pro',\n  // contexto automático: source, medium, device\n})`,
-    checkout_started: `window.GrowthOS.track('checkout_started', {\n  gross_value: 89.00,\n  product_id: 'produto-001',\n  // abandono automático detectado no beforeunload\n})`,
-    checkout_abandoned: `window.GrowthOS.track('checkout_abandoned', {\n  gross_value: 89.00,\n  product_id: 'produto-001',\n  reason: 'exit',  // exit | payment_failed | timeout\n})`,
-    pageview: `// '${t}' é rastreado automaticamente pelo tracker\n// Nenhuma chamada manual necessária`,
+    payment: `window.GrowthOS.track('payment', {\n  gross_value: 150.00,          // obrigatório\n  currency: '${currency}',           // obrigatório sempre\n  discount: 10.00,              // opcional: desconto aplicado\n  payment_method: 'pix',        // pix | credit_card | boleto\n  product_id: 'produto-001',    // opcional mas recomendado\n  category: 'principal',        // opcional\n  customer_type: 'new',         // new | returning\n  customer_id: hashAnonymous(user.id), // NUNCA email ou CPF\n})`,
+    signup: `window.GrowthOS.track('signup', {\n  customer_type: 'new',         // new | returning\n  customer_id: hashAnonymous(user.id), // NUNCA email ou CPF\n  // contexto automático: source, medium, device, landing_page\n})`,
+    trial_started: `window.GrowthOS.track('trial_started', {\n  plan_id: 'plano-pro',\n  plan_name: 'Pro Mensal',\n  customer_id: hashAnonymous(user.id),\n  // contexto automático: source, medium, device\n})`,
+    checkout_started: `window.GrowthOS.track('checkout_started', {\n  gross_value: 89.00,\n  currency: '${currency}',\n  product_id: 'produto-001',\n  customer_id: hashAnonymous(user.id),\n  // abandono automático detectado no beforeunload\n})`,
+    checkout_abandoned: `window.GrowthOS.track('checkout_abandoned', {\n  gross_value: 89.00,\n  currency: '${currency}',\n  product_id: 'produto-001',\n  reason: 'exit',  // exit | payment_failed | timeout\n})`,
   };
 
   if (examples[t]) return examples[t];
 
-  return `window.GrowthOS.track('${t}', {\n  // adicione os campos relevantes para esta etapa\n})`;
+  return `window.GrowthOS.track('${t}', {\n  product_id: /* ID do recurso envolvido */,\n  customer_id: hashAnonymous(user.id), // NUNCA email ou CPF\n})`;
 }
 
 export function StepApiKey({
   organizationId,
   organizationName,
+  currency,
+  hasRecurringRevenue,
   funnelSteps,
   existingKey,
   onComplete,
 }: StepApiKeyProps) {
   const [apiKey, setApiKey] = useState<string | null>(existingKey ?? null);
   const [isGenerating, setIsGenerating] = useState(!existingKey);
-  const [baseUrl, setBaseUrl] = useState(
+  const [baseUrl] = useState(
     typeof window !== "undefined"
       ? window.location.origin
       : "https://growthos.dev",
@@ -198,25 +202,15 @@ export function StepApiKey({
 
         <div className="rounded-md bg-amber-900/20 border border-amber-800/30 px-3 py-2">
           <p className="text-[11px] text-amber-400">
-            Guarde esta chave em segurança. Ela autentica os eventos do seu
-            site.
+            Esta key autentica todos os eventos de{" "}
+            <strong className="text-amber-300">{organizationName}</strong>.
+            Não commite no Git — use variável de ambiente (
+            <code className="font-mono">NEXT_PUBLIC_GROWTHOS_KEY</code>).
           </p>
         </div>
       </div>
 
       <div className="space-y-3">
-        <div className="space-y-1.5">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-            URL base do GrowthOS
-          </p>
-          <input
-            value={baseUrl}
-            onChange={(e) => setBaseUrl(e.target.value)}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 font-mono focus:border-indigo-500 focus:outline-none"
-            placeholder="https://growthos.dev"
-          />
-        </div>
-
         {apiKey && (
           <CodeBlock title="index.html" language="html" code={snippet} />
         )}
@@ -252,7 +246,7 @@ export function StepApiKey({
           </div>
         ) : (
           funnelSteps.map((step, idx) => {
-            const example = buildEventExample(step);
+            const example = buildEventExample(step, currency);
             const isAutoTracked =
               step.countUnique === true ||
               step.eventType === "pageview" ||
@@ -284,12 +278,43 @@ export function StepApiKey({
         )}
       </div>
 
+      {funnelSteps.some((s) => s.eventType === "payment") &&
+        !funnelSteps.some((s) => s.eventType === "checkout_started") && (
+          <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-4 py-3 flex items-start gap-2.5">
+            <IconInfoCircle size={14} className="text-indigo-400 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-zinc-300">
+                Evento opcional:{" "}
+                <code className="font-mono text-indigo-300">checkout_started</code>
+              </p>
+              <p className="text-[11px] text-zinc-500 leading-relaxed">
+                Se o seu fluxo tem um checkout (modal, redirecionamento ou página
+                separada), adicione este evento <strong className="text-zinc-400">antes do payment</strong>.
+                Ele habilita a análise de abandono de checkout — quantos usuários
+                chegaram até aqui mas não converteram. O tracker detecta o abandono
+                automaticamente via <code className="font-mono text-zinc-400">beforeunload</code>.
+              </p>
+            </div>
+          </div>
+        )}
+
+      {apiKey && (
+        <AiPromptSection
+          apiKey={apiKey}
+          baseUrl={baseUrl}
+          orgName={organizationName}
+          currency={currency}
+          funnelSteps={funnelSteps}
+          hasRecurringRevenue={hasRecurringRevenue}
+        />
+      )}
+
       <Button
         onClick={() => apiKey && onComplete(apiKey)}
         disabled={isGenerating || !apiKey}
         className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold gap-2 group"
       >
-        Continuar
+        Continuar — Verificar instalação
         <IconArrowRight
           size={16}
           className="transition-transform group-hover:translate-x-0.5"

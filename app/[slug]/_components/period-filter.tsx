@@ -61,10 +61,10 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
     setLocalStart("");
     setLocalEnd("");
     setShowCustom(false);
-    push({ period: "30d", start_date: undefined, end_date: undefined });
+    push({ period: "today", start_date: undefined, end_date: undefined });
   };
 
-  const activePeriod = !hasRange ? (filter.period ?? "30d") : null;
+  const activePeriod = !hasRange ? (filter.period ?? "today") : null;
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

@@ -16,7 +16,7 @@ O `public/tracker.js` é um script JavaScript embeddable que os clientes instala
 | `signup` | Após o usuário criar uma conta | — | user_id, email, metadata |
 | `checkout_started` | Quando o usuário inicia o checkout | — | gross_value, discount, metadata |
 | `checkout_abandoned` | Quando o usuário abandona o checkout sem pagar (auto com `data-auto-abandon="true"`) | — | gross_value (do checkout iniciado) |
-| `payment` | Após pagamento confirmado | — | gross_value, net_value, discount, gateway_fee, installments, payment_method, category |
+| `payment` | Após pagamento confirmado | — | gross_value, discount, installments, payment_method, category |
 | Evento customizado | Qualquer passo definido no funil da organização | — | qualquer metadata |
 
 ### Contexto capturado automaticamente
@@ -42,12 +42,10 @@ Para **todo evento**, o tracker injeta os seguintes campos automaticamente:
 | Campo | Tipo | Descrição |
 |---|---|---|
 | `gross_value` | number (centavos) | Valor bruto da venda |
-| `net_value` | number (centavos) | Valor líquido (após taxas e descontos) |
-| `discount` | number (centavos) | Valor do desconto aplicado |
-| `gateway_fee` | number (centavos) | Taxa do gateway de pagamento |
-| `installments` | number | Número de parcelas |
-| `payment_method` | string | `credit_card`, `pix`, `boleto`, etc. |
-| `category` | string | Categoria do produto/serviço vendido |
+| `discount` | number (centavos) | Valor do desconto aplicado (opcional) |
+| `installments` | number | Número de parcelas (opcional) |
+| `payment_method` | string | `credit_card`, `pix`, `boleto`, etc. (opcional) |
+| `category` | string | Categoria do produto/serviço vendido (opcional) |
 
 ---
 
@@ -71,9 +69,7 @@ events
 ├── utm_content         text
 ├── device              text
 ├── gross_value_in_cents integer
-├── net_value_in_cents   integer
 ├── discount_in_cents    integer
-├── gateway_fee_in_cents integer
 ├── installments         integer
 ├── payment_method       text
 ├── category             text
@@ -131,12 +127,9 @@ O funil exibe as etapas configuradas pela organização no onboarding, com as se
 | KPI | Fórmula |
 |---|---|
 | Receita Bruta | `SUM(gross_value_in_cents)` WHERE event_type = 'payment' |
-| Receita Líquida | `SUM(net_value_in_cents)` WHERE event_type = 'payment' |
-| Taxas de Gateway | `SUM(gateway_fee_in_cents)` WHERE event_type = 'payment' |
 | Descontos | `SUM(discount_in_cents)` WHERE event_type = 'payment' |
 | Receita Perdida | `SUM(gross_value_in_cents)` WHERE event_type = 'checkout_abandoned' |
 | Ticket Médio | `SUM(gross_value_in_cents) / COUNT(*)` WHERE event_type = 'payment' |
-| Margem Bruta | `net_revenue / gross_revenue * 100` |
 | Número de Pagamentos | `COUNT(*)` WHERE event_type = 'payment' |
 
 #### Breakdown por Método de Pagamento

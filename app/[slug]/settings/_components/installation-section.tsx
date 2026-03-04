@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { useApiKeys } from "@/hooks/queries/use-api-keys";
 import { useCreateApiKey } from "@/hooks/mutations/use-create-api-key";
 import { useDeleteApiKey } from "@/hooks/mutations/use-delete-api-key";
+import { AiPromptSection } from "./ai-prompt-section";
+import type { IFunnelStep } from "@/interfaces/organization.interface";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -253,9 +255,18 @@ function CreateKeyForm({
 interface InstallationSectionProps {
   orgId: string;
   orgName: string;
+  currency: string;
+  funnelSteps: IFunnelStep[];
+  hasRecurringRevenue: boolean;
 }
 
-export function InstallationSection({ orgId, orgName }: InstallationSectionProps) {
+export function InstallationSection({
+  orgId,
+  orgName,
+  currency,
+  funnelSteps,
+  hasRecurringRevenue,
+}: InstallationSectionProps) {
   const { data: keys, isLoading } = useApiKeys(orgId);
   const createMutation = useCreateApiKey(orgId);
   const deleteMutation = useDeleteApiKey(orgId);
@@ -365,30 +376,41 @@ export function InstallationSection({ orgId, orgName }: InstallationSectionProps
           )}
 
           {firstActiveKey && (
-            <div className="mt-4 space-y-2">
-              <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
-                Snippet de Instalação
-              </p>
-              <div className="mb-2">
-                <label className="text-[11px] text-zinc-600 uppercase tracking-wider">
-                  URL base do GrowthOS
-                </label>
-                <input
-                  value={baseUrl}
-                  onChange={(e) => setBaseUrl(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none"
-                  placeholder="https://seu-dominio.com"
-                />
+            <div className="mt-4 space-y-4">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
+                  Snippet de Instalação
+                </p>
+                <div>
+                  <label className="text-[11px] text-zinc-600 uppercase tracking-wider">
+                    URL base do GrowthOS
+                  </label>
+                  <input
+                    value={baseUrl}
+                    onChange={(e) => setBaseUrl(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none"
+                    placeholder="https://seu-dominio.com"
+                  />
+                </div>
+                <InstallSnippet apiKey={firstActiveKey.key} baseUrl={baseUrl} />
+                <p className="text-[11px] text-zinc-600 leading-relaxed">
+                  Cole este script no{" "}
+                  <code className="text-zinc-400">&lt;head&gt;</code> de qualquer
+                  página do seu site. O tracker.js captura automaticamente
+                  pageviews, UTMs, device e referrer. Use{" "}
+                  <code className="text-zinc-400">window.GrowthOS.track()</code>{" "}
+                  para eventos manuais.
+                </p>
               </div>
-              <InstallSnippet apiKey={firstActiveKey.key} baseUrl={baseUrl} />
-              <p className="text-[11px] text-zinc-600 leading-relaxed">
-                Cole este script no{" "}
-                <code className="text-zinc-400">&lt;head&gt;</code> de qualquer
-                página do seu site. O tracker.js captura automaticamente
-                pageviews, UTMs, device e referrer. Use{" "}
-                <code className="text-zinc-400">window.GrowthOS.track()</code>{" "}
-                para eventos manuais.
-              </p>
+
+              <AiPromptSection
+                apiKey={firstActiveKey.key}
+                baseUrl={baseUrl}
+                orgName={orgName}
+                currency={currency}
+                funnelSteps={funnelSteps}
+                hasRecurringRevenue={hasRecurringRevenue}
+              />
             </div>
           )}
         </div>

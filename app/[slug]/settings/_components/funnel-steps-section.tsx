@@ -15,6 +15,7 @@ import {
   IconDeviceFloppy,
   IconEye,
   IconEyeOff,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -375,6 +376,26 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
             </p>
           )}
         </div>
+
+        {steps.some((s) => s.eventType === "payment") &&
+          !steps.some((s) => s.eventType === "checkout_started") && (
+            <div className="rounded-lg border border-zinc-800/50 bg-zinc-950/40 px-3.5 py-3 flex items-start gap-2">
+              <IconInfoCircle size={13} className="text-indigo-500 mt-px shrink-0" />
+              <div className="space-y-0.5">
+                <p className="text-[11px] font-medium text-zinc-400">
+                  Evento opcional:{" "}
+                  <span className="font-mono text-indigo-400">checkout_started</span>
+                </p>
+                <p className="text-[10px] text-zinc-600 leading-relaxed">
+                  Se o projeto tiver checkout (modal ou página separada), adicione{" "}
+                  <span className="font-mono text-zinc-500">checkout_started</span> como etapa antes de{" "}
+                  <span className="font-mono text-zinc-500">payment</span>. Isso habilita a análise de
+                  abandono no dashboard. O tracker detecta o abandono automaticamente via{" "}
+                  <span className="font-mono text-zinc-500">beforeunload</span>.
+                </p>
+              </div>
+            </div>
+          )}
       </div>
     </div>
   );

@@ -79,9 +79,7 @@ URL (slug + searchParams) → app/[slug]/layout.tsx (valida org)
 | organization_id       | uuid FK   | Referência para organizations                       |
 | event_type            | text      | pageview, signup, payment, subscription_canceled... |
 | gross_value_in_cents  | integer   |                                                     |
-| net_value_in_cents    | integer   |                                                     |
 | discount_in_cents     | integer   |                                                     |
-| gateway_fee_in_cents  | integer   |                                                     |
 | installments          | integer   |                                                     |
 | payment_method        | text      |                                                     |
 | product_id            | text      |                                                     |

@@ -23,7 +23,7 @@ dayjs.locale("pt-br");
 interface StepVerifyEventProps {
   organizationId: string;
   apiKey: string;
-  onComplete: () => void;
+  onComplete: (verified: boolean) => void;
 }
 
 export function StepVerifyEvent({
@@ -181,13 +181,13 @@ export function StepVerifyEvent({
       <div className="flex gap-3">
         <Button
           variant="ghost"
-          onClick={onComplete}
+          onClick={() => onComplete(false)}
           className="flex-1 h-10 text-zinc-500 hover:text-zinc-300 border border-zinc-800 text-sm"
         >
           Pular, configurar depois
         </Button>
         <Button
-          onClick={onComplete}
+          onClick={() => onComplete(true)}
           disabled={!hasEvent}
           className={cn(
             "flex-1 h-10 font-semibold gap-2 group",

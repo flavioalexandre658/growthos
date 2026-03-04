@@ -20,7 +20,7 @@ export default async function FinancePage({ params, searchParams }: FinancePageP
   const filter: IDateFilter =
     sp.start_date && sp.end_date
       ? { start_date: sp.start_date, end_date: sp.end_date }
-      : { period: (sp.period as IDateFilter["period"]) || "30d" };
+      : { period: (sp.period as IDateFilter["period"]) || "today" };
 
   return (
     <div className="p-5 lg:p-6">

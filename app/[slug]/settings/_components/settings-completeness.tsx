@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { IconCheck, IconBrain } from "@tabler/icons-react";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ interface CompletenessItem {
 
 interface SettingsCompletenessProps {
   organization: IOrganization;
-  onSectionChange: (id: string) => void;
+  slug: string;
 }
 
 function buildItems(organization: IOrganization): CompletenessItem[] {
@@ -62,8 +63,9 @@ function buildItems(organization: IOrganization): CompletenessItem[] {
 
 export function SettingsCompleteness({
   organization,
-  onSectionChange,
+  slug,
 }: SettingsCompletenessProps) {
+  const router = useRouter();
   const items = buildItems(organization);
   const doneCount = items.filter((i) => i.done).length;
   const percentage = Math.round((doneCount / items.length) * 100);
@@ -94,7 +96,10 @@ export function SettingsCompleteness({
         {items.map((item) => (
           <button
             key={item.id}
-            onClick={() => !item.done && onSectionChange(item.sectionId)}
+            onClick={() =>
+              !item.done &&
+              router.push(`/${slug}/settings/${item.sectionId}`)
+            }
             className={cn(
               "flex items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors",
               item.done

@@ -1,13 +1,10 @@
-import { SettingsContent } from "./_components/settings-content";
+import { redirect } from "next/navigation";
 
-export const metadata = {
-  title: "Configurações | GrowthOS",
-};
+interface SettingsPageProps {
+  params: Promise<{ slug: string }>;
+}
 
-export default function SettingsPage() {
-  return (
-    <div className="p-5 lg:p-6">
-      <SettingsContent />
-    </div>
-  );
+export default async function SettingsPage({ params }: SettingsPageProps) {
+  const { slug } = await params;
+  redirect(`/${slug}/settings/installation`);
 }
