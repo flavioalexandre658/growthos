@@ -35,7 +35,6 @@ import {
   IconHistory,
   IconChevronDown,
   IconArrowRight,
-  IconCircleDot,
 } from "@tabler/icons-react";
 import type { IDebugResult } from "@/interfaces/event.interface";
 

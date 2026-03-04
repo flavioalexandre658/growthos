@@ -202,7 +202,7 @@ export function PagesContent({ filter }: PagesContentProps) {
 
   const { data: resp, isPending: isLoading } = useLandingPages(orgId, params);
 
-  const allData = resp?.data ?? [];
+  const allData = useMemo(() => resp?.data ?? [], [resp?.data]);
   const pagination = resp?.pagination ?? EMPTY_PAGINATION;
   const stepMeta = resp?.stepMeta ?? [];
 

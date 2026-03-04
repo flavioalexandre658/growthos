@@ -900,7 +900,7 @@ export function ComparisonContent() {
           <div>
             <p className="text-sm font-semibold text-zinc-400">Pronto para comparar</p>
             <p className="text-xs text-zinc-600 mt-1 max-w-xs">
-              Selecione a seção e os dois períodos acima, depois clique em "Comparar com IA"
+              Selecione a seção e os dois períodos acima, depois clique em &ldquo;Comparar com IA&rdquo;
             </p>
           </div>
           <div className="mt-2 text-xs text-zinc-600 space-y-1">
