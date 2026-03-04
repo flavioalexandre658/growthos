@@ -1,2140 +1,742 @@
 "use client";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useMemo } from "react";
+import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { IconCheck } from "@tabler/icons-react";
+import { Input } from "@/components/ui/input";
+import {
+  IconCheck,
+  IconSearch,
+  IconPackage,
+  IconCode,
+  IconServer,
+  IconRepeat,
+  IconWorld,
+  IconBug,
+  IconBolt,
+} from "@tabler/icons-react";
 import { CodeBlock } from "./code-block";
 import { EventCard } from "./event-card";
 import { Callout } from "./callout";
 import { AutoPropTable } from "./auto-prop-table";
-
-const AUTO_CONTEXT_ROWS = [
-  { name: "utm_source", source: "?utm_source na URL", example: "google" },
-  { name: "utm_medium", source: "?utm_medium na URL", example: "cpc" },
-  {
-    name: "utm_campaign",
-    source: "?utm_campaign na URL",
-    example: "black-friday",
-  },
-  {
-    name: "utm_content",
-    source: "?utm_content na URL",
-    example: "banner-topo",
-  },
-  {
-    name: "landing_page",
-    source: "window.location.pathname",
-    example: "/convite/casamento",
-  },
-  {
-    name: "referrer",
-    source: "document.referrer + inferência",
-    example: "instagram.com",
-  },
-  {
-    name: "device",
-    source: "navigator.userAgent",
-    example: "mobile | desktop",
-  },
-  {
-    name: "session_id",
-    source: "sessionStorage (anônimo, gerado)",
-    example: "s_abc123",
-  },
-];
-
-const buildInstallHtml = (baseUrl: string) => `<script
-  async
-  src="${baseUrl}/tracker.js"
-  data-key="tok_xxx"
-></script>`;
-
-const SCRIPT_ATTRS_ROWS = [
-  {
-    name: "data-key",
-    required: "sim",
-    description: "API key da organização. Obtida em Configurações.",
-    example: "tok_convitede_xxx",
-  },
-  {
-    name: "data-debug",
-    required: "não",
-    description: 'Habilita logs no console: "[GrowthOS] track: evento {...}".',
-    example: "true",
-  },
-  {
-    name: "data-auto-abandon",
-    required: "não",
-    description:
-      "Desabilita a detecção automática de checkout_abandoned no beforeunload. Padrão: habilitado.",
-    example: "false",
-  },
-];
-
-const buildInstallNextjs = (
-  baseUrl: string,
-) => `import Script from 'next/script'
-
-export default function RootLayout({ children }) {
-  return (
-    <html>
-      <head />
-      <body>
-        {children}
-        <Script
-          src="${baseUrl}/tracker.js"
-          data-key={process.env.NEXT_PUBLIC_GROWTHOS_KEY}
-          strategy="afterInteractive"
-        />
-      </body>
-    </html>
-  )
-}`;
-
-const ENV_CODE = `NEXT_PUBLIC_GROWTHOS_KEY=tok_convitede_xxx`;
-
-const HOOK_CODE = `'use client'
-
-import { useCallback } from 'react'
-import type { GrowthOSEventType | GrowthOSEventData } from '@/types/growthos'
-
-export function useTracker() {
-  const track = useCallback(
-    (eventType: GrowthOSEventType, data?: GrowthOSEventData) => {
-      if (typeof window === 'undefined') return
-      if (!window.GrowthOS) return
-      window.GrowthOS.track(eventType, data)
-    },
-    []
-  )
-
-  return { track }
-}`;
-
-const HOOK_USAGE_CODE = `'use client'
-
-import { useTracker } from '@/hooks/use-tracker'
-
-export function CheckoutButton({ product, price }) {
-  const { track } = useTracker()
-
-  const handleCheckout = async () => {
-    track('checkout_started', {
-      gross_value: price,
-      product_id: product.id,
-      product_name: product.name,
-    })
-
-    await openCheckout(product.id)
-  }
-
-  return (
-    <button onClick={handleCheckout}>
-      Comprar por R$ {price}
-    </button>
-  )
-}`;
-
-const PAYMENT_CODE = `window.GrowthOS.track('payment', {
-  gross_value: 150.00,      // valor bruto cobrado (obrigatório)
-  currency: 'BRL',          // moeda ISO 4217 (opcional, padrão: moeda da org)
-  discount: 10.00,          // desconto aplicado (opcional)
-  installments: 1,          // número de parcelas (opcional)
-  payment_method: 'pix',    // pix | credit_card | boleto | debit_card | mbway | ...
-  product_id: 'template-casamento-001',
-  product_name: 'Convite Casamento Premium',
-  category: 'casamento',
-  customer_type: 'new',     // new | returning
-  customer_id: 'hash_anonimo_cliente',
-})
-
-// Venda em USD (org com moeda base BRL)
-// Requer taxa USD→BRL configurada em Configurações → Taxas de Câmbio
-window.GrowthOS.track('payment', {
-  gross_value: 15.00,
-  currency: 'USD',
-  product_name: 'International Plan',
-})`;
-
-const CHECKOUT_STARTED_CODE = `window.GrowthOS.track('checkout_started', {
-  gross_value: 89.00,
-  product_id: 'template-aniversario-002',
-  product_name: 'Convite Aniversário Standard',
-})
-
-// A partir desse momento, se o usuário fechar a aba/navegador
-// antes de um evento 'payment', o tracker envia automaticamente
-// um 'checkout_abandoned' via beforeunload + navigator.sendBeacon`;
-
-const SIGNUP_CODE = `window.GrowthOS.track('signup', {
-  customer_type: 'new',
-  customer_id: 'hash_anonimo',
-})`;
-
-const ABANDONED_CODE = `// Disparo manual , quando você sabe o motivo exato
-window.GrowthOS.track('checkout_abandoned', {
-  gross_value: 89.00,
-  product_id: 'template-aniversario-002',
-  reason: 'payment_failed',  // exit | payment_failed | timeout
-})
-
-// Disparo automático , pelo tracker via beforeunload
-// Não é necessário nenhum código adicional.
-// O tracker usa os dados do último checkout_started salvo em sessionStorage.`;
-
-const DATA_ATTRS_CODE = `<!-- Botão de pagamento -->
-<button
-  data-growthos="payment"
-  data-growthos-value="89.90"
-  data-growthos-product_id="template-casamento-001"
-  data-growthos-product_name="Convite Casamento Premium"
-  data-growthos-payment_method="pix"
->
-  Pagar com PIX
-</button>
-
-<!-- Cadastro -->
-<button
-  data-growthos="signup"
-  data-growthos-customer_type="new"
->
-  Criar conta grátis
-</button>`;
-
-const TYPES_CODE = `export type GrowthOSEventType =
-  | 'pageview'
-  | 'signup'
-  | 'trial_started'
-  | 'checkout_started'
-  | 'checkout_abandoned'
-  | 'payment'
-
-export type GrowthOSPaymentMethod =
-  | 'pix'
-  | 'credit_card'
-  | 'debit_card'
-  | 'boleto'
-
-export type GrowthOSCustomerType = 'new' | 'returning'
-export type GrowthOSBillingType = 'recurring' | 'one_time'
-export type GrowthOSBillingInterval = 'monthly' | 'yearly' | 'weekly'
-
-export interface GrowthOSEventData {
-  gross_value?: number
-  discount?: number
-  installments?: number
-  payment_method?: GrowthOSPaymentMethod
-  product_id?: string
-  product_name?: string
-  category?: string
-  customer_type?: GrowthOSCustomerType
-  customer_id?: string
-  billing_type?: GrowthOSBillingType
-  billing_interval?: GrowthOSBillingInterval
-  subscription_id?: string
-  plan_id?: string
-  plan_name?: string
-  reason?: 'exit' | 'payment_failed' | 'timeout'
-  metadata?: Record<string, unknown>
-  dedupe?: boolean | string  // true = deduplica por event_type; string = chave customizada
-}
-
-declare global {
-  interface Window {
-    GrowthOS: {
-      track: (eventType: GrowthOSEventType, data?: GrowthOSEventData) => void
-      clearDedupe: () => void
-    }
-  }
-}`;
-
-const DEBUG_CODE = `// Verificar se o tracker carregou
-console.log(window.GrowthOS)
-// Deve retornar: { track: ƒ }
-
-// Disparar evento de teste
-window.GrowthOS.track('pageview')
-// Verificar no Network: POST /api/track → 204`;
-
-const buildDebugAttrsCode = (baseUrl: string) => `<script
-  async
-  src="${baseUrl}/tracker.js"
-  data-key="tok_xxx"
-  data-debug="true"
-></script>
-
-// Console vai mostrar:
-// [GrowthOS] track: payment { gross_value: 150, source: "google", ... }`;
-
-const DEBUG_QUEUE_CODE = `// Verificar eventos na fila offline (pendentes de envio)
-JSON.parse(localStorage.getItem('growthos_queue') || '[]')
-
-// Verificar UTMs persistidos na sessão atual
-JSON.parse(sessionStorage.getItem('growthos_utm') || 'null')
-
-// Verificar checkout em andamento
-JSON.parse(sessionStorage.getItem('growthos_checkout') || 'null')
-
-// Verificar chaves de deduplicação já enviadas nessa sessão
-JSON.parse(sessionStorage.getItem('growthos_dedup') || '[]')
-
-// Limpar a fila manualmente (em caso de eventos inválidos presos)
-localStorage.removeItem('growthos_queue')
-
-// Resetar deduplicação da sessão atual
-window.GrowthOS.clearDedupe()`;
-
-const DEDUPE_BOOL_CODE = `// Dispara "signup" apenas 1x por sessão (aba/navegador)
-// Mesmo que o componente monte várias vezes (React StrictMode, re-renders),
-// o evento só é enviado na primeira vez.
-window.GrowthOS.track('signup', { dedupe: true })`;
-
-const DEDUPE_KEY_CODE = `// Deduplica por chave customizada — útil quando o mesmo evento
-// pode ocorrer para produtos diferentes e você quer deduplicar
-// apenas para um produto específico.
-window.GrowthOS.track('payment', {
-  gross_value: 150.00,
-  product_id: 'template-casamento-001',
-  dedupe: 'payment_order_abc123',  // chave única do pedido
-})`;
-
-const DEDUPE_HOOK_CODE = `'use client'
-
-import { useEffect } from 'react'
-import { useTracker } from '@/hooks/use-tracker'
-
-export function SignupSuccessPage() {
-  const { track } = useTracker()
-
-  // useEffect dispara 2x no React StrictMode (dev) — dedupe garante
-  // que o evento chegue ao GrowthOS apenas 1 vez.
-  useEffect(() => {
-    track('signup', {
-      customer_type: 'new',
-      dedupe: true,
-    })
-  }, [track])
-
-  return <h1>Bem-vindo!</h1>
-}`;
-
-const DEDUPE_ATTRS_CODE = `<!-- Botão de cadastro: envia "signup" só na 1ª vez que for clicado por sessão -->
-<button
-  data-growthos="signup"
-  data-growthos-customer_type="new"
-  data-growthos-dedupe="true"
->
-  Criar conta grátis
-</button>
-
-<!-- Deduplicação por chave de pedido específico -->
-<button
-  data-growthos="payment"
-  data-growthos-value="89.90"
-  data-growthos-dedupe="payment_order_abc123"
->
-  Confirmar pagamento
-</button>`;
-
-const DEDUPE_CLEAR_CODE = `// Limpar toda a deduplicação da sessão atual
-// (o usuário poderá disparar eventos já enviados novamente)
-window.GrowthOS.clearDedupe()
-
-// Verificar quais chaves já foram enviadas nessa sessão
-JSON.parse(sessionStorage.getItem('growthos_dedup') || '[]')`;
-
-const CHECKLIST_ITEMS = [
-  {
-    label: "Script carregou sem erro no Network",
-    detail: "Network → tracker.js → status 200",
-  },
-  {
-    label: "window.GrowthOS existe no console",
-    detail: "typeof window.GrowthOS === 'object'",
-  },
-  {
-    label: "UTMs sendo capturados",
-    detail: "Acesse /?utm_source=teste e confira o payload",
-  },
-  {
-    label: "POST /api/track retorna 204",
-    detail: "Disparar evento e checar no Network",
-  },
-  { label: "Dados no dashboard em até 30s", detail: "Visão Geral → atualizar" },
-  {
-    label: "Sem PII nos payloads",
-    detail: "Nunca enviar email, CPF ou nome no customer_id",
-  },
-];
-
-const API_PAYLOAD_CODE = `POST /api/track
-Content-Type: application/json
-
-{
-  "key": "tok_xxx",            // obrigatório , API key
-  "event_type": "payment",     // obrigatório , tipo do evento
-
-  // valores monetários , enviar em reais, a API converte para centavos
-  "gross_value": 150.00,
-  "discount": 10.00,
-  "installments": 1,
-  "payment_method": "pix",
-
-  // produto
-  "product_id": "template-001",
-  "product_name": "Convite Casamento",
-  "category": "casamento",
-
-  // atribuição , preenchido automaticamente pelo tracker
-  "source": "google",
-  "medium": "organic",
-  "campaign": "val2024",
-  "content": "banner-topo",
-  "landing_page": "/convite/casamento",
-  "referrer": "https://google.com",
-
-  // contexto , preenchido automaticamente pelo tracker
-  "device": "mobile",
-  "customer_type": "new",
-  "customer_id": "hash_anonimo",
-  "session_id": "s_abc123",
-
-  // extra livre , max 20 chaves, strings max 500 chars
-  "metadata": { "promo_code": "VERAO10" }
-}`;
-
-const API_RESPONSES_ROWS = [
-  {
-    status: "204",
-    meaning: "No Content",
-    description: "Evento registrado com sucesso.",
-  },
-  {
-    status: "400",
-    meaning: "Bad Request",
-    description: "Payload inválido ou campos key / event_type ausentes.",
-  },
-  {
-    status: "401",
-    meaning: "Unauthorized",
-    description: "API key inválida, inativa ou expirada.",
-  },
-  {
-    status: "413",
-    meaning: "Payload Too Large",
-    description: "Payload excede 64KB.",
-  },
-  {
-    status: "429",
-    meaning: "Too Many Requests",
-    description: "Rate limit: 1.000 req/min por API key.",
-  },
-];
-
-function buildServerNodeCode(appUrl: string) {
-  return `// Node.js / Next.js API Route / Server Action
-const res = await fetch('${appUrl}/api/track', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    key: process.env.GROWTHOS_API_KEY,
-    event_type: 'payment',
-    gross_value: 97.00,
-    payment_method: 'credit_card',
-    billing_type: 'recurring',
-    billing_interval: 'monthly',
-    subscription_id: 'sub_stripe_abc123',
-    plan_id: 'plan_pro',
-    plan_name: 'Pro Mensal',
-    customer_id: 'hash_anonimo_cliente',
-    timestamp: new Date().toISOString(),
-  }),
-})`;
-}
-
-function buildServerCurlCode(appUrl: string) {
-  return `curl -X POST ${appUrl}/api/track \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "key": "tok_xxx",
-    "event_type": "payment",
-    "gross_value": 97.00,
-    "billing_type": "recurring",
-    "billing_interval": "monthly",
-    "subscription_id": "sub_stripe_abc123",
-    "plan_name": "Pro Mensal",
-    "customer_id": "hash_cliente",
-    "timestamp": "2025-01-15T10:30:00Z"
-  }'`;
-}
-
-function buildServerPythonCode(appUrl: string) {
-  return `import requests, os
-
-requests.post(
-    "${appUrl}/api/track",
-    json={
-        "key": os.environ["GROWTHOS_API_KEY"],
-        "event_type": "payment",
-        "gross_value": 97.00,
-        "billing_type": "recurring",
-        "billing_interval": "monthly",
-        "subscription_id": "sub_stripe_abc123",
-        "plan_name": "Pro Mensal",
-        "customer_id": "hash_cliente",
-    }
-)`;
-}
-
-function buildServerPhpCode(appUrl: string) {
-  return `<?php
-$payload = [
-    'key'             => getenv('GROWTHOS_API_KEY'),
-    'event_type'      => 'payment',
-    'gross_value'     => 97.00,
-    'billing_type'    => 'recurring',
-    'billing_interval'=> 'monthly',
-    'subscription_id' => 'sub_stripe_abc123',
-    'plan_name'       => 'Pro Mensal',
-    'customer_id'     => 'hash_cliente',
-];
-
-$ch = curl_init('${appUrl}/api/track');
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-curl_exec($ch);
-curl_close($ch);`;
-}
-
-const SERVER_STRIPE_WEBHOOK_CODE = `// pages/api/webhooks/stripe.ts (ou app/api/webhooks/stripe/route.ts)
-import Stripe from 'stripe'
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-
-export async function POST(req: Request) {
-  const sig = req.headers.get('stripe-signature')!
-  const body = await req.text()
-  const event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
-
-  if (event.type === 'invoice.payment_succeeded') {
-    const invoice = event.data.object as Stripe.Invoice
-
-    await fetch(process.env.GROWTHOS_API_URL + '/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        key: process.env.GROWTHOS_API_KEY,
-        event_type: 'payment',
-        gross_value: invoice.amount_paid / 100,
-        billing_type: 'recurring',
-        billing_interval: invoice.lines.data[0]?.plan?.interval ?? 'monthly',
-        subscription_id: invoice.subscription as string,
-        plan_id: invoice.lines.data[0]?.plan?.id ?? '',
-        plan_name: invoice.lines.data[0]?.description ?? '',
-        customer_id: invoice.customer as string,
-        timestamp: new Date(invoice.created * 1000).toISOString(),
-      }),
-    })
-  }
-
-  if (event.type === 'customer.subscription.deleted') {
-    const sub = event.data.object as Stripe.Subscription
-
-    await fetch(process.env.GROWTHOS_API_URL + '/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        key: process.env.GROWTHOS_API_KEY,
-        event_type: 'subscription_canceled',
-        subscription_id: sub.id,
-        customer_id: sub.customer as string,
-        timestamp: new Date().toISOString(),
-      }),
-    })
-  }
-
-  return new Response(null, { status: 200 })
-}`;
-
-const RECURRING_PAYMENT_CODE = `// Renovação mensal (via webhook do seu gateway)
-window.GrowthOS.track('payment', {
-  gross_value: 97.00,
-  payment_method: 'credit_card',
-
-  // campos de recorrência
-  billing_type: 'recurring',        // 'recurring' | 'one_time'
-  billing_interval: 'monthly',      // 'monthly' | 'yearly' | 'weekly'
-  subscription_id: 'sub_abc123',    // ID único da assinatura no seu sistema
-  plan_id: 'plan_pro',
-  plan_name: 'Pro Mensal',
-  customer_id: 'hash_cliente',
-})`;
-
-const RECURRING_CANCEL_CODE = `// Cancelamento de assinatura
-window.GrowthOS.track('subscription_canceled', {
-  subscription_id: 'sub_abc123',
-  customer_id: 'hash_cliente',
-})
-
-// Ou via servidor (webhook do Stripe, por exemplo)
-await fetch('/api/track', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    key: process.env.GROWTHOS_API_KEY,
-    event_type: 'subscription_canceled',
-    subscription_id: 'sub_abc123',
-    customer_id: 'hash_cliente',
-  }),
-})`;
-
-const RECURRING_CHANGED_CODE = `// Upgrade ou downgrade de plano
-window.GrowthOS.track('subscription_changed', {
-  subscription_id: 'sub_abc123',
-  plan_id: 'plan_enterprise',
-  plan_name: 'Enterprise Anual',
-  gross_value: 197.00,
-  billing_interval: 'yearly',
-  customer_id: 'hash_cliente',
-})`;
-
-const RECURRING_TYPES_CODE = `export type GrowthOSRecurringEventType =
-  | 'payment'              // com billing_type: 'recurring'
-  | 'subscription_canceled'
-  | 'subscription_changed'
-
-export type GrowthOSBillingType = 'recurring' | 'one_time'
-export type GrowthOSBillingInterval = 'monthly' | 'yearly' | 'weekly'
-
-// Campos adicionais no GrowthOSEventData para recorrência:
-export interface GrowthOSRecurringData {
-  billing_type?: GrowthOSBillingType
-  billing_interval?: GrowthOSBillingInterval
-  subscription_id?: string
-  plan_id?: string
-  plan_name?: string
-}`;
+import { cn } from "@/lib/utils";
 
 interface DocsContentProps {
   serverUrl: string;
 }
 
+// ─── Nav structure ────────────────────────────────────────────────────────────
+
+const NAV_GROUPS = [
+  {
+    label: "Início",
+    items: [
+      { value: "install", label: "Instalação", icon: IconPackage },
+      { value: "nextjs", label: "Next.js", icon: IconCode },
+      { value: "auto", label: "Auto-tracking" },
+    ],
+  },
+  {
+    label: "Eventos",
+    items: [
+      { value: "manual", label: "Eventos Manuais" },
+      { value: "reference", label: "Referência" },
+      { value: "attributes", label: "Data Attributes" },
+      { value: "dedup", label: "Deduplicação" },
+    ],
+  },
+  {
+    label: "Avançado",
+    items: [
+      { value: "server", label: "Server-Side", icon: IconServer },
+      { value: "recurring", label: "Recorrência", icon: IconRepeat },
+      { value: "i18n", label: "Multi-moeda", icon: IconWorld },
+    ],
+  },
+  {
+    label: "Referência",
+    items: [
+      { value: "typescript", label: "TypeScript" },
+      { value: "api", label: "API Reference" },
+      { value: "debug", label: "Debug", icon: IconBug },
+    ],
+  },
+];
+
+const ALL_TABS = NAV_GROUPS.flatMap((g) => g.items);
+
+// ─── Auto-captured context ────────────────────────────────────────────────────
+
+const AUTO_CONTEXT_ROWS = [
+  { name: "utm_source", source: "?utm_source na URL", example: "google" },
+  { name: "utm_medium", source: "?utm_medium na URL", example: "cpc" },
+  { name: "utm_campaign", source: "?utm_campaign na URL", example: "black-friday" },
+  { name: "utm_content", source: "?utm_content na URL", example: "banner-topo" },
+  { name: "landing_page", source: "window.location.pathname", example: "/convite/casamento" },
+  { name: "referrer", source: "document.referrer + inferência", example: "instagram.com" },
+  { name: "device", source: "navigator.userAgent", example: "mobile | desktop" },
+  { name: "session_id", source: "sessionStorage (anônimo, gerado)", example: "s_abc123" },
+];
+
+// ─── Code snippets ────────────────────────────────────────────────────────────
+
+const buildInstallHtml = (baseUrl: string) =>
+  `<script\n  async\n  src="${baseUrl}/tracker.js"\n  data-key="tok_xxx"\n></script>`;
+
+const buildInstallNextjs = (baseUrl: string) =>
+  `import Script from 'next/script'\n\nexport default function RootLayout({ children }) {\n  return (\n    <html>\n      <head />\n      <body>\n        {children}\n        <Script\n          src="${baseUrl}/tracker.js"\n          data-key={process.env.NEXT_PUBLIC_GROWTHOS_KEY}\n          strategy="afterInteractive"\n        />\n      </body>\n    </html>\n  )\n}`;
+
+const ENV_CODE = `NEXT_PUBLIC_GROWTHOS_KEY=tok_convitede_xxx`;
+
+const HOOK_CODE = `'use client'\n\nimport { useCallback } from 'react'\nimport type { GrowthOSEventType, GrowthOSEventData } from '@/types/growthos'\n\nexport function useTracker() {\n  const track = useCallback(\n    (eventType: GrowthOSEventType, data?: GrowthOSEventData) => {\n      if (typeof window === 'undefined') return\n      if (!window.GrowthOS) return\n      window.GrowthOS.track(eventType, data)\n    },\n    []\n  )\n  return { track }\n}`;
+
+const HOOK_USAGE = `'use client'\n\nimport { useTracker } from '@/hooks/use-tracker'\n\nexport function CheckoutButton({ product, price }) {\n  const { track } = useTracker()\n\n  const handleCheckout = async () => {\n    track('checkout_started', {\n      gross_value: price,\n      currency: 'BRL',\n      product_id: product.id,\n      product_name: product.name,\n    })\n    await openCheckout(product.id)\n  }\n\n  return <button onClick={handleCheckout}>Comprar R$ {price}</button>\n}`;
+
+const PAYMENT_CODE = `window.GrowthOS.track('payment', {\n  // Financeiro — obrigatório\n  gross_value: 150.00,\n  currency: 'BRL',          // ISO 4217 — sempre informe\n\n  // Financeiro — opcional mas recomendado\n  net_value: 140.00,        // após desconto, antes das taxas\n  discount: 10.00,          // desconto em reais\n  gateway_fee: 4.50,        // taxa Pagar.me, Stripe, etc\n  installments: 1,\n  payment_method: 'pix',    // pix | credit_card | boleto | debit_card\n\n  // Produto\n  product_id: 'template-casamento-001',\n  product_name: 'Convite Casamento Premium',\n  category: 'casamento',\n\n  // Cliente\n  customer_type: 'new',     // new | returning\n  customer_id: 'hash_anonimo',\n  customer_segment: 'premium',\n  customer_cohort: '2024-Q1',\n})`;
+
+const RECURRING_PAYMENT = `// Primeiro pagamento de assinatura\nwindow.GrowthOS.track('payment', {\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_type: 'recurring',\n  billing_interval: 'monthly',\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  plan_name: 'Pro Mensal',\n  customer_id: 'hash_cliente',\n})\n\n// Cancelamento de assinatura\nwindow.GrowthOS.track('subscription_canceled', {\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_interval: 'monthly',\n  reason: 'user_canceled', // user_canceled | payment_failed | upgraded | downgraded\n})\n\n// Upgrade de plano\nwindow.GrowthOS.track('subscription_changed', {\n  subscription_id: 'sub_abc123',\n  previous_plan_id: 'plan_basic',\n  new_plan_id: 'plan_pro',\n  previous_value: 49.00,\n  new_value: 89.00,\n  billing_interval: 'monthly',\n  currency: 'BRL',\n})`;
+
+const SERVER_FETCH = `// Node.js / Next.js — renovação mensal às 3h da manhã\nawait fetch(\`\${process.env.GROWTHOS_URL}/api/track\`, {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    key: process.env.GROWTHOS_API_KEY,\n    event_type: 'payment',\n    gross_value: 89.00,\n    currency: 'BRL',\n    billing_type: 'recurring',\n    billing_interval: 'monthly',\n    subscription_id: subscription.id,\n    plan_id: subscription.planId,\n    customer_id: hashCustomerId(subscription.customerId),\n  }),\n})`;
+
+const SERVER_CURL = `curl -X POST https://growthos.app/api/track \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "key": "tok_convitede_xxx",\n    "event_type": "payment",\n    "gross_value": 89.00,\n    "currency": "BRL",\n    "billing_type": "recurring",\n    "subscription_id": "sub_abc123"\n  }'`;
+
+const SERVER_PYTHON = `import requests\n\nrequests.post('https://growthos.app/api/track', json={\n    'key': 'tok_convitede_xxx',\n    'event_type': 'payment',\n    'gross_value': 89.00,\n    'currency': 'BRL',\n    'billing_type': 'recurring',\n    'subscription_id': 'sub_abc123',\n})`;
+
+const DATA_ATTRS = `<!-- Botão de pagamento -->\n<button\n  data-growthos="payment"\n  data-growthos-value="89.90"\n  data-growthos-currency="BRL"\n  data-growthos-product_id="template-001"\n  data-growthos-product_name="Convite Casamento"\n  data-growthos-payment_method="pix"\n>\n  Pagar com PIX\n</button>\n\n<!-- Cadastro -->\n<button\n  data-growthos="signup"\n  data-growthos-customer_type="new"\n>\n  Criar conta grátis\n</button>`;
+
+const TYPES_CODE = `// src/types/growthos.d.ts\n\nexport type GrowthOSEventType =\n  | 'pageview'\n  | 'signup'\n  | 'trial_started'\n  | 'checkout_started'\n  | 'checkout_abandoned'\n  | 'payment'\n  | 'subscription_canceled'\n  | 'subscription_changed'\n\nexport type GrowthOSCurrency = 'BRL' | 'USD' | 'EUR' | 'GBP' | 'ARS' | string\nexport type GrowthOSPaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'boleto' | string\nexport type GrowthOSBillingInterval = 'monthly' | 'yearly' | 'weekly'\nexport type GrowthOSBillingType = 'recurring' | 'one_time'\nexport type GrowthOSCustomerType = 'new' | 'returning'\n\nexport interface GrowthOSEventData {\n  // Financeiro\n  gross_value?: number\n  net_value?: number\n  discount?: number\n  gateway_fee?: number\n  installments?: number\n  payment_method?: GrowthOSPaymentMethod\n  currency?: GrowthOSCurrency      // ISO 4217 — padrão: moeda da org\n\n  // Produto\n  product_id?: string\n  product_name?: string\n  category?: string\n\n  // Cliente\n  customer_type?: GrowthOSCustomerType\n  customer_id?: string             // hash anônimo — NUNCA email/CPF\n  customer_segment?: string\n  customer_cohort?: string\n\n  // Recorrência\n  billing_type?: GrowthOSBillingType\n  billing_interval?: GrowthOSBillingInterval\n  subscription_id?: string\n  plan_id?: string\n  plan_name?: string\n\n  // Subscription events\n  previous_plan_id?: string\n  new_plan_id?: string\n  previous_value?: number\n  new_value?: number\n  reason?: 'user_canceled' | 'payment_failed' | 'upgraded' | 'downgraded' | 'exit' | 'timeout'\n\n  // Livre\n  metadata?: Record<string, unknown>\n}\n\ndeclare global {\n  interface Window {\n    GrowthOS: {\n      track: (eventType: GrowthOSEventType, data?: GrowthOSEventData) => void\n    }\n  }\n}`;
+
+const DEBUG_CODE = `// 1 — Verificar se o tracker carregou\nconsole.log(window.GrowthOS)\n// → { track: ƒ }\n\n// 2 — Disparar evento de teste\nwindow.GrowthOS.track('pageview')\n// → Network: POST /api/track 204\n\n// 3 — Evento com moeda\nwindow.GrowthOS.track('payment', {\n  gross_value: 1.00,\n  currency: 'BRL',\n  product_name: 'Teste'\n})\n// Verificar em Dados → Eventos`;
+
+const DEDUP_CODE = `// ── Client-side: opção dedupe ───────────────────────────────────────────────\n\n// Usando dedupe: true  →  1 evento por tipo por sessão\nwindow.GrowthOS.track('signup', { dedupe: true })\n\n// Usando dedupe: <id>  →  1 evento por ID por sessão (mais preciso)\nwindow.GrowthOS.track('payment', {\n  gross_value: 89.00,\n  dedupe: \`payment-\${invoice.id}\`,  // ← ignorado se já enviado nesta sessão\n})\n\n// ── Server-side: hash automático ─────────────────────────────────────────────\n// O servidor calcula um hash de (event_type + customer_id + gross_value +\n// product_id + subscription_id) em janelas de 5 minutos.\n// Envios idênticos na mesma janela retornam 204 com X-GrowthOS-Duplicate: true\n// e NÃO são registrados novamente.\n\nawait fetch('/api/track', {\n  body: JSON.stringify({\n    key: 'tok_xxx',\n    event_type: 'payment',\n    gross_value: 89.00,\n    customer_id: 'usr_abc123',   // ← inclua sempre para dedup eficaz\n    subscription_id: 'sub_xyz',  // ← ou product_id em pagamentos únicos\n  })\n})`;
+
+// ─── Checklist items ──────────────────────────────────────────────────────────
+
+const CHECKLIST = [
+  { label: "Script carregou sem erro no Network", detail: "Network → tracker.js → status 200" },
+  { label: "window.GrowthOS existe no console", detail: "typeof window.GrowthOS === 'object'" },
+  { label: "UTMs capturados corretamente", detail: "Acesse /?utm_source=teste e confira o payload no Network" },
+  { label: "POST /api/track retorna 204", detail: "Disparar evento manual e verificar no Network" },
+  { label: "Currency presente em eventos financeiros", detail: "Payload deve ter currency: 'BRL' (ou a moeda da venda)" },
+  { label: "Dados aparecem em Dados → Eventos", detail: "Aguardar até 30s e atualizar a tela" },
+  { label: "Sem PII nos payloads", detail: "Nunca enviar email, CPF ou nome em customer_id" },
+];
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export function DocsContent({ serverUrl }: DocsContentProps) {
-  const appUrl =
-    typeof window !== "undefined" ? window.location.origin : serverUrl;
+  const [active, setActive] = useState("install");
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return ALL_TABS;
+    return ALL_TABS.filter((t) =>
+      t.label.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [search]);
 
   return (
-    <Tabs defaultValue="install" className="flex gap-0 h-full">
-      <div className="w-52 shrink-0 border-r border-border pr-4 pt-6 sticky top-0 h-[calc(100vh-57px)] overflow-y-auto">
-        <TabsList className="flex flex-col h-auto bg-transparent gap-0.5 items-start w-full p-0">
-          {[
-            { value: "install", label: "Instalação" },
-            { value: "nextjs", label: "Next.js" },
-            { value: "auto", label: "Auto-tracking" },
-            { value: "manual", label: "Eventos Manuais" },
-            { value: "reference", label: "Referência" },
-            { value: "attributes", label: "Data Attributes" },
-            { value: "dedupe", label: "Deduplicação" },
-            { value: "typescript", label: "TypeScript" },
-            { value: "api", label: "API Reference" },
-            { value: "serverside", label: "Server-Side" },
-            { value: "recurring", label: "Recorrência" },
-            { value: "debug", label: "Debug" },
-            { value: "i18n", label: "Multi-moeda" },
-          ].map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              className="w-full justify-start text-sm px-3 py-2 rounded-md data-[state=active]:bg-muted data-[state=active]:text-foreground text-muted-foreground"
-            >
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+    <Tabs
+      value={active}
+      onValueChange={setActive}
+      className="flex h-full"
+    >
+      {/* ── Sidebar ── */}
+      <div className="w-60 shrink-0 flex flex-col border-r border-zinc-800/50 overflow-y-auto">
+        {/* Title + Search */}
+        <div className="px-4 pt-4 pb-3 border-b border-zinc-800/50 space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-500/20 ring-1 ring-indigo-500/30 shrink-0">
+              <IconBolt size={12} className="text-indigo-400" />
+            </div>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-sm font-semibold text-zinc-100 truncate">Tracker Docs</span>
+              <span className="font-mono text-[10px] border border-zinc-700 text-zinc-500 px-1.5 py-px rounded shrink-0">v1.0</span>
+            </div>
+          </div>
+          <div className="relative">
+            <IconSearch
+              size={13}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-600"
+            />
+            <Input
+              placeholder="Buscar..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-7 h-7 text-xs bg-zinc-900 border-zinc-800 text-zinc-300 placeholder:text-zinc-600 focus-visible:ring-indigo-500/30"
+            />
+          </div>
+        </div>
+
+        {/* Nav */}
+        <div className="flex-1 py-4 px-3">
+          {search.trim() ? (
+            // Search results flat
+            <div className="space-y-0.5">
+              {filtered.length > 0 ? (
+                filtered.map((item) => (
+                  <NavItem
+                    key={item.value}
+                    item={item}
+                    active={active}
+                    onSelect={setActive}
+                  />
+                ))
+              ) : (
+                <p className="text-xs text-zinc-600 px-2 py-2">Nenhum resultado</p>
+              )}
+            </div>
+          ) : (
+            // Grouped nav
+            <div className="space-y-5">
+              {NAV_GROUPS.map((group) => (
+                <div key={group.label}>
+                  <p className="px-2 mb-1.5 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+                    {group.label}
+                  </p>
+                  <div className="space-y-px">
+                    {group.items.map((item) => (
+                      <NavItem
+                        key={item.value}
+                        item={item}
+                        active={active}
+                        onSelect={setActive}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="flex-1 min-w-0 pl-10 pt-6 pb-20 overflow-y-auto">
-        {/* Instalação */}
-        <TabsContent value="install" className="mt-0 space-y-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-xl font-semibold tracking-tight">
-                Instalação
-              </h2>
-              <Badge variant="secondary">2 linhas</Badge>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+      {/* ── Content ── */}
+      <TabsList className="hidden" />
+      <div className="flex-1 min-w-0 overflow-y-auto">
+        <div className="max-w-4xl px-8 py-6 pb-20">
+
+          {/* INSTALAÇÃO */}
+          <TabsContent value="install" className="mt-0 space-y-6">
+            <SectionHeader title="Instalação" badge="2 linhas" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
               Adicione o script no{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                {"<head>"}
-              </code>{" "}
-              de qualquer página. Substitua{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-green-600 dark:text-green-400">
-                tok_xxx
-              </code>{" "}
-              pela API key disponível em Configurações.
+              <Mono>{"<head>"}</Mono> de qualquer página. Substitua{" "}
+              <Mono className="text-green-400">tok_xxx</Mono> pela API key disponível em{" "}
+              <strong className="text-zinc-300">Configurações → API Keys</strong>.
             </p>
-          </div>
 
-          <CodeBlock
-            code={buildInstallHtml(appUrl)}
-            lang="html"
-            title="Qualquer sistema HTML"
-          />
+            <CodeBlock code={buildInstallHtml(serverUrl)} lang="html" title="Qualquer sistema HTML" />
 
-          <Callout type="tip">
-            O atributo <code className="font-mono text-xs">async</code> garante
-            que o script é carregado em paralelo, sem bloquear o parsing do HTML
-            nem atrasar o <code className="font-mono text-xs">LCP</code> da
-            página. O tracker só executa após o download, sem nenhum impacto no
-            desempenho do site.
-          </Callout>
-
-          <Callout type="info">
-            Instale <strong>antes</strong> de qualquer outro script para
-            garantir que UTMs e referrer sejam capturados desde o primeiro
-            carregamento.
-          </Callout>
-
-          <Separator />
-
-          <div>
-            <h3 className="text-xs font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
-              Atributos do script
-            </h3>
-            <div className="rounded-lg border border-border overflow-hidden">
-              <div className="grid grid-cols-4 text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-2.5 bg-muted/40 border-b border-border">
-                <span>atributo</span>
-                <span>obrigatório</span>
-                <span className="col-span-2">descrição / exemplo</span>
-              </div>
-              {SCRIPT_ATTRS_ROWS.map((row) => (
-                <div
-                  key={row.name}
-                  className="grid grid-cols-4 text-sm px-4 py-3 border-b border-border last:border-0 hover:bg-muted/20"
-                >
-                  <code className="font-mono text-xs text-blue-600 dark:text-blue-400">
-                    {row.name}
-                  </code>
-                  <span className="text-xs text-muted-foreground">
-                    {row.required}
-                  </span>
-                  <span className="col-span-2 text-xs text-muted-foreground">
-                    {row.description}{" "}
-                    <code className="font-mono text-xs text-green-600 dark:text-green-400">
-                      {row.example}
-                    </code>
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <Separator />
-
-          <div>
-            <h3 className="text-xs font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
-              O que é capturado automaticamente
-            </h3>
-            <AutoPropTable rows={AUTO_CONTEXT_ROWS} />
-          </div>
-        </TabsContent>
-
-        {/* Next.js */}
-        <TabsContent value="nextjs" className="mt-0 space-y-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-xl font-semibold tracking-tight">
-                Integração Next.js
-              </h2>
-              <Badge variant="secondary">App Router</Badge>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Use o componente{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                Script
-              </code>{" "}
-              do Next.js no{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                layout.tsx
-              </code>{" "}
-              raiz.
-            </p>
-          </div>
-
-          <CodeBlock
-            code={buildInstallNextjs(appUrl)}
-            lang="tsx"
-            title="app/layout.tsx"
-          />
-          <CodeBlock code={ENV_CODE} lang="bash" title=".env.local" />
-
-          <Callout type="warn">
-            Use{" "}
-            <code className="font-mono text-xs">
-              {`strategy="afterInteractive"`}
-            </code>{" "}
-            para não bloquear o carregamento. Os UTMs da URL são capturados
-            corretamente mesmo com essa estratégia.
-          </Callout>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Hook reutilizável (recomendado)
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Crie um hook para não depender de{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                window
-              </code>{" "}
-              diretamente nos componentes. Fica tipado e seguro para SSR.
-            </p>
-            <CodeBlock
-              code={HOOK_CODE}
-              lang="ts"
-              title="hooks/use-tracker.ts"
-            />
-            <CodeBlock
-              code={HOOK_USAGE_CODE}
-              lang="tsx"
-              title="Usando em um componente"
-            />
-          </div>
-        </TabsContent>
-
-        {/* Auto-tracking */}
-        <TabsContent value="auto" className="mt-0 space-y-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-xl font-semibold tracking-tight">
-                Auto-Tracking
-              </h2>
-              <Badge variant="secondary">zero config</Badge>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              O tracker detecta e envia alguns eventos automaticamente, sem
-              nenhum código adicional. Esses eventos aparecem em todas as
-              métricas do dashboard assim que o script está instalado.
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-border overflow-hidden">
-            <div className="grid grid-cols-3 text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-2.5 bg-muted/40 border-b border-border">
-              <span>Evento</span>
-              <span>Quando dispara</span>
-              <span>Dados automáticos</span>
-            </div>
-            {[
-              [
-                "pageview",
-                "Carregamento inicial da página (window load)",
-                "landing_page, referrer, device, UTMs, session_id",
-              ],
-              [
-                "pageview",
-                "Navegação SPA — history.pushState, replaceState ou popstate",
-                "nova landing_page, mantém session_id e UTMs da sessão",
-              ],
-              [
-                "checkout_abandoned",
-                "Fechamento de aba/navegador após checkout_started (beforeunload + sendBeacon)",
-                "dados do último checkout_started + reason: 'exit'",
-              ],
-            ].map(([event, when, data], i) => (
-              <div
-                key={i}
-                className="grid grid-cols-3 text-sm px-4 py-3 border-b border-border last:border-0 hover:bg-muted/20"
-              >
-                <code className="font-mono text-xs text-blue-600 dark:text-blue-400">
-                  {event}
-                </code>
-                <span className="text-muted-foreground text-xs">{when}</span>
-                <span className="text-xs text-muted-foreground">{data}</span>
-              </div>
-            ))}
-          </div>
-
-          <Callout type="tip">
-            O evento{" "}
-            <code className="font-mono text-xs">pageview</code> é injetado
-            automaticamente como a primeira etapa do funil em{" "}
-            <strong>todas as métricas</strong> — Visão Geral, Gráfico Diário,
-            Canais e Landing Pages. A coluna{" "}
-            <strong>Visitas</strong> aparece sem nenhuma configuração extra,
-            e a taxa de conversão{" "}
-            <strong>Visitas → Cadastros</strong> é calculada automaticamente.
-          </Callout>
-
-          <Callout type="info">
-            O evento{" "}
-            <code className="font-mono text-xs">checkout_abandoned</code>{" "}
-            aparece como o card{" "}
-            <strong>Abandonos</strong> nos KPIs da Visão Geral, visível sempre
-            que houver ao menos um abandono no período selecionado.
-          </Callout>
-
-          <Callout type="info">
-            Você nunca precisa passar manualmente:{" "}
-            <code className="font-mono text-xs">source</code>,{" "}
-            <code className="font-mono text-xs">medium</code>,{" "}
-            <code className="font-mono text-xs">campaign</code>,{" "}
-            <code className="font-mono text-xs">landing_page</code>,{" "}
-            <code className="font-mono text-xs">device</code>,{" "}
-            <code className="font-mono text-xs">referrer</code> ou{" "}
-            <code className="font-mono text-xs">session_id</code>. O tracker já
-            os captura e faz merge automaticamente em todo evento.
-          </Callout>
-
-          <Separator />
-
-          <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              SPA Tracking , como funciona
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              O tracker intercepta{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                history.pushState
-              </code>
-              ,{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                history.replaceState
-              </code>{" "}
-              e o evento{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                popstate
-              </code>
-              . Um{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                pageview
-              </code>{" "}
-              é disparado automaticamente sempre que o pathname muda , sem
-              nenhuma configuração extra.
-            </p>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Auto-detecção de checkout_abandoned
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Quando{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                checkout_started
-              </code>{" "}
-              é disparado, o tracker salva os dados em{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                sessionStorage
-              </code>
-              . Se o usuário fechar a aba antes de um{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                payment
-              </code>
-              , o listener{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                beforeunload
-              </code>{" "}
-              envia o evento via{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                navigator.sendBeacon
-              </code>
-              . Para desabilitar, use{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                {`data-auto-abandon="false"`}
-              </code>{" "}
-              no script.
-            </p>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Fila offline
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Se o envio falhar por queda de rede, o evento é salvo em{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                localStorage
-              </code>{" "}
-              (chave{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                growthos_queue
-              </code>
-              , máximo 50 itens). No próximo carregamento de página o tracker
-              faz flush automático da fila antes de registrar novos eventos.
-            </p>
-          </div>
-        </TabsContent>
-
-        {/* Eventos Manuais */}
-        <TabsContent value="manual" className="mt-0 space-y-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-xl font-semibold tracking-tight">
-                Eventos Manuais
-              </h2>
-              <Badge variant="outline" className="font-mono text-xs">
-                window.GrowthOS.track
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Para eventos que dependem de lógica do servidor , como confirmação
-              de pagamento , use o método manual após a resposta da API.
-            </p>
-          </div>
-
-          <CodeBlock
-            code={PAYMENT_CODE}
-            lang="js"
-            title="payment , mais importante"
-          />
-
-          <Callout type="tip">
-            Dispare <code className="font-mono text-xs">payment</code> somente
-            após confirmação do servidor. Disparar no clique do botão gera dados
-            incorretos caso o pagamento seja recusado.
-          </Callout>
-
-          <Callout type="info">
-            <strong>O campo discount alimenta o P&L automaticamente.</strong> O
-            valor de{" "}
-            <code className="font-mono text-xs">discount</code> enviado em cada
-            evento é deduzido da Receita Bruta em tempo real, aparecendo como{" "}
-            <em>Descontos</em> nas telas <strong>Financeiro</strong> e{" "}
-            <strong>Custos</strong>. Para taxas de gateway, impostos, comissões
-            ou despesas fixas, acesse{" "}
-            <strong>Custos</strong> no menu lateral e cadastre-os como custos
-            fixos ou variáveis — eles serão combinados com os descontos do
-            evento para compor o P&L completo.
-          </Callout>
-
-          <CodeBlock
-            code={CHECKOUT_STARTED_CODE}
-            lang="js"
-            title="checkout_started , habilita auto-abandon"
-          />
-
-          <Callout type="info">
-            <code className="font-mono text-xs">checkout_started</code> é o
-            pré-requisito para o auto-abandonment funcionar. Sem ele, o tracker
-            não tem dados para enviar no{" "}
-            <code className="font-mono text-xs">beforeunload</code>.
-          </Callout>
-
-          <CodeBlock code={SIGNUP_CODE} lang="js" title="signup" />
-          <CodeBlock
-            code={ABANDONED_CODE}
-            lang="js"
-            title="checkout_abandoned , receita perdida"
-          />
-        </TabsContent>
-
-        {/* Referência */}
-        <TabsContent value="reference" className="mt-0 space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight mb-1">
-              Referência de Eventos
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Todos os eventos suportados e suas propriedades.{" "}
-              <span className="text-destructive">*</span> = obrigatório.
-            </p>
-          </div>
-
-          <div className="space-y-5">
-            <EventCard
-              name="pageview"
-              description="Visualização de página. Disparado automaticamente pelo tracker , manual só se necessário."
-              variant="secondary"
-              props={[]}
-            />
-
-            <EventCard
-              name="payment"
-              description="Pagamento confirmado. Alimenta faturamento, P&L, ticket médio e ROAS."
-              variant="default"
-              props={[
-                {
-                  name: "gross_value",
-                  type: "number",
-                  required: true,
-                  description: "Valor bruto cobrado (em reais)",
-                  example: "150.00",
-                },
-                {
-                  name: "discount",
-                  type: "number",
-                  description: "Desconto aplicado (em reais). Deduzido automaticamente no P&L como evento de custo.",
-                  example: "10.00",
-                },
-                {
-                  name: "installments",
-                  type: "number",
-                  description: "Número de parcelas",
-                  example: "3",
-                },
-                {
-                  name: "payment_method",
-                  type: "string",
-                  description: "pix | credit_card | boleto | debit_card",
-                  example: "'pix'",
-                },
-                {
-                  name: "product_id",
-                  type: "string",
-                  description: "ID único do produto",
-                  example: "'template-001'",
-                },
-                {
-                  name: "product_name",
-                  type: "string",
-                  description: "Nome legível do produto",
-                  example: "'Convite Casamento'",
-                },
-                {
-                  name: "category",
-                  type: "string",
-                  description: "Categoria do produto",
-                  example: "'casamento'",
-                },
-                {
-                  name: "customer_type",
-                  type: "string",
-                  description: "new | returning",
-                  example: "'new'",
-                },
-                {
-                  name: "customer_id",
-                  type: "string",
-                  description: "Hash anônimo (nunca PII)",
-                  example: "'hash_abc'",
-                },
-                {
-                  name: "billing_type",
-                  type: "string",
-                  description: "recurring | one_time. Use 'recurring' com subscription_id para assinaturas.",
-                  example: "'recurring'",
-                },
-                {
-                  name: "billing_interval",
-                  type: "string",
-                  description: "monthly | yearly | weekly. Obrigatório quando billing_type = 'recurring'.",
-                  example: "'monthly'",
-                },
-                {
-                  name: "subscription_id",
-                  type: "string",
-                  description: "ID único da assinatura no seu sistema. Obrigatório para recorrência.",
-                  example: "'sub_abc123'",
-                },
-                {
-                  name: "plan_id",
-                  type: "string",
-                  description: "ID do plano contratado",
-                  example: "'plan_pro'",
-                },
-                {
-                  name: "plan_name",
-                  type: "string",
-                  description: "Nome legível do plano",
-                  example: "'Pro Mensal'",
-                },
-              ]}
-            />
-
-            <EventCard
-              name="signup"
-              description="Novo cadastro. Calcula taxa de conversão e CAC."
-              variant="secondary"
-              props={[
-                {
-                  name: "customer_type",
-                  type: "string",
-                  description: "new | returning",
-                  example: "'new'",
-                },
-                {
-                  name: "customer_id",
-                  type: "string",
-                  description: "Hash anônimo",
-                  example: "'hash_abc'",
-                },
-              ]}
-            />
-
-            <EventCard
-              name="checkout_started"
-              description="Início do checkout. Habilita detecção automática de abandono via beforeunload."
-              variant="outline"
-              props={[
-                {
-                  name: "gross_value",
-                  type: "number",
-                  description: "Valor no carrinho (em reais)",
-                  example: "89.00",
-                },
-                {
-                  name: "product_id",
-                  type: "string",
-                  description: "ID do produto",
-                  example: "'template-001'",
-                },
-                {
-                  name: "product_name",
-                  type: "string",
-                  description: "Nome do produto",
-                  example: "'Convite Casamento'",
-                },
-              ]}
-            />
-
-            <EventCard
-              name="checkout_abandoned"
-              description="Checkout não concluído. Representa receita perdida no P&L. Pode ser disparado automaticamente."
-              variant="destructive"
-              props={[
-                {
-                  name: "gross_value",
-                  type: "number",
-                  description: "Valor que não converteu (em reais)",
-                  example: "89.00",
-                },
-                {
-                  name: "product_id",
-                  type: "string",
-                  description: "ID do produto",
-                  example: "'template-001'",
-                },
-                {
-                  name: "reason",
-                  type: "string",
-                  description: "exit | payment_failed | timeout",
-                  example: "'exit'",
-                },
-              ]}
-            />
-
-            <EventCard
-              name="trial_started"
-              description="Início de período trial. Usado no funil customizável por organização."
-              variant="secondary"
-              props={[
-                {
-                  name: "product_id",
-                  type: "string",
-                  description: "Plano ou produto trial",
-                  example: "'plano-pro'",
-                },
-              ]}
-            />
-          </div>
-        </TabsContent>
-
-        {/* Data Attributes */}
-        <TabsContent value="attributes" className="mt-0 space-y-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-xl font-semibold tracking-tight">
-                Data Attributes
-              </h2>
-              <Badge variant="secondary">sem JavaScript</Badge>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Para elementos HTML que disparam eventos sem código JS. Útil em
-              templates, páginas estáticas e sistemas sem acesso ao JS.
-            </p>
-          </div>
-
-          <CodeBlock
-            code={DATA_ATTRS_CODE}
-            lang="html"
-            title="HTML , data attributes"
-          />
-
-          <div className="rounded-lg border border-border overflow-hidden">
-            <div className="grid grid-cols-3 text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-2.5 bg-muted/40 border-b border-border">
-              <span>Atributo</span>
-              <span>Equivalente JS</span>
-              <span>Notas</span>
-            </div>
-            {[
-              [
-                "data-growthos",
-                "eventType",
-                "Obrigatório. Define o tipo do evento",
-              ],
-              [
-                "data-growthos-value",
-                "gross_value",
-                "Converte ponto decimal automaticamente",
-              ],
-              ["data-growthos-product_id", "product_id", ""],
-              ["data-growthos-product_name", "product_name", ""],
-              ["data-growthos-category", "category", ""],
-              ["data-growthos-payment_method", "payment_method", ""],
-              ["data-growthos-customer_type", "customer_type", ""],
-              [
-                "data-growthos-dedupe",
-                "dedupe",
-                "true = deduplica por event_type. String = chave customizada",
-              ],
-            ].map(([attr, js, note]) => (
-              <div
-                key={attr}
-                className="grid grid-cols-3 text-sm px-4 py-3 border-b border-border last:border-0 hover:bg-muted/20"
-              >
-                <code className="font-mono text-xs text-blue-600 dark:text-blue-400">
-                  {attr}
-                </code>
-                <code className="font-mono text-xs text-green-600 dark:text-green-400">
-                  {js}
-                </code>
-                <span className="text-xs text-muted-foreground">{note}</span>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Deduplicação */}
-        <TabsContent value="dedupe" className="mt-0 space-y-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-xl font-semibold tracking-tight">
-                Deduplicação de Eventos
-              </h2>
-              <Badge variant="secondary">session-scoped</Badge>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Em aplicações React, o{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                useEffect
-              </code>{" "}
-              pode disparar duas vezes no StrictMode (desenvolvimento) ou
-              sempre que um componente remonta. O campo{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                dedupe
-              </code>{" "}
-              garante que o evento chegue ao GrowthOS apenas uma vez por sessão
-              (aba/navegador).
-            </p>
-          </div>
-
-          <Callout type="info">
-            A chave de deduplicação é armazenada em{" "}
-            <code className="font-mono text-xs">sessionStorage</code> e nunca
-            enviada à API. Ela é descartada automaticamente quando a aba é
-            fechada.
-          </Callout>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              dedupe: true — deduplicar por tipo de evento
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Usa o próprio{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                event_type
-              </code>{" "}
-              como chave. Ideal quando cada tipo de evento deve ocorrer no
-              máximo uma vez por sessão.
-            </p>
-            <CodeBlock code={DEDUPE_BOOL_CODE} lang="js" title="Exemplo básico" />
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              dedupe: &quot;chave&quot; — deduplicar por chave customizada
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Passa uma string como chave. Útil quando o mesmo tipo de evento
-              pode ocorrer para diferentes produtos e você quer deduplicar
-              apenas um caso específico, como um pedido.
-            </p>
-            <CodeBlock code={DEDUPE_KEY_CODE} lang="js" title="Chave customizada" />
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Uso com React + useEffect
-            </h3>
-            <CodeBlock
-              code={DEDUPE_HOOK_CODE}
-              lang="tsx"
-              title="Componente Next.js / React"
-            />
             <Callout type="tip">
-              <code className="font-mono text-xs">dedupe: true</code> é a
-              solução recomendada para qualquer{" "}
-              <code className="font-mono text-xs">track()</code> dentro de{" "}
-              <code className="font-mono text-xs">useEffect</code> sem
-              dependências ou com dependências estáveis que remontam.
+              Instale <strong>antes</strong> de qualquer outro script para garantir que UTMs e referrer sejam capturados desde o primeiro carregamento.
             </Callout>
-          </div>
 
-          <Separator />
+            <SubSection title="Atributos do script">
+              <AttrTable rows={[
+                { name: "data-key", required: "sim", desc: "API key da organização. Obtida em Configurações.", example: "tok_convitede_xxx" },
+                { name: "data-debug", required: "não", desc: 'Habilita logs no console: "[GrowthOS] track: evento {...}".', example: "true" },
+                { name: "data-auto-abandon", required: "não", desc: "Desabilita detecção automática de checkout_abandoned no beforeunload.", example: "false" },
+              ]} />
+            </SubSection>
 
-          <div className="space-y-4">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Data Attributes
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Use{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                data-growthos-dedupe
-              </code>{" "}
-              em elementos HTML para deduplicar sem JavaScript.
+            <SubSection title="O que é capturado automaticamente">
+              <AutoPropTable rows={AUTO_CONTEXT_ROWS} />
+            </SubSection>
+          </TabsContent>
+
+          {/* NEXT.JS */}
+          <TabsContent value="nextjs" className="mt-0 space-y-6">
+            <SectionHeader title="Next.js" badge="App Router" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Use o componente <Mono>Script</Mono> do Next.js no{" "}
+              <Mono>layout.tsx</Mono> raiz com <Mono>strategy=&quot;afterInteractive&quot;</Mono>.
             </p>
-            <CodeBlock
-              code={DEDUPE_ATTRS_CODE}
-              lang="html"
-              title="HTML — data-growthos-dedupe"
-            />
-          </div>
 
-          <Separator />
+            <CodeBlock code={buildInstallNextjs(serverUrl)} lang="tsx" title="app/layout.tsx" />
+            <CodeBlock code={ENV_CODE} lang="bash" title=".env.local" />
 
-          <div className="space-y-4">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              GrowthOS.clearDedupe()
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Reseta todas as chaves de deduplicação da sessão atual. Útil em
-              testes ou quando o usuário realiza uma ação que permite reenvio
-              intencional de um evento.
-            </p>
-            <CodeBlock
-              code={DEDUPE_CLEAR_CODE}
-              lang="js"
-              title="Resetar e inspecionar"
-            />
-          </div>
-
-          <Callout type="warn">
-            <code className="font-mono text-xs">dedupe</code> é scoped por aba
-            — se o usuário abrir o site em duas abas diferentes, cada aba tem
-            seu próprio estado de deduplicação. Isso é o comportamento esperado:
-            cada sessão é independente.
-          </Callout>
-        </TabsContent>
-
-        {/* TypeScript */}
-        <TabsContent value="typescript" className="mt-0 space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight mb-1">
-              TypeScript
-            </h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Copie para{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                src/types/growthos.d.ts
-              </code>{" "}
-              para ter tipagem completa no projeto.
-            </p>
-          </div>
-
-          <CodeBlock
-            code={TYPES_CODE}
-            lang="ts"
-            title="src/types/growthos.d.ts"
-          />
-        </TabsContent>
-
-        {/* API Reference */}
-        <TabsContent value="api" className="mt-0 space-y-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h2 className="text-xl font-semibold tracking-tight">
-                API Reference
-              </h2>
-              <Badge variant="outline" className="font-mono text-xs">
-                POST /api/track
-              </Badge>
-            </div>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Endpoint que recebe eventos do{" "}
-              <code className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
-                tracker.js
-              </code>
-              . Pode ser chamado diretamente se necessário , por exemplo, para
-              importar dados históricos ou disparar eventos server-side.
-            </p>
-          </div>
-
-          <div className="rounded-lg border border-border overflow-hidden">
-            <div className="grid grid-cols-3 text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-2.5 bg-muted/40 border-b border-border">
-              <span>Limite</span>
-              <span>Valor</span>
-              <span>Comportamento ao exceder</span>
-            </div>
-            {[
-              ["Rate limit", "1.000 req/min por API key", "HTTP 429"],
-              ["Tamanho do payload", "64 KB", "HTTP 413"],
-              [
-                "Chaves em metadata",
-                "20 chaves máximo",
-                "Excedentes são descartados",
-              ],
-              [
-                "Tamanho de string em metadata",
-                "500 caracteres",
-                "Truncado silenciosamente",
-              ],
-              [
-                "Tipos aceitos em metadata",
-                "string, number, boolean, null",
-                "Outros tipos são descartados",
-              ],
-            ].map(([limit, value, behavior]) => (
-              <div
-                key={limit}
-                className="grid grid-cols-3 text-sm px-4 py-3 border-b border-border last:border-0 hover:bg-muted/20"
-              >
-                <span className="text-xs font-medium">{limit}</span>
-                <code className="font-mono text-xs text-yellow-600 dark:text-yellow-400">
-                  {value}
-                </code>
-                <span className="text-xs text-muted-foreground">
-                  {behavior}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <Callout type="tip">
-            Valores monetários devem ser enviados em <strong>reais</strong> (ex:{" "}
-            <code className="font-mono text-xs">150.00</code>). A API converte
-            automaticamente para centavos antes de armazenar no banco.
-          </Callout>
-
-          <CodeBlock
-            code={API_PAYLOAD_CODE}
-            lang="http"
-            title="Payload completo"
-          />
-
-          <div>
-            <h3 className="text-xs font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
-              Respostas
-            </h3>
-            <div className="rounded-lg border border-border overflow-hidden">
-              <div className="grid grid-cols-3 text-xs font-medium text-muted-foreground uppercase tracking-wider px-4 py-2.5 bg-muted/40 border-b border-border">
-                <span>Status</span>
-                <span>Significado</span>
-                <span>Descrição</span>
-              </div>
-              {API_RESPONSES_ROWS.map((row) => (
-                <div
-                  key={row.status}
-                  className="grid grid-cols-3 text-sm px-4 py-3 border-b border-border last:border-0 hover:bg-muted/20"
-                >
-                  <code
-                    className={`font-mono text-xs font-semibold ${
-                      row.status === "204"
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-red-600 dark:text-red-400"
-                    }`}
-                  >
-                    {row.status}
-                  </code>
-                  <span className="text-xs text-muted-foreground">
-                    {row.meaning}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {row.description}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <Callout type="info">
-            CORS está habilitado para qualquer origem. A API reflete a{" "}
-            <code className="font-mono text-xs">Origin</code> exata de quem
-            chamou (
-            <code className="font-mono text-xs">
-              Access-Control-Allow-Origin: origem
-            </code>
-            ), compatível com qualquer modo de credenciais. Requests{" "}
-            <code className="font-mono text-xs">OPTIONS</code> de preflight
-            retornam <code className="font-mono text-xs">204</code>{" "}
-            automaticamente.
-          </Callout>
-        </TabsContent>
-
-        {/* Debug */}
-        <TabsContent value="debug" className="mt-0 space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight mb-1">
-              Debug & Validação
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Ferramentas para confirmar que o tracker está funcionando
-              corretamente.
-            </p>
-          </div>
-
-          <CodeBlock code={DEBUG_CODE} lang="js" title="Console do navegador" />
-          <CodeBlock
-            code={buildDebugAttrsCode(appUrl)}
-            lang="html"
-            title="Modo debug , data-debug=true"
-          />
-
-          <Separator />
-
-          <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Fila offline e estado da sessão
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Use os comandos abaixo no DevTools para inspecionar o estado
-              interno do tracker sem precisar disparar novos eventos.
-            </p>
-            <CodeBlock
-              code={DEBUG_QUEUE_CODE}
-              lang="js"
-              title="DevTools , inspecionar estado"
-            />
-          </div>
-
-          <Separator />
-
-          <div className="space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Checklist de validação
-            </h3>
-            {CHECKLIST_ITEMS.map((item) => (
-              <div
-                key={item.label}
-                className="flex items-start gap-3 rounded-lg border border-border px-4 py-3 hover:bg-muted/20 transition-colors"
-              >
-                <IconCheck className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium">{item.label}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {item.detail}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <Callout type="warn">
-            <strong>Nunca envie PII no customer_id.</strong> Use sempre um hash
-            anônimo gerado pelo seu sistema. Ex:{" "}
-            <code className="font-mono text-xs">sha256(user.id + salt)</code>
-          </Callout>
-        </TabsContent>
-
-        {/* Server-Side */}
-        <TabsContent value="serverside" className="space-y-8 mt-0">
-          <div>
-            <h2 className="text-xl font-bold">Server-Side Tracking</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Envie eventos diretamente do seu servidor — sem browser, sem tracker.js
-            </p>
-          </div>
-
-          <Callout type="info">
-            <strong>Por que server-side?</strong> Renovações automáticas de assinatura
-            acontecem sem o usuário no browser. Webhooks do Stripe/Pagar.me chegam no seu
-            servidor. Crons e workers processam eventos assíncronos. Nesses casos o
-            tracker.js não está disponível — você chama o{" "}
-            <code className="font-mono text-xs">/api/track</code> diretamente.
-          </Callout>
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Como funciona
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Mesmo endpoint <code className="font-mono text-xs">/api/track</code>, mesma API key.
-              A diferença é que o servidor <strong>não tem contexto automático</strong>: UTMs,
-              device, referrer e landing_page serão <code className="font-mono text-xs">null</code>.
-              Isso afeta os relatórios de Canais e Landing Pages para esses eventos, mas não afeta
-              Financeiro, Recorrência ou P&L.
-            </p>
-            <div className="rounded-lg border border-border overflow-hidden">
-              <table className="w-full text-xs">
-                <thead className="bg-muted/40">
-                  <tr>
-                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Campo</th>
-                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Browser (tracker.js)</th>
-                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Server-side</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {[
-                    ["key", "data-key do script", "Variável de ambiente"],
-                    ["event_type", "automático / manual", "Você define"],
-                    ["source / medium / campaign", "UTMs da URL capturados", "null"],
-                    ["device", "navigator.userAgent", "null"],
-                    ["landing_page / referrer", "window.location / document.referrer", "null"],
-                    ["session_id", "sessionStorage (gerado)", "null (opcional: gerar no server)"],
-                    ["timestamp", "new Date().toISOString()", "Você define (webhook timestamp)"],
-                  ].map(([field, browser, server]) => (
-                    <tr key={field} className="hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-2 font-mono text-foreground">{field}</td>
-                      <td className="px-4 py-2 text-muted-foreground">{browser}</td>
-                      <td className="px-4 py-2 text-muted-foreground">{server}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Node.js / Next.js
-            </h3>
-            <CodeBlock code={buildServerNodeCode(appUrl)} lang="ts" />
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              curl (bash / cron)
-            </h3>
-            <CodeBlock code={buildServerCurlCode(appUrl)} lang="bash" />
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Python
-            </h3>
-            <CodeBlock code={buildServerPythonCode(appUrl)} lang="python" />
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              PHP
-            </h3>
-            <CodeBlock code={buildServerPhpCode(appUrl)} lang="php" />
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Webhook Stripe (exemplo completo)
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              O caso de uso mais comum: capturar renovações e cancelamentos via webhook do Stripe
-              e enviá-los ao GrowthOS para calcular MRR e Churn automaticamente.
-            </p>
-            <CodeBlock code={SERVER_STRIPE_WEBHOOK_CODE} lang="ts" />
-          </div>
-
-          <Separator />
-
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Casos de uso obrigatórios (server-side)
-            </h3>
-            {[
-              {
-                title: "Renovação de assinatura",
-                desc: "O gateway processa o pagamento recorrente sem o usuário na tela. Use webhook + event_type: 'payment' + billing_type: 'recurring'.",
-              },
-              {
-                title: "Cancelamento automático por inadimplência",
-                desc: "Quando o gateway cancela a assinatura após falhas de pagamento. Use event_type: 'subscription_canceled'.",
-              },
-              {
-                title: "Upgrade/Downgrade via painel admin",
-                desc: "Mudança de plano feita por um admin no seu dashboard. Use event_type: 'subscription_changed'.",
-              },
-              {
-                title: "Migração de dados históricos",
-                desc: "Importar assinaturas existentes antes de integrar o GrowthOS. Envie cada registro com o timestamp correto.",
-              },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="flex items-start gap-3 rounded-lg border border-border px-4 py-3"
-              >
-                <IconCheck className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium">{item.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </TabsContent>
-
-        {/* Recorrência */}
-        <TabsContent value="recurring" className="space-y-8 mt-0">
-          <div>
-            <h2 className="text-xl font-bold">Recorrência (MRR)</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Rastreie assinaturas, MRR, Churn e LTV com 3 tipos de evento
-            </p>
-          </div>
-
-          <Callout type="info">
-            Quando o GrowthOS recebe um <code className="font-mono text-xs">payment</code> com{" "}
-            <code className="font-mono text-xs">billing_type: &apos;recurring&apos;</code>, ele
-            automaticamente atualiza a tabela de assinaturas e habilita a tela{" "}
-            <strong>Recorrência</strong> no sidebar para sua organização.
-          </Callout>
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Eventos disponíveis
-            </h3>
-            <div className="rounded-lg border border-border overflow-hidden">
-              <table className="w-full text-xs">
-                <thead className="bg-muted/40">
-                  <tr>
-                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Evento</th>
-                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Quando disparar</th>
-                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Efeito no dashboard</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {[
-                    ["payment + billing_type: recurring", "Renovação ou nova assinatura paga", "Upsert na tabela subscriptions, incrementa MRR"],
-                    ["subscription_canceled", "Assinatura cancelada", "Marca como cancelada, incrementa Churn"],
-                    ["subscription_changed", "Upgrade ou downgrade de plano", "Atualiza valor/plano, calcula Expansão/Contração"],
-                  ].map(([event, when, effect]) => (
-                    <tr key={event} className="hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-2 font-mono text-foreground">{event}</td>
-                      <td className="px-4 py-2 text-muted-foreground">{when}</td>
-                      <td className="px-4 py-2 text-muted-foreground">{effect}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Campos obrigatórios para recorrência
-            </h3>
-            <div className="rounded-lg border border-border overflow-hidden">
-              <table className="w-full text-xs">
-                <thead className="bg-muted/40">
-                  <tr>
-                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Campo</th>
-                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Tipo</th>
-                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Descrição</th>
-                    <th className="text-left px-4 py-2 font-semibold text-muted-foreground">Exemplo</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {[
-                    ["billing_type", "string", "'recurring' | 'one_time'", "'recurring'"],
-                    ["billing_interval", "string", "'monthly' | 'yearly' | 'weekly'", "'monthly'"],
-                    ["subscription_id", "string", "ID único da assinatura no seu sistema", "'sub_stripe_abc123'"],
-                    ["plan_id", "string", "ID do plano", "'plan_pro'"],
-                    ["plan_name", "string", "Nome legível do plano", "'Pro Mensal'"],
-                    ["gross_value", "number", "Valor bruto em reais", "97.00"],
-                    ["customer_id", "string", "Hash anônimo do cliente", "'hash_cliente'"],
-                  ].map(([field, type, desc, example]) => (
-                    <tr key={field} className="hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-2 font-mono text-foreground">{field}</td>
-                      <td className="px-4 py-2 text-muted-foreground">{type}</td>
-                      <td className="px-4 py-2 text-muted-foreground">{desc}</td>
-                      <td className="px-4 py-2 font-mono text-muted-foreground">{example}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Pagamento recorrente
-            </h3>
-            <CodeBlock code={RECURRING_PAYMENT_CODE} lang="js" />
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Cancelamento de assinatura
-            </h3>
-            <CodeBlock code={RECURRING_CANCEL_CODE} lang="js" />
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Upgrade / Downgrade
-            </h3>
-            <CodeBlock code={RECURRING_CHANGED_CODE} lang="js" />
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Como o GrowthOS calcula as métricas
-            </h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {[
-                {
-                  metric: "MRR",
-                  desc: "Soma de todos os valueInCents das assinaturas ativas, normalizado para mensal (yearly /12, weekly ×4.33).",
-                },
-                {
-                  metric: "ARR",
-                  desc: "MRR × 12.",
-                },
-                {
-                  metric: "ARPU",
-                  desc: "MRR ÷ número de assinantes ativos.",
-                },
-                {
-                  metric: "Churn Rate",
-                  desc: "Cancelamentos no período ÷ (ativos + cancelados). Em %.",
-                },
-                {
-                  metric: "Revenue Churn",
-                  desc: "MRR cancelado ÷ (MRR atual + MRR cancelado). Em %.",
-                },
-                {
-                  metric: "LTV Estimado",
-                  desc: "ARPU ÷ Churn Rate mensal. Se churn = 0, usa 24× ARPU.",
-                },
-                {
-                  metric: "MRR Movimentação",
-                  desc: "New MRR (novas subs), Expansion (upgrades), Contraction (downgrades), Churned (cancelamentos).",
-                },
-                {
-                  metric: "MRR Growth Rate",
-                  desc: "(MRR atual − MRR início período) ÷ MRR início período. Em %.",
-                },
-              ].map((item) => (
-                <div key={item.metric} className="rounded-lg border border-border px-4 py-3">
-                  <p className="text-sm font-semibold text-foreground">{item.metric}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              TypeScript types
-            </h3>
-            <CodeBlock code={RECURRING_TYPES_CODE} lang="ts" />
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Webhook Stripe (integração completa)
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Veja a aba <strong>Server-Side</strong> para o exemplo completo de webhook do Stripe
-              capturando renovações e cancelamentos automaticamente.
-            </p>
-          </div>
-
-          <Callout type="warn">
-            O campo <code className="font-mono text-xs">subscription_id</code> deve ser o ID
-            único da assinatura no seu gateway (ex: <code className="font-mono text-xs">sub_stripe_xxx</code>).
-            Nunca reutilize o mesmo ID para assinaturas diferentes — ele é a chave de upsert que
-            garante idempotência dos eventos.
-          </Callout>
-        </TabsContent>
-
-        {/* Multi-moeda */}
-        <TabsContent value="i18n" className="mt-0 space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight mb-1">Multi-moeda e Internacionalização</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              O GrowthOS suporta organizações que vendem em múltiplas moedas. Todos os valores são
-              convertidos para a moeda base da organização no momento da ingestão do evento.
-            </p>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Como funciona a conversão
-            </h3>
-            <div className="grid grid-cols-1 gap-3">
-              {[
-                {
-                  step: "1. Evento recebido",
-                  desc: 'O tracker envia gross_value: 15.00, currency: "USD".',
-                },
-                {
-                  step: "2. Moeda da org verificada",
-                  desc: "O servidor lê a moeda base da organização (ex: BRL).",
-                },
-                {
-                  step: "3. Taxa de câmbio consultada",
-                  desc: "Busca a taxa USD→BRL configurada manualmente em Configurações → Taxas de Câmbio.",
-                },
-                {
-                  step: "4. Ambos os valores salvos",
-                  desc: "gross_value_in_cents = 1500 (USD), base_gross_value_in_cents = 7800 (BRL) com rate = 5.20.",
-                },
-                {
-                  step: "5. Dashboard usa base_value",
-                  desc: "Todos os gráficos e P&L somam base_gross_value_in_cents, consolidando tudo na moeda base.",
-                },
-              ].map((item) => (
-                <div key={item.step} className="rounded-lg border border-border px-4 py-3">
-                  <p className="text-sm font-semibold text-foreground">{item.step}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Enviando eventos com moeda explícita
-            </h3>
-            <CodeBlock
-              code={`// Venda em BRL (mesma que a org) — currency é opcional, rate = 1
-window.GrowthOS.track('payment', {
-  gross_value: 89.00,
-  currency: 'BRL',  // ou omita — herda da organização
-  product_name: 'Plano Básico',
-})
-
-// Venda em USD (org com moeda base BRL)
-// Requer taxa USD→BRL configurada em Configurações → Taxas de Câmbio
-window.GrowthOS.track('payment', {
-  gross_value: 15.00,
-  currency: 'USD',
-  product_name: 'International Plan',
-})
-
-// Venda em EUR
-window.GrowthOS.track('payment', {
-  gross_value: 12.00,
-  currency: 'EUR',
-  product_name: 'Plano Europa',
-})`}
-              lang="js"
-              title="tracker.js"
-            />
-          </div>
-
-          <Separator />
-
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Configurando taxas de câmbio
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Acesse <strong>Configurações → Taxas de Câmbio</strong> para cadastrar as taxas que
-              sua organização pratica — não a taxa do banco central, mas a taxa real que você usa com clientes.
-            </p>
             <Callout type="warn">
-              Se um evento chegar com uma moeda diferente da moeda base e não houver taxa configurada,
-              o evento será <strong>rejeitado com erro 400</strong>. Configure a taxa antes de começar a
-              enviar eventos nessa moeda.
+              Nunca exponha a API key no client-side de forma pública. A chave no tracker é segura pois é validada pelo GrowthOS — mas nunca a use em chamadas autenticadas de admin.
             </Callout>
-          </div>
 
-          <Separator />
+            <SubSection title="Hook reutilizável (recomendado)">
+              <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+                Encapsula <Mono>window.GrowthOS</Mono> com tipagem TypeScript e proteção SSR.
+              </p>
+              <CodeBlock code={HOOK_CODE} lang="ts" title="hooks/use-tracker.ts" />
+              <CodeBlock code={HOOK_USAGE} lang="tsx" title="Usando em um componente" />
+            </SubSection>
+          </TabsContent>
 
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Configurações regionais da organização
-            </h3>
-            <div className="grid grid-cols-1 gap-3">
+          {/* AUTO-TRACKING */}
+          <TabsContent value="auto" className="mt-0 space-y-6">
+            <SectionHeader title="Auto-Tracking" badge="zero config" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Eventos e contexto capturados automaticamente — sem código adicional.
+            </p>
+
+            <div className="rounded-lg border border-zinc-800/60 overflow-hidden">
+              <div className="grid grid-cols-3 text-[11px] font-medium text-zinc-500 uppercase tracking-wider px-4 py-2.5 bg-zinc-900/60 border-b border-zinc-800/60">
+                <span>Evento</span>
+                <span>Quando dispara</span>
+                <span>Dados automáticos</span>
+              </div>
               {[
-                {
-                  field: "currency",
-                  desc: "Moeda base (ISO 4217). Todos os valores são convertidos para esta moeda.",
-                  example: "BRL, USD, EUR",
-                },
-                {
-                  field: "locale",
-                  desc: "Locale de formatação de números e datas no dashboard.",
-                  example: "pt-BR, en-US, pt-PT",
-                },
-                {
-                  field: "timezone",
-                  desc: "Fuso horário usado nos filtros de data e agrupamentos diários.",
-                  example: "America/Sao_Paulo, UTC",
-                },
-                {
-                  field: "language",
-                  desc: "Idioma das análises de IA (diagnósticos, recomendações).",
-                  example: "pt-BR, en-US, es-ES",
-                },
-                {
-                  field: "country",
-                  desc: "País da organização. Usado para contexto na IA.",
-                  example: "BR, US, PT",
-                },
-              ].map((item) => (
-                <div key={item.field} className="rounded-lg border border-border px-4 py-3">
-                  <div className="flex items-center gap-2 mb-1">
-                    <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded text-green-600 dark:text-green-400">
-                      {item.field}
-                    </code>
-                    <span className="text-xs text-muted-foreground">
-                      Ex: {item.example}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                ["pageview", "Carregamento da página", "landing_page, referrer, device, UTMs"],
+                ["pageview", "Navegação SPA (history.pushState)", "nova landing_page, mantém session_id"],
+                ["checkout_abandoned", "beforeunload após checkout_started", "gross_value do checkout_started"],
+              ].map(([ev, when, data], i) => (
+                <div key={i} className="grid grid-cols-3 text-sm px-4 py-3 border-b border-zinc-800/40 last:border-0 hover:bg-zinc-900/30 transition-colors">
+                  <code className="font-mono text-xs text-indigo-400">{ev}</code>
+                  <span className="text-xs text-zinc-400">{when}</span>
+                  <span className="text-xs text-zinc-500">{data}</span>
                 </div>
               ))}
             </div>
-          </div>
 
-          <Separator />
+            <Callout type="info">
+              Você <strong>nunca</strong> precisa passar manualmente:{" "}
+              <Mono>source</Mono>, <Mono>medium</Mono>, <Mono>campaign</Mono>,{" "}
+              <Mono>landing_page</Mono>, <Mono>device</Mono>, <Mono>referrer</Mono> ou{" "}
+              <Mono>session_id</Mono>. O tracker injeta automaticamente em todo evento.
+            </Callout>
+          </TabsContent>
 
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-              Schema do evento (campos de câmbio)
-            </h3>
-            <CodeBlock
-              code={`// Campos salvos no banco para cada evento com moeda
-{
-  currency: "USD",                  // moeda do evento (ISO 4217)
-  base_currency: "BRL",             // moeda base da org
-  exchange_rate: 5.20,              // taxa aplicada no momento da ingestão
-  gross_value_in_cents: 1500,       // valor original ($15.00 USD)
-  base_gross_value_in_cents: 7800,  // valor convertido (R$78.00 BRL)
-  base_net_value_in_cents: 7800,    // líquido após desconto, em moeda base
-}`}
-              lang="json"
-              title="Evento no banco"
-            />
-          </div>
+          {/* EVENTOS MANUAIS */}
+          <TabsContent value="manual" className="mt-0 space-y-6">
+            <SectionHeader title="Eventos Manuais" badge="window.GrowthOS.track" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Para eventos que dependem de lógica do sistema. Sempre passe{" "}
+              <Mono className="text-amber-400">currency</Mono> em eventos financeiros.
+            </p>
+            <CodeBlock code={PAYMENT_CODE} lang="js" title="payment — mais importante" />
+          </TabsContent>
 
-          <Callout type="info">
-            Eventos históricos (antes da implementação de multi-moeda) têm{" "}
-            <code className="font-mono text-xs">base_gross_value_in_cents = null</code>.
-            O dashboard usa{" "}
-            <code className="font-mono text-xs">COALESCE(base_gross_value_in_cents, gross_value_in_cents)</code>{" "}
-            como fallback, garantindo compatibilidade retroativa.
-          </Callout>
-        </TabsContent>
+          {/* REFERÊNCIA */}
+          <TabsContent value="reference" className="mt-0 space-y-6">
+            <SectionHeader title="Referência de Eventos" />
+            <p className="text-sm text-zinc-400">
+              Todos os eventos e propriedades. <span className="text-red-400">*</span> = obrigatório.
+            </p>
+
+            <div className="space-y-5">
+              <EventCard
+                name="payment"
+                description="Pagamento confirmado. Alimenta faturamento, P&L, ticket médio e ROAS."
+                variant="default"
+                props={[
+                  { name: "gross_value", type: "number", required: true, description: "Valor bruto cobrado", example: "150.00" },
+                  { name: "currency", type: "string", required: true, description: "ISO 4217 — sempre informe", example: "'BRL'" },
+                  { name: "net_value", type: "number", description: "Após desconto, antes das taxas", example: "140.00" },
+                  { name: "discount", type: "number", description: "Desconto em reais", example: "10.00" },
+                  { name: "gateway_fee", type: "number", description: "Taxa do gateway de pagamento", example: "4.50" },
+                  { name: "installments", type: "number", description: "Número de parcelas", example: "3" },
+                  { name: "payment_method", type: "string", description: "pix | credit_card | boleto | debit_card", example: "'pix'" },
+                  { name: "product_id", type: "string", description: "ID único do produto", example: "'template-001'" },
+                  { name: "product_name", type: "string", description: "Nome legível do produto", example: "'Convite Casamento'" },
+                  { name: "category", type: "string", description: "Categoria do produto", example: "'casamento'" },
+                  { name: "customer_type", type: "string", description: "new | returning", example: "'new'" },
+                  { name: "customer_id", type: "string", description: "Hash anônimo (nunca PII)", example: "'hash_abc'" },
+                  { name: "customer_segment", type: "string", description: "Segmentação do seu negócio", example: "'premium'" },
+                  { name: "billing_type", type: "string", description: "recurring | one_time", example: "'one_time'" },
+                  { name: "billing_interval", type: "string", description: "monthly | yearly | weekly. Obrigatório se recurring.", example: "'monthly'" },
+                  { name: "subscription_id", type: "string", description: "ID da assinatura no gateway. Obrigatório se recurring.", example: "'sub_abc'" },
+                  { name: "plan_id", type: "string", description: "ID do plano", example: "'plan_pro'" },
+                  { name: "plan_name", type: "string", description: "Nome do plano", example: "'Pro Mensal'" },
+                ]}
+              />
+
+              <EventCard
+                name="signup"
+                description="Novo cadastro. Calcula taxa de conversão e funil."
+                variant="secondary"
+                props={[
+                  { name: "customer_type", type: "string", description: "new | returning", example: "'new'" },
+                  { name: "customer_id", type: "string", description: "Hash anônimo", example: "'hash_abc'" },
+                ]}
+              />
+
+              <EventCard
+                name="checkout_started"
+                description="Início do checkout. Par com checkout_abandoned para calcular abandono."
+                variant="outline"
+                props={[
+                  { name: "gross_value", type: "number", description: "Valor no carrinho", example: "89.00" },
+                  { name: "currency", type: "string", required: true, description: "ISO 4217", example: "'BRL'" },
+                  { name: "product_id", type: "string", description: "ID do produto", example: "'template-001'" },
+                ]}
+              />
+
+              <EventCard
+                name="checkout_abandoned"
+                description="Checkout não concluído. Representa receita perdida no P&L."
+                variant="destructive"
+                props={[
+                  { name: "gross_value", type: "number", description: "Valor que não converteu", example: "89.00" },
+                  { name: "currency", type: "string", required: true, description: "ISO 4217", example: "'BRL'" },
+                  { name: "reason", type: "string", description: "exit | payment_failed | timeout", example: "'exit'" },
+                ]}
+              />
+
+              <EventCard
+                name="subscription_canceled"
+                description="Assinatura cancelada. Alimenta Churn MRR e Churn Rate."
+                variant="destructive"
+                props={[
+                  { name: "subscription_id", type: "string", required: true, description: "ID da assinatura no seu sistema", example: "'sub_abc'" },
+                  { name: "gross_value", type: "number", description: "MRR que vai parar de entrar", example: "89.00" },
+                  { name: "currency", type: "string", required: true, description: "ISO 4217", example: "'BRL'" },
+                  { name: "billing_interval", type: "string", description: "monthly | yearly | weekly", example: "'monthly'" },
+                  { name: "reason", type: "string", description: "user_canceled | payment_failed | upgraded | downgraded", example: "'user_canceled'" },
+                ]}
+              />
+
+              <EventCard
+                name="subscription_changed"
+                description="Upgrade ou downgrade de plano. Alimenta Expansion e Contraction MRR."
+                variant="secondary"
+                props={[
+                  { name: "subscription_id", type: "string", required: true, description: "ID da assinatura", example: "'sub_abc'" },
+                  { name: "previous_plan_id", type: "string", description: "Plano anterior", example: "'plan_basic'" },
+                  { name: "new_plan_id", type: "string", description: "Novo plano", example: "'plan_pro'" },
+                  { name: "previous_value", type: "number", description: "Valor do plano anterior", example: "49.00" },
+                  { name: "new_value", type: "number", description: "Valor do novo plano", example: "89.00" },
+                  { name: "currency", type: "string", required: true, description: "ISO 4217", example: "'BRL'" },
+                ]}
+              />
+            </div>
+          </TabsContent>
+
+          {/* DATA ATTRIBUTES */}
+          <TabsContent value="attributes" className="mt-0 space-y-6">
+            <SectionHeader title="Data Attributes" badge="sem JavaScript" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Rastreie cliques em elementos HTML sem código JS. Útil em templates e páginas estáticas.
+            </p>
+            <CodeBlock code={DATA_ATTRS} lang="html" title="HTML — data attributes" />
+            <AttrTable rows={[
+              { name: "data-growthos", required: "sim", desc: "Define o tipo do evento", example: "payment" },
+              { name: "data-growthos-value", required: "não", desc: "gross_value (converte ponto decimal)", example: "89.90" },
+              { name: "data-growthos-currency", required: "não", desc: "ISO 4217 — padrão: moeda da org", example: "BRL" },
+              { name: "data-growthos-product_id", required: "não", desc: "ID do produto", example: "template-001" },
+              { name: "data-growthos-payment_method", required: "não", desc: "Método de pagamento", example: "pix" },
+            ]} />
+          </TabsContent>
+
+          {/* DEDUPLICAÇÃO */}
+          <TabsContent value="dedup" className="mt-0 space-y-6">
+            <SectionHeader title="Deduplicação" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              A deduplicação funciona em duas camadas: <strong className="text-zinc-300">client-side</strong> via opção{" "}
+              <Mono>dedupe</Mono> no tracker, e <strong className="text-zinc-300">server-side</strong> via hash automático
+              calculado a partir do conteúdo do evento.
+            </p>
+            <CodeBlock code={DEDUP_CODE} lang="js" title="Deduplicação" />
+            <Callout type="info">
+              O servidor calcula um hash de <Mono>event_type + customer_id + gross_value + product_id + subscription_id</Mono>{" "}
+              em janelas de 5 minutos. Envios idênticos na mesma janela são silenciosamente ignorados e retornam{" "}
+              <Mono>X-GrowthOS-Duplicate: true</Mono> no header. Para aumentar a precisão do dedup, sempre inclua{" "}
+              <Mono>customer_id</Mono> e <Mono>subscription_id</Mono> (ou <Mono>product_id</Mono>) nos eventos de pagamento.
+            </Callout>
+          </TabsContent>
+
+          {/* SERVER-SIDE */}
+          <TabsContent value="server" className="mt-0 space-y-6">
+            <SectionHeader title="Server-Side Track" badge="Node · Python · curl" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              O <Mono>/api/track</Mono> é um endpoint HTTP padrão. Qualquer linguagem ou ambiente que faz requisições HTTP pode enviar eventos — crons, workers, webhooks, lambdas.
+            </p>
+
+            <Callout type="warn">
+              Eventos server-side <strong>não têm contexto automático</strong> (UTMs, device, referrer). Esses campos serão <Mono>null</Mono> e os relatórios de Canais e Landing Pages não os refletirão. É o comportamento esperado — renovações de assinatura não têm origem de canal.
+            </Callout>
+
+            <SubSection title="Quando usar server-side">
+              <div className="grid gap-2">
+                {[
+                  ["Renovação automática de assinatura", "Acontece no servidor às 3h — sem usuário no browser"],
+                  ["Cancelamento por inadimplência", "Processado pelo gateway, sem interação do usuário"],
+                  ["Upgrade via painel admin", "Você admin altera o plano, não o cliente"],
+                  ["Migração de dados históricos", "Import one-time de pagamentos antigos"],
+                  ["Webhook de gateway externo", "Stripe, Asaas, Kiwify chamam sua API"],
+                ].map(([title, desc]) => (
+                  <div key={title} className="flex gap-3 rounded-lg border border-zinc-800/60 px-4 py-3">
+                    <IconCheck size={14} className="text-green-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-zinc-200">{title}</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SubSection>
+
+            <SubSection title="Node.js / Next.js">
+              <CodeBlock code={SERVER_FETCH} lang="ts" title="Renovação mensal — cron job" />
+            </SubSection>
+
+            <SubSection title="curl / bash">
+              <CodeBlock code={SERVER_CURL} lang="bash" title="Cron ou script de migração" />
+            </SubSection>
+
+            <SubSection title="Python">
+              <CodeBlock code={SERVER_PYTHON} lang="python" title="Worker Python" />
+            </SubSection>
+          </TabsContent>
+
+          {/* RECORRÊNCIA */}
+          <TabsContent value="recurring" className="mt-0 space-y-6">
+            <SectionHeader title="Recorrência" badge="MRR · Churn · LTV" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Para alimentar a tela de Recorrência (MRR, ARR, Churn, ARPU, LTV) você precisa
+              identificar pagamentos recorrentes e disparar eventos de ciclo de vida da assinatura.
+            </p>
+
+            <Callout type="info">
+              Renovações automáticas acontecem no servidor — use <strong>Server-Side Track</strong> para enviá-las.
+              O tracker.js cobre apenas o primeiro pagamento (quando o usuário está na página).
+            </Callout>
+
+            <CodeBlock code={RECURRING_PAYMENT} lang="js" title="Eventos de recorrência" />
+
+            <SubSection title="Campos obrigatórios para MRR correto">
+              <AttrTable rows={[
+                { name: "billing_type", required: "sim", desc: "Deve ser 'recurring'", example: "recurring" },
+                { name: "billing_interval", required: "sim", desc: "Ciclo de cobrança", example: "monthly" },
+                { name: "subscription_id", required: "sim", desc: "Chave de upsert na tabela subscriptions", example: "sub_abc123" },
+                { name: "currency", required: "sim", desc: "ISO 4217 — afeta o MRR consolidado", example: "BRL" },
+              ]} />
+            </SubSection>
+
+            <Callout type="warn">
+              O <Mono>subscription_id</Mono> é a chave que o GrowthOS usa para manter o estado da assinatura
+              na tabela <Mono>subscriptions</Mono>. Use sempre o ID do seu gateway ou sistema —
+              nunca reutilize o mesmo ID para assinaturas diferentes.
+            </Callout>
+          </TabsContent>
+
+          {/* MULTI-MOEDA */}
+          <TabsContent value="i18n" className="mt-0 space-y-6">
+            <SectionHeader title="Multi-moeda" badge="ISO 4217" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Organizações que vendem em múltiplas moedas têm todos os valores convertidos
+              para a moeda base da organização no momento da ingestão.
+            </p>
+
+            <SubSection title="Como funciona a conversão">
+              <div className="space-y-2">
+                {[
+                  ["1. Evento recebido", "O tracker envia gross_value: 15.00, currency: 'USD'."],
+                  ["2. Moeda base verificada", "Servidor lê a moeda base da org (ex: BRL)."],
+                  ["3. Taxa consultada", "Busca a taxa USD→BRL configurada em Configurações → Taxas de Câmbio."],
+                  ["4. Ambos os valores salvos", "gross_value_in_cents = 1500 (USD original), base_gross_value_in_cents = 7800 (BRL)."],
+                  ["5. Dashboard usa base_value", "Todos os gráficos somam base_gross_value_in_cents, consolidando na moeda base."],
+                ].map(([step, desc]) => (
+                  <div key={step} className="rounded-lg border border-zinc-800/60 px-4 py-3">
+                    <p className="text-sm font-semibold text-zinc-300">{step}</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">{desc}</p>
+                  </div>
+                ))}
+              </div>
+            </SubSection>
+
+            <SubSection title="Enviando eventos com moeda">
+              <CodeBlock
+                code={`// Mesma moeda da org — currency é opcional\nwindow.GrowthOS.track('payment', {\n  gross_value: 89.00,\n  currency: 'BRL',\n})\n\n// Moeda diferente — requer taxa configurada\nwindow.GrowthOS.track('payment', {\n  gross_value: 15.00,\n  currency: 'USD', // precisa de USD→BRL em Configurações\n})`}
+                lang="js"
+                title="tracker.js"
+              />
+            </SubSection>
+
+            <Callout type="warn">
+              Se um evento chegar com moeda diferente da base e <strong>não houver taxa configurada</strong>,
+              o evento será rejeitado com erro <Mono>400</Mono>. Configure a taxa em{" "}
+              <strong className="text-zinc-300">Configurações → Taxas de Câmbio</strong> antes de enviar.
+            </Callout>
+          </TabsContent>
+
+          {/* TYPESCRIPT */}
+          <TabsContent value="typescript" className="mt-0 space-y-6">
+            <SectionHeader title="TypeScript" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Copie para <Mono>src/types/growthos.d.ts</Mono> para tipagem completa no projeto.
+            </p>
+            <CodeBlock code={TYPES_CODE} lang="ts" title="src/types/growthos.d.ts" />
+          </TabsContent>
+
+          {/* API REFERENCE */}
+          <TabsContent value="api" className="mt-0 space-y-6">
+            <SectionHeader title="API Reference" badge="POST /api/track" />
+
+            <SubSection title="Endpoint">
+              <CodeBlock
+                code={`POST ${serverUrl}/api/track\nContent-Type: application/json`}
+                lang="http"
+              />
+            </SubSection>
+
+            <SubSection title="Campos do payload">
+              <AttrTable rows={[
+                { name: "key", required: "sim", desc: "API key da organização", example: "tok_xxx" },
+                { name: "event_type", required: "sim", desc: "Tipo do evento", example: "payment" },
+                { name: "gross_value", required: "não", desc: "Valor bruto (decimal)", example: "89.90" },
+                { name: "currency", required: "não", desc: "ISO 4217 — padrão: moeda da org", example: "BRL" },
+                { name: "customer_id", required: "não", desc: "ID do cliente (melhora dedup server-side)", example: "usr_abc123" },
+                { name: "...outros", required: "não", desc: "Qualquer campo de GrowthOSEventData", example: "" },
+              ]} />
+            </SubSection>
+
+            <SubSection title="Respostas">
+              <div className="space-y-2">
+                {[
+                  ["204", "text-green-400", "Evento registrado com sucesso (sem body)"],
+                  ["400", "text-red-400", "Payload inválido, moeda sem taxa configurada"],
+                  ["401", "text-red-400", "API key inválida ou revogada"],
+                  ["413", "text-amber-400", "Payload maior que 64KB"],
+                  ["429", "text-amber-400", "Rate limit excedido (1000 req/min por key)"],
+                ].map(([code, color, desc]) => (
+                  <div key={code} className="flex items-center gap-3 rounded-lg border border-zinc-800/60 px-4 py-2.5">
+                    <code className={cn("font-mono text-sm font-bold w-8", color)}>{code}</code>
+                    <span className="text-xs text-zinc-400">{desc}</span>
+                  </div>
+                ))}
+              </div>
+            </SubSection>
+          </TabsContent>
+
+          {/* DEBUG */}
+          <TabsContent value="debug" className="mt-0 space-y-6">
+            <SectionHeader title="Debug & Validação" />
+
+            <CodeBlock code={`<script\n  src="${serverUrl}/tracker.js"\n  data-key="tok_xxx"\n  data-debug="true"\n></script>`} lang="html" title="Ativar modo debug" />
+            <CodeBlock code={DEBUG_CODE} lang="js" title="Console do navegador" />
+
+            <Separator className="bg-zinc-800/60" />
+
+            <SubSection title="Checklist de validação">
+              <div className="space-y-2">
+                {CHECKLIST.map((item) => (
+                  <div key={item.label} className="flex items-start gap-3 rounded-lg border border-zinc-800/60 px-4 py-3 hover:bg-zinc-900/30 transition-colors">
+                    <IconCheck size={14} className="text-green-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-zinc-200">{item.label}</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">{item.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SubSection>
+
+            <Callout type="warn">
+              <strong>Nunca envie PII no customer_id.</strong> Use sempre um hash anônimo.
+              Ex: <Mono>sha256(user.id + salt)</Mono>. Nome, email e CPF nunca devem
+              aparecer em nenhum campo do payload.
+            </Callout>
+          </TabsContent>
+
+        </div>
       </div>
     </Tabs>
+  );
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function NavItem({
+  item,
+  active,
+  onSelect,
+}: {
+  item: { value: string; label: string; icon?: React.ElementType };
+  active: string;
+  onSelect: (v: string) => void;
+}) {
+  const isActive = active === item.value;
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(item.value)}
+      className={cn(
+        "w-full flex items-center justify-start text-[13px] px-2.5 py-2 rounded-md transition-all text-left",
+        isActive
+          ? "bg-zinc-800/80 text-zinc-100 font-medium"
+          : "text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/60 font-normal"
+      )}
+    >
+      {item.label}
+      {isActive && (
+        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-400 shrink-0" />
+      )}
+    </button>
+  );
+}
+
+function SectionHeader({ title, badge }: { title: string; badge?: string }) {
+  return (
+    <div className="flex items-center gap-2.5 mb-1">
+      <h2 className="text-xl font-bold tracking-tight text-zinc-100">{title}</h2>
+      {badge && (
+        <Badge variant="outline" className="font-mono text-[10px] border-zinc-700 text-zinc-500 py-0">
+          {badge}
+        </Badge>
+      )}
+    </div>
+  );
+}
+
+function SubSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <h3 className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+function Mono({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <code className={cn("font-mono text-xs bg-zinc-800/80 border border-zinc-700/50 px-1.5 py-0.5 rounded text-zinc-300", className)}>
+      {children}
+    </code>
+  );
+}
+
+function AttrTable({
+  rows,
+}: {
+  rows: { name: string; required: string; desc: string; example: string }[];
+}) {
+  return (
+    <div className="rounded-lg border border-zinc-800/60 overflow-hidden">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-zinc-800/60 bg-zinc-900/60">
+            {["Atributo", "Obrigatório", "Descrição / Exemplo"].map((h) => (
+              <th key={h} className="text-left px-4 py-2.5 text-[11px] font-medium text-zinc-500 uppercase tracking-wider">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.name} className="border-b border-zinc-800/40 last:border-0 hover:bg-zinc-900/30 transition-colors">
+              <td className="px-4 py-3 font-mono text-xs text-indigo-400">{row.name}</td>
+              <td className="px-4 py-3 text-xs text-zinc-500">{row.required}</td>
+              <td className="px-4 py-3 text-xs text-zinc-400">
+                {row.desc}
+                {row.example && (
+                  <code className="ml-1.5 font-mono text-[11px] bg-zinc-800/80 px-1.5 py-0.5 rounded text-green-400">
+                    {row.example}
+                  </code>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
