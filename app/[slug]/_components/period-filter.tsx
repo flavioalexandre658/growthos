@@ -81,7 +81,6 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
     ? `${filter.start_date} → ${filter.end_date}`
     : PERIOD_OPTIONS.find((o) => o.value === activePeriod)?.label ?? "Hoje";
 
-  const isQuickActive = activePeriod !== null && MOBILE_QUICK.includes(activePeriod);
   const isOtherActive = (activePeriod !== null && !MOBILE_QUICK.includes(activePeriod)) || hasRange;
 
   return (
@@ -243,8 +242,8 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
                 hasRange
                   ? "bg-indigo-600 text-white"
                   : showCustom
-                  ? "bg-zinc-700 text-zinc-100"
-                  : "text-zinc-400 hover:text-zinc-100"
+                    ? "bg-zinc-700 text-zinc-100"
+                    : "text-zinc-400 hover:text-zinc-100"
               )}
               title="Intervalo personalizado"
             >
