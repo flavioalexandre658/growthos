@@ -28,7 +28,7 @@ import {
   IconList,
   IconBug,
 } from "@tabler/icons-react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -447,7 +447,8 @@ export function Sidebar({ slug }: { slug: string }) {
               <IconMenu2 size={20} />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-56 bg-zinc-950 border-zinc-800">
+          <SheetContent side="left" className="p-0 w-56 bg-zinc-950 border-zinc-800 [&>button:last-of-type]:hidden">
+            <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
             <SidebarContent slug={slug} onClose={() => setMobileOpen(false)} />
           </SheetContent>
         </Sheet>

@@ -5,7 +5,8 @@ import { useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { DashboardPeriod, IDateFilter } from "@/interfaces/dashboard.interface";
 import { cn } from "@/lib/utils";
-import { IconCalendar, IconX, IconRefresh } from "@tabler/icons-react";
+import { IconCalendar, IconX, IconRefresh, IconChevronDown, IconCheck } from "@tabler/icons-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 const PERIOD_OPTIONS: { value: DashboardPeriod; label: string }[] = [
   { value: "today", label: "Hoje" },
@@ -17,6 +18,8 @@ const PERIOD_OPTIONS: { value: DashboardPeriod; label: string }[] = [
   { value: "90d", label: "90d" },
 ];
 
+const MOBILE_QUICK: DashboardPeriod[] = ["today", "7d", "30d"];
+
 interface PeriodFilterProps {
   filter: IDateFilter;
 }
@@ -27,6 +30,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const hasRange = !!(filter.start_date && filter.end_date);
   const [showCustom, setShowCustom] = useState(hasRange);
@@ -49,6 +53,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
     setShowCustom(false);
     setLocalStart("");
     setLocalEnd("");
+    setMobileOpen(false);
     push({ period: p, start_date: undefined, end_date: undefined });
   };
 
@@ -72,9 +77,140 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
     setIsRefreshing(false);
   };
 
+  const activeLabel = hasRange
+    ? `${filter.start_date} → ${filter.end_date}`
+    : PERIOD_OPTIONS.find((o) => o.value === activePeriod)?.label ?? "Hoje";
+
+  const isQuickActive = activePeriod !== null && MOBILE_QUICK.includes(activePeriod);
+  const isOtherActive = (activePeriod !== null && !MOBILE_QUICK.includes(activePeriod)) || hasRange;
+
   return (
     <div className="flex flex-col gap-2 w-full sm:w-auto">
-      <div className="flex items-center gap-2">
+      {/* ── Mobile layout (< sm) ────────────────────────────── */}
+      <div className="flex items-center gap-2 sm:hidden">
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          title="Atualizar dados"
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600 transition-colors disabled:opacity-50 shrink-0"
+        >
+          <IconRefresh size={14} className={isRefreshing ? "animate-spin" : ""} />
+        </button>
+
+        <div className="flex items-center gap-0.5 rounded-lg border border-zinc-800 bg-zinc-900/80 p-1 flex-1">
+          {MOBILE_QUICK.map((val) => {
+            const opt = PERIOD_OPTIONS.find((o) => o.value === val)!;
+            return (
+              <button
+                key={val}
+                onClick={() => handlePeriod(val)}
+                className={cn(
+                  "flex-1 py-1 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
+                  activePeriod === val
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-zinc-400 hover:text-zinc-100"
+                )}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+
+          <div className="mx-1 h-4 w-px bg-zinc-700 shrink-0" />
+
+          <Popover open={mobileOpen} onOpenChange={setMobileOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
+                  isOtherActive
+                    ? "bg-indigo-600 text-white shadow-sm"
+                    : "text-zinc-400 hover:text-zinc-100"
+                )}
+              >
+                {isOtherActive && !hasRange ? activeLabel : "Mais"}
+                <IconChevronDown size={10} />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              side="bottom"
+              className="w-56 p-2 bg-zinc-900 border-zinc-800"
+            >
+              <div className="space-y-0.5">
+                {PERIOD_OPTIONS.filter((o) => !MOBILE_QUICK.includes(o.value)).map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => handlePeriod(opt.value)}
+                    className={cn(
+                      "w-full flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors",
+                      activePeriod === opt.value
+                        ? "bg-indigo-600/20 text-indigo-300"
+                        : "text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100"
+                    )}
+                  >
+                    {opt.label}
+                    {activePeriod === opt.value && <IconCheck size={12} />}
+                  </button>
+                ))}
+
+                <div className="my-1.5 h-px bg-zinc-800" />
+
+                <button
+                  onClick={() => setShowCustom((v) => !v)}
+                  className={cn(
+                    "w-full flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors",
+                    hasRange
+                      ? "bg-indigo-600/20 text-indigo-300"
+                      : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                  )}
+                >
+                  <IconCalendar size={12} />
+                  {hasRange ? "Custom ativo" : "Intervalo personalizado"}
+                  {hasRange && <IconCheck size={12} className="ml-auto" />}
+                </button>
+
+                {showCustom && (
+                  <div className="pt-1.5 flex flex-col gap-1.5">
+                    <input
+                      type="date"
+                      value={localStart}
+                      max={localEnd || undefined}
+                      onChange={(e) => {
+                        setLocalStart(e.target.value);
+                        if (localEnd && e.target.value) handleDateApply(e.target.value, localEnd);
+                      }}
+                      className="h-8 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 text-[16px] text-zinc-200 focus:border-indigo-500 focus:outline-none [color-scheme:dark]"
+                    />
+                    <input
+                      type="date"
+                      value={localEnd}
+                      min={localStart || undefined}
+                      onChange={(e) => {
+                        setLocalEnd(e.target.value);
+                        if (localStart && e.target.value) handleDateApply(localStart, e.target.value);
+                      }}
+                      className="h-8 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-2.5 text-[16px] text-zinc-200 focus:border-indigo-500 focus:outline-none [color-scheme:dark]"
+                    />
+                    {hasRange && (
+                      <button
+                        onClick={handleClearCustom}
+                        className="flex items-center justify-center gap-1.5 h-7 rounded-md border border-zinc-700 text-xs text-zinc-500 hover:border-red-800 hover:text-red-400 transition-colors"
+                      >
+                        <IconX size={11} />
+                        Limpar
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
+      {/* ── Desktop layout (sm+) ─────────────────────────────── */}
+      <div className="hidden sm:flex items-center gap-2">
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
@@ -105,7 +241,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
               className={cn(
                 "flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold transition-all whitespace-nowrap",
                 hasRange
-                  ? "bg-indigo-600 text-white shadow-sm"
+                  ? "bg-indigo-600 text-white"
                   : showCustom
                   ? "bg-zinc-700 text-zinc-100"
                   : "text-zinc-400 hover:text-zinc-100"
@@ -119,8 +255,9 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
         </div>
       </div>
 
+      {/* ── Custom date range row (desktop only) ─────────────── */}
       {showCustom && (
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="hidden sm:flex flex-wrap items-center gap-1.5">
           <input
             type="date"
             value={localStart}

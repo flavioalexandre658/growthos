@@ -123,6 +123,63 @@ function buildFlowNodes(data: IMrrOverview): { inputs: FlowNode[]; outputs: Flow
   };
 }
 
+function FlowNodeRow({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg bg-zinc-800/50">
+      <span className="text-xs text-zinc-400">{label}</span>
+      <span
+        className="text-sm font-bold font-mono rounded-full px-2.5 py-0.5 shrink-0"
+        style={{ color, backgroundColor: `${color}20` }}
+      >
+        {fmtInt(value)}
+      </span>
+    </div>
+  );
+}
+
+function SubscriberFlowMobile({ data }: { data: IMrrOverview }) {
+  const { inputs, outputs } = buildFlowNodes(data);
+
+  return (
+    <div className="space-y-2">
+      <div className="space-y-1">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 px-1">Entradas</p>
+        <div className="space-y-1">
+          {inputs.map((node) => (
+            <FlowNodeRow key={node.key} label={node.label} value={node.value} color={node.color} />
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center gap-0.5 py-1">
+        <div className="h-4 w-px bg-zinc-700" />
+      </div>
+
+      <div
+        className="rounded-xl px-4 py-3 text-center"
+        style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.20)" }}
+      >
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500 mb-1">Base Ativa</p>
+        <p className="text-3xl font-bold font-mono text-zinc-100">{fmtInt(data.activeSubscriptions)}</p>
+        <p className="text-xs font-mono text-zinc-400 mt-0.5">{fmtBRLDecimal((data.mrr ?? 0) / 100)} MRR</p>
+      </div>
+
+      <div className="flex flex-col items-center gap-0.5 py-1">
+        <div className="h-4 w-px bg-zinc-700" />
+      </div>
+
+      <div className="space-y-1">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 px-1">Saídas</p>
+        <div className="space-y-1">
+          {outputs.map((node) => (
+            <FlowNodeRow key={node.key} label={node.label} value={node.value} color={node.color} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
   const [hovered, setHovered] = useState<string | null>(null);
 
@@ -455,7 +512,14 @@ export function SubscriberFlowSankey({ data, isLoading }: SubscriberFlowSankeyPr
           Sem dados de recorrência
         </div>
       ) : (
-        <SubscriberSankeyInner data={data} />
+        <>
+          <div className="md:hidden">
+            <SubscriberFlowMobile data={data} />
+          </div>
+          <div className="hidden md:block">
+            <SubscriberSankeyInner data={data} />
+          </div>
+        </>
       )}
     </div>
   );

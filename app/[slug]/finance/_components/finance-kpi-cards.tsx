@@ -68,34 +68,37 @@ interface KpiCardProps {
 
 function KpiCard({ label, value, previousLabel, subLabel, icon: Icon, color, bgColor, current, previous, hero }: KpiCardProps) {
   const hasPrev = previous !== undefined && previous > 0 && current !== undefined;
+
+  const variationBadge = hasPrev && current !== undefined && previous !== undefined ? (
+    <VariationBadge current={current} previous={previous} />
+  ) : null;
+
   return (
-    <div className={`rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-1.5 ${hero ? "sm:col-span-2" : ""}`}>
-      <div className="flex items-center justify-between gap-1">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500 truncate">
+    <div className={`rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 sm:p-4 flex flex-col gap-1 ${hero ? "sm:col-span-2" : ""}`}>
+      <div className="flex items-center justify-between gap-1 min-w-0">
+        <span className="text-[10px] font-semibold uppercase tracking-tight sm:tracking-widest text-zinc-500 truncate min-w-0">
           {label}
         </span>
-        <div className={`flex h-6 w-6 items-center justify-center rounded-md shrink-0 ${bgColor}`}>
-          <Icon size={12} className={color} />
+        <div className={`flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-md shrink-0 ${bgColor}`}>
+          <Icon size={11} className={color} />
         </div>
       </div>
-      <div className="flex items-baseline gap-1.5 flex-wrap">
-        <span className={`font-bold font-mono leading-none ${color} ${hero ? "text-3xl" : "text-xl"}`}>
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-1.5">
+        <span className={`font-bold font-mono leading-none ${color} ${hero ? "text-2xl sm:text-3xl" : "text-lg sm:text-xl"}`}>
           {value}
         </span>
-        {hasPrev && current !== undefined && previous !== undefined && (
-          <VariationBadge current={current} previous={previous} />
-        )}
+        {variationBadge && <span className="flex">{variationBadge}</span>}
       </div>
       {hasPrev && previousLabel && (
-        <p className="text-[10px] text-zinc-600 leading-tight truncate">
-          Comparado a {previousLabel} no período anterior
+        <p className="text-[9px] sm:text-[10px] text-zinc-600 leading-tight truncate">
+          vs {previousLabel} anterior
         </p>
       )}
       {!hasPrev && subLabel && (
-        <p className="text-[10px] text-zinc-600 leading-tight">{subLabel}</p>
+        <p className="text-[9px] sm:text-[10px] text-zinc-600 leading-tight">{subLabel}</p>
       )}
       {hasPrev && !previousLabel && subLabel && (
-        <p className="text-[10px] text-zinc-600 leading-tight">{subLabel}</p>
+        <p className="text-[9px] sm:text-[10px] text-zinc-600 leading-tight">{subLabel}</p>
       )}
     </div>
   );
@@ -111,7 +114,7 @@ function BlockHeader({ label }: { label: string }) {
 
 function SkeletonCard({ hero }: { hero?: boolean }) {
   return (
-    <div className={`rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-1.5 ${hero ? "sm:col-span-2" : ""}`}>
+    <div className={`rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 sm:p-4 flex flex-col gap-1.5 ${hero ? "sm:col-span-2" : ""}`}>
       <div className="flex items-center justify-between">
         <Skeleton className="h-3 w-20 bg-zinc-800" />
         <Skeleton className="h-6 w-6 rounded-md bg-zinc-800" />

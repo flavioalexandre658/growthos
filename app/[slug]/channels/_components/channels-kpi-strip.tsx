@@ -14,15 +14,26 @@ interface KpiItemProps {
   label: string;
   value: React.ReactNode;
   sub?: React.ReactNode;
-  divider?: boolean;
+  rightBorder?: boolean;
+  bottomBorder?: boolean;
 }
 
-function KpiItem({ label, value, sub, divider = true }: KpiItemProps) {
+function KpiItem({ label, value, sub, rightBorder, bottomBorder }: KpiItemProps) {
   return (
-    <div className={`flex-1 px-5 py-3 flex flex-col gap-0.5 ${divider ? "border-r border-zinc-800" : ""}`}>
-      <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider">{label}</span>
-      <div className="text-sm font-bold font-mono text-zinc-100">{value}</div>
-      {sub && <div className="text-[10px] text-zinc-600">{sub}</div>}
+    <div
+      className={[
+        "flex flex-col gap-0.5 px-4 py-3 min-w-0",
+        rightBorder ? "border-r border-zinc-800" : "",
+        bottomBorder ? "border-b border-zinc-800" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <span className="text-[10px] font-medium text-zinc-500 uppercase tracking-wider truncate">
+        {label}
+      </span>
+      <div className="text-sm font-bold font-mono text-zinc-100 truncate">{value}</div>
+      {sub && <div className="text-[10px] text-zinc-600 truncate">{sub}</div>}
     </div>
   );
 }
@@ -30,9 +41,12 @@ function KpiItem({ label, value, sub, divider = true }: KpiItemProps) {
 export function ChannelsKpiStrip({ data, isLoading }: ChannelsKpiStripProps) {
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 flex overflow-hidden">
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 grid grid-cols-2 sm:flex overflow-hidden">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex-1 px-5 py-3 border-r border-zinc-800 last:border-r-0">
+          <div
+            key={i}
+            className="flex-1 px-4 py-3 border-r border-zinc-800 last:border-r-0 border-b sm:border-b-0 [&:nth-child(2)]:border-r-0 sm:[&:nth-child(2)]:border-r [&:nth-child(n+3)]:border-b-0"
+          >
             <Skeleton className="h-3 w-16 bg-zinc-800 mb-2 rounded" />
             <Skeleton className="h-5 w-24 bg-zinc-800 rounded" />
           </div>
@@ -51,44 +65,87 @@ export function ChannelsKpiStrip({ data, isLoading }: ChannelsKpiStripProps) {
   const topChannelName = topChannel ? getChannelName(topChannel) : "—";
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 flex overflow-hidden">
-      <KpiItem
-        label="Total de Canais"
-        value={totalChannels}
-        sub={`${channelsWithRevenue} com receita`}
-      />
-      <KpiItem
-        label="Receita Total"
-        value={
-          <span className="text-emerald-400">{fmtBRLDecimal(totalRevenue / 100)}</span>
-        }
-        sub="no período"
-      />
-      <KpiItem
-        label="Canal Líder"
-        value={
-          <span className="flex items-center gap-1.5">
-            <span
-              className="inline-block h-2 w-2 rounded-full shrink-0"
-              style={{ background: topChannelColor }}
-            />
-            {topChannelName || "—"}
-          </span>
-        }
-        sub={topChannel ? "maior receita" : undefined}
-      />
-      <KpiItem
-        label="Concentração"
-        value={
-          concentrationTop2 > 0 ? (
-            <span className={concentrationTop2 >= 80 ? "text-amber-400" : "text-zinc-100"}>
-              {concentrationTop2}%
+    <>
+      <div className="sm:hidden rounded-xl border border-zinc-800 bg-zinc-900/50 grid grid-cols-2 overflow-hidden">
+        <KpiItem
+          label="Total de Canais"
+          value={totalChannels}
+          sub={`${channelsWithRevenue} com receita`}
+          rightBorder
+          bottomBorder
+        />
+        <KpiItem
+          label="Receita Total"
+          value={<span className="text-emerald-400">{fmtBRLDecimal(totalRevenue / 100)}</span>}
+          sub="no período"
+          bottomBorder
+        />
+        <KpiItem
+          label="Canal Líder"
+          value={
+            <span className="flex items-center gap-1.5">
+              <span
+                className="inline-block h-2 w-2 rounded-full shrink-0"
+                style={{ background: topChannelColor }}
+              />
+              <span className="truncate">{topChannelName || "—"}</span>
             </span>
-          ) : "—"
-        }
-        sub={concentrationTop2 > 0 ? "top 2 canais" : undefined}
-        divider={false}
-      />
-    </div>
+          }
+          sub={topChannel ? "maior receita" : undefined}
+          rightBorder
+        />
+        <KpiItem
+          label="Concentração"
+          value={
+            concentrationTop2 > 0 ? (
+              <span className={concentrationTop2 >= 80 ? "text-amber-400" : "text-zinc-100"}>
+                {concentrationTop2}%
+              </span>
+            ) : "—"
+          }
+          sub={concentrationTop2 > 0 ? "top 2 canais" : undefined}
+        />
+      </div>
+
+      <div className="hidden sm:flex rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+        <KpiItem
+          label="Total de Canais"
+          value={totalChannels}
+          sub={`${channelsWithRevenue} com receita`}
+          rightBorder
+        />
+        <KpiItem
+          label="Receita Total"
+          value={<span className="text-emerald-400">{fmtBRLDecimal(totalRevenue / 100)}</span>}
+          sub="no período"
+          rightBorder
+        />
+        <KpiItem
+          label="Canal Líder"
+          value={
+            <span className="flex items-center gap-1.5">
+              <span
+                className="inline-block h-2 w-2 rounded-full shrink-0"
+                style={{ background: topChannelColor }}
+              />
+              {topChannelName || "—"}
+            </span>
+          }
+          sub={topChannel ? "maior receita" : undefined}
+          rightBorder
+        />
+        <KpiItem
+          label="Concentração"
+          value={
+            concentrationTop2 > 0 ? (
+              <span className={concentrationTop2 >= 80 ? "text-amber-400" : "text-zinc-100"}>
+                {concentrationTop2}%
+              </span>
+            ) : "—"
+          }
+          sub={concentrationTop2 > 0 ? "top 2 canais" : undefined}
+        />
+      </div>
+    </>
   );
 }

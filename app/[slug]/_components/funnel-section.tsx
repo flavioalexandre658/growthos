@@ -60,6 +60,60 @@ function flowPath(x1: number, h1: number, x2: number, h2: number): string {
   ].join(" ");
 }
 
+function FunnelMobile({ steps, allStepKeys }: SankeyFunnelProps) {
+  const maxValue = Math.max(...steps.map((s) => s.value), 1);
+
+  const rates = steps.slice(1).map((step, i) => {
+    const prev = steps[i];
+    if (prev.value <= 0) return "—";
+    return `${((step.value / prev.value) * 100).toFixed(0)}%`;
+  });
+
+  return (
+    <div className="space-y-0.5">
+      {steps.map((step, i) => {
+        const color = getStepColor(step.key, allStepKeys).hex;
+        const pct = maxValue > 0 ? (step.value / maxValue) * 100 : 0;
+        const globalRate = maxValue > 0 ? ((step.value / steps[0].value) * 100).toFixed(0) : "0";
+
+        return (
+          <div key={step.key}>
+            <div className="flex items-center gap-3 rounded-lg bg-zinc-800/50 px-3 py-2.5">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <span className="text-xs font-medium text-zinc-300 truncate">{step.label}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-[10px] text-zinc-500 font-mono">{i === 0 ? "100%" : `${globalRate}%`}</span>
+                    <span
+                      className="min-w-[44px] text-center text-sm font-bold font-mono rounded-full px-2.5 py-0.5"
+                      style={{ color, backgroundColor: `${color}20` }}
+                    >
+                      {fmtInt(step.value)}
+                    </span>
+                  </div>
+                </div>
+                <div className="h-1 w-full rounded-full bg-zinc-700/50 overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${pct}%`, backgroundColor: color }}
+                  />
+                </div>
+              </div>
+            </div>
+            {i < steps.length - 1 && (
+              <div className="flex items-center justify-center gap-1.5 py-1">
+                <div className="h-3 w-px bg-zinc-700" />
+                <span className="text-[10px] font-mono text-zinc-500">{rates[i]}</span>
+                <div className="h-3 w-px bg-zinc-700" />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function SankeyFunnel({ steps, allStepKeys }: SankeyFunnelProps) {
   const [hovered, setHovered] = useState<number | null>(null);
 
@@ -316,7 +370,14 @@ export function FunnelSection({ data, isLoading, hiddenKeys }: FunnelSectionProp
           <p className="text-xs text-zinc-700">Configure ao menos 2 etapas no funil</p>
         </div>
       ) : (
-        <SankeyFunnel steps={visibleSteps} allStepKeys={allStepKeys} />
+        <>
+          <div className="md:hidden">
+            <FunnelMobile steps={visibleSteps} allStepKeys={allStepKeys} />
+          </div>
+          <div className="hidden md:block">
+            <SankeyFunnel steps={visibleSteps} allStepKeys={allStepKeys} />
+          </div>
+        </>
       )}
 
       {isLoading && (

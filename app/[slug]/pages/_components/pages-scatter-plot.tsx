@@ -47,6 +47,124 @@ const Q_META = {
 
 type Quadrant = keyof typeof Q_META;
 
+const Q_ORDER: Quadrant[] = ["escalar", "manter", "otimizar", "ignorar"];
+
+function classifyQuadrant(visits: number, conversionRate: number, medianX: number, medianY: number): Quadrant {
+  const highV = visits >= medianX;
+  const highC = conversionRate >= medianY;
+  if (!highV && highC) return "escalar";
+  if (highV && highC) return "manter";
+  if (highV && !highC) return "otimizar";
+  return "ignorar";
+}
+
+function PagesScatterMobile({ data, isLoading }: PagesScatterPlotProps) {
+  const points = useMemo(() => data ?? [], [data]);
+
+  const { medianX, medianY } = useMemo(() => {
+    if (points.length === 0) return { medianX: 1, medianY: 50 };
+    const logVisits = points.map((p) => safeLog(Math.max(p.visits, 1)));
+    const convRates = points.map((p) => p.conversionRate);
+    const sorted = [...logVisits].sort((a, b) => a - b);
+    const sortedConv = [...convRates].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return { medianX: Math.pow(10, sorted[mid]), medianY: sortedConv[mid] };
+  }, [points]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<Quadrant, IPageScatterPoint[]>();
+    for (const q of Q_ORDER) map.set(q, []);
+    for (const p of points) {
+      const q = classifyQuadrant(p.visits, p.conversionRate, medianX, medianY);
+      map.get(q)!.push(p);
+    }
+    for (const q of Q_ORDER) {
+      map.get(q)!.sort((a, b) => b.revenue - a.revenue);
+    }
+    return map;
+  }, [points, medianX, medianY]);
+
+  const shortPath = (p: string) => (p.length > 32 ? p.slice(0, 31) + "…" : p);
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+      <div className="mb-3">
+        <h3 className="text-sm font-bold text-zinc-100">Oportunidades</h3>
+        <p className="mt-0.5 text-[10px] text-zinc-500">Volume vs conversão por quadrante</p>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-16 w-full rounded-lg bg-zinc-800" />
+          ))}
+        </div>
+      ) : points.length === 0 ? (
+        <div className="flex items-center justify-center h-24 text-zinc-600 text-sm">
+          Sem dados suficientes no período
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {Q_ORDER.map((q) => {
+            const group = grouped.get(q)!;
+            if (group.length === 0) return null;
+            const meta = Q_META[q];
+            const top = group.slice(0, 5);
+
+            return (
+              <div key={q}>
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <span
+                    className="inline-block h-1.5 w-1.5 rounded-full shrink-0"
+                    style={{ background: meta.color }}
+                  />
+                  <span
+                    className="text-[10px] font-semibold uppercase tracking-wider"
+                    style={{ color: meta.color }}
+                  >
+                    {meta.label}
+                  </span>
+                  <span className="text-[10px] text-zinc-600 font-mono">
+                    {group.length} página{group.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  {top.map((p) => (
+                    <div
+                      key={p.page}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-zinc-800/60 bg-zinc-800/30 px-3 py-2"
+                    >
+                      <span className="text-[11px] text-zinc-300 truncate min-w-0 font-mono">
+                        {shortPath(p.page)}
+                      </span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] font-bold font-mono text-zinc-100">
+                          {fmtBRLDecimal(p.revenue / 100)}
+                        </span>
+                        <span
+                          className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded"
+                          style={{ color: meta.color, backgroundColor: `${meta.color}20` }}
+                        >
+                          {p.conversionRate.toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {group.length > 5 && (
+                    <p className="text-[10px] text-zinc-600 text-center py-0.5">
+                      +{group.length - 5} página{group.length - 5 !== 1 ? "s" : ""}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -136,7 +254,11 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
   const shortPath = (p: string) => (p.length > 36 ? p.slice(0, 35) + "…" : p);
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+    <>
+      <div className="md:hidden">
+        <PagesScatterMobile data={data} isLoading={isLoading} />
+      </div>
+      <div className="hidden md:block rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <div className="flex items-baseline justify-between mb-3">
         <div>
           <h3 className="text-sm font-bold text-zinc-100">Oportunidades</h3>
@@ -426,5 +548,6 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
         </div>
       )}
     </div>
+    </>
   );
 }

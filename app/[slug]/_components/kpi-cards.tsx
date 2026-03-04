@@ -52,47 +52,51 @@ function KpiCard({ label, value, previousLabel, icon: Icon, color, bgColor, curr
   const hasPrev = previous !== undefined && previous > 0 && current !== undefined;
   const variation = hasPrev ? computeVariation(current!, previous!) : null;
 
+  const variationBadge = variation ? (
+    variation.abs < 0.5 ? (
+      <span className="flex items-center gap-0.5 rounded-md bg-zinc-800/60 px-1.5 py-0.5 text-[10px] font-mono font-medium text-zinc-500">
+        <IconMinus size={9} />
+        0%
+      </span>
+    ) : (
+      <span
+        className={`flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-mono font-medium ${
+          variation.isUp
+            ? "bg-emerald-950/60 text-emerald-400"
+            : "bg-rose-950/60 text-rose-400"
+        }`}
+      >
+        {variation.isUp ? <IconTrendingUp size={9} /> : <IconTrendingDown size={9} />}
+        {variation.isUp ? "+" : "-"}{variation.abs.toFixed(1)}%
+      </span>
+    )
+  ) : null;
+
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-1.5">
-      <div className="flex items-center justify-between gap-1">
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 truncate">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 sm:p-4 flex flex-col gap-1">
+      <div className="flex items-center justify-between gap-1 min-w-0">
+        <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-tight sm:tracking-widest text-zinc-500 truncate min-w-0">
           {label}
         </span>
-        <div className={`flex h-6 w-6 items-center justify-center rounded-md shrink-0 ${bgColor}`}>
-          <Icon size={12} className={color} />
+        <div className={`flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-md shrink-0 ${bgColor}`}>
+          <Icon size={11} className={color} />
         </div>
       </div>
 
-      <div className="flex items-baseline gap-1.5 flex-wrap">
-        <span className={`text-2xl font-bold font-mono leading-none ${color}`}>{value}</span>
-        {variation && (
-          variation.abs < 0.5 ? (
-            <span className="flex items-center gap-0.5 rounded-md bg-zinc-800/60 px-1.5 py-0.5 text-[10px] font-mono font-medium text-zinc-500">
-              <IconMinus size={9} />
-              0%
-            </span>
-          ) : (
-            <span
-              className={`flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-mono font-medium ${
-                variation.isUp
-                  ? "bg-emerald-950/60 text-emerald-400"
-                  : "bg-rose-950/60 text-rose-400"
-              }`}
-            >
-              {variation.isUp ? <IconTrendingUp size={9} /> : <IconTrendingDown size={9} />}
-              {variation.isUp ? "+" : "-"}{variation.abs.toFixed(1)}%
-            </span>
-          )
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-1.5">
+        <span className={`text-xl sm:text-2xl font-bold font-mono leading-none ${color}`}>{value}</span>
+        {variationBadge && (
+          <span className="flex">{variationBadge}</span>
         )}
       </div>
 
       {hasPrev && previousLabel && (
-        <p className="text-[10px] text-zinc-600 leading-tight truncate">
-          Comparado a {previousLabel} no período anterior
+        <p className="text-[9px] sm:text-[10px] text-zinc-600 leading-tight truncate">
+          vs {previousLabel} anterior
         </p>
       )}
       {!hasPrev && (
-        <p className="text-[10px] text-zinc-700 leading-tight">Sem dados anteriores</p>
+        <p className="text-[9px] sm:text-[10px] text-zinc-700 leading-tight">Sem dados anteriores</p>
       )}
     </div>
   );
@@ -100,7 +104,7 @@ function KpiCard({ label, value, previousLabel, icon: Icon, color, bgColor, curr
 
 function KpiCardSkeleton() {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-1.5">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 sm:p-4 flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
         <Skeleton className="h-3 w-20 bg-zinc-800" />
         <Skeleton className="h-6 w-6 rounded-md bg-zinc-800" />

@@ -180,6 +180,91 @@ interface TooltipData {
   mouseY: number;
 }
 
+function ChannelsTreemapMobile({ data, isLoading }: ChannelsTreemapProps) {
+  const sorted = useMemo(
+    () => (data ?? []).filter((c) => c.revenue > 0).sort((a, b) => b.revenue - a.revenue),
+    [data]
+  );
+  const totalRevenue = useMemo(
+    () => sorted.reduce((s, c) => s + c.revenue, 0),
+    [sorted]
+  );
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
+      <div className="flex items-baseline justify-between mb-3">
+        <div>
+          <h3 className="text-sm font-bold text-zinc-100">Receita por Canal</h3>
+          <p className="mt-0.5 text-[10px] text-zinc-500">Proporção por receita</p>
+        </div>
+        {sorted.length > 0 && (
+          <span className="text-[10px] text-zinc-600 font-mono">
+            {sorted.length} canal{sorted.length !== 1 ? "is" : ""}
+          </span>
+        )}
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-14 w-full rounded-lg bg-zinc-800" />
+          ))}
+        </div>
+      ) : sorted.length === 0 ? (
+        <div className="flex items-center justify-center h-24 text-zinc-600 text-sm">
+          Sem dados de receita no período
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {sorted.map((channel, idx) => {
+            const color = getChannelColor(channel.channel, idx);
+            const name = getChannelName(channel.channel);
+            const pct = totalRevenue > 0 ? Math.round((channel.revenue / totalRevenue) * 100) : 0;
+            const payments = channel.steps["payment"] ?? 0;
+
+            return (
+              <div
+                key={channel.channel}
+                className="flex items-center gap-3 rounded-lg border border-zinc-800/60 bg-zinc-800/30 px-3 py-2.5"
+              >
+                <div
+                  className="shrink-0 w-1 self-stretch rounded-full"
+                  style={{ backgroundColor: color }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-zinc-200 truncate">{name}</span>
+                    <span
+                      className="shrink-0 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded"
+                      style={{ color, backgroundColor: `${color}20` }}
+                    >
+                      {pct}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-2 mt-0.5">
+                    <span className="text-sm font-bold font-mono text-zinc-100">
+                      {fmtBRLDecimal(channel.revenue / 100)}
+                    </span>
+                    <span className="text-[10px] text-zinc-500 font-mono shrink-0">
+                      {fmtInt(payments)} pag. · conv. {channel.conversion_rate}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 h-0.5 rounded-full bg-zinc-800">
+                    <div
+                      className="h-full rounded-full"
+                      style={{ width: `${pct}%`, backgroundColor: color, opacity: 0.7 }}
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
   const [hoveredChannel, setHoveredChannel] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
@@ -214,7 +299,11 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
   );
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+    <>
+      <div className="md:hidden">
+        <ChannelsTreemapMobile data={data} isLoading={isLoading} />
+      </div>
+      <div className="hidden md:block rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <div className="flex items-baseline justify-between mb-3">
         <div>
           <h3 className="text-sm font-bold text-zinc-100">Receita por Canal</h3>
@@ -522,5 +611,6 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
         </div>
       )}
     </div>
+    </>
   );
 }
