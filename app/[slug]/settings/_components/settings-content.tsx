@@ -26,18 +26,6 @@ export function SettingsContent() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  const markUnsaved = useCallback((sectionId: string) => {
-    setUnsavedSections((prev) => new Set(prev).add(sectionId));
-  }, []);
-
-  const markSaved = useCallback((sectionId: string) => {
-    setUnsavedSections((prev) => {
-      const next = new Set(prev);
-      next.delete(sectionId);
-      return next;
-    });
-  }, []);
-
   const activeLabel = SETTINGS_SECTIONS.find((s) => s.id === activeSection)?.label ?? "";
 
   return (
