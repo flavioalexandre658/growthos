@@ -181,12 +181,14 @@ function EventCard({
             >
               {event.eventType}
             </span>
-            <span
-              className="text-[10px] text-zinc-600 shrink-0"
-              title={dayjs(event.createdAt).format("DD/MM/YYYY HH:mm:ss")}
-            >
-              {dayjs(event.createdAt).fromNow()}
-            </span>
+            <div className="flex flex-col items-end gap-0.5 shrink-0">
+              <span className="text-[10px] font-mono text-zinc-400">
+                {dayjs(event.createdAt).format("DD/MM/YYYY HH:mm")}
+              </span>
+              <span className="text-[9px] text-zinc-600">
+                {dayjs(event.createdAt).fromNow()}
+              </span>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
@@ -323,12 +325,14 @@ function EventRow({
           )}
         </td>
         <td className="px-3 py-2.5 whitespace-nowrap">
-          <span
-            className="text-xs text-zinc-600"
-            title={dayjs(event.createdAt).format("DD/MM/YYYY HH:mm:ss")}
-          >
-            {dayjs(event.createdAt).fromNow()}
-          </span>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-mono text-zinc-300">
+              {dayjs(event.createdAt).format("DD/MM/YYYY HH:mm")}
+            </span>
+            <span className="text-[10px] text-zinc-600">
+              {dayjs(event.createdAt).fromNow()}
+            </span>
+          </div>
         </td>
         <td className="px-3 py-2.5 w-10">
           <button
