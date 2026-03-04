@@ -17,7 +17,7 @@ import { TeamSection } from "./team-section";
 export function SettingsContent() {
   const { organization, isLoading } = useOrganization();
   const [activeSection, setActiveSection] = useState(SETTINGS_SECTIONS[0].id);
-  const [unsavedSections, setUnsavedSections] = useState<Set<string>>(
+  const [unsavedSections] = useState<Set<string>>(
     new Set(),
   );
 
