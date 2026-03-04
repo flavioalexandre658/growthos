@@ -20,6 +20,7 @@ import {
   IconWorld,
 } from "@tabler/icons-react";
 import { FunnelStepsSection } from "./funnel-steps-section";
+import { AiProfileSection } from "./ai-profile-section";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -504,6 +505,10 @@ export function SettingsContent() {
           <FunnelStepsSection
             orgId={organization.id}
             initialSteps={organization.funnelSteps}
+          />
+          <AiProfileSection
+            orgId={organization.id}
+            initialProfile={organization.aiProfile}
           />
           <OrgApiKeysSection
             orgId={organization.id}

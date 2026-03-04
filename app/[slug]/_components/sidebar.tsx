@@ -24,6 +24,7 @@ import {
   IconPlus,
   IconRepeat,
   IconSparkles,
+  IconTrendingUp,
   IconList,
   IconBug,
 } from "@tabler/icons-react";
@@ -94,7 +95,8 @@ function buildNavSections(slug: string): NavSection[] {
     {
       title: "Inteligência",
       items: [
-        { href: `/${slug}/ai`, label: "Análise com IA", icon: IconSparkles, exact: false, highlight: true },
+        { href: `/${slug}/ai`, label: "Análise com IA", icon: IconSparkles, exact: true, highlight: true },
+        { href: `/${slug}/ai/comparativo`, label: "Comparativo", icon: IconTrendingUp, exact: false, highlight: false },
       ],
     },
   ];

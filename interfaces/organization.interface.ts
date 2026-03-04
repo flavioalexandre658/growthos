@@ -1,3 +1,5 @@
+import type { IAiProfile } from "./ai.interface";
+
 export interface IFunnelStep {
   eventType: string;
   label: string;
@@ -12,6 +14,7 @@ export interface IOrganization {
   funnelSteps: IFunnelStep[];
   timezone: string;
   hasRecurringRevenue: boolean;
+  aiProfile?: IAiProfile;
   createdAt: Date;
   updatedAt: Date;
 }

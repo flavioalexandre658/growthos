@@ -7,6 +7,13 @@ export interface IFunnelStepConfig {
   hidden?: boolean;
 }
 
+export interface IAiProfileConfig {
+  segment?: string;
+  model?: string;
+  taxRegime?: string;
+  monthlyGoal?: number;
+}
+
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -20,6 +27,7 @@ export const organizations = pgTable("organizations", {
     ]),
   timezone: text("timezone").notNull().default("America/Sao_Paulo"),
   hasRecurringRevenue: boolean("has_recurring_revenue").notNull().default(false),
+  aiProfile: jsonb("ai_profile").$type<IAiProfileConfig>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { IconSparkles, IconRefresh, IconChevronDown, IconChevronUp } from "@tabler/icons-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { IconSparkles, IconTrendingUp, IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { ComparisonDialog } from "./comparison-dialog";
 import type { IProfitAndLoss } from "@/interfaces/cost.interface";
 import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
@@ -21,10 +22,12 @@ export function AiAnalysisSection({
   filter,
   orgName,
 }: AiAnalysisSectionProps) {
+  const params = useParams<{ slug: string }>();
+  const slug = params.slug ?? "";
+
   const [analysis, setAnalysis] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [comparisonOpen, setComparisonOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   const handleAnalyze = async () => {
@@ -109,11 +112,13 @@ export function AiAnalysisSection({
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setComparisonOpen(true)}
+            asChild
             className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 h-8 gap-1.5 text-xs"
           >
-            <IconRefresh size={13} />
-            Comparar Períodos
+            <Link href={`/${slug}/ai/comparativo`}>
+              <IconTrendingUp size={13} />
+              Comparar Períodos
+            </Link>
           </Button>
           <Button
             size="sm"
@@ -158,12 +163,6 @@ export function AiAnalysisSection({
         </div>
       )}
 
-      <ComparisonDialog
-        open={comparisonOpen}
-        onOpenChange={setComparisonOpen}
-        orgName={orgName}
-        pl={pl}
-      />
     </div>
   );
 }
