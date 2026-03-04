@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, real, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, real, timestamp, index } from "drizzle-orm/pg-core";
 import { organizations } from "./organization.schema";
 
 export const exchangeRates = pgTable(
@@ -11,14 +11,16 @@ export const exchangeRates = pgTable(
     fromCurrency: text("from_currency").notNull(),
     toCurrency: text("to_currency").notNull(),
     rate: real("rate").notNull(),
+    effectiveFrom: timestamp("effective_from").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex("exchange_rates_org_pair_idx").on(
+    index("exchange_rates_org_pair_date_idx").on(
       table.organizationId,
       table.fromCurrency,
       table.toCurrency,
+      table.effectiveFrom,
     ),
   ],
 );

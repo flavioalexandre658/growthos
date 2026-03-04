@@ -11,6 +11,7 @@ const schema = z.object({
   fromCurrency: z.string().length(3).toUpperCase(),
   toCurrency: z.string().length(3).toUpperCase(),
   rate: z.number().positive("A taxa deve ser maior que zero"),
+  effectiveFrom: z.string().optional(),
 });
 
 export async function upsertExchangeRate(input: z.infer<typeof schema>) {
@@ -19,6 +20,10 @@ export async function upsertExchangeRate(input: z.infer<typeof schema>) {
 
   const data = schema.parse(input);
 
+  const effectiveFrom = data.effectiveFrom
+    ? new Date(data.effectiveFrom)
+    : new Date();
+
   const [rate] = await db
     .insert(exchangeRates)
     .values({
@@ -26,17 +31,7 @@ export async function upsertExchangeRate(input: z.infer<typeof schema>) {
       fromCurrency: data.fromCurrency,
       toCurrency: data.toCurrency,
       rate: data.rate,
-    })
-    .onConflictDoUpdate({
-      target: [
-        exchangeRates.organizationId,
-        exchangeRates.fromCurrency,
-        exchangeRates.toCurrency,
-      ],
-      set: {
-        rate: data.rate,
-        updatedAt: new Date(),
-      },
+      effectiveFrom,
     })
     .returning();
 

@@ -6,3 +6,5 @@ export * from "./api-key.schema";
 export * from "./user.schema";
 export * from "./subscription.schema";
 export * from "./pageview-aggregate.schema";
+export * from "./alert-config.schema";
+export * from "./org-member.schema";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { IconBrain, IconCheck } from "@tabler/icons-react";
+import { IconBrain, IconCheck, IconInfoCircle } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { updateAiProfile } from "@/actions/organizations/update-ai-profile.action";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,6 +16,14 @@ const TAX_REGIMES = [
   { value: "lucro_presumido", label: "Lucro Presumido" },
   { value: "lucro_real", label: "Lucro Real" },
 ];
+
+const TAX_REGIME_DESCRIPTIONS: Record<string, string> = {
+  "": "IA não considera impostos nas análises de rentabilidade",
+  mei: "IA considera alíquota fixa de ~5% (DAS) nas recomendações de margem",
+  simples_nacional: "IA considera alíquota de ~6% nas recomendações de margem",
+  lucro_presumido: "IA considera alíquota de ~13,33% nas recomendações de margem",
+  lucro_real: "IA considera alíquota variável — informe o contexto no segmento para mais precisão",
+};
 
 export function AiProfileSection({
   orgId,
@@ -105,6 +113,14 @@ export function AiProfileSection({
                 </option>
               ))}
             </select>
+            {TAX_REGIME_DESCRIPTIONS[taxRegime] && (
+              <div className="flex items-start gap-1.5">
+                <IconInfoCircle size={12} className="text-zinc-600 mt-0.5 shrink-0" />
+                <p className="text-[11px] text-zinc-500 leading-relaxed">
+                  {TAX_REGIME_DESCRIPTIONS[taxRegime]}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">
