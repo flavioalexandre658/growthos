@@ -76,9 +76,10 @@
     } catch (_) {}
   }
 
-  var SEARCH_ENGINES = ["google", "bing", "yahoo", "duckduckgo", "baidu", "yandex", "ecosia"];
+  var SEARCH_ENGINES = ["google", "bing", "yahoo", "duckduckgo", "baidu", "yandex", "ecosia", "chatgpt", "perplexity", "gemini", "claude", "copilot"];
 
   var SOURCE_PATTERNS = [
+    { pattern: /gemini\.google/i, source: "gemini" },
     { pattern: /google/i, source: "google" },
     { pattern: /bing/i, source: "bing" },
     { pattern: /yahoo/i, source: "yahoo" },
@@ -96,6 +97,10 @@
     { pattern: /baidu/i, source: "baidu" },
     { pattern: /yandex/i, source: "yandex" },
     { pattern: /ecosia/i, source: "ecosia" },
+    { pattern: /chat\.openai|chatgpt/i, source: "chatgpt" },
+    { pattern: /perplexity/i, source: "perplexity" },
+    { pattern: /claude\.ai/i, source: "claude" },
+    { pattern: /copilot\.microsoft/i, source: "copilot" },
   ];
 
   function isSameSite(referrer) {

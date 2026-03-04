@@ -31,6 +31,8 @@ const SOURCE_ALIASES: Record<string, string> = {
   gads: "google",
   tw: "twitter",
   x: "twitter",
+  openai: "chatgpt",
+  "chat.openai": "chatgpt",
 };
 
 function normalizeSource(source: string): string {
@@ -195,7 +197,7 @@ export async function getChannels(
   }
 
   for (const [source, sessions] of pvBySource) {
-    const normalizedSource = normalizeChannel(source === "direct" ? "direct" : source + "_organic");
+    const normalizedSource = normalizeChannel(source);
     if (!channelMap.has(normalizedSource)) {
       channelMap.set(normalizedSource, { steps: {}, revenue: 0, paymentCount: 0 });
     }

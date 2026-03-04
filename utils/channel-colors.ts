@@ -21,6 +21,11 @@ export const CHANNEL_COLORS: Record<string, string> = {
   whatsapp_organic: "#22c55e",
   email_organic: "#a855f7",
   telegram_organic: "#0ea5e9",
+  chatgpt_organic: "#10a37f",
+  perplexity_organic: "#20b2aa",
+  gemini_organic: "#886efe",
+  claude_organic: "#d97706",
+  copilot_organic: "#0078d4",
 };
 
 export const CHANNEL_NAMES: Record<string, string> = {
@@ -48,6 +53,11 @@ export const CHANNEL_NAMES: Record<string, string> = {
   telegram_organic: "Telegram",
   yahoo_organic: "Yahoo",
   duckduckgo_organic: "DuckDuckGo",
+  chatgpt_organic: "ChatGPT",
+  perplexity_organic: "Perplexity",
+  gemini_organic: "Gemini",
+  claude_organic: "Claude",
+  copilot_organic: "Copilot",
 };
 
 const COLOR_FALLBACKS = [
