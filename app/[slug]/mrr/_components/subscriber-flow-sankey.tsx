@@ -11,11 +11,14 @@ interface SubscriberFlowSankeyProps {
 }
 
 const W = 900;
-const H = 240;
-const FLOW_TOP = 24;
-const FLOW_BOT = H - 24;
+const H = 200;
+const FLOW_TOP = 20;
+const FLOW_BOT = H - 20;
 const FLOW_H = FLOW_BOT - FLOW_TOP;
 const CY = FLOW_TOP + FLOW_H / 2;
+const BAND_GAP = 8;
+const CARD_W = 96;
+const CARD_H = 52;
 
 const BANDS = [
   { scale: 0.72, opacity: 0.08 },
@@ -35,9 +38,30 @@ const COLORS = {
 };
 
 function logH(value: number, maxLog: number): number {
-  const MIN = FLOW_H * 0.08;
+  const MIN = FLOW_H * 0.07;
+  const MAX = FLOW_H * 0.30;
   if (value <= 0 || maxLog <= 0) return MIN;
-  return MIN + (Math.log2(value + 1) / maxLog) * (FLOW_H - MIN);
+  return MIN + (Math.log2(value + 1) / maxLog) * (MAX - MIN);
+}
+
+function computeStack(values: number[], maxLog: number): { cy: number; h: number }[] {
+  const heights = values.map((v) => logH(v, maxLog));
+  const n = heights.length;
+  const totalH = heights.reduce((a, b) => a + b, 0) + BAND_GAP * Math.max(n - 1, 0);
+  let y = CY - totalH / 2;
+  return heights.map((h) => {
+    const cy = y + h / 2;
+    y += h + BAND_GAP;
+    return { cy, h };
+  });
+}
+
+function computeSidePositions(count: number): number[] {
+  if (count === 0) return [];
+  if (count === 1) return [CY];
+  const span = FLOW_H * 0.58;
+  const step = span / (count - 1);
+  return Array.from({ length: count }, (_, i) => CY - span / 2 + i * step);
 }
 
 function flowPath(x1: number, h1: number, x2: number, h2: number, cy1: number, cy2: number): string {
@@ -55,6 +79,13 @@ function flowPath(x1: number, h1: number, x2: number, h2: number, cy1: number, c
   ].join(" ");
 }
 
+interface FlowNode {
+  key: string;
+  label: string;
+  value: number;
+  color: string;
+}
+
 interface FlowLink {
   key: string;
   label: string;
@@ -65,10 +96,10 @@ interface FlowLink {
   x2: number;
   cy1: number;
   cy2: number;
-  isInput: boolean;
+  h: number;
 }
 
-function buildFlowData(data: IMrrOverview) {
+function buildFlowNodes(data: IMrrOverview): { inputs: FlowNode[]; outputs: FlowNode[] } {
   const active = data.activeSubscriptions;
   const newMrr = data.totalNewMrr ?? 0;
   const expansionMrr = data.totalExpansionMrr ?? 0;
@@ -81,71 +112,96 @@ function buildFlowData(data: IMrrOverview) {
 
   return {
     inputs: [
-      { key: "new", label: "Novos", value: newCount, color: COLORS.new, offsetY: -FLOW_H * 0.26 },
-      { key: "expansion", label: "Expansão", value: expansionCount, color: COLORS.expansion, offsetY: 0 },
-      { key: "reactivated", label: "Reativados", value: 0, color: COLORS.reactivated, offsetY: FLOW_H * 0.26 },
+      { key: "new", label: "Novos", value: newCount, color: COLORS.new },
+      { key: "expansion", label: "Expansão", value: expansionCount, color: COLORS.expansion },
+      { key: "reactivated", label: "Reativados", value: 0, color: COLORS.reactivated },
     ],
-    center: { value: active, color: COLORS.active },
     outputs: [
-      { key: "canceled", label: "Cancelados", value: churnedCount, color: COLORS.canceled, offsetY: -FLOW_H * 0.22 },
-      { key: "pastdue", label: "Inadimplentes", value: pastDue, color: COLORS.pastdue, offsetY: FLOW_H * 0.22 },
+      { key: "canceled", label: "Cancelados", value: churnedCount, color: COLORS.canceled },
+      { key: "pastdue", label: "Inadimplentes", value: pastDue, color: COLORS.pastdue },
     ],
   };
 }
 
 function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const flow = useMemo(() => buildFlowData(data), [data]);
-
-  const allValues = [
-    flow.center.value,
-    ...flow.inputs.map((n) => n.value),
-    ...flow.outputs.map((n) => n.value),
-  ];
-  const maxLog = Math.log2(Math.max(...allValues, 1) + 1);
 
   const xLeft = 100;
   const xCenter = W / 2;
   const xRight = W - 100;
 
-  const links: FlowLink[] = useMemo(() => {
-    const result: FlowLink[] = [];
-    flow.inputs.forEach((node) => {
-      result.push({
+  const { links, allNodes } = useMemo(() => {
+    const { inputs, outputs } = buildFlowNodes(data);
+
+    const allValues = [
+      data.activeSubscriptions,
+      ...inputs.map((n) => n.value),
+      ...outputs.map((n) => n.value),
+    ];
+    const ml = Math.log2(Math.max(...allValues, 1) + 1);
+
+    const inputStack = computeStack(inputs.map((n) => n.value), ml);
+    const outputStack = computeStack(outputs.map((n) => n.value), ml);
+    const inputSideY = computeSidePositions(inputs.length);
+    const outputSideY = computeSidePositions(outputs.length);
+
+    const xCardLeft = xCenter - CARD_W / 2;
+    const xCardRight = xCenter + CARD_W / 2;
+
+    const computedLinks: FlowLink[] = [
+      ...inputs.map((node, i) => ({
         key: node.key,
         label: node.label,
         value: node.value,
         color1: node.color,
-        color2: flow.center.color,
+        color2: COLORS.active,
         x1: xLeft,
-        x2: xCenter,
-        cy1: CY + node.offsetY,
-        cy2: CY,
-        isInput: true,
-      });
-    });
-    flow.outputs.forEach((node) => {
-      result.push({
+        x2: xCardLeft,
+        cy1: inputSideY[i],
+        cy2: inputStack[i].cy,
+        h: inputStack[i].h,
+      })),
+      ...outputs.map((node, i) => ({
         key: node.key,
         label: node.label,
         value: node.value,
-        color1: flow.center.color,
+        color1: COLORS.active,
         color2: node.color,
-        x1: xCenter,
+        x1: xCardRight,
         x2: xRight,
-        cy1: CY,
-        cy2: CY + node.offsetY,
-        isInput: false,
-      });
-    });
-    return result;
-  }, [flow, xLeft, xCenter, xRight]);
+        cy1: outputStack[i].cy,
+        cy2: outputSideY[i],
+        h: outputStack[i].h,
+      })),
+    ];
 
-  const allNodes = [
-    ...flow.inputs.map((n) => ({ ...n, side: "left" as const, cx: xLeft, cy: CY + n.offsetY })),
-    { key: "active", label: "Base Ativa", value: flow.center.value, color: flow.center.color, side: "center" as const, cx: xCenter, cy: CY, offsetY: 0 },
-    ...flow.outputs.map((n) => ({ ...n, side: "right" as const, cx: xRight, cy: CY + n.offsetY })),
-  ];
+    const nodes = [
+      ...inputs.map((n, i) => ({
+        ...n,
+        side: "left" as const,
+        cx: xLeft,
+        cy: inputSideY[i],
+      })),
+      {
+        key: "active",
+        label: "Base Ativa",
+        value: data.activeSubscriptions,
+        color: COLORS.active,
+        side: "center" as const,
+        cx: xCenter,
+        cy: CY,
+      },
+      ...outputs.map((n, i) => ({
+        ...n,
+        side: "right" as const,
+        cx: xRight,
+        cy: outputSideY[i],
+      })),
+    ];
+
+    return { links: computedLinks, allNodes: nodes };
+  }, [data, xLeft, xCenter, xRight]);
+
 
   return (
     <div className="w-full overflow-hidden">
@@ -154,6 +210,15 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
           <filter id="sf-glow" x="-10%" y="-20%" width="120%" height="140%">
             <feGaussianBlur in="SourceGraphic" stdDeviation="4" />
           </filter>
+          <clipPath id="sf-card-clip">
+            <rect
+              x={W / 2 - CARD_W / 2}
+              y={CY - CARD_H / 2}
+              width={CARD_W}
+              height={CARD_H}
+              rx={12}
+            />
+          </clipPath>
           {links.map((link) => (
             <linearGradient
               key={`g-${link.key}`}
@@ -171,11 +236,8 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
         </defs>
 
         {links.map((link) => {
-          const h1 = logH(link.value, maxLog);
-          const h2 = Math.max(h1 * 0.8, FLOW_H * 0.05);
-          const d = flowPath(link.x1, h1, link.x2, h2, link.cy1, link.cy2);
-          const adjacent = hovered === link.key;
-          const dim = hovered !== null && !adjacent;
+          const d = flowPath(link.x1, link.h, link.x2, link.h, link.cy1, link.cy2);
+          const dim = hovered !== null && hovered !== link.key;
           return (
             <path
               key={`glow-${link.key}`}
@@ -190,9 +252,8 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
 
         {BANDS.map((band, bIdx) =>
           links.map((link) => {
-            const h1 = logH(link.value, maxLog) * band.scale;
-            const h2 = Math.max(logH(link.value, maxLog) * 0.8, FLOW_H * 0.05) * band.scale;
-            const d = flowPath(link.x1, h1, link.x2, h2, link.cy1, link.cy2);
+            const h = link.h * band.scale;
+            const d = flowPath(link.x1, h, link.x2, h, link.cy1, link.cy2);
             const adjacent = hovered === link.key;
             const dim = hovered !== null && !adjacent;
             const op = dim
@@ -213,7 +274,6 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
         )}
 
         <line x1={xLeft} y1={FLOW_TOP - 4} x2={xLeft} y2={FLOW_BOT + 4} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-        <line x1={xCenter} y1={FLOW_TOP - 4} x2={xCenter} y2={FLOW_BOT + 4} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
         <line x1={xRight} y1={FLOW_TOP - 4} x2={xRight} y2={FLOW_BOT + 4} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
 
         {allNodes.filter((n) => n.side !== "center").map((node) => {
@@ -275,28 +335,23 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
           );
         })}
 
-        {/* Center node — prominent subscriber count */}
         {(() => {
-          //const centerH = logH(flow.center.value, maxLog);
           const dim = hovered !== null && hovered !== "active";
           const isActive = hovered === "active";
-          const cardW = 96;
-          const cardH = 52;
           return (
             <g opacity={dim ? 0.25 : 1} style={{ transition: "opacity 0.25s" }}>
               <rect
-                x={xCenter - cardW / 2}
-                y={CY - cardH / 2}
-                width={cardW}
-                height={cardH}
-                rx={10}
-                fill="rgba(18,18,20,0.95)"
-                stroke={isActive ? COLORS.active : "rgba(99,102,241,0.35)"}
-                strokeWidth={isActive ? 1.5 : 1}
+                x={xCenter - CARD_W / 2}
+                y={CY - CARD_H / 2}
+                width={CARD_W}
+                height={CARD_H}
+                rx={12}
+                fill="rgba(0,0,0,0)"
+                clipPath="url(#sf-card-clip)"
               />
               <text
                 x={xCenter}
-                y={CY - cardH / 2 - 8}
+                y={CY - CARD_H / 2 - 8}
                 textAnchor="middle"
                 fill="rgba(161,161,170,0.7)"
                 fontSize="9"
@@ -317,35 +372,25 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
                 fontWeight="700"
                 style={{ transition: "fill 0.25s" }}
               >
-                {fmtInt(flow.center.value)}
+                {fmtInt(data.activeSubscriptions)}
               </text>
               <text
                 x={xCenter}
-                y={CY + cardH / 2 - 8}
+                y={CY + CARD_H / 2 - 8}
                 textAnchor="middle"
                 dominantBaseline="central"
-                fill="rgba(113,113,122,0.7)"
+                fill="rgba(212,212,216,0.9)"
                 fontSize="9"
                 fontFamily="ui-monospace, monospace"
               >
                 {fmtBRLDecimal((data.mrr ?? 0) / 100)} MRR
               </text>
-              <line
-                x1={xCenter - cardW / 2 + 12}
-                y1={CY + 10}
-                x2={xCenter + cardW / 2 - 12}
-                y2={CY + 10}
-                stroke="rgba(99,102,241,0.18)"
-                strokeWidth="1"
-              />
             </g>
           );
         })()}
 
         {links.map((link) => {
-          const h1 = logH(link.value, maxLog);
-          const h2 = Math.max(h1 * 0.8, FLOW_H * 0.05);
-          const d = flowPath(link.x1, h1, link.x2, h2, link.cy1, link.cy2);
+          const d = flowPath(link.x1, link.h, link.x2, link.h, link.cy1, link.cy2);
           return (
             <path
               key={`hit-${link.key}`}
@@ -361,9 +406,10 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
         {allNodes.filter((n) => n.side !== "center").map((node) => {
           const pillW = 60;
           const pillH = 28;
-          const px = node.side === "left"
-            ? Math.max(0, node.cx - pillW - 12)
-            : Math.min(W - pillW, node.cx + 12);
+          const px =
+            node.side === "left"
+              ? Math.max(0, node.cx - pillW - 12)
+              : Math.min(W - pillW, node.cx + 12);
           return (
             <rect
               key={`hit-node-${node.key}`}
@@ -380,15 +426,16 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
         })}
 
         <rect
-          x={xCenter - 48}
-          y={CY - 26 - 20}
-          width={96}
-          height={52 + 20}
+          x={xCenter - CARD_W / 2}
+          y={CY - CARD_H / 2 - 20}
+          width={CARD_W}
+          height={CARD_H + 20}
           fill="transparent"
           onMouseEnter={() => setHovered("active")}
           onMouseLeave={() => setHovered(null)}
           className="cursor-pointer"
         />
+
       </svg>
     </div>
   );
@@ -402,9 +449,9 @@ export function SubscriberFlowSankey({ data, isLoading }: SubscriberFlowSankeyPr
         Entradas (Novos, Expansão) → Base Ativa → Saídas (Churn, Inadimplência)
       </p>
       {isLoading ? (
-        <Skeleton className="h-56 w-full rounded-lg bg-zinc-800" />
+        <Skeleton className="h-48 w-full rounded-lg bg-zinc-800" />
       ) : !data ? (
-        <div className="flex items-center justify-center h-56 text-zinc-600 text-sm">
+        <div className="flex items-center justify-center h-48 text-zinc-600 text-sm">
           Sem dados de recorrência
         </div>
       ) : (
