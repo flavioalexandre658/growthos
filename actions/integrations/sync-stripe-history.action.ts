@@ -157,6 +157,7 @@ export async function syncStripeHistory(
       billingReason: string | null;
       eventType: "renewal" | "purchase";
       billingInterval: BillingInterval | undefined;
+      paidAt: number;
     }
 
     const invoiceBillingMap = new Map<string, InvoiceBillingDetails>();
@@ -175,6 +176,7 @@ export async function syncStripeHistory(
       const billingReason = invoice.billing_reason ?? null;
       const eventType =
         isRecurring && billingReason === "subscription_cycle" ? "renewal" : "purchase";
+      const paidAt = invoice.status_transitions?.paid_at ?? invoice.created;
 
       invoiceBillingMap.set(invoice.id, {
         invoiceId: invoice.id,
@@ -186,14 +188,19 @@ export async function syncStripeHistory(
         billingReason,
         eventType,
         billingInterval: billingInterval as BillingInterval | undefined,
+        paidAt,
       });
     }
 
-    for await (const charge of stripe.charges.list({ limit: 100 })) {
+    for await (const charge of stripe.charges.list({ limit: 100, expand: ["data.invoice"] })) {
       if (charge.status !== "succeeded") continue;
       if (!charge.amount) continue;
 
-      const chargeInvoiceId = (charge as Stripe.Charge & { invoice?: string | null }).invoice;
+      const invoiceField = (charge as Stripe.Charge & { invoice?: string | Stripe.Invoice | null }).invoice;
+      const chargeInvoiceId =
+        typeof invoiceField === "string"
+          ? invoiceField
+          : invoiceField?.id ?? null;
       const billing = chargeInvoiceId ? invoiceBillingMap.get(chargeInvoiceId) : undefined;
 
       if (chargeInvoiceId) chargedInvoiceIds.add(chargeInvoiceId);
@@ -308,7 +315,7 @@ export async function syncStripeHistory(
           paymentMethod: "credit_card",
           provider: "stripe",
           eventHash: stripeEventHash(organizationId, billing.invoiceId),
-          createdAt: new Date(),
+          createdAt: new Date(billing.paidAt * 1000),
           source: acq?.source ?? null,
           medium: acq?.medium ?? null,
           campaign: acq?.campaign ?? null,
@@ -329,6 +336,7 @@ export async function syncStripeHistory(
             baseCurrency,
             exchangeRate,
             baseGrossValueInCents: baseValueInCents,
+            createdAt: new Date(billing.paidAt * 1000),
           },
         });
 
