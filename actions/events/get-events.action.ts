@@ -129,6 +129,7 @@ export async function getEvents(
         landingPage: events.landingPage,
         paymentMethod: events.paymentMethod,
         createdAt: events.createdAt,
+        eventHash: events.eventHash,
         dupCount: dupWindowExpr,
         isRetry: sql<boolean>`COALESCE((${events.metadata}->>'retried')::boolean, false)`,
       })
@@ -215,6 +216,7 @@ export async function getEvents(
       landingPage: r.landingPage,
       paymentMethod: r.paymentMethod,
       createdAt: r.createdAt,
+      eventHash: r.eventHash ?? null,
       possibleDuplicate: Number(r.dupCount) > 1,
       isRetry: Boolean(r.isRetry),
     })),

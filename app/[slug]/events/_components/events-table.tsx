@@ -12,12 +12,12 @@ import {
   IconChevronLeft,
   IconLoader2,
   IconDots,
-  IconCopy,
-  IconCheck,
   IconAlertTriangle,
   IconX,
   IconAlertCircle,
   IconRepeat,
+  IconRoute,
+  IconUserSearch,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,76 +33,27 @@ import { fmtCurrencyDecimal } from "@/utils/format";
 import { useDeleteEvent } from "@/hooks/mutations/use-delete-event";
 import { useDeleteEventsBatch } from "@/hooks/mutations/use-delete-events-batch";
 import { getEventTypeBadgeClass } from "./events-filters";
+import { SessionTimeline } from "./session-timeline";
+import { CustomerTimeline } from "./customer-timeline";
+import { DetailField, CopyButton } from "./event-detail-field";
+import type { DetailFieldProps } from "./event-detail-field";
 import type { IEvent } from "@/interfaces/event.interface";
 import type { IPaginationMeta } from "@/interfaces/dashboard.interface";
 
 dayjs.extend(relativeTime);
 dayjs.locale("pt-br");
 
-function CopyButton({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    navigator.clipboard.writeText(value).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      className="ml-1.5 shrink-0 p-0.5 rounded text-zinc-700 hover:text-zinc-300 transition-colors"
-      title="Copiar"
-    >
-      {copied ? (
-        <IconCheck size={11} className="text-emerald-400" />
-      ) : (
-        <IconCopy size={11} />
-      )}
-    </button>
-  );
-}
-
-interface DetailFieldProps {
-  label: string;
-  value: string;
-  mono?: boolean;
-  copyable?: boolean;
-  dim?: boolean;
-}
-
-function DetailField({ label, value, mono = false, copyable = false, dim = false }: DetailFieldProps) {
-  return (
-    <div className="flex items-center justify-between gap-3 px-3 py-2">
-      <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600 shrink-0 w-[100px]">
-        {label}
-      </span>
-      <div className="flex items-center gap-0 flex-1 min-w-0 justify-end">
-        <span
-          className={cn(
-            "text-xs truncate",
-            mono ? "font-mono" : "",
-            dim ? "text-zinc-700" : "text-zinc-300"
-          )}
-          title={value}
-        >
-          {value}
-        </span>
-        {copyable && <CopyButton value={value} />}
-      </div>
-    </div>
-  );
-}
-
-function EventDetailGrid({ event }: { event: IEvent }) {
+function EventDetailGrid({
+  event,
+  organizationId,
+}: {
+  event: IEvent;
+  organizationId: string;
+}) {
+  const [sessionOpen, setSessionOpen] = useState(false);
+  const [customerOpen, setCustomerOpen] = useState(false);
   const fields: DetailFieldProps[] = [];
 
-  if (event.sessionId)
-    fields.push({ label: "session_id", value: event.sessionId, mono: true, copyable: true });
-  if (event.customerId)
-    fields.push({ label: "customer_id", value: event.customerId, mono: true, copyable: true });
   if (event.productId)
     fields.push({ label: "product_id", value: event.productId, mono: true, copyable: true });
   if (event.landingPage)
@@ -115,13 +66,91 @@ function EventDetailGrid({ event }: { event: IEvent }) {
     fields.push({ label: "category", value: event.category });
   if (event.paymentMethod)
     fields.push({ label: "payment_method", value: event.paymentMethod });
+  if (event.eventHash)
+    fields.push({ label: "event_hash", value: event.eventHash, mono: true, copyable: true, dim: true });
   fields.push({ label: "event_id", value: event.id, mono: true, copyable: true, dim: true });
 
   return (
-    <div className="rounded-lg border border-zinc-800/60 bg-zinc-950/50 divide-y divide-zinc-800/40 overflow-hidden">
-      {fields.map((f) => (
-        <DetailField key={f.label} {...f} />
-      ))}
+    <div className="space-y-2">
+      {event.sessionId && (
+        <div className="rounded-lg border border-zinc-800/60 bg-zinc-950/50 overflow-hidden">
+          <div className="flex items-center justify-between gap-3 px-3 py-2">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600 shrink-0 w-[100px]">
+              session_id
+            </span>
+            <div className="flex items-center gap-0 flex-1 min-w-0 justify-end">
+              <span className="text-xs font-mono text-zinc-300 truncate" title={event.sessionId}>
+                {event.sessionId}
+              </span>
+              <CopyButton value={event.sessionId} />
+              <button
+                type="button"
+                onClick={() => setSessionOpen((v) => !v)}
+                title="Ver timeline da sessão"
+                className={cn(
+                  "ml-1.5 shrink-0 p-0.5 rounded transition-colors",
+                  sessionOpen
+                    ? "text-indigo-400 hover:text-indigo-300"
+                    : "text-zinc-700 hover:text-indigo-400"
+                )}
+              >
+                <IconRoute size={12} />
+              </button>
+            </div>
+          </div>
+          {sessionOpen && (
+            <div className="px-3 pb-3 border-t border-zinc-800/40">
+              <SessionTimeline
+                organizationId={organizationId}
+                sessionId={event.sessionId}
+                currentEventId={event.id}
+              />
+            </div>
+          )}
+        </div>
+      )}
+      {event.customerId && (
+        <div className="rounded-lg border border-zinc-800/60 bg-zinc-950/50 overflow-hidden">
+          <div className="flex items-center justify-between gap-3 px-3 py-2">
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600 shrink-0 w-[100px]">
+              customer_id
+            </span>
+            <div className="flex items-center gap-0 flex-1 min-w-0 justify-end">
+              <span className="text-xs font-mono text-zinc-300 truncate" title={event.customerId}>
+                {event.customerId}
+              </span>
+              <CopyButton value={event.customerId} />
+              <button
+                type="button"
+                onClick={() => setCustomerOpen((v) => !v)}
+                title="Ver funil completo do cliente"
+                className={cn(
+                  "ml-1.5 shrink-0 p-0.5 rounded transition-colors",
+                  customerOpen
+                    ? "text-violet-400 hover:text-violet-300"
+                    : "text-zinc-700 hover:text-violet-400"
+                )}
+              >
+                <IconUserSearch size={12} />
+              </button>
+            </div>
+          </div>
+          {customerOpen && (
+            <div className="px-3 pb-3 border-t border-zinc-800/40">
+              <CustomerTimeline
+                organizationId={organizationId}
+                customerId={event.customerId}
+                currentEventId={event.id}
+              />
+            </div>
+          )}
+        </div>
+      )}
+      <div className="rounded-lg border border-zinc-800/60 bg-zinc-950/50 divide-y divide-zinc-800/40 overflow-hidden">
+        {fields.map((f) => (
+          <DetailField key={f.label} {...f} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -270,7 +299,7 @@ function EventCard({
       </div>
       {expanded && details && (
         <div className="mt-2.5 pt-2.5 border-t border-zinc-800/40 ml-6">
-          <EventDetailGrid event={event} />
+          <EventDetailGrid event={event} organizationId={organizationId} />
         </div>
       )}
     </div>
@@ -427,7 +456,7 @@ function EventRow({
         <tr className="border-b border-zinc-800/60 bg-zinc-950/60">
           <td colSpan={8} className="px-4 py-3">
             <div className="pl-5">
-              <EventDetailGrid event={event} />
+              <EventDetailGrid event={event} organizationId={organizationId} />
             </div>
           </td>
         </tr>

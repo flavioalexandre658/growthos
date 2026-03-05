@@ -127,25 +127,27 @@ function computeEventHash(parts: {
   grossValueInCents: number | null;
   productId: string | null;
   subscriptionId: string | null;
+  landingPage: string | null;
   timestamp: Date;
 }): string {
   const isImportant =
     FINANCIAL_EVENT_TYPES.has(parts.eventType) ||
     LIFECYCLE_EVENT_TYPES.has(parts.eventType);
-  const bucket = isImportant
-    ? Math.floor(parts.timestamp.getTime() / (24 * 60 * 60 * 1000))
-    : Math.floor(parts.timestamp.getTime() / (60 * 60 * 1000));
 
-  const raw = [
+  const segments: (string | number)[] = [
     parts.eventType,
     parts.customerId ?? "",
     parts.grossValueInCents ?? "",
     parts.productId ?? "",
     parts.subscriptionId ?? "",
-    bucket,
-  ].join("|");
+    parts.landingPage ?? "",
+  ];
 
-  return sha256Short(raw);
+  if (!isImportant) {
+    segments.push(Math.floor(parts.timestamp.getTime() / (24 * 60 * 60 * 1000)));
+  }
+
+  return sha256Short(segments.join("|"));
 }
 
 function sanitizeMetadata(raw: unknown): Record<string, unknown> | null {
@@ -477,6 +479,7 @@ export async function POST(req: NextRequest) {
       grossValueInCents,
       productId: toString(body.product_id),
       subscriptionId: toString(body.subscription_id),
+      landingPage: toString(body.landing_page),
       timestamp: eventTimestamp,
     });
   }

@@ -26,6 +26,7 @@ export interface IEvent {
   createdAt: Date;
   possibleDuplicate: boolean;
   isRetry: boolean;
+  eventHash: string | null;
 }
 
 export interface IEventParams extends IDateFilter {
@@ -49,6 +50,30 @@ export interface IEventsResult {
   distinctSources: string[];
   distinctDevices: string[];
   distinctProviders: string[];
+}
+
+export interface ISessionEvent {
+  id: string;
+  eventType: string;
+  grossValueInCents: number | null;
+  baseCurrency: string;
+  baseGrossValueInCents: number | null;
+  productName: string | null;
+  productId: string | null;
+  landingPage: string | null;
+  source: string | null;
+  medium: string | null;
+  campaign: string | null;
+  device: string | null;
+  customerId: string | null;
+  category: string | null;
+  paymentMethod: string | null;
+  eventHash: string | null;
+  createdAt: Date;
+}
+
+export interface ICustomerEvent extends ISessionEvent {
+  sessionId: string | null;
 }
 
 export interface IEventHealth {
