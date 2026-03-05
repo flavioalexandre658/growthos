@@ -10,6 +10,7 @@ import {
   IconBell,
   IconUsers,
   IconBuilding,
+  IconPlug,
 } from "@tabler/icons-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ export interface SettingsSection {
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
   { id: "installation", label: "Instalação", icon: <IconCode size={14} /> },
+  { id: "integrations", label: "Integrações", icon: <IconPlug size={14} /> },
   { id: "regional", label: "Regional", icon: <IconWorld size={14} /> },
   { id: "funnel", label: "Funil", icon: <IconFilter size={14} /> },
   { id: "ai-profile", label: "Perfil IA", icon: <IconBrain size={14} /> },

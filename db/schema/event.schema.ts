@@ -44,6 +44,8 @@ export const events = pgTable(
     planId: text("plan_id"),
     planName: text("plan_name"),
 
+    provider: text("provider"),
+
     metadata: jsonb("metadata"),
     eventHash: text("event_hash"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
