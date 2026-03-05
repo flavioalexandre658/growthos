@@ -17,19 +17,30 @@ export async function connectStripe(
 
   const stripe = new Stripe(rawKey);
 
-  const account = await stripe.accounts.retrieve().catch(() => null);
-  if (!account) {
-    throw new Error("Restricted Key inválida. Verifique e tente novamente.");
-  }
-
-  const canRead = await stripe.subscriptions
+  // Restricted Keys cannot call accounts.retrieve() — that requires a full secret key.
+  // Validate by listing subscriptions (requires the Read permission we actually need).
+  const validationResult = await stripe.subscriptions
     .list({ limit: 1 })
-    .then(() => true)
-    .catch(() => false);
+    .catch((err: unknown) => {
+      const stripeErr = err as { type?: string; code?: string };
+      if (
+        stripeErr?.type === "StripeAuthenticationError" ||
+        stripeErr?.code === "api_key_expired"
+      ) {
+        throw new Error("Restricted Key inválida ou expirada. Verifique e tente novamente.");
+      }
+      if (stripeErr?.type === "StripePermissionError") {
+        throw new Error("A key precisa de permissão Read em Subscriptions.");
+      }
+      throw new Error("Não foi possível validar a key. Verifique e tente novamente.");
+    });
 
-  if (!canRead) {
-    throw new Error("A key precisa de permissão Read em Subscriptions.");
+  if (!validationResult) {
+    throw new Error("Não foi possível validar a key. Verifique e tente novamente.");
   }
+
+  // Derive a stable account identifier from the key prefix (rk_live_xxx → first 24 chars)
+  const providerAccountId = rawKey.slice(0, 24);
 
   const [row] = await db
     .insert(integrations)
@@ -37,14 +48,14 @@ export async function connectStripe(
       organizationId,
       provider: "stripe",
       accessToken: encrypt(rawKey),
-      providerAccountId: account.id,
+      providerAccountId,
       status: "active",
     })
     .onConflictDoUpdate({
       target: [integrations.organizationId, integrations.provider],
       set: {
         accessToken: encrypt(rawKey),
-        providerAccountId: account.id,
+        providerAccountId,
         status: "active",
         syncError: null,
         historySyncedAt: null,
@@ -64,5 +75,5 @@ export async function connectStripe(
       updatedAt: integrations.updatedAt,
     });
 
-  return row as IIntegration;
+  return { ...row, hasWebhookSecret: false } as IIntegration;
 }
