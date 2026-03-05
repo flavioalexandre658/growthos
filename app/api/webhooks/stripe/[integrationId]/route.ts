@@ -81,17 +81,16 @@ export async function POST(
 async function handleStripeEvent(orgId: string, event: Stripe.Event) {
   switch (event.type) {
     case "invoice.payment_succeeded":
-      await handleInvoicePaid(orgId, event.data.object as Stripe.Invoice, event.id);
+      await handleInvoicePaid(orgId, event.data.object as Stripe.Invoice);
       break;
     case "payment_intent.succeeded":
       await handlePaymentIntentSucceeded(
         orgId,
         event.data.object as Stripe.PaymentIntent,
-        event.id,
       );
       break;
     case "charge.refunded":
-      await handleChargeRefunded(orgId, event.data.object as Stripe.Charge, event.id);
+      await handleChargeRefunded(orgId, event.data.object as Stripe.Charge);
       break;
     case "customer.subscription.created":
       await handleSubscriptionCreated(orgId, event.data.object as Stripe.Subscription, event.id);
@@ -113,7 +112,7 @@ async function handleStripeEvent(orgId: string, event: Stripe.Event) {
   }
 }
 
-async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, _eventId: string) {
+async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice) {
   const rawCustomerId =
     typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
   const hashedCustomerId = hashAnonymous(rawCustomerId);
@@ -196,7 +195,6 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, _eventI
 async function handlePaymentIntentSucceeded(
   orgId: string,
   pi: Stripe.PaymentIntent,
-  _eventId: string,
 ) {
   if (!(pi as Stripe.PaymentIntent & { invoice?: string | null }).invoice) {
     const rawCustomerId =
@@ -255,7 +253,7 @@ async function handlePaymentIntentSucceeded(
   }
 }
 
-async function handleChargeRefunded(orgId: string, charge: Stripe.Charge, _eventId: string) {
+async function handleChargeRefunded(orgId: string, charge: Stripe.Charge) {
   const refundedAmount = charge.amount_refunded;
   if (!refundedAmount) return;
 
