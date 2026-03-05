@@ -12,7 +12,7 @@ import {
   IconBuilding,
   IconPlug,
 } from "@tabler/icons-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 export interface SettingsSection {
@@ -78,8 +78,8 @@ export function SettingsNav({ slug }: SettingsNavProps) {
       </nav>
 
       <div className="lg:hidden sticky top-0 z-10 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800 -mx-5 px-5 mb-4">
-        <ScrollArea className="w-full">
-          <div className="flex items-center gap-1 py-2.5 w-max">
+        <ScrollArea className="w-full" type="scroll">
+          <div className="flex items-center gap-1 py-2.5 w-max pr-5">
             {SETTINGS_SECTIONS.map((section) => {
               const active = isActive(section.id);
               return (
@@ -103,6 +103,7 @@ export function SettingsNav({ slug }: SettingsNavProps) {
               );
             })}
           </div>
+          <ScrollBar orientation="horizontal" className="h-0" />
         </ScrollArea>
       </div>
     </>

@@ -209,21 +209,28 @@ function ConnectedCard({
   integration: IIntegration;
 }) {
   const queryClient = useQueryClient();
-  const { mutateAsync: syncHistory, isPending: isSyncing } = useSyncStripeHistory(organizationId);
+  const { mutate: syncHistory, isPending: isSyncing } = useSyncStripeHistory(organizationId);
   const { mutateAsync: disconnect, isPending: isDisconnecting } =
     useDisconnectIntegration(organizationId);
 
   const isSyncPending = integration.status === "active" && !integration.historySyncedAt;
 
-  const handleSync = async () => {
-    try {
-      const result = await syncHistory(integration.id);
-      toast.success(
-        `Histórico importado: ${result.subscriptionsSynced} assinaturas, ${result.invoicesSynced} recorrentes, ${result.oneTimePurchasesSynced} avulsos.`,
-      );
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao importar histórico.");
-    }
+  const handleSync = () => {
+    toast.loading("Importando histórico em segundo plano...", { id: "stripe-sync" });
+    syncHistory(integration.id, {
+      onSuccess: (result) => {
+        toast.success(
+          `Histórico importado: ${result.subscriptionsSynced} assinaturas, ${result.invoicesSynced} recorrentes, ${result.oneTimePurchasesSynced} avulsos.`,
+          { id: "stripe-sync" },
+        );
+      },
+      onError: (err) => {
+        toast.error(
+          err instanceof Error ? err.message : "Erro ao importar histórico.",
+          { id: "stripe-sync" },
+        );
+      },
+    });
   };
 
   const handleDisconnect = async () => {
@@ -277,46 +284,49 @@ function ConnectedCard({
           />
         </div>
 
-        {isSyncing ? (
-          <SyncingOverlay />
-        ) : (
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
-            {isSyncPending && (
-              <div className="flex items-center gap-1.5 text-xs text-amber-400">
-                <IconClockHour4 size={13} />
-                <span>Histórico não importado ainda</span>
-              </div>
-            )}
-            {integration.historySyncedAt && (
-              <div className="flex items-center gap-1.5 text-xs text-emerald-400">
-                <IconCircleCheckFilled size={13} />
-                <span>Histórico importado</span>
-              </div>
-            )}
-
-            <div className="sm:ml-auto flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSync}
-                className="h-8 text-xs border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300"
-              >
-                <IconRefresh size={12} />
-                {integration.historySyncedAt ? "Re-importar" : "Importar histórico"}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDisconnect}
-                disabled={isDisconnecting}
-                className="h-8 text-xs border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-red-400 hover:text-red-300"
-              >
-                <IconUnlink size={12} />
-                Desconectar
-              </Button>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
+          {isSyncing && (
+            <div className="flex items-center gap-1.5 text-xs text-indigo-400">
+              <IconLoader2 size={13} className="animate-spin shrink-0" />
+              <span>Importando em segundo plano...</span>
             </div>
+          )}
+          {!isSyncing && isSyncPending && (
+            <div className="flex items-center gap-1.5 text-xs text-amber-400">
+              <IconClockHour4 size={13} />
+              <span>Histórico não importado ainda</span>
+            </div>
+          )}
+          {!isSyncing && integration.historySyncedAt && (
+            <div className="flex items-center gap-1.5 text-xs text-emerald-400">
+              <IconCircleCheckFilled size={13} />
+              <span>Histórico importado</span>
+            </div>
+          )}
+
+          <div className="sm:ml-auto flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="h-8 text-xs border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 disabled:opacity-50"
+            >
+              <IconRefresh size={12} className={cn(isSyncing && "animate-spin")} />
+              {integration.historySyncedAt ? "Re-importar" : "Importar histórico"}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDisconnect}
+              disabled={isDisconnecting || isSyncing}
+              className="h-8 text-xs border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-red-400 hover:text-red-300 disabled:opacity-50"
+            >
+              <IconUnlink size={12} />
+              Desconectar
+            </Button>
           </div>
-        )}
+        </div>
       </div>
 
       <WebhookInstructions
@@ -369,22 +379,6 @@ function StripeConnectedNotice() {
             </ul>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── Syncing Overlay ──────────────────────────────────────────────────────────
-
-function SyncingOverlay() {
-  return (
-    <div className="flex items-start gap-3 rounded-lg bg-indigo-500/5 border border-indigo-500/20 p-3.5">
-      <IconLoader2 size={15} className="text-indigo-400 shrink-0 mt-0.5 animate-spin" />
-      <div>
-        <p className="text-xs font-medium text-indigo-300">Sincronizando histórico...</p>
-        <p className="text-xs text-zinc-500 mt-0.5">
-          Isso pode levar alguns minutos dependendo do volume de dados.
-        </p>
       </div>
     </div>
   );

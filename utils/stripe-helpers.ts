@@ -1,5 +1,10 @@
 import Stripe from "stripe";
+import { createHash } from "crypto";
 import type { BillingInterval } from "./billing";
+
+export function stripeEventHash(orgId: string, externalId: string): string {
+  return createHash("sha256").update(`${orgId}:${externalId}`).digest("hex").slice(0, 32);
+}
 
 export function extractSubscriptionIdFromInvoice(invoice: Stripe.Invoice): string | null {
   const newRef = invoice.parent?.subscription_details?.subscription;

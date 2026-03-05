@@ -5,14 +5,9 @@ import { integrations, events, subscriptions, organizations } from "@/db/schema"
 import { decrypt } from "@/lib/crypto";
 import { hashAnonymous } from "@/lib/hash";
 import { eq } from "drizzle-orm";
-import { createHash } from "crypto";
-import { extractSubscriptionIdFromInvoice, mapBillingInterval } from "@/utils/stripe-helpers";
+import { extractSubscriptionIdFromInvoice, mapBillingInterval, stripeEventHash } from "@/utils/stripe-helpers";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
-
-function stripeEventHash(orgId: string, externalId: string): string {
-  return createHash("sha256").update(`${orgId}:${externalId}`).digest("hex").slice(0, 32);
-}
 
 async function getOrgCurrency(orgId: string): Promise<string> {
   const [org] = await db
@@ -118,14 +113,14 @@ async function handleStripeEvent(orgId: string, event: Stripe.Event) {
   }
 }
 
-async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventId: string) {
+async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, _eventId: string) {
   const rawCustomerId =
     typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
   const hashedCustomerId = hashAnonymous(rawCustomerId);
 
   const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
   const isRecurring = !!subscriptionId;
-  const billingReason = (invoice as unknown as Record<string, unknown>).billing_reason as string | null ?? null;
+  const billingReason = invoice.billing_reason ?? null;
   const eventType = isRecurring && billingReason === "subscription_cycle" ? "renewal" : "purchase";
 
   let billingInterval: string | null = null;
@@ -165,7 +160,7 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventId
       customerId: hashedCustomerId,
       paymentMethod: "credit_card",
       provider: "stripe",
-      eventHash: stripeEventHash(orgId, eventId),
+      eventHash: stripeEventHash(orgId, invoice.id),
       createdAt: new Date(invoice.created * 1000),
       source: acq?.source ?? null,
       medium: acq?.medium ?? null,
@@ -201,7 +196,7 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventId
 async function handlePaymentIntentSucceeded(
   orgId: string,
   pi: Stripe.PaymentIntent,
-  eventId: string,
+  _eventId: string,
 ) {
   if (!(pi as Stripe.PaymentIntent & { invoice?: string | null }).invoice) {
     const rawCustomerId =
@@ -237,7 +232,7 @@ async function handlePaymentIntentSucceeded(
         customerId: hashedCustomerId ?? undefined,
         paymentMethod: pm,
         provider: "stripe",
-        eventHash: stripeEventHash(orgId, eventId),
+        eventHash: stripeEventHash(orgId, pi.id),
         createdAt: new Date((pi.created ?? Date.now() / 1000) * 1000),
         source: acq?.source ?? null,
         medium: acq?.medium ?? null,
@@ -247,11 +242,20 @@ async function handlePaymentIntentSucceeded(
         entryPage: acq?.entryPage ?? null,
         sessionId: acq?.sessionId ?? null,
       })
-      .onConflictDoNothing();
+      .onConflictDoUpdate({
+        target: [events.organizationId, events.eventHash],
+        set: {
+          billingType: "one_time",
+          currency: eventCurrency,
+          baseCurrency,
+          exchangeRate,
+          baseGrossValueInCents,
+        },
+      });
   }
 }
 
-async function handleChargeRefunded(orgId: string, charge: Stripe.Charge, eventId: string) {
+async function handleChargeRefunded(orgId: string, charge: Stripe.Charge, _eventId: string) {
   const refundedAmount = charge.amount_refunded;
   if (!refundedAmount) return;
 
@@ -281,11 +285,20 @@ async function handleChargeRefunded(orgId: string, charge: Stripe.Charge, eventI
       billingType: "one_time",
       customerId: hashedCustomerId ?? undefined,
       provider: "stripe",
-      eventHash: stripeEventHash(orgId, eventId),
+      eventHash: stripeEventHash(orgId, charge.id),
       metadata: { chargeId: charge.id, paymentIntent: charge.payment_intent },
       createdAt: new Date(),
     })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: [events.organizationId, events.eventHash],
+      set: {
+        grossValueInCents: -refundedAmount,
+        currency: eventCurrency,
+        baseCurrency,
+        exchangeRate,
+        baseGrossValueInCents: -baseGrossValueInCents,
+      },
+    });
 }
 
 async function handleSubscriptionCreated(

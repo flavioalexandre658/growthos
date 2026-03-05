@@ -8,15 +8,10 @@ import { integrations, events, subscriptions, organizations } from "@/db/schema"
 import { decrypt } from "@/lib/crypto";
 import { hashAnonymous } from "@/lib/hash";
 import { eq, and } from "drizzle-orm";
-import { createHash } from "crypto";
-import { extractSubscriptionIdFromInvoice, mapBillingInterval } from "@/utils/stripe-helpers";
+import { extractSubscriptionIdFromInvoice, mapBillingInterval, stripeEventHash } from "@/utils/stripe-helpers";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
 import type { BillingInterval } from "@/utils/billing";
-
-function stripeEventHash(orgId: string, externalId: string): string {
-  return createHash("sha256").update(`${orgId}:${externalId}`).digest("hex").slice(0, 32);
-}
 
 function mapStripeStatus(
   s: Stripe.Subscription.Status,
@@ -85,6 +80,15 @@ export async function syncStripeHistory(
 
   const stripe = new Stripe(decrypt(integration.accessToken));
   const orgCurrency = await getOrgCurrency(organizationId);
+
+  await db
+    .delete(events)
+    .where(
+      and(
+        eq(events.organizationId, organizationId),
+        eq(events.provider, "stripe"),
+      ),
+    );
 
   let subscriptionsSynced = 0;
   let invoicesSynced = 0;
@@ -155,7 +159,7 @@ export async function syncStripeHistory(
       const billingInterval = isRecurring
         ? (subIntervalMap.get(subscriptionId!) ?? "monthly")
         : undefined;
-      const billingReason = (invoice as unknown as Record<string, unknown>).billing_reason as string | null ?? null;
+      const billingReason = invoice.billing_reason ?? null;
       const eventType = isRecurring && billingReason === "subscription_cycle" ? "renewal" : "purchase";
 
       const acq = await lookupAcquisitionContext(organizationId, hashedCustomerId);

@@ -67,7 +67,7 @@ export function WebhookInstructions({
   };
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-5">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-5 overflow-hidden">
       <div className="flex items-center gap-2">
         <IconWebhook size={16} className="text-indigo-400 shrink-0" />
         <p className="text-sm font-medium text-zinc-200">Configurar Webhook</p>
@@ -79,12 +79,12 @@ export function WebhookInstructions({
         )}
       </div>
 
-      <div className="space-y-3 text-xs text-zinc-400">
+      <div className="space-y-3 text-xs text-zinc-400 overflow-hidden">
         <Step n={1} text="Stripe Dashboard → Developers → Webhooks → Add endpoint" />
         <Step n={2}>
           <span>Cole a URL do endpoint:</span>
           <div className="flex items-center gap-2 mt-1.5">
-            <code className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-300 font-mono text-xs truncate">
+            <code className="min-w-0 flex-1 block bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-zinc-300 font-mono text-xs overflow-hidden text-ellipsis whitespace-nowrap">
               {webhookUrl}
             </code>
             <Button
@@ -101,9 +101,9 @@ export function WebhookInstructions({
           <span>Selecione os eventos:</span>
           <ul className="mt-1.5 space-y-1 font-mono text-zinc-500">
             {WEBHOOK_EVENTS.map((e) => (
-              <li key={e} className="flex items-center gap-2">
+              <li key={e} className="flex items-center gap-2 overflow-hidden">
                 <span className="w-1 h-1 rounded-full bg-zinc-600 shrink-0" />
-                {e}
+                <span className="truncate">{e}</span>
               </li>
             ))}
           </ul>
@@ -151,7 +151,7 @@ function Step({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-3 min-w-0">
       <span
         className={cn(
           "shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold",
@@ -160,7 +160,7 @@ function Step({
       >
         {n}
       </span>
-      <div className="flex-1 pt-0.5">{text ?? children}</div>
+      <div className="flex-1 min-w-0 overflow-hidden pt-0.5">{text ?? children}</div>
     </div>
   );
 }
