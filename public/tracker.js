@@ -486,9 +486,11 @@
         event_type: "checkout_abandoned",
         reason: "exit",
         timestamp: new Date().toISOString(),
+        dedupe_id: "checkout_abandoned:" + autoCtx.session_id,
       });
 
       clearCheckout();
+      logFailedEvent(payload, "beacon_backup");
       sendBeaconSync(payload);
     });
   }
@@ -551,7 +553,7 @@
   persistUtms();
 
   flushQueue();
-  retryFailedEvents();
+  // retryFailedEvents();
 
   function init() {
     track("pageview", {});

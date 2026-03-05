@@ -33,6 +33,7 @@ function buildEventExample(
 ): string {
   if (eventType === "payment") {
     return `window.GrowthOS.track('payment', {
+  dedupe: invoice.id,              // OBRIGATÓRIO: ID único da transação no gateway
   gross_value: 89.00,              // obrigatório
   currency: '${currency}',         // obrigatório sempre
   discount: 10.00,                 // opcional — desconto aplicado
@@ -67,6 +68,7 @@ function buildEventExample(
 
   if (eventType === "signup") {
     return `window.GrowthOS.track('signup', {
+  dedupe: true,                    // 1 cadastro por sessão (24h)
   customer_type: 'new',            // new | returning
   customer_id: hashAnonymous(user.id), // NUNCA email ou CPF
 })`;
@@ -74,6 +76,7 @@ function buildEventExample(
 
   if (eventType === "trial_started") {
     return `window.GrowthOS.track('trial_started', {
+  dedupe: true,                    // 1 trial por sessão (24h)
   plan_id: plan.id,
   plan_name: plan.name,
   customer_id: hashAnonymous(user.id),
@@ -82,6 +85,7 @@ function buildEventExample(
 
   if (eventType === "subscription_canceled") {
     return `window.GrowthOS.track('subscription_canceled', {
+  dedupe: subscription.id,         // ID único da assinatura no gateway
   subscription_id: subscription.id,
   gross_value: subscription.price,
   currency: '${currency}',
@@ -92,6 +96,7 @@ function buildEventExample(
 
   if (eventType === "subscription_changed") {
     return `window.GrowthOS.track('subscription_changed', {
+  dedupe: subscription.id,         // ID único da assinatura no gateway
   subscription_id: subscription.id,
   previous_plan_id: subscription.previousPlanId,
   new_plan_id: subscription.newPlanId,
@@ -194,6 +199,7 @@ await fetch('${baseUrl}/api/track', {
   body: JSON.stringify({
     key: process.env.GROWTHOS_API_KEY,
     event_type: 'payment',
+    dedupe_id: 'payment:' + invoice.id,  // OBRIGATÓRIO: ID único da invoice
     gross_value: subscription.price,
     currency: '${currency}',
     billing_type: 'recurring',
@@ -211,6 +217,7 @@ await fetch('${baseUrl}/api/track', {
   body: JSON.stringify({
     key: process.env.GROWTHOS_API_KEY,
     event_type: 'subscription_canceled',
+    dedupe_id: 'subscription_canceled:' + subscription.id,
     subscription_id: subscription.id,
     gross_value: subscription.price,
     currency: '${currency}',

@@ -57,6 +57,13 @@ function toString(value: unknown): string | null {
 
 const FINANCIAL_EVENT_TYPES = new Set(["payment", "refund", "renewal"]);
 
+const LIFECYCLE_EVENT_TYPES = new Set([
+  "signup",
+  "trial_started",
+  "subscription_canceled",
+  "subscription_changed",
+]);
+
 const MAX_PAST_DAYS = 30;
 
 function resolveCreatedAt(payloadTimestamp: string | null): Date {
@@ -79,6 +86,8 @@ const TRANSACTION_ID_FIELDS = [
   "payment_intent_id",
   "charge_id",
 ] as const;
+
+const SUBSCRIPTION_ID_FIELDS = ["subscription_id"] as const;
 
 function sha256Short(input: string): string {
   return createHash("sha256").update(input).digest("hex").slice(0, 32);
@@ -104,6 +113,14 @@ function extractTransactionId(body: Record<string, unknown>): string | null {
   return null;
 }
 
+function extractLifecycleId(body: Record<string, unknown>): string | null {
+  for (const field of SUBSCRIPTION_ID_FIELDS) {
+    const val = body[field];
+    if (val && typeof val === "string" && val.length >= DEDUPE_ID_MIN) return `${field}:${val}`;
+  }
+  return null;
+}
+
 function computeEventHash(parts: {
   eventType: string;
   customerId: string | null;
@@ -112,10 +129,12 @@ function computeEventHash(parts: {
   subscriptionId: string | null;
   timestamp: Date;
 }): string {
-  const isFinancial = FINANCIAL_EVENT_TYPES.has(parts.eventType);
-  const bucket = isFinancial
+  const isImportant =
+    FINANCIAL_EVENT_TYPES.has(parts.eventType) ||
+    LIFECYCLE_EVENT_TYPES.has(parts.eventType);
+  const bucket = isImportant
     ? Math.floor(parts.timestamp.getTime() / (24 * 60 * 60 * 1000))
-    : Math.floor(parts.timestamp.getTime() / (5 * 60 * 1000));
+    : Math.floor(parts.timestamp.getTime() / (60 * 60 * 1000));
 
   const raw = [
     parts.eventType,
@@ -413,17 +432,34 @@ export async function POST(req: NextRequest) {
       : null;
 
   const isFinancialEvent = FINANCIAL_EVENT_TYPES.has(eventType);
+  const isLifecycleEvent = LIFECYCLE_EVENT_TYPES.has(eventType);
 
   const transactionId =
     !dedupeId && isFinancialEvent
       ? extractTransactionId(body as Record<string, unknown>)
       : null;
 
+  const lifecycleId =
+    !dedupeId && isLifecycleEvent
+      ? extractLifecycleId(body as Record<string, unknown>)
+      : null;
+
   const missingDedupeOnPayment = isFinancialEvent && !dedupeId && !transactionId;
+
+  const missingSubscriptionId =
+    (eventType === "subscription_canceled" || eventType === "subscription_changed") &&
+    !dedupeId &&
+    !lifecycleId;
 
   if (missingDedupeOnPayment) {
     console.warn(
       `[GrowthOS] ${eventType} event without dedupe_id or transaction identifier — org: ${apiKey.organizationId}, session: ${toString(body.session_id)}`
+    );
+  }
+
+  if (missingSubscriptionId) {
+    console.warn(
+      `[GrowthOS] ${eventType} event without subscription_id — org: ${apiKey.organizationId}, session: ${toString(body.session_id)}`
     );
   }
 
@@ -432,6 +468,8 @@ export async function POST(req: NextRequest) {
     eventHash = computeDedupeIdHash(apiKey.organizationId, dedupeId);
   } else if (transactionId) {
     eventHash = computeDedupeIdHash(apiKey.organizationId, `${eventType}:${transactionId}`);
+  } else if (lifecycleId) {
+    eventHash = computeDedupeIdHash(apiKey.organizationId, `${eventType}:${lifecycleId}`);
   } else {
     eventHash = computeEventHash({
       eventType,
@@ -495,6 +533,11 @@ export async function POST(req: NextRequest) {
   if (missingDedupeOnPayment) {
     responseHeaders["X-GrowthOS-Warning"] =
       "Financial event without dedupe_id. Deduplication relies on fallback hash. Pass dedupe with a unique transaction ID for reliable dedup.";
+  }
+
+  if (missingSubscriptionId) {
+    responseHeaders["X-GrowthOS-Warning"] =
+      "Subscription lifecycle event without subscription_id. Deduplication relies on fallback daily hash. Pass subscription_id for reliable dedup.";
   }
 
   if (inserted.length === 0) {
