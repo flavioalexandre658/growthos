@@ -6,6 +6,7 @@
   var SESSION_KEY = "growthos_sid";
   var CHECKOUT_KEY = "growthos_checkout";
   var DEDUP_KEY = "growthos_dedup";
+  var DEDUP_TTL_MS = 24 * 60 * 60 * 1000;
   var ENTRY_KEY = "growthos_entry";
   var FAILED_KEY = "growthos_failed_events";
   var FAILED_MAX = 50;
@@ -49,8 +50,18 @@
 
   function getDedup() {
     try {
-      var raw = sessionStorage.getItem(DEDUP_KEY);
-      return raw ? JSON.parse(raw) : [];
+      var raw = localStorage.getItem(DEDUP_KEY);
+      if (!raw) return [];
+      var entries = JSON.parse(raw);
+      var now = Date.now();
+      var valid = [];
+      for (var i = 0; i < entries.length; i++) {
+        if (entries[i].e > now) valid.push(entries[i]);
+      }
+      if (valid.length !== entries.length) {
+        localStorage.setItem(DEDUP_KEY, JSON.stringify(valid));
+      }
+      return valid;
     } catch (_) {
       return [];
     }
@@ -59,7 +70,7 @@
   function isDuplicate(key) {
     var set = getDedup();
     for (var i = 0; i < set.length; i++) {
-      if (set[i] === key) return true;
+      if (set[i].k === key) return true;
     }
     return false;
   }
@@ -67,14 +78,15 @@
   function markDedup(key) {
     try {
       var set = getDedup();
-      set.push(key);
-      sessionStorage.setItem(DEDUP_KEY, JSON.stringify(set));
+      set.push({ k: key, e: Date.now() + DEDUP_TTL_MS });
+      if (set.length > 200) set = set.slice(-200);
+      localStorage.setItem(DEDUP_KEY, JSON.stringify(set));
     } catch (_) {}
   }
 
   function clearDedup() {
     try {
-      sessionStorage.removeItem(DEDUP_KEY);
+      localStorage.removeItem(DEDUP_KEY);
     } catch (_) {}
   }
 
@@ -388,11 +400,15 @@
   function track(eventType, data) {
     var rawData = data || {};
     var dedupeOption = rawData.dedupe;
+    var serverDedupeId = null;
 
     if (dedupeOption !== undefined) {
       var dedupKey = dedupeOption === true ? eventType : eventType + ":" + String(dedupeOption);
       if (isDuplicate(dedupKey)) return;
       markDedup(dedupKey);
+      if (dedupeOption !== true) {
+        serverDedupeId = eventType + ":" + String(dedupeOption);
+      }
     }
 
     var cleanData = Object.assign({}, rawData);
@@ -404,6 +420,10 @@
       event_type: eventType,
       timestamp: new Date().toISOString(),
     });
+
+    if (serverDedupeId) {
+      payload.dedupe_id = serverDedupeId;
+    }
 
     if (eventType === "checkout_started") {
       saveCheckout(Object.assign({}, cleanData));

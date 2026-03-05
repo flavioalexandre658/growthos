@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and, sql } from "drizzle-orm";
+import { createHash } from "crypto";
 import { db } from "@/db";
 import { apiKeys, events, subscriptions, organizations, pageviewAggregates } from "@/db/schema";
 import { resolveExchangeRate as resolveRate } from "@/utils/resolve-exchange-rate";
@@ -54,6 +55,43 @@ function toString(value: unknown): string | null {
   return String(value).slice(0, 1000);
 }
 
+const FINANCIAL_EVENT_TYPES = new Set(["payment", "refund", "renewal"]);
+
+const DEDUPE_ID_MIN = 3;
+const DEDUPE_ID_MAX = 256;
+
+const TRANSACTION_ID_FIELDS = [
+  "order_id",
+  "transaction_id",
+  "invoice_id",
+  "payment_intent_id",
+  "charge_id",
+] as const;
+
+function sha256Short(input: string): string {
+  return createHash("sha256").update(input).digest("hex").slice(0, 32);
+}
+
+function computeDedupeIdHash(organizationId: string, dedupeId: string): string {
+  return sha256Short(`${organizationId}:${dedupeId}`);
+}
+
+function extractTransactionId(body: Record<string, unknown>): string | null {
+  for (const field of TRANSACTION_ID_FIELDS) {
+    const val = body[field];
+    if (val && typeof val === "string" && val.length >= DEDUPE_ID_MIN) return `${field}:${val}`;
+  }
+  const meta = body.metadata;
+  if (meta && typeof meta === "object" && !Array.isArray(meta)) {
+    const metaObj = meta as Record<string, unknown>;
+    for (const field of TRANSACTION_ID_FIELDS) {
+      const val = metaObj[field];
+      if (val && typeof val === "string" && val.length >= DEDUPE_ID_MIN) return `meta.${field}:${val}`;
+    }
+  }
+  return null;
+}
+
 function computeEventHash(parts: {
   eventType: string;
   customerId: string | null;
@@ -62,7 +100,11 @@ function computeEventHash(parts: {
   subscriptionId: string | null;
   timestamp: Date;
 }): string {
-  const bucket = Math.floor(parts.timestamp.getTime() / (5 * 60 * 1000));
+  const isFinancial = FINANCIAL_EVENT_TYPES.has(parts.eventType);
+  const bucket = isFinancial
+    ? Math.floor(parts.timestamp.getTime() / (24 * 60 * 60 * 1000))
+    : Math.floor(parts.timestamp.getTime() / (5 * 60 * 1000));
+
   const raw = [
     parts.eventType,
     parts.customerId ?? "",
@@ -71,11 +113,8 @@ function computeEventHash(parts: {
     parts.subscriptionId ?? "",
     bucket,
   ].join("|");
-  let h = 0;
-  for (let i = 0; i < raw.length; i++) {
-    h = ((h << 5) - h + raw.charCodeAt(i)) | 0;
-  }
-  return h.toString(36);
+
+  return sha256Short(raw);
 }
 
 function sanitizeMetadata(raw: unknown): Record<string, unknown> | null {
@@ -343,14 +382,45 @@ export async function POST(req: NextRequest) {
       : baseGrossValueInCents;
 
   const eventTimestamp = body.timestamp ? new Date(String(body.timestamp)) : new Date();
-  const eventHash = computeEventHash({
-    eventType,
-    customerId: toString(body.customer_id),
-    grossValueInCents,
-    productId: toString(body.product_id),
-    subscriptionId: toString(body.subscription_id),
-    timestamp: eventTimestamp,
-  });
+  const rawDedupeId = toString(body.dedupe_id);
+
+  const dedupeId =
+    rawDedupeId &&
+    rawDedupeId.length >= DEDUPE_ID_MIN &&
+    rawDedupeId.length <= DEDUPE_ID_MAX
+      ? rawDedupeId
+      : null;
+
+  const isFinancialEvent = FINANCIAL_EVENT_TYPES.has(eventType);
+
+  const transactionId =
+    !dedupeId && isFinancialEvent
+      ? extractTransactionId(body as Record<string, unknown>)
+      : null;
+
+  const missingDedupeOnPayment = isFinancialEvent && !dedupeId && !transactionId;
+
+  if (missingDedupeOnPayment) {
+    console.warn(
+      `[GrowthOS] ${eventType} event without dedupe_id or transaction identifier — org: ${apiKey.organizationId}, session: ${toString(body.session_id)}`
+    );
+  }
+
+  let eventHash: string;
+  if (dedupeId) {
+    eventHash = computeDedupeIdHash(apiKey.organizationId, dedupeId);
+  } else if (transactionId) {
+    eventHash = computeDedupeIdHash(apiKey.organizationId, `${eventType}:${transactionId}`);
+  } else {
+    eventHash = computeEventHash({
+      eventType,
+      customerId: toString(body.customer_id),
+      grossValueInCents,
+      productId: toString(body.product_id),
+      subscriptionId: toString(body.subscription_id),
+      timestamp: eventTimestamp,
+    });
+  }
 
   const inserted = await db.insert(events).values({
     organizationId: apiKey.organizationId,
@@ -396,11 +466,18 @@ export async function POST(req: NextRequest) {
     .onConflictDoNothing({ target: [events.organizationId, events.eventHash] })
     .returning({ id: events.id });
 
+  const responseHeaders: Record<string, string> = {
+    ...buildCorsHeaders(origin),
+  };
+
+  if (missingDedupeOnPayment) {
+    responseHeaders["X-GrowthOS-Warning"] =
+      "Financial event without dedupe_id. Deduplication relies on fallback hash. Pass dedupe with a unique transaction ID for reliable dedup.";
+  }
+
   if (inserted.length === 0) {
-    return new NextResponse(null, {
-      status: 204,
-      headers: { ...buildCorsHeaders(origin), "X-GrowthOS-Duplicate": "true" },
-    });
+    responseHeaders["X-GrowthOS-Duplicate"] = "true";
+    return new NextResponse(null, { status: 204, headers: responseHeaders });
   }
 
   await handleSubscriptionUpsert(
@@ -409,5 +486,5 @@ export async function POST(req: NextRequest) {
     body as Record<string, unknown>
   );
 
-  return new NextResponse(null, { status: 204, headers: buildCorsHeaders(origin) });
+  return new NextResponse(null, { status: 204, headers: responseHeaders });
 }
