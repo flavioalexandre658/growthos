@@ -25,6 +25,7 @@ export interface IEvent {
   paymentMethod: string | null;
   createdAt: Date;
   possibleDuplicate: boolean;
+  isRetry: boolean;
 }
 
 export interface IEventParams extends IDateFilter {

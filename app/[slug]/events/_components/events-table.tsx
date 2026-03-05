@@ -17,6 +17,7 @@ import {
   IconAlertTriangle,
   IconX,
   IconAlertCircle,
+  IconRepeat,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -210,6 +211,15 @@ function EventCard({
                   dup
                 </span>
               )}
+              {event.isRetry && (
+                <span
+                  title="Evento enviado por retentativa — falhou originalmente por erro de rede"
+                  className="flex items-center gap-0.5 rounded border border-sky-600/40 bg-sky-600/10 px-1 py-0.5 text-[9px] font-semibold text-sky-400 shrink-0"
+                >
+                  <IconRepeat size={9} />
+                  retry
+                </span>
+              )}
             </div>
             <div className="flex flex-col items-end gap-0.5 shrink-0">
               <span className="text-[10px] font-mono text-zinc-400">
@@ -346,6 +356,15 @@ function EventRow({
               >
                 <IconAlertCircle size={10} />
                 duplicata
+              </span>
+            )}
+            {event.isRetry && (
+              <span
+                title="Evento enviado por retentativa — falhou originalmente por erro de rede"
+                className="flex items-center gap-1 rounded border border-sky-600/40 bg-sky-600/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-400"
+              >
+                <IconRepeat size={10} />
+                retentativa
               </span>
             )}
           </div>

@@ -10,6 +10,8 @@
   var ENTRY_KEY = "growthos_entry";
   var FAILED_KEY = "growthos_failed_events";
   var FAILED_MAX = 50;
+  var FAILED_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+  var FAILED_MAX_ATTEMPTS = 3;
 
   var script = document.currentScript || (function () {
     var scripts = document.getElementsByTagName("script");
@@ -318,26 +320,61 @@
     } catch (_) {}
   }
 
+  function normalizeFailedEntry(entry) {
+    var failedAt = typeof entry.failedAt === "string"
+      ? new Date(entry.failedAt).getTime()
+      : (entry.failedAt || 0);
+    var attempts = typeof entry.attempts === "number" ? entry.attempts : 0;
+    return { payload: entry.payload, reason: entry.reason || "unknown", failedAt: failedAt, attempts: attempts };
+  }
+
   function logFailedEvent(payload, reason) {
     var list = readFailed();
-    list.push({ payload: payload, reason: reason, failedAt: new Date().toISOString() });
+    list.push({ payload: payload, reason: reason, failedAt: Date.now(), attempts: 0 });
+    writeFailed(list);
+  }
+
+  function logFailedRetry(entry, reason) {
+    var list = readFailed();
+    list.push({ payload: entry.payload, reason: reason, failedAt: entry.failedAt, attempts: entry.attempts + 1 });
     writeFailed(list);
   }
 
   function retryFailedEvents() {
-    var list = readFailed();
-    if (list.length === 0) return;
+    var raw = readFailed();
+    if (raw.length === 0) return;
+
+    var now = Date.now();
+    var eligible = [];
+    var discarded = [];
+
+    for (var i = 0; i < raw.length; i++) {
+      var entry = normalizeFailedEntry(raw[i]);
+      var age = now - entry.failedAt;
+      if (age > FAILED_TTL_MS || entry.attempts >= FAILED_MAX_ATTEMPTS) {
+        discarded.push(entry);
+      } else {
+        eligible.push(entry);
+      }
+    }
+
     writeFailed([]);
-    list.forEach(function (entry) {
+
+    eligible.forEach(function (entry) {
+      var retryPayload = Object.assign({}, entry.payload, {
+        _retried: true,
+        _retry_attempt: entry.attempts + 1,
+      });
+
       fetch(API_BASE + "/api/track", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(entry.payload),
+        body: JSON.stringify(retryPayload),
         keepalive: true,
       }).then(function (res) {
-        if (!res.ok) logFailedEvent(entry.payload, "http_" + res.status);
+        if (!res.ok && res.status !== 429) logFailedRetry(entry, "http_" + res.status);
       }).catch(function () {
-        logFailedEvent(entry.payload, "network");
+        logFailedRetry(entry, "network");
       });
     });
   }

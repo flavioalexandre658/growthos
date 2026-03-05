@@ -130,6 +130,7 @@ export async function getEvents(
         paymentMethod: events.paymentMethod,
         createdAt: events.createdAt,
         dupCount: dupWindowExpr,
+        isRetry: sql<boolean>`COALESCE((${events.metadata}->>'retried')::boolean, false)`,
       })
       .from(events)
       .where(whereClause)
@@ -215,6 +216,7 @@ export async function getEvents(
       paymentMethod: r.paymentMethod,
       createdAt: r.createdAt,
       possibleDuplicate: Number(r.dupCount) > 1,
+      isRetry: Boolean(r.isRetry),
     })),
     pagination: {
       page,

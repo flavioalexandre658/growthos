@@ -57,6 +57,18 @@ function toString(value: unknown): string | null {
 
 const FINANCIAL_EVENT_TYPES = new Set(["payment", "refund", "renewal"]);
 
+const MAX_PAST_DAYS = 30;
+
+function resolveCreatedAt(payloadTimestamp: string | null): Date {
+  if (!payloadTimestamp) return new Date();
+  const parsed = new Date(payloadTimestamp);
+  if (isNaN(parsed.getTime())) return new Date();
+  const now = new Date();
+  const diffMs = now.getTime() - parsed.getTime();
+  if (diffMs < 0 || diffMs > MAX_PAST_DAYS * 86_400_000) return now;
+  return parsed;
+}
+
 const DEDUPE_ID_MIN = 3;
 const DEDUPE_ID_MAX = 256;
 
@@ -382,6 +394,15 @@ export async function POST(req: NextRequest) {
       : baseGrossValueInCents;
 
   const eventTimestamp = body.timestamp ? new Date(String(body.timestamp)) : new Date();
+  const createdAt = resolveCreatedAt(toString(body.timestamp));
+
+  const isRetry = body._retried === true;
+  const retryAttempt = isRetry ? toInt(body._retry_attempt) : null;
+  const rawMeta = sanitizeMetadata(body.metadata);
+  const metadata = isRetry
+    ? { ...(rawMeta ?? {}), retried: true, retryAttempt }
+    : rawMeta;
+
   const rawDedupeId = toString(body.dedupe_id);
 
   const dedupeId =
@@ -460,8 +481,9 @@ export async function POST(req: NextRequest) {
     planId: toString(body.plan_id),
     planName: toString(body.plan_name),
 
-    metadata: sanitizeMetadata(body.metadata),
+    metadata,
     eventHash,
+    createdAt,
   })
     .onConflictDoNothing({ target: [events.organizationId, events.eventHash] })
     .returning({ id: events.id });
