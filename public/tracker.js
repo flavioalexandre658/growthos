@@ -7,16 +7,29 @@
   var CHECKOUT_KEY = "growthos_checkout";
   var DEDUP_KEY = "growthos_dedup";
   var DEDUP_TTL_MS = 24 * 60 * 60 * 1000;
+  var DEDUP_TTL_FINANCIAL_MS = 365 * 24 * 60 * 60 * 1000;
+  var OPT_OUT_KEY = "growthos_opt_out";
+  var FINANCIAL_EVENT_TYPES = [
+    "payment",
+    "refund",
+    "renewal",
+    "signup",
+    "trial_started",
+    "subscription_canceled",
+    "subscription_changed",
+  ];
   var ENTRY_KEY = "growthos_entry";
   var FAILED_KEY = "growthos_failed_events";
   var FAILED_MAX = 50;
   var FAILED_TTL_MS = 7 * 24 * 60 * 60 * 1000;
   var FAILED_MAX_ATTEMPTS = 3;
 
-  var script = document.currentScript || (function () {
-    var scripts = document.getElementsByTagName("script");
-    return scripts[scripts.length - 1];
-  })();
+  var script =
+    document.currentScript ||
+    (function () {
+      var scripts = document.getElementsByTagName("script");
+      return scripts[scripts.length - 1];
+    })();
 
   var API_KEY = script.getAttribute("data-key") || "";
   var scriptSrc = script.getAttribute("src") || "";
@@ -77,10 +90,12 @@
     return false;
   }
 
-  function markDedup(key) {
+  function markDedup(key, eventType) {
     try {
       var set = getDedup();
-      set.push({ k: key, e: Date.now() + DEDUP_TTL_MS });
+      var isFinancial = FINANCIAL_EVENT_TYPES.indexOf(eventType) >= 0;
+      var ttl = isFinancial ? DEDUP_TTL_FINANCIAL_MS : DEDUP_TTL_MS;
+      set.push({ k: key, e: Date.now() + ttl });
       if (set.length > 200) set = set.slice(-200);
       localStorage.setItem(DEDUP_KEY, JSON.stringify(set));
     } catch (_) {}
@@ -92,7 +107,20 @@
     } catch (_) {}
   }
 
-  var SEARCH_ENGINES = ["google", "bing", "yahoo", "duckduckgo", "baidu", "yandex", "ecosia", "chatgpt", "perplexity", "gemini", "claude", "copilot"];
+  var SEARCH_ENGINES = [
+    "google",
+    "bing",
+    "yahoo",
+    "duckduckgo",
+    "baidu",
+    "yandex",
+    "ecosia",
+    "chatgpt",
+    "perplexity",
+    "gemini",
+    "claude",
+    "copilot",
+  ];
 
   var SOURCE_PATTERNS = [
     { pattern: /gemini\.google/i, source: "gemini" },
@@ -213,13 +241,16 @@
         var source = inferSourceFromReferrer(referrer);
         var medium = inferMediumFromReferrer(referrer);
         if (source !== "direct") {
-          sessionStorage.setItem(UTM_KEY, JSON.stringify({
-            source: source,
-            medium: medium,
-            campaign: null,
-            content: null,
-            term: null,
-          }));
+          sessionStorage.setItem(
+            UTM_KEY,
+            JSON.stringify({
+              source: source,
+              medium: medium,
+              campaign: null,
+              content: null,
+              term: null,
+            }),
+          );
         }
       }
     } catch (_) {}
@@ -250,32 +281,34 @@
     var params = new URLSearchParams(window.location.search);
     var storedUtms = getStoredUtms();
     var rawReferrer = document.referrer || null;
-    var externalReferrer = (rawReferrer && !isSameSite(rawReferrer)) ? rawReferrer : null;
+    var externalReferrer =
+      rawReferrer && !isSameSite(rawReferrer) ? rawReferrer : null;
     var clickId = detectClickId(params);
 
-    var source = params.get("utm_source") ||
+    var source =
+      params.get("utm_source") ||
       (clickId && clickId.source) ||
       (storedUtms && storedUtms.source) ||
       inferSourceFromReferrer(externalReferrer);
 
-    var medium = params.get("utm_medium") ||
+    var medium =
+      params.get("utm_medium") ||
       (clickId && clickId.medium) ||
       (storedUtms && storedUtms.medium) ||
       inferMediumFromReferrer(externalReferrer);
 
-    var campaign = params.get("utm_campaign") ||
-      (storedUtms && storedUtms.campaign) ||
-      null;
+    var campaign =
+      params.get("utm_campaign") || (storedUtms && storedUtms.campaign) || null;
 
-    var content = params.get("utm_content") ||
-      (storedUtms && storedUtms.content) ||
-      null;
+    var content =
+      params.get("utm_content") || (storedUtms && storedUtms.content) || null;
 
-    var device = /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent
-    )
-      ? "mobile"
-      : "desktop";
+    var device =
+      /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent,
+      )
+        ? "mobile"
+        : "desktop";
 
     return {
       source: source,
@@ -321,22 +354,38 @@
   }
 
   function normalizeFailedEntry(entry) {
-    var failedAt = typeof entry.failedAt === "string"
-      ? new Date(entry.failedAt).getTime()
-      : (entry.failedAt || 0);
+    var failedAt =
+      typeof entry.failedAt === "string"
+        ? new Date(entry.failedAt).getTime()
+        : entry.failedAt || 0;
     var attempts = typeof entry.attempts === "number" ? entry.attempts : 0;
-    return { payload: entry.payload, reason: entry.reason || "unknown", failedAt: failedAt, attempts: attempts };
+    return {
+      payload: entry.payload,
+      reason: entry.reason || "unknown",
+      failedAt: failedAt,
+      attempts: attempts,
+    };
   }
 
   function logFailedEvent(payload, reason) {
     var list = readFailed();
-    list.push({ payload: payload, reason: reason, failedAt: Date.now(), attempts: 0 });
+    list.push({
+      payload: payload,
+      reason: reason,
+      failedAt: Date.now(),
+      attempts: 0,
+    });
     writeFailed(list);
   }
 
   function logFailedRetry(entry, reason) {
     var list = readFailed();
-    list.push({ payload: entry.payload, reason: reason, failedAt: entry.failedAt, attempts: entry.attempts + 1 });
+    list.push({
+      payload: entry.payload,
+      reason: reason,
+      failedAt: entry.failedAt,
+      attempts: entry.attempts + 1,
+    });
     writeFailed(list);
   }
 
@@ -371,11 +420,14 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(retryPayload),
         keepalive: true,
-      }).then(function (res) {
-        if (!res.ok && res.status !== 429) logFailedRetry(entry, "http_" + res.status);
-      }).catch(function () {
-        logFailedRetry(entry, "network");
-      });
+      })
+        .then(function (res) {
+          if (!res.ok && res.status !== 429)
+            logFailedRetry(entry, "http_" + res.status);
+        })
+        .catch(function () {
+          logFailedRetry(entry, "network");
+        });
     });
   }
 
@@ -387,13 +439,15 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
       keepalive: true,
-    }).then(function (res) {
-      if (!res.ok && res.status !== 429) {
-        logFailedEvent(payload, "http_" + res.status);
-      }
-    }).catch(function () {
-      logFailedEvent(payload, "network");
-    });
+    })
+      .then(function (res) {
+        if (!res.ok && res.status !== 429) {
+          logFailedEvent(payload, "http_" + res.status);
+        }
+      })
+      .catch(function () {
+        logFailedEvent(payload, "network");
+      });
   }
 
   function flushQueue() {
@@ -430,19 +484,28 @@
   function sendBeaconSync(payload) {
     if (!navigator.sendBeacon) return;
     var url = API_BASE + "/api/track";
-    var blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+    var blob = new Blob([JSON.stringify(payload)], {
+      type: "application/json",
+    });
     navigator.sendBeacon(url, blob);
   }
 
   function track(eventType, data) {
+    try {
+      if (localStorage.getItem(OPT_OUT_KEY) === "1") return;
+    } catch (_) {}
+
     var rawData = data || {};
     var dedupeOption = rawData.dedupe;
     var serverDedupeId = null;
 
     if (dedupeOption !== undefined) {
-      var dedupKey = dedupeOption === true ? eventType : eventType + ":" + String(dedupeOption);
+      var dedupKey =
+        dedupeOption === true
+          ? eventType
+          : eventType + ":" + String(dedupeOption);
       if (isDuplicate(dedupKey)) return;
-      markDedup(dedupKey);
+      markDedup(dedupKey, eventType);
       if (dedupeOption !== true) {
         serverDedupeId = eventType + ":" + String(dedupeOption);
       }
@@ -506,7 +569,9 @@
           for (var i = 0; i < attrs.length; i++) {
             var attr = attrs[i];
             if (attr.name.indexOf("data-growthos-") === 0) {
-              var key = attr.name.replace("data-growthos-", "").replace(/-/g, "_");
+              var key = attr.name
+                .replace("data-growthos-", "")
+                .replace(/-/g, "_");
               var val = attr.value;
               if (key === "dedupe") {
                 data.dedupe = val === "true" ? true : val;
@@ -553,7 +618,7 @@
   persistUtms();
 
   flushQueue();
-  // retryFailedEvents();
+  retryFailedEvents();
 
   function init() {
     track("pageview", {});
@@ -571,7 +636,11 @@
   window.GrowthOS = {
     track: track,
     clearDedupe: clearDedup,
-    failedEvents: function () { return readFailed(); },
-    clearFailedEvents: function () { writeFailed([]); },
+    failedEvents: function () {
+      return readFailed();
+    },
+    clearFailedEvents: function () {
+      writeFailed([]);
+    },
   };
 })();
