@@ -4,6 +4,8 @@ import { useState } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/pt-br";
+import { useOrganization } from "@/components/providers/organization-provider";
+import { formatDate } from "@/utils/format-date";
 import {
   IconChevronDown,
   IconChevronRight,
@@ -92,7 +94,7 @@ function DetailField({
   );
 }
 
-function SubscriptionDetailGrid({ item }: { item: ISubscriptionListItem }) {
+function SubscriptionDetailGrid({ item, timezone }: { item: ISubscriptionListItem; timezone: string }) {
   return (
     <div className="rounded-lg border border-zinc-800/60 bg-zinc-950/50 divide-y divide-zinc-800/40 overflow-hidden">
       <DetailField
@@ -107,14 +109,14 @@ function SubscriptionDetailGrid({ item }: { item: ISubscriptionListItem }) {
       {item.canceledAt && (
         <DetailField
           label="canceled_at"
-          value={dayjs(item.canceledAt).format("DD/MM/YYYY HH:mm")}
+          value={formatDate(item.canceledAt, timezone)}
         />
       )}
     </div>
   );
 }
 
-function SubscriptionCard({ item }: { item: ISubscriptionListItem }) {
+function SubscriptionCard({ item, timezone }: { item: ISubscriptionListItem; timezone: string }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -149,7 +151,7 @@ function SubscriptionCard({ item }: { item: ISubscriptionListItem }) {
                 item.billingInterval}
             </span>
             <span className="text-zinc-600">
-              Desde {dayjs(item.startedAt).format("DD/MM/YYYY")}
+              Desde {formatDate(item.startedAt, timezone, "DD/MM/YYYY")}
             </span>
           </div>
         </div>
@@ -165,14 +167,14 @@ function SubscriptionCard({ item }: { item: ISubscriptionListItem }) {
 
       {expanded && (
         <div className="mt-2.5 pt-2.5 border-t border-zinc-800/40">
-          <SubscriptionDetailGrid item={item} />
+          <SubscriptionDetailGrid item={item} timezone={timezone} />
         </div>
       )}
     </div>
   );
 }
 
-function SubscriptionRow({ item }: { item: ISubscriptionListItem }) {
+function SubscriptionRow({ item, timezone }: { item: ISubscriptionListItem; timezone: string }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -225,7 +227,7 @@ function SubscriptionRow({ item }: { item: ISubscriptionListItem }) {
         <td className="px-3 py-2.5 whitespace-nowrap">
           <div className="flex flex-col gap-0.5">
             <span className="text-xs font-mono text-zinc-300">
-              {dayjs(item.startedAt).format("DD/MM/YYYY")}
+              {formatDate(item.startedAt, timezone, "DD/MM/YYYY")}
             </span>
             <span className="text-[10px] text-zinc-600">
               {dayjs(item.startedAt).fromNow()}
@@ -235,7 +237,7 @@ function SubscriptionRow({ item }: { item: ISubscriptionListItem }) {
         <td className="px-3 py-2.5 whitespace-nowrap">
           {item.canceledAt ? (
             <span className="text-xs font-mono text-zinc-500">
-              {dayjs(item.canceledAt).format("DD/MM/YYYY")}
+              {formatDate(item.canceledAt, timezone, "DD/MM/YYYY")}
             </span>
           ) : (
             <span className="text-xs text-zinc-700">—</span>
@@ -246,7 +248,7 @@ function SubscriptionRow({ item }: { item: ISubscriptionListItem }) {
         <tr className="border-b border-zinc-800/60 bg-zinc-950/60">
           <td colSpan={7} className="px-4 py-3">
             <div className="pl-5">
-              <SubscriptionDetailGrid item={item} />
+              <SubscriptionDetailGrid item={item} timezone={timezone} />
             </div>
           </td>
         </tr>
@@ -270,6 +272,8 @@ export function SubscriptionsTable({
   onPageChange,
   onPageSizeChange,
 }: SubscriptionsTableProps) {
+  const { organization } = useOrganization();
+  const timezone = organization?.timezone ?? "America/Sao_Paulo";
   const paginationStart =
     pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
   const paginationEnd = Math.min(
@@ -384,7 +388,7 @@ export function SubscriptionsTable({
                 </td>
               </tr>
             ) : (
-              data.map((item) => <SubscriptionRow key={item.id} item={item} />)
+              data.map((item) => <SubscriptionRow key={item.id} item={item} timezone={timezone} />)
             )}
           </tbody>
         </table>
@@ -411,7 +415,7 @@ export function SubscriptionsTable({
             Nenhuma assinatura encontrada para os filtros aplicados
           </div>
         ) : (
-          data.map((item) => <SubscriptionCard key={item.id} item={item} />)
+          data.map((item) => <SubscriptionCard key={item.id} item={item} timezone={timezone} />)
         )}
       </div>
 

@@ -190,7 +190,7 @@ export async function syncStripeHistory(
           paymentMethod: "credit_card",
           provider: "stripe",
           eventHash: stripeEventHash(organizationId, invoice.id),
-          createdAt: new Date(invoice.created * 1000),
+          createdAt: new Date((invoice.status_transitions.paid_at ?? invoice.created) * 1000),
           source: acq?.source ?? null,
           medium: acq?.medium ?? null,
           campaign: acq?.campaign ?? null,

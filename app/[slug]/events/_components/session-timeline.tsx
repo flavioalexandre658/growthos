@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import dayjs from "dayjs";
 import { IconChevronRight, IconChevronDown } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { fmtCurrencyDecimal } from "@/utils/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSessionEvents } from "@/hooks/queries/use-session-events";
+import { useOrganization } from "@/components/providers/organization-provider";
+import { formatDate } from "@/utils/format-date";
 import { getEventTypeBadgeClass } from "./events-filters";
 import { DetailField } from "./event-detail-field";
 import type { ISessionEvent } from "@/interfaces/event.interface";
@@ -56,6 +57,8 @@ export function SessionTimeline({
   currentEventId,
 }: SessionTimelineProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { organization } = useOrganization();
+  const tz = organization?.timezone ?? "America/Sao_Paulo";
   const { data, isLoading } = useSessionEvents(organizationId, sessionId);
 
   if (isLoading) {
@@ -154,7 +157,7 @@ export function SessionTimeline({
                       </span>
                     )}
                     <span className="text-[10px] font-mono text-zinc-600 shrink-0">
-                      {dayjs(event.createdAt).format("HH:mm:ss")}
+                      {formatDate(event.createdAt, tz, "HH:mm:ss")}
                     </span>
                     <span className="ml-auto shrink-0 text-zinc-700">
                       {isExpanded ? (

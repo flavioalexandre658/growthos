@@ -160,7 +160,7 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice) {
       paymentMethod: "credit_card",
       provider: "stripe",
       eventHash: stripeEventHash(orgId, invoice.id),
-      createdAt: new Date(invoice.created * 1000),
+      createdAt: new Date((invoice.status_transitions.paid_at ?? invoice.created) * 1000),
       source: acq?.source ?? null,
       medium: acq?.medium ?? null,
       campaign: acq?.campaign ?? null,

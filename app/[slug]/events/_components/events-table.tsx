@@ -5,6 +5,8 @@ import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/pt-br";
+import { useOrganization } from "@/components/providers/organization-provider";
+import { formatDate } from "@/utils/format-date";
 import {
   IconTrash,
   IconChevronDown,
@@ -179,11 +181,13 @@ function hasEventDetails(event: IEvent) {
 function EventCard({
   event,
   organizationId,
+  timezone,
   isSelected,
   onToggle,
 }: {
   event: IEvent;
   organizationId: string;
+  timezone: string;
   isSelected: boolean;
   onToggle: (id: string) => void;
 }) {
@@ -252,7 +256,7 @@ function EventCard({
             </div>
             <div className="flex flex-col items-end gap-0.5 shrink-0">
               <span className="text-[10px] font-mono text-zinc-400">
-                {dayjs(event.createdAt).format("DD/MM/YYYY HH:mm")}
+                {formatDate(event.createdAt, timezone)}
               </span>
               <span className="text-[9px] text-zinc-600">
                 {dayjs(event.createdAt).fromNow()}
@@ -309,11 +313,13 @@ function EventCard({
 function EventRow({
   event,
   organizationId,
+  timezone,
   isSelected,
   onToggle,
 }: {
   event: IEvent;
   organizationId: string;
+  timezone: string;
   isSelected: boolean;
   onToggle: (id: string) => void;
 }) {
@@ -429,7 +435,7 @@ function EventRow({
         <td className="px-3 py-2.5 whitespace-nowrap">
           <div className="flex flex-col gap-0.5">
             <span className="text-xs font-mono text-zinc-300">
-              {dayjs(event.createdAt).format("DD/MM/YYYY HH:mm")}
+              {formatDate(event.createdAt, timezone)}
             </span>
             <span className="text-[10px] text-zinc-600">
               {dayjs(event.createdAt).fromNow()}
@@ -482,6 +488,8 @@ export function EventsTable({
   onPageChange,
   onPageSizeChange,
 }: EventsTableProps) {
+  const { organization } = useOrganization();
+  const timezone = organization?.timezone ?? "America/Sao_Paulo";
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const batchDeleteMutation = useDeleteEventsBatch();
@@ -708,6 +716,7 @@ export function EventsTable({
                   key={event.id}
                   event={event}
                   organizationId={organizationId}
+                  timezone={timezone}
                   isSelected={selectedIds.has(event.id)}
                   onToggle={toggleSelect}
                 />
@@ -755,6 +764,7 @@ export function EventsTable({
                 key={event.id}
                 event={event}
                 organizationId={organizationId}
+                timezone={timezone}
                 isSelected={selectedIds.has(event.id)}
                 onToggle={toggleSelect}
               />

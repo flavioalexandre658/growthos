@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import dayjs from "dayjs";
 import { IconChevronRight, IconChevronDown } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { fmtCurrencyDecimal } from "@/utils/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCustomerEvents } from "@/hooks/queries/use-customer-events";
+import { useOrganization } from "@/components/providers/organization-provider";
+import { formatDate } from "@/utils/format-date";
 import { getEventTypeBadgeClass } from "./events-filters";
 import { DetailField } from "./event-detail-field";
 import type { ICustomerEvent } from "@/interfaces/event.interface";
@@ -50,7 +51,7 @@ interface SessionGroup {
   events: ICustomerEvent[];
 }
 
-function groupBySession(events: ICustomerEvent[]): SessionGroup[] {
+function groupBySession(events: ICustomerEvent[], tz: string): SessionGroup[] {
   const groups: SessionGroup[] = [];
   const seen = new Map<string, SessionGroup>();
 
@@ -59,7 +60,7 @@ function groupBySession(events: ICustomerEvent[]): SessionGroup[] {
     if (!seen.has(key)) {
       const firstEvent = event;
       const label = event.sessionId
-        ? `Sessão de ${dayjs(firstEvent.createdAt).format("DD/MM HH:mm")}`
+        ? `Sessão de ${formatDate(firstEvent.createdAt, tz, "DD/MM HH:mm")}`
         : "Sem sessão";
       const group: SessionGroup = { sessionId: event.sessionId, label, events: [] };
       seen.set(key, group);
@@ -83,6 +84,8 @@ export function CustomerTimeline({
   currentEventId,
 }: CustomerTimelineProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { organization } = useOrganization();
+  const tz = organization?.timezone ?? "America/Sao_Paulo";
   const { data, isLoading } = useCustomerEvents(organizationId, customerId);
 
   if (isLoading) {
@@ -114,7 +117,7 @@ export function CustomerTimeline({
     );
   }
 
-  const groups = groupBySession(data);
+  const groups = groupBySession(data, tz);
 
   return (
     <div className="mt-3">
@@ -179,7 +182,7 @@ export function CustomerTimeline({
                             </span>
                           )}
                           <span className="text-[10px] font-mono text-zinc-600 shrink-0">
-                            {dayjs(event.createdAt).format("DD/MM HH:mm:ss")}
+                            {formatDate(event.createdAt, tz, "DD/MM HH:mm:ss")}
                           </span>
                           <span className="ml-auto shrink-0 text-zinc-700">
                             {isExpanded ? (

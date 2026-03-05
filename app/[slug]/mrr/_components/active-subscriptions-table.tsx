@@ -14,8 +14,10 @@ import {
   type TableColumn,
 } from "@/components/ui/responsive-table";
 import { useActiveSubscriptions } from "@/hooks/queries/use-active-subscriptions";
+import { useOrganization } from "@/components/providers/organization-provider";
 import { normalizeToMonthly, INTERVAL_LABELS } from "@/utils/billing";
 import { fmtBRLDecimal } from "@/utils/format";
+import { formatDate } from "@/utils/format-date";
 import dayjs from "dayjs";
 import type {
   IActiveSubscription,
@@ -69,6 +71,8 @@ interface ActiveSubscriptionsTableProps {
 }
 
 export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptionsTableProps) {
+  const { organization } = useOrganization();
+  const timezone = organization?.timezone ?? "America/Sao_Paulo";
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<SubscriptionStatusFilter>("active");
   const [planId, setPlanId] = useState<string | undefined>();
@@ -233,7 +237,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
       render: (row) => (
         <span className="text-xs text-zinc-500">
           {row.nextBillingAt
-            ? dayjs(row.nextBillingAt).format("DD/MM/YYYY")
+            ? formatDate(row.nextBillingAt, timezone, "DD/MM/YYYY")
             : <span className="text-zinc-700">—</span>}
         </span>
       ),
@@ -257,7 +261,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
       currentSortDir: sortDir,
       render: (row) => (
         <span className="text-xs text-zinc-500">
-          {dayjs(row.startedAt).format("DD/MM/YYYY")}
+          {formatDate(row.startedAt, timezone, "DD/MM/YYYY")}
         </span>
       ),
     },
