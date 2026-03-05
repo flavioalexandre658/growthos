@@ -1,27 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/db";
-import { integrations, events, subscriptions } from "@/db/schema";
+import { integrations, events, subscriptions, organizations } from "@/db/schema";
 import { decrypt } from "@/lib/crypto";
 import { hashAnonymous } from "@/lib/hash";
 import { eq } from "drizzle-orm";
 import { createHash } from "crypto";
-import type { BillingInterval } from "@/utils/billing";
+import { extractSubscriptionIdFromInvoice, mapBillingInterval } from "@/utils/stripe-helpers";
+import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
 
 function stripeEventHash(orgId: string, externalId: string): string {
   return createHash("sha256").update(`${orgId}:${externalId}`).digest("hex").slice(0, 32);
 }
 
-function mapBillingInterval(interval: string, intervalCount = 1): BillingInterval {
-  if (interval === "year") return "yearly";
-  if (interval === "week") return "weekly";
-  if (interval === "month") {
-    if (intervalCount === 3) return "quarterly";
-    if (intervalCount === 6) return "semiannual";
-    if (intervalCount === 12) return "yearly";
-  }
-  return "monthly";
+async function getOrgCurrency(orgId: string): Promise<string> {
+  const [org] = await db
+    .select({ currency: organizations.currency })
+    .from(organizations)
+    .where(eq(organizations.id, orgId))
+    .limit(1);
+  return org?.currency ?? "BRL";
+}
+
+async function computeBaseValue(
+  orgId: string,
+  eventCurrency: string,
+  orgCurrency: string,
+  grossValueInCents: number,
+): Promise<{ baseCurrency: string; exchangeRate: number; baseGrossValueInCents: number }> {
+  const rate = await resolveExchangeRate(orgId, eventCurrency, orgCurrency);
+  const resolvedRate = rate ?? 1;
+  return {
+    baseCurrency: orgCurrency,
+    exchangeRate: resolvedRate,
+    baseGrossValueInCents: Math.round(grossValueInCents * resolvedRate),
+  };
 }
 
 export async function POST(
@@ -109,15 +123,28 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventId
     typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
   const hashedCustomerId = hashAnonymous(rawCustomerId);
 
-  const subRef = invoice.parent?.subscription_details?.subscription ?? null;
-  const subscriptionId = subRef
-    ? typeof subRef === "string"
-      ? subRef
-      : subRef.id
-    : null;
-
+  const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
   const isRecurring = !!subscriptionId;
+
+  let billingInterval: string | null = null;
+  if (subscriptionId) {
+    const [sub] = await db
+      .select({ billingInterval: subscriptions.billingInterval })
+      .from(subscriptions)
+      .where(eq(subscriptions.subscriptionId, subscriptionId))
+      .limit(1);
+    billingInterval = sub?.billingInterval ?? null;
+  }
+
   const acq = await lookupAcquisitionContext(orgId, hashedCustomerId);
+  const eventCurrency = invoice.currency.toUpperCase();
+  const orgCurrency = await getOrgCurrency(orgId);
+  const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
+    orgId,
+    eventCurrency,
+    orgCurrency,
+    invoice.amount_paid,
+  );
 
   await db
     .insert(events)
@@ -125,8 +152,12 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventId
       organizationId: orgId,
       eventType: "payment",
       grossValueInCents: invoice.amount_paid,
-      currency: invoice.currency.toUpperCase(),
+      currency: eventCurrency,
+      baseCurrency,
+      exchangeRate,
+      baseGrossValueInCents,
       billingType: isRecurring ? "recurring" : "one_time",
+      billingInterval: billingInterval ?? null,
       subscriptionId,
       customerId: hashedCustomerId,
       paymentMethod: "credit_card",
@@ -166,14 +197,26 @@ async function handlePaymentIntentSucceeded(
       : null;
 
     const pm = pi.payment_method_types?.[0] ?? "credit_card";
+    const eventCurrency = pi.currency.toUpperCase();
+    const orgCurrency = await getOrgCurrency(orgId);
+    const gross = pi.amount_received ?? pi.amount;
+    const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
+      orgId,
+      eventCurrency,
+      orgCurrency,
+      gross,
+    );
 
     await db
       .insert(events)
       .values({
         organizationId: orgId,
         eventType: "payment",
-        grossValueInCents: pi.amount_received ?? pi.amount,
-        currency: pi.currency.toUpperCase(),
+        grossValueInCents: gross,
+        currency: eventCurrency,
+        baseCurrency,
+        exchangeRate,
+        baseGrossValueInCents,
         billingType: "one_time",
         customerId: hashedCustomerId ?? undefined,
         paymentMethod: pm,
@@ -200,13 +243,25 @@ async function handleChargeRefunded(orgId: string, charge: Stripe.Charge, eventI
     typeof charge.customer === "string" ? charge.customer : charge.customer?.id ?? null;
   const hashedCustomerId = rawCustomerId ? hashAnonymous(rawCustomerId) : null;
 
+  const eventCurrency = charge.currency.toUpperCase();
+  const orgCurrency = await getOrgCurrency(orgId);
+  const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
+    orgId,
+    eventCurrency,
+    orgCurrency,
+    refundedAmount,
+  );
+
   await db
     .insert(events)
     .values({
       organizationId: orgId,
       eventType: "refund",
       grossValueInCents: -refundedAmount,
-      currency: charge.currency.toUpperCase(),
+      currency: eventCurrency,
+      baseCurrency,
+      exchangeRate,
+      baseGrossValueInCents: -baseGrossValueInCents,
       billingType: "one_time",
       customerId: hashedCustomerId ?? undefined,
       provider: "stripe",
@@ -229,6 +284,16 @@ async function handleSubscriptionCreated(
   const intervalCount = item?.price.recurring?.interval_count ?? 1;
   const billingInterval = mapBillingInterval(interval, intervalCount);
 
+  const eventCurrency = sub.currency.toUpperCase();
+  const orgCurrency = await getOrgCurrency(orgId);
+  const valueInCents = item?.price.unit_amount ?? 0;
+  const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
+    orgId,
+    eventCurrency,
+    orgCurrency,
+    valueInCents,
+  );
+
   await db
     .insert(subscriptions)
     .values({
@@ -238,8 +303,11 @@ async function handleSubscriptionCreated(
       planId: item?.price.id ?? "unknown",
       planName: item?.price.nickname ?? item?.price.id ?? "Plano",
       status: "active",
-      valueInCents: item?.price.unit_amount ?? 0,
-      currency: sub.currency.toUpperCase(),
+      valueInCents,
+      currency: eventCurrency,
+      baseCurrency,
+      exchangeRate,
+      baseValueInCents: baseGrossValueInCents,
       billingInterval,
       startedAt: new Date(sub.start_date * 1000),
     })
@@ -247,6 +315,9 @@ async function handleSubscriptionCreated(
       target: [subscriptions.subscriptionId],
       set: {
         status: "active",
+        baseCurrency,
+        exchangeRate,
+        baseValueInCents: baseGrossValueInCents,
         updatedAt: new Date(),
       },
     });
@@ -264,16 +335,30 @@ async function handleSubscriptionCanceled(
   const item = sub.items.data[0];
   const interval = item?.price.recurring?.interval ?? "month";
   const intervalCount = item?.price.recurring?.interval_count ?? 1;
+  const billingInterval = mapBillingInterval(interval, intervalCount);
+
+  const eventCurrency = sub.currency.toUpperCase();
+  const orgCurrency = await getOrgCurrency(orgId);
+  const valueInCents = item?.price.unit_amount ?? 0;
+  const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
+    orgId,
+    eventCurrency,
+    orgCurrency,
+    valueInCents,
+  );
 
   await db
     .insert(events)
     .values({
       organizationId: orgId,
       eventType: "subscription_canceled",
-      grossValueInCents: item?.price.unit_amount ?? 0,
-      currency: sub.currency.toUpperCase(),
+      grossValueInCents: valueInCents,
+      currency: eventCurrency,
+      baseCurrency,
+      exchangeRate,
+      baseGrossValueInCents,
       billingType: "recurring",
-      billingInterval: mapBillingInterval(interval, intervalCount),
+      billingInterval,
       subscriptionId: sub.id,
       customerId: hashAnonymous(customerId),
       provider: "stripe",
@@ -303,13 +388,25 @@ async function handleSubscriptionUpdated(
   const customerId =
     typeof sub.customer === "string" ? sub.customer : sub.customer.id;
 
+  const eventCurrency = sub.currency.toUpperCase();
+  const orgCurrency = await getOrgCurrency(orgId);
+  const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
+    orgId,
+    eventCurrency,
+    orgCurrency,
+    newAmount ?? 0,
+  );
+
   await db
     .insert(events)
     .values({
       organizationId: orgId,
       eventType: "subscription_changed",
       grossValueInCents: newAmount ?? 0,
-      currency: sub.currency.toUpperCase(),
+      currency: eventCurrency,
+      baseCurrency,
+      exchangeRate,
+      baseGrossValueInCents,
       billingType: "recurring",
       subscriptionId: sub.id,
       customerId: hashAnonymous(customerId),
@@ -322,12 +419,7 @@ async function handleSubscriptionUpdated(
 }
 
 async function handlePaymentFailed(orgId: string, invoice: Stripe.Invoice) {
-  const subRef = invoice.parent?.subscription_details?.subscription ?? null;
-  const subscriptionId = subRef
-    ? typeof subRef === "string"
-      ? subRef
-      : subRef.id
-    : null;
+  const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
 
   if (!subscriptionId) return;
 

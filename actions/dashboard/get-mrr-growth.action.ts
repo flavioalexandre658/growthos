@@ -49,7 +49,7 @@ export async function getMrrGrowth(
       const isActive =
         s.startedAt <= pointDate &&
         (s.canceledAt === null || s.canceledAt > pointDate);
-      return isActive ? sum + normalizeToMonthly(s.valueInCents, s.billingInterval) : sum;
+      return isActive ? sum + normalizeToMonthly(s.baseValueInCents ?? s.valueInCents, s.billingInterval) : sum;
     }, 0);
 
     entries.push({ date: cursor.format("YYYY-MM-DD"), mrr });

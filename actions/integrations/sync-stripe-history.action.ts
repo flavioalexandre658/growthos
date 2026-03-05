@@ -4,13 +4,15 @@ import Stripe from "stripe";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
-import { integrations, events, subscriptions } from "@/db/schema";
+import { integrations, events, subscriptions, organizations } from "@/db/schema";
 import { decrypt } from "@/lib/crypto";
 import { hashAnonymous } from "@/lib/hash";
 import { eq, and } from "drizzle-orm";
 import { createHash } from "crypto";
-import type { BillingInterval } from "@/utils/billing";
+import { extractSubscriptionIdFromInvoice, mapBillingInterval } from "@/utils/stripe-helpers";
+import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
+import type { BillingInterval } from "@/utils/billing";
 
 function stripeEventHash(orgId: string, externalId: string): string {
   return createHash("sha256").update(`${orgId}:${externalId}`).digest("hex").slice(0, 32);
@@ -32,15 +34,28 @@ function mapStripeStatus(
   return map[s] ?? "active";
 }
 
-function mapBillingInterval(interval: string, intervalCount = 1): BillingInterval {
-  if (interval === "year") return "yearly";
-  if (interval === "week") return "weekly";
-  if (interval === "month") {
-    if (intervalCount === 3) return "quarterly";
-    if (intervalCount === 6) return "semiannual";
-    if (intervalCount === 12) return "yearly";
-  }
-  return "monthly";
+async function getOrgCurrency(organizationId: string): Promise<string> {
+  const [org] = await db
+    .select({ currency: organizations.currency })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1);
+  return org?.currency ?? "BRL";
+}
+
+async function computeBaseValue(
+  organizationId: string,
+  eventCurrency: string,
+  orgCurrency: string,
+  grossValueInCents: number,
+): Promise<{ baseCurrency: string; exchangeRate: number; baseValueInCents: number }> {
+  const rate = await resolveExchangeRate(organizationId, eventCurrency, orgCurrency);
+  const resolvedRate = rate ?? 1;
+  return {
+    baseCurrency: orgCurrency,
+    exchangeRate: resolvedRate,
+    baseValueInCents: Math.round(grossValueInCents * resolvedRate),
+  };
 }
 
 export async function syncStripeHistory(
@@ -69,6 +84,7 @@ export async function syncStripeHistory(
   if (integration.status === "disconnected") throw new Error("Integração desconectada.");
 
   const stripe = new Stripe(decrypt(integration.accessToken));
+  const orgCurrency = await getOrgCurrency(organizationId);
 
   let subscriptionsSynced = 0;
   let invoicesSynced = 0;
@@ -85,6 +101,15 @@ export async function syncStripeHistory(
 
       subIntervalMap.set(sub.id, billingInterval);
 
+      const eventCurrency = sub.currency.toUpperCase();
+      const valueInCents = item?.price.unit_amount ?? 0;
+      const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
+        organizationId,
+        eventCurrency,
+        orgCurrency,
+        valueInCents,
+      );
+
       await db
         .insert(subscriptions)
         .values({
@@ -94,8 +119,11 @@ export async function syncStripeHistory(
           planId: item?.price.id ?? "unknown",
           planName: item?.price.nickname ?? item?.price.id ?? "Plano",
           status: mapStripeStatus(sub.status),
-          valueInCents: item?.price.unit_amount ?? 0,
-          currency: sub.currency.toUpperCase(),
+          valueInCents,
+          currency: eventCurrency,
+          baseCurrency,
+          exchangeRate,
+          baseValueInCents,
           billingInterval,
           startedAt: new Date(sub.start_date * 1000),
           canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
@@ -105,14 +133,15 @@ export async function syncStripeHistory(
           set: {
             status: mapStripeStatus(sub.status),
             canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
+            baseCurrency,
+            exchangeRate,
+            baseValueInCents,
             updatedAt: new Date(),
           },
         });
 
       subscriptionsSynced++;
     }
-
-    const invoiceIdsSynced = new Set<string>();
 
     for await (const invoice of stripe.invoices.list({ limit: 100, status: "paid" })) {
       if (!invoice.amount_paid) continue;
@@ -121,13 +150,7 @@ export async function syncStripeHistory(
         typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
       const hashedCustomerId = hashAnonymous(rawCustomerId);
 
-      const subRef = invoice.parent?.subscription_details?.subscription ?? null;
-      const subscriptionId = subRef
-        ? typeof subRef === "string"
-          ? subRef
-          : subRef.id
-        : null;
-
+      const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
       const isRecurring = !!subscriptionId;
       const billingInterval = isRecurring
         ? (subIntervalMap.get(subscriptionId!) ?? "monthly")
@@ -135,13 +158,24 @@ export async function syncStripeHistory(
 
       const acq = await lookupAcquisitionContext(organizationId, hashedCustomerId);
 
+      const eventCurrency = invoice.currency.toUpperCase();
+      const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
+        organizationId,
+        eventCurrency,
+        orgCurrency,
+        invoice.amount_paid,
+      );
+
       await db
         .insert(events)
         .values({
           organizationId,
           eventType: "payment",
           grossValueInCents: invoice.amount_paid,
-          currency: invoice.currency.toUpperCase(),
+          currency: eventCurrency,
+          baseCurrency,
+          exchangeRate,
+          baseGrossValueInCents: baseValueInCents,
           billingType: isRecurring ? "recurring" : "one_time",
           billingInterval: billingInterval ?? null,
           subscriptionId,
@@ -159,8 +193,6 @@ export async function syncStripeHistory(
           sessionId: acq?.sessionId ?? null,
         })
         .onConflictDoNothing();
-
-      invoiceIdsSynced.add(invoice.id);
 
       if (isRecurring) {
         invoicesSynced++;
@@ -183,6 +215,13 @@ export async function syncStripeHistory(
         : null;
 
       const pm = charge.payment_method_details?.type ?? "credit_card";
+      const eventCurrency = charge.currency.toUpperCase();
+      const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
+        organizationId,
+        eventCurrency,
+        orgCurrency,
+        charge.amount,
+      );
 
       await db
         .insert(events)
@@ -190,7 +229,10 @@ export async function syncStripeHistory(
           organizationId,
           eventType: "payment",
           grossValueInCents: charge.amount,
-          currency: charge.currency.toUpperCase(),
+          currency: eventCurrency,
+          baseCurrency,
+          exchangeRate,
+          baseGrossValueInCents: baseValueInCents,
           billingType: "one_time",
           customerId: hashedCustomerId ?? undefined,
           paymentMethod: pm,

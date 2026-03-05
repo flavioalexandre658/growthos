@@ -8,7 +8,6 @@ import {
   IconChevronDown,
   IconChevronRight,
   IconChevronLeft,
-  IconLoader2,
   IconDots,
   IconCopy,
   IconCheck,
@@ -24,7 +23,11 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { fmtBRLDecimal } from "@/utils/format";
-import { getStatusBadgeClass, BILLING_INTERVAL_LABELS, STATUS_LABELS } from "./subscriptions-filters";
+import {
+  getStatusBadgeClass,
+  BILLING_INTERVAL_LABELS,
+  STATUS_LABELS,
+} from "./subscriptions-filters";
 import type { ISubscriptionListItem } from "@/interfaces/subscription.interface";
 import type { IPaginationMeta } from "@/interfaces/dashboard.interface";
 
@@ -75,7 +78,10 @@ function DetailField({
       </span>
       <div className="flex items-center gap-0 flex-1 min-w-0 justify-end">
         <span
-          className={cn("text-xs truncate", mono ? "font-mono text-zinc-300" : "text-zinc-300")}
+          className={cn(
+            "text-xs truncate",
+            mono ? "font-mono text-zinc-300" : "text-zinc-300",
+          )}
           title={value}
         >
           {value}
@@ -89,7 +95,12 @@ function DetailField({
 function SubscriptionDetailGrid({ item }: { item: ISubscriptionListItem }) {
   return (
     <div className="rounded-lg border border-zinc-800/60 bg-zinc-950/50 divide-y divide-zinc-800/40 overflow-hidden">
-      <DetailField label="subscription_id" value={item.subscriptionId} mono copyable />
+      <DetailField
+        label="subscription_id"
+        value={item.subscriptionId}
+        mono
+        copyable
+      />
       <DetailField label="customer_id" value={item.customerId} mono copyable />
       <DetailField label="plan_id" value={item.planId} mono copyable />
       <DetailField label="currency" value={item.currency} />
@@ -115,12 +126,14 @@ function SubscriptionCard({ item }: { item: ISubscriptionListItem }) {
               <span
                 className={cn(
                   "rounded-md border px-2 py-0.5 text-[11px] font-semibold shrink-0",
-                  getStatusBadgeClass(item.status)
+                  getStatusBadgeClass(item.status),
                 )}
               >
                 {STATUS_LABELS[item.status] ?? item.status}
               </span>
-              <span className="text-xs text-zinc-300 truncate font-medium">{item.planName}</span>
+              <span className="text-xs text-zinc-300 truncate font-medium">
+                {item.planName}
+              </span>
             </div>
             <span className="text-xs font-mono font-semibold text-emerald-400 shrink-0">
               {fmtBRLDecimal(item.valueInCents / 100)}
@@ -132,7 +145,8 @@ function SubscriptionCard({ item }: { item: ISubscriptionListItem }) {
               {item.customerId}
             </span>
             <span className="text-zinc-600">
-              {BILLING_INTERVAL_LABELS[item.billingInterval] ?? item.billingInterval}
+              {BILLING_INTERVAL_LABELS[item.billingInterval] ??
+                item.billingInterval}
             </span>
             <span className="text-zinc-600">
               Desde {dayjs(item.startedAt).format("DD/MM/YYYY")}
@@ -171,7 +185,11 @@ function SubscriptionRow({ item }: { item: ISubscriptionListItem }) {
               onClick={() => setExpanded((v) => !v)}
               className="text-zinc-600 hover:text-zinc-300 transition-colors shrink-0"
             >
-              {expanded ? <IconChevronDown size={13} /> : <IconChevronRight size={13} />}
+              {expanded ? (
+                <IconChevronDown size={13} />
+              ) : (
+                <IconChevronRight size={13} />
+              )}
             </button>
             <span className="text-xs text-zinc-400 font-mono truncate max-w-[160px]">
               {item.customerId}
@@ -179,7 +197,9 @@ function SubscriptionRow({ item }: { item: ISubscriptionListItem }) {
           </div>
         </td>
         <td className="px-3 py-2.5 max-w-[180px]">
-          <span className="text-xs text-zinc-200 truncate block">{item.planName}</span>
+          <span className="text-xs text-zinc-200 truncate block">
+            {item.planName}
+          </span>
         </td>
         <td className="px-3 py-2.5 text-right">
           <span className="text-xs font-mono font-semibold text-emerald-400">
@@ -188,14 +208,15 @@ function SubscriptionRow({ item }: { item: ISubscriptionListItem }) {
         </td>
         <td className="px-3 py-2.5">
           <span className="text-xs text-zinc-400">
-            {BILLING_INTERVAL_LABELS[item.billingInterval] ?? item.billingInterval}
+            {BILLING_INTERVAL_LABELS[item.billingInterval] ??
+              item.billingInterval}
           </span>
         </td>
         <td className="px-3 py-2.5">
           <span
             className={cn(
               "rounded-md border px-2 py-0.5 text-[11px] font-semibold",
-              getStatusBadgeClass(item.status)
+              getStatusBadgeClass(item.status),
             )}
           >
             {STATUS_LABELS[item.status] ?? item.status}
@@ -206,7 +227,9 @@ function SubscriptionRow({ item }: { item: ISubscriptionListItem }) {
             <span className="text-xs font-mono text-zinc-300">
               {dayjs(item.startedAt).format("DD/MM/YYYY")}
             </span>
-            <span className="text-[10px] text-zinc-600">{dayjs(item.startedAt).fromNow()}</span>
+            <span className="text-[10px] text-zinc-600">
+              {dayjs(item.startedAt).fromNow()}
+            </span>
           </div>
         </td>
         <td className="px-3 py-2.5 whitespace-nowrap">
@@ -249,12 +272,17 @@ export function SubscriptionsTable({
 }: SubscriptionsTableProps) {
   const paginationStart =
     pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
-  const paginationEnd = Math.min(pagination.page * pagination.limit, pagination.total);
+  const paginationEnd = Math.min(
+    pagination.page * pagination.limit,
+    pagination.total,
+  );
 
   const paginationBar = pagination.total > 0 && (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 px-4 py-3">
       <div className="flex items-center gap-2">
-        <span className="text-xs text-zinc-500 hidden sm:inline">Linhas por página</span>
+        <span className="text-xs text-zinc-500 hidden sm:inline">
+          Linhas por página
+        </span>
         <Select
           value={String(pagination.limit)}
           onValueChange={(v) => {
@@ -348,7 +376,10 @@ export function SubscriptionsTable({
               ))
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-sm text-zinc-600">
+                <td
+                  colSpan={7}
+                  className="px-4 py-12 text-center text-sm text-zinc-600"
+                >
                   Nenhuma assinatura encontrada para os filtros aplicados
                 </td>
               </tr>
@@ -363,7 +394,10 @@ export function SubscriptionsTable({
         {isLoading ? (
           <div className="space-y-0">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="border-b border-zinc-800/40 px-3 py-3.5 space-y-2">
+              <div
+                key={i}
+                className="border-b border-zinc-800/40 px-3 py-3.5 space-y-2"
+              >
                 <div className="flex justify-between">
                   <Skeleton className="h-5 w-28 rounded bg-zinc-800" />
                   <Skeleton className="h-3 w-16 rounded bg-zinc-800" />

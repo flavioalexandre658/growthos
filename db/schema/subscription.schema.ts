@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, integer, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, integer, real, timestamp, index } from "drizzle-orm/pg-core";
 import { organizations } from "./organization.schema";
 
 export const subscriptions = pgTable(
@@ -19,6 +19,9 @@ export const subscriptions = pgTable(
       .default("active"),
     valueInCents: integer("value_in_cents").notNull(),
     currency: text("currency").notNull().default("BRL"),
+    baseCurrency: text("base_currency").notNull().default("BRL"),
+    exchangeRate: real("exchange_rate").notNull().default(1),
+    baseValueInCents: integer("base_value_in_cents"),
     billingInterval: text("billing_interval", {
       enum: ["monthly", "quarterly", "semiannual", "yearly", "weekly"],
     }).notNull(),

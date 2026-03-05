@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { apiKeys, events, subscriptions, organizations, pageviewAggregates, exchangeRates } from "@/db/schema";
+import { apiKeys, events, subscriptions, organizations, pageviewAggregates } from "@/db/schema";
+import { resolveExchangeRate as resolveRate } from "@/utils/resolve-exchange-rate";
 import { checkRateLimit } from "@/utils/rate-limiter";
 import dayjs from "@/utils/dayjs";
 
@@ -134,21 +135,9 @@ async function resolveExchangeRate(
   toCurrency: string,
   origin: string | null
 ): Promise<{ rate: number } | NextResponse> {
-  if (fromCurrency === toCurrency) return { rate: 1 };
+  const rate = await resolveRate(organizationId, fromCurrency, toCurrency);
 
-  const [found] = await db
-    .select({ rate: exchangeRates.rate })
-    .from(exchangeRates)
-    .where(
-      and(
-        eq(exchangeRates.organizationId, organizationId),
-        eq(exchangeRates.fromCurrency, fromCurrency),
-        eq(exchangeRates.toCurrency, toCurrency),
-      )
-    )
-    .limit(1);
-
-  if (!found) {
+  if (rate === null) {
     return jsonError(
       `Exchange rate ${fromCurrency}→${toCurrency} not configured. Set it in Settings → Exchange Rates.`,
       400,
@@ -156,7 +145,7 @@ async function resolveExchangeRate(
     );
   }
 
-  return { rate: found.rate };
+  return { rate };
 }
 
 async function handleSubscriptionUpsert(

@@ -12,10 +12,10 @@ import type { IDateFilter } from "@/interfaces/dashboard.interface";
 import type { IMrrOverview } from "@/interfaces/mrr.interface";
 
 function computeMrrMetrics(
-  activeSubs: { valueInCents: number; billingInterval: string }[]
+  activeSubs: { valueInCents: number; baseValueInCents: number | null; billingInterval: string }[]
 ) {
   const mrr = activeSubs.reduce(
-    (sum, s) => sum + normalizeToMonthly(s.valueInCents, s.billingInterval),
+    (sum, s) => sum + normalizeToMonthly(s.baseValueInCents ?? s.valueInCents, s.billingInterval),
     0
   );
   const count = activeSubs.length;
@@ -84,7 +84,7 @@ export async function getMrrOverview(
     totalAtStart > 0 ? parseFloat(((canceledCount / totalAtStart) * 100).toFixed(2)) : 0;
 
   const churnedMrrTotal = canceledInPeriod.reduce(
-    (sum, s) => sum + normalizeToMonthly(s.valueInCents, s.billingInterval),
+    (sum, s) => sum + normalizeToMonthly(s.baseValueInCents ?? s.valueInCents, s.billingInterval),
     0
   );
 
@@ -109,7 +109,7 @@ export async function getMrrOverview(
     );
 
   const totalNewMrr = newSubsInPeriod.reduce(
-    (sum, s) => sum + normalizeToMonthly(s.valueInCents, s.billingInterval),
+    (sum, s) => sum + normalizeToMonthly(s.baseValueInCents ?? s.valueInCents, s.billingInterval),
     0
   );
 
@@ -119,6 +119,7 @@ export async function getMrrOverview(
     .select({
       subscriptionId: events.subscriptionId,
       grossValueInCents: events.grossValueInCents,
+      baseGrossValueInCents: events.baseGrossValueInCents,
     })
     .from(events)
     .where(
@@ -132,13 +133,16 @@ export async function getMrrOverview(
     );
 
   const totalPeriodRevenue = paymentEventsInPeriod.reduce(
-    (sum, e) => sum + (e.grossValueInCents ?? 0),
+    (sum, e) => sum + (e.baseGrossValueInCents ?? e.grossValueInCents ?? 0),
     0
   );
   const totalPaymentCount = paymentEventsInPeriod.length;
 
   const prevPaymentEvents = await db
-    .select({ grossValueInCents: events.grossValueInCents })
+    .select({
+      grossValueInCents: events.grossValueInCents,
+      baseGrossValueInCents: events.baseGrossValueInCents,
+    })
     .from(events)
     .where(
       and(
@@ -151,7 +155,7 @@ export async function getMrrOverview(
     );
 
   const previousPeriodRevenue = prevPaymentEvents.reduce(
-    (sum, e) => sum + (e.grossValueInCents ?? 0),
+    (sum, e) => sum + (e.baseGrossValueInCents ?? e.grossValueInCents ?? 0),
     0
   );
 
@@ -228,7 +232,7 @@ export async function getMrrOverview(
       : 0;
 
   const prevChurnedMrr = prevCanceledInPeriod.reduce(
-    (sum, s) => sum + normalizeToMonthly(s.valueInCents, s.billingInterval),
+    (sum, s) => sum + normalizeToMonthly(s.baseValueInCents ?? s.valueInCents, s.billingInterval),
     0
   );
 
@@ -288,7 +292,7 @@ export async function getMrrOverview(
     if (!next) continue;
     const nextDay = dayjs(next);
     if (nextDay.isAfter(now) && (nextDay.isBefore(in30Days) || nextDay.isSame(in30Days, "day"))) {
-      forecastNext30dRevenue += sub.valueInCents;
+      forecastNext30dRevenue += sub.baseValueInCents ?? sub.valueInCents;
       forecastNext30dCount++;
     }
   }
