@@ -20,7 +20,7 @@ export const subscriptions = pgTable(
     valueInCents: integer("value_in_cents").notNull(),
     currency: text("currency").notNull().default("BRL"),
     billingInterval: text("billing_interval", {
-      enum: ["monthly", "yearly", "weekly"],
+      enum: ["monthly", "quarterly", "semiannual", "yearly", "weekly"],
     }).notNull(),
     startedAt: timestamp("started_at").notNull(),
     canceledAt: timestamp("canceled_at"),

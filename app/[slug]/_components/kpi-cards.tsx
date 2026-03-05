@@ -1,6 +1,12 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { fmtInt, fmtBRLDecimal } from "@/utils/format";
 import { getStepColor } from "@/utils/step-colors";
 import {
@@ -16,6 +22,7 @@ import {
   IconEye,
   IconShoppingCart,
   IconShoppingCartX,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
 
@@ -30,6 +37,7 @@ const STEP_ICON_MAP: Record<string, React.ElementType> = {
   checkout_started: IconShoppingCart,
 };
 
+
 const FALLBACK_ICON = IconChartBar;
 
 interface KpiCardProps {
@@ -41,6 +49,7 @@ interface KpiCardProps {
   bgColor: string;
   current?: number;
   previous?: number;
+  tooltip?: string;
 }
 
 function computeVariation(current: number, previous: number) {
@@ -48,7 +57,7 @@ function computeVariation(current: number, previous: number) {
   return { pct, abs: Math.abs(pct), isUp: pct > 0 };
 }
 
-function KpiCard({ label, value, previousLabel, icon: Icon, color, bgColor, current, previous }: KpiCardProps) {
+function KpiCard({ label, value, previousLabel, icon: Icon, color, bgColor, current, previous, tooltip }: KpiCardProps) {
   const hasPrev = previous !== undefined && previous > 0 && current !== undefined;
   const variation = hasPrev ? computeVariation(current!, previous!) : null;
 
@@ -75,19 +84,40 @@ function KpiCard({ label, value, previousLabel, icon: Icon, color, bgColor, curr
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 sm:p-4 flex flex-col gap-1">
       <div className="flex items-center justify-between gap-1 min-w-0">
-        <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-tight sm:tracking-widest text-zinc-500 truncate min-w-0">
-          {label}
-        </span>
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-tight sm:tracking-widest text-zinc-500 truncate min-w-0">
+            {label}
+          </span>
+          {tooltip && (
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="shrink-0 text-zinc-700 hover:text-zinc-400 transition-colors focus:outline-none"
+                    aria-label={`Informação sobre ${label}`}
+                  >
+                    <IconInfoCircle size={11} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  className="max-w-[220px] bg-zinc-800 border-zinc-700 text-zinc-200 text-xs leading-relaxed"
+                >
+                  {tooltip}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
         <div className={`flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-md shrink-0 ${bgColor}`}>
           <Icon size={11} className={color} />
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-1.5">
-        <span className={`text-xl sm:text-2xl font-bold font-mono leading-none ${color}`}>{value}</span>
-        {variationBadge && (
-          <span className="flex">{variationBadge}</span>
-        )}
+      <div className="flex items-baseline gap-1.5 flex-wrap">
+        <span className={`text-base sm:text-xl font-bold font-mono leading-none whitespace-nowrap ${color}`}>{value}</span>
+        {variationBadge}
       </div>
 
       {hasPrev && previousLabel && (
@@ -160,6 +190,7 @@ export function KpiCards({ data, isLoading, hiddenKeys }: KpiCardsProps) {
       bgColor: bg,
       current: step.value,
       previous: prev,
+      tooltip: undefined,
     };
   });
 
@@ -181,6 +212,7 @@ export function KpiCards({ data, isLoading, hiddenKeys }: KpiCardsProps) {
       icon: IconReceipt,
       color: "text-amber-400",
       bgColor: "bg-amber-600/20",
+      tooltip: "Valor médio por pagamento. Receita ÷ número de pagamentos no período.",
     },
   ];
 

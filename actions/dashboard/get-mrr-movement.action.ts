@@ -4,17 +4,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { events, organizations } from "@/db/schema";
+import { events, organizations, subscriptions } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { normalizeToMonthly } from "@/utils/billing";
 import dayjs from "@/utils/dayjs";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 import type { IMrrMovementEntry } from "@/interfaces/mrr.interface";
-
-function normalizeToMonthly(valueInCents: number, interval: string): number {
-  if (interval === "yearly") return Math.round(valueInCents / 12);
-  if (interval === "weekly") return Math.round(valueInCents * 4.33);
-  return valueInCents;
-}
 
 function bucketDate(date: Date, totalDays: number, tz: string): string {
   const d = dayjs(date).tz(tz);
@@ -52,39 +47,75 @@ export async function getMrrMovement(
       )
     );
 
+  const subscriptionIds = [
+    ...new Set(
+      relevantEvents
+        .filter((e) => e.subscriptionId)
+        .map((e) => e.subscriptionId as string)
+    ),
+  ];
+
+  const subsMap = new Map<string, { startedAt: Date; billingInterval: string }>();
+  if (subscriptionIds.length > 0) {
+    const rows = await db
+      .select({
+        subscriptionId: subscriptions.subscriptionId,
+        startedAt: subscriptions.startedAt,
+        billingInterval: subscriptions.billingInterval,
+      })
+      .from(subscriptions)
+      .where(
+        and(
+          eq(subscriptions.organizationId, organizationId),
+          inArray(subscriptions.subscriptionId, subscriptionIds)
+        )
+      );
+    for (const r of rows) subsMap.set(r.subscriptionId, { startedAt: r.startedAt, billingInterval: r.billingInterval });
+  }
+
   const bucketMap = new Map<
     string,
-    { newMrr: number; expansionMrr: number; contractionMrr: number; churnedMrr: number }
+    { newMrr: number; renewalMrr: number; expansionMrr: number; contractionMrr: number; churnedMrr: number }
   >();
-
-  const seenSubscriptions = new Set<string>();
 
   for (const event of relevantEvents) {
     const bucket = bucketDate(event.createdAt, totalDays, tz);
     if (!bucketMap.has(bucket)) {
-      bucketMap.set(bucket, { newMrr: 0, expansionMrr: 0, contractionMrr: 0, churnedMrr: 0 });
+      bucketMap.set(bucket, {
+        newMrr: 0,
+        renewalMrr: 0,
+        expansionMrr: 0,
+        contractionMrr: 0,
+        churnedMrr: 0,
+      });
     }
     const entry = bucketMap.get(bucket)!;
-    const monthly = normalizeToMonthly(
-      event.grossValueInCents ?? 0,
-      event.billingInterval ?? "monthly"
-    );
+    const subInfo = event.subscriptionId ? subsMap.get(event.subscriptionId) : undefined;
+    const resolvedInterval = event.billingInterval ?? subInfo?.billingInterval ?? "monthly";
+    const monthly = normalizeToMonthly(event.grossValueInCents ?? 0, resolvedInterval);
 
-    if (
-      event.eventType === "payment" &&
-      event.billingType === "recurring" &&
-      event.subscriptionId
-    ) {
-      if (!seenSubscriptions.has(event.subscriptionId)) {
-        seenSubscriptions.add(event.subscriptionId);
+    if (event.eventType === "payment" && event.billingType === "recurring" && event.subscriptionId) {
+      const startedAt = subInfo?.startedAt;
+      const isNew = startedAt
+        ? startedAt >= startDate && startedAt <= endDate
+        : false;
+
+      if (isNew) {
         entry.newMrr += monthly;
       } else {
-        entry.expansionMrr += monthly;
+        entry.renewalMrr += monthly;
       }
-    } else if (event.eventType === "subscription_canceled" && event.subscriptionId) {
+    } else if (event.eventType === "subscription_canceled") {
       entry.churnedMrr += monthly;
-    } else if (event.eventType === "subscription_changed" && event.subscriptionId) {
-      entry.expansionMrr += monthly;
+    } else if (event.eventType === "subscription_changed") {
+      const meta = event.metadata as { previousValue?: number; newValue?: number } | null;
+      if (meta) {
+        const prev = normalizeToMonthly(meta.previousValue ?? 0, event.billingInterval ?? "monthly");
+        const next = normalizeToMonthly(meta.newValue ?? 0, event.billingInterval ?? "monthly");
+        const delta = next - prev;
+        if (delta > 0) entry.expansionMrr += delta;
+        else if (delta < 0) entry.contractionMrr += Math.abs(delta);
+      }
     }
   }
 
@@ -95,9 +126,10 @@ export async function getMrrMovement(
   return sortedBuckets.map(([date, data]) => ({
     date,
     newMrr: data.newMrr,
+    renewalMrr: data.renewalMrr,
     expansionMrr: data.expansionMrr,
     contractionMrr: data.contractionMrr,
     churnedMrr: data.churnedMrr,
-    netMrr: data.newMrr + data.expansionMrr - data.contractionMrr - data.churnedMrr,
+    netMrr: data.newMrr + data.renewalMrr + data.expansionMrr - data.contractionMrr - data.churnedMrr,
   }));
 }

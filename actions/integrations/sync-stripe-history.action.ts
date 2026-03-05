@@ -9,6 +9,7 @@ import { decrypt } from "@/lib/crypto";
 import { hashAnonymous } from "@/lib/hash";
 import { eq, and } from "drizzle-orm";
 import { createHash } from "crypto";
+import type { BillingInterval } from "@/utils/billing";
 
 function stripeEventHash(orgId: string, externalId: string): string {
   return createHash("sha256").update(`${orgId}:${externalId}`).digest("hex").slice(0, 32);
@@ -28,9 +29,17 @@ function mapStripeStatus(s: Stripe.Subscription.Status): "active" | "canceled" |
   return map[s] ?? "active";
 }
 
-function mapBillingInterval(interval: string): "monthly" | "yearly" | "weekly" {
-  if (interval === "year") return "yearly";
+function mapBillingInterval(interval: string, intervalCount = 1): BillingInterval {
+  if (interval === "year") {
+    if (intervalCount === 1) return "yearly";
+    return "yearly";
+  }
   if (interval === "week") return "weekly";
+  if (interval === "month") {
+    if (intervalCount === 3) return "quarterly";
+    if (intervalCount === 6) return "semiannual";
+    if (intervalCount === 12) return "yearly";
+  }
   return "monthly";
 }
 
@@ -59,12 +68,17 @@ export async function syncStripeHistory(
 
   let subscriptionsSynced = 0;
   let invoicesSynced = 0;
+  const subIntervalMap = new Map<string, BillingInterval>();
 
   try {
     for await (const sub of stripe.subscriptions.list({ limit: 100, status: "all" })) {
       const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
       const item = sub.items.data[0];
       const interval = item?.price.recurring?.interval ?? "month";
+      const intervalCount = item?.price.recurring?.interval_count ?? 1;
+      const billingInterval = mapBillingInterval(interval, intervalCount);
+
+      subIntervalMap.set(sub.id, billingInterval);
 
       await db
         .insert(subscriptions)
@@ -77,7 +91,7 @@ export async function syncStripeHistory(
           status: mapStripeStatus(sub.status),
           valueInCents: item?.price.unit_amount ?? 0,
           currency: sub.currency.toUpperCase(),
-          billingInterval: mapBillingInterval(interval),
+          billingInterval,
           startedAt: new Date(sub.start_date * 1000),
           canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
         })
@@ -105,6 +119,10 @@ export async function syncStripeHistory(
           : subRef.id
         : null;
 
+      const billingInterval = subscriptionId
+        ? (subIntervalMap.get(subscriptionId) ?? "monthly")
+        : "monthly";
+
       await db
         .insert(events)
         .values({
@@ -113,8 +131,10 @@ export async function syncStripeHistory(
           grossValueInCents: invoice.amount_paid,
           currency: invoice.currency.toUpperCase(),
           billingType: "recurring",
+          billingInterval,
           subscriptionId,
           customerId: hashAnonymous(customerId),
+          paymentMethod: "credit_card",
           provider: "stripe",
           eventHash: stripeEventHash(organizationId, invoice.id),
           createdAt: new Date(invoice.created * 1000),

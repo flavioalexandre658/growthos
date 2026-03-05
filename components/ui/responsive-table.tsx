@@ -11,15 +11,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./select";
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
+import { IconChevronLeft, IconChevronRight, IconArrowUp, IconArrowDown, IconArrowsUpDown } from "@tabler/icons-react";
 
 export interface TableColumn<T> {
   key: string;
   header: string;
   align?: "left" | "right";
   render: (row: T) => React.ReactNode;
+  mobileRender?: (row: T) => React.ReactNode;
   mobilePrimary?: boolean;
   mobileHide?: boolean;
+  sortKey?: string;
+  onSort?: (key: string) => void;
+  currentSortKey?: string;
+  currentSortDir?: "asc" | "desc";
 }
 
 export interface ServerPaginationConfig {
@@ -180,17 +185,43 @@ export function ResponsiveTable<T>({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-zinc-800">
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className={cn(
-                    "px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 whitespace-nowrap",
-                    col.align === "right" ? "text-right" : "text-left"
-                  )}
-                >
-                  {col.header}
-                </th>
-              ))}
+              {columns.map((col) => {
+                const isSortActive = col.sortKey && col.currentSortKey === col.sortKey;
+                return (
+                  <th
+                    key={col.key}
+                    className={cn(
+                      "px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 whitespace-nowrap",
+                      col.align === "right" ? "text-right" : "text-left"
+                    )}
+                  >
+                    {col.sortKey && col.onSort ? (
+                      <button
+                        type="button"
+                        onClick={() => col.onSort!(col.sortKey!)}
+                        className={cn(
+                          "inline-flex items-center gap-1 hover:text-zinc-300 transition-colors",
+                          col.align === "right" && "flex-row-reverse",
+                          isSortActive && "text-zinc-200"
+                        )}
+                      >
+                        {col.header}
+                        {isSortActive ? (
+                          col.currentSortDir === "asc" ? (
+                            <IconArrowUp size={11} className="text-zinc-300" />
+                          ) : (
+                            <IconArrowDown size={11} className="text-zinc-300" />
+                          )
+                        ) : (
+                          <IconArrowsUpDown size={11} className="text-zinc-600" />
+                        )}
+                      </button>
+                    ) : (
+                      col.header
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -261,14 +292,18 @@ export function ResponsiveTable<T>({
                 key={getRowKey(row)}
                 className="border-b border-zinc-800/60 p-4 last:border-b-0"
               >
-                <div className="mb-3">{primaryCol.render(row)}</div>
+                <div className="mb-3">
+                  {(primaryCol.mobileRender ?? primaryCol.render)(row)}
+                </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                   {mobileDetailCols.map((col) => (
-                    <div key={col.key}>
-                      <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-600 mb-0.5">
+                    <div key={col.key} className="min-w-0 overflow-hidden">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-600 mb-0.5 truncate">
                         {col.header}
                       </p>
-                      {col.render(row)}
+                      <div className="min-w-0 overflow-hidden">
+                        {(col.mobileRender ?? col.render)(row)}
+                      </div>
                     </div>
                   ))}
                 </div>

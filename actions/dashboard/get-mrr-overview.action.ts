@@ -4,16 +4,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { subscriptions, organizations } from "@/db/schema";
+import { subscriptions, organizations, events } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { normalizeToMonthly } from "@/utils/billing";
+import dayjs from "@/utils/dayjs";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 import type { IMrrOverview } from "@/interfaces/mrr.interface";
-
-function normalizeToMonthly(valueInCents: number, interval: string): number {
-  if (interval === "yearly") return Math.round(valueInCents / 12);
-  if (interval === "weekly") return Math.round(valueInCents * 4.33);
-  return valueInCents;
-}
 
 function computeMrrMetrics(
   activeSubs: { valueInCents: number; billingInterval: string }[]
@@ -117,20 +113,82 @@ export async function getMrrOverview(
     0
   );
 
-  const expansionSubs = await db
-    .select()
-    .from(subscriptions)
+  const newSubIds = new Set(newSubsInPeriod.map((s) => s.subscriptionId));
+
+  const paymentEventsInPeriod = await db
+    .select({
+      subscriptionId: events.subscriptionId,
+      grossValueInCents: events.grossValueInCents,
+    })
+    .from(events)
     .where(
       and(
-        eq(subscriptions.organizationId, organizationId),
-        inArray(subscriptions.status, ["active"]),
-        gte(subscriptions.updatedAt, startDate),
-        lte(subscriptions.updatedAt, endDate)
+        eq(events.organizationId, organizationId),
+        eq(events.eventType, "payment"),
+        gte(events.createdAt, startDate),
+        lte(events.createdAt, endDate),
+        inArray(events.billingType, ["recurring"])
       )
     );
-  const totalExpansionMrr = expansionSubs.length > 0 ? Math.round(mrr * 0.03) : 0;
 
-  const previousMrr = mrr - totalNewMrr + churnedMrrTotal;
+  const totalPeriodRevenue = paymentEventsInPeriod.reduce(
+    (sum, e) => sum + (e.grossValueInCents ?? 0),
+    0
+  );
+  const totalPaymentCount = paymentEventsInPeriod.length;
+
+  const prevPaymentEvents = await db
+    .select({ grossValueInCents: events.grossValueInCents })
+    .from(events)
+    .where(
+      and(
+        eq(events.organizationId, organizationId),
+        eq(events.eventType, "payment"),
+        gte(events.createdAt, previousStartDate),
+        lte(events.createdAt, previousEndDate),
+        inArray(events.billingType, ["recurring"])
+      )
+    );
+
+  const previousPeriodRevenue = prevPaymentEvents.reduce(
+    (sum, e) => sum + (e.grossValueInCents ?? 0),
+    0
+  );
+
+  const renewingSubIds = new Set(
+    paymentEventsInPeriod
+      .map((e) => e.subscriptionId)
+      .filter((id): id is string => !!id && !newSubIds.has(id))
+  );
+
+  const renewalSubscriptions = renewingSubIds.size;
+
+  const changedEvents = await db
+    .select()
+    .from(events)
+    .where(
+      and(
+        eq(events.organizationId, organizationId),
+        eq(events.eventType, "subscription_changed"),
+        gte(events.createdAt, startDate),
+        lte(events.createdAt, endDate)
+      )
+    );
+
+  let totalExpansionMrr = 0;
+  let totalContractionMrr = 0;
+
+  for (const ev of changedEvents) {
+    const meta = ev.metadata as { previousValue?: number; newValue?: number } | null;
+    if (!meta) continue;
+    const prev = normalizeToMonthly(meta.previousValue ?? 0, ev.billingInterval ?? "monthly");
+    const next = normalizeToMonthly(meta.newValue ?? 0, ev.billingInterval ?? "monthly");
+    const delta = next - prev;
+    if (delta > 0) totalExpansionMrr += delta;
+    else if (delta < 0) totalContractionMrr += Math.abs(delta);
+  }
+
+  const previousMrr = mrr - totalNewMrr - totalExpansionMrr + totalContractionMrr + churnedMrrTotal;
   const mrrGrowthRate =
     previousMrr > 0
       ? parseFloat((((mrr - previousMrr) / previousMrr) * 100).toFixed(2))
@@ -143,9 +201,7 @@ export async function getMrrOverview(
       and(
         eq(subscriptions.organizationId, organizationId),
         lte(subscriptions.startedAt, previousEndDate),
-        and(
-          eq(subscriptions.status, "active")
-        )
+        eq(subscriptions.status, "active")
       )
     );
 
@@ -185,6 +241,58 @@ export async function getMrrOverview(
   const prevEstimatedLtv =
     prevMonthlyChurn > 0 ? Math.round(prevArpuVal / prevMonthlyChurn) : prevArpuVal * 24;
 
+  const nrr =
+    previousMrr > 0
+      ? parseFloat((((mrr - totalNewMrr) / previousMrr) * 100).toFixed(1))
+      : 0;
+
+  const prevNewMrrForNrr = (() => {
+    const prevPeriodMs = previousEndDate.getTime() - previousStartDate.getTime();
+    return 0;
+  })();
+
+  const prevNrrBase = prevMrrVal > 0 ? prevMrrVal : 0;
+  const previousNrr =
+    prevNrrBase > 0
+      ? parseFloat((((prevMrrVal - prevNewMrrForNrr) / prevNrrBase) * 100).toFixed(1))
+      : undefined;
+
+  const now = dayjs();
+  const in30Days = now.add(30, "day");
+
+  function computeNextBillingAt(startedAt: Date, interval: string): Date | null {
+    const start = dayjs(startedAt);
+    if (!start.isValid()) return null;
+    const monthsMap: Record<string, number> = {
+      monthly: 1,
+      quarterly: 3,
+      semiannual: 6,
+      yearly: 12,
+    };
+    if (interval === "weekly") {
+      let next = start;
+      while (next.isBefore(now) || next.isSame(now, "day")) next = next.add(1, "week");
+      return next.toDate();
+    }
+    const months = monthsMap[interval] ?? 1;
+    let next = start;
+    while (next.isBefore(now) || next.isSame(now, "day")) next = next.add(months, "month");
+    return next.toDate();
+  }
+
+  let forecastNext30dRevenue = 0;
+  let forecastNext30dCount = 0;
+
+  for (const sub of activeSubs) {
+    const next = computeNextBillingAt(sub.startedAt, sub.billingInterval);
+    if (!next) continue;
+    const nextDay = dayjs(next);
+    if (nextDay.isAfter(now) && (nextDay.isBefore(in30Days) || nextDay.isSame(in30Days, "day"))) {
+      forecastNext30dRevenue += sub.valueInCents;
+      forecastNext30dCount++;
+    }
+  }
+
   return {
     mrr,
     arr,
@@ -203,8 +311,18 @@ export async function getMrrOverview(
     previousActiveSubscriptions: prevCount > 0 ? prevCount : undefined,
     totalNewMrr,
     totalExpansionMrr,
+    totalContractionMrr,
     totalChurnedMrr: churnedMrrTotal,
-    totalContractionMrr: 0,
     pastDueSubscriptions: Number(pastDueSubs[0]?.count ?? 0),
+    newSubscriptions: newSubsInPeriod.length,
+    churnedSubscriptions: canceledCount,
+    renewalSubscriptions,
+    totalPeriodRevenue,
+    totalPaymentCount,
+    previousPeriodRevenue: previousPeriodRevenue > 0 ? previousPeriodRevenue : undefined,
+    nrr,
+    previousNrr,
+    forecastNext30dRevenue,
+    forecastNext30dCount,
   };
 }

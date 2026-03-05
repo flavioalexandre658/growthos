@@ -1,6 +1,12 @@
 "use client";
 
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { fmtBRLDecimal } from "@/utils/format";
 import {
   IconTrendingDown,
@@ -8,6 +14,7 @@ import {
   IconReceipt,
   IconPercentage,
   IconWallet,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 import type { ICostsSummary } from "@/interfaces/cost.interface";
 
@@ -18,20 +25,42 @@ interface ImpactCardProps {
   icon: React.ElementType;
   color: string;
   bgColor: string;
+  tooltip: string;
 }
 
-function ImpactCard({ label, value, sub, icon: Icon, color, bgColor }: ImpactCardProps) {
+function ImpactCard({ label, value, sub, icon: Icon, color, bgColor, tooltip }: ImpactCardProps) {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
-          {label}
-        </span>
-        <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${bgColor}`}>
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500 truncate">
+            {label}
+          </span>
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="shrink-0 text-zinc-700 hover:text-zinc-400 transition-colors focus:outline-none"
+                  aria-label={`Informação sobre ${label}`}
+                >
+                  <IconInfoCircle size={11} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                className="max-w-[220px] bg-zinc-800 border-zinc-700 text-zinc-200 text-xs leading-relaxed"
+              >
+                {tooltip}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <div className={`flex h-7 w-7 items-center justify-center rounded-lg shrink-0 ${bgColor}`}>
           <Icon size={14} className={color} />
         </div>
       </div>
-      <span className={`text-xl font-bold font-mono ${color}`}>{value}</span>
+      <span className={`text-base sm:text-lg font-bold font-mono whitespace-nowrap ${color}`}>{value}</span>
       <span className="text-[10px] text-zinc-600">{sub}</span>
     </div>
   );
@@ -81,6 +110,7 @@ export function CostsImpactCards({ data, isLoading }: CostsImpactCardsProps) {
       icon: IconReceipt,
       color: "text-red-400",
       bgColor: "bg-red-600/20",
+      tooltip: "Soma das despesas mensais que não variam com a receita — ferramentas, salários, aluguel, serviços. Pagas independente do volume de vendas.",
     },
     {
       label: "Custos Variáveis",
@@ -89,6 +119,7 @@ export function CostsImpactCards({ data, isLoading }: CostsImpactCardsProps) {
       icon: IconTrendingDown,
       color: "text-orange-400",
       bgColor: "bg-orange-600/20",
+      tooltip: "Custos calculados como percentual da receita — taxas de gateway, comissões de marketplace, impostos. Crescem proporcionalmente às vendas.",
     },
     {
       label: "Custo Total",
@@ -97,6 +128,7 @@ export function CostsImpactCards({ data, isLoading }: CostsImpactCardsProps) {
       icon: IconWallet,
       color: "text-amber-400",
       bgColor: "bg-amber-600/20",
+      tooltip: "Soma de todos os custos do período (fixos + variáveis). É o total que precisa ser coberto pela receita para o negócio ser lucrativo.",
     },
     {
       label: "Impacto na Margem",
@@ -105,6 +137,7 @@ export function CostsImpactCards({ data, isLoading }: CostsImpactCardsProps) {
       icon: IconPercentage,
       color: impact > 50 ? "text-red-400" : impact > 25 ? "text-orange-400" : "text-emerald-400",
       bgColor: impact > 50 ? "bg-red-600/20" : impact > 25 ? "bg-orange-600/20" : "bg-emerald-600/20",
+      tooltip: "Percentual da receita bruta consumido pelos custos totais. Acima de 50% é preocupante — significa que mais da metade do que entra já vai para despesas.",
     },
     {
       label: "Receita Bruta (mês)",
@@ -113,6 +146,7 @@ export function CostsImpactCards({ data, isLoading }: CostsImpactCardsProps) {
       icon: IconCurrencyDollar,
       color: "text-emerald-400",
       bgColor: "bg-emerald-600/20",
+      tooltip: "Total bruto recebido no mês de referência, usado como base para calcular o impacto percentual dos custos.",
     },
   ];
 

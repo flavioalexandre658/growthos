@@ -2,17 +2,27 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { eq, and, inArray, or, desc, count } from "drizzle-orm";
+import { eq, and, inArray, or } from "drizzle-orm";
 import { db } from "@/db";
 import { subscriptions } from "@/db/schema";
 import dayjs from "@/utils/dayjs";
-import type { IActiveSubscription, SubscriptionStatusFilter } from "@/interfaces/mrr.interface";
+import { normalizeToMonthly } from "@/utils/billing";
+import type {
+  IActiveSubscription,
+  IAvailablePlan,
+  SubscriptionStatusFilter,
+  BillingIntervalFilter,
+  NextBillingFilter,
+  SubscriptionSortField,
+  SortDirection,
+} from "@/interfaces/mrr.interface";
 import type { IPaginationMeta } from "@/interfaces/dashboard.interface";
 
-function normalizeToMonthly(valueInCents: number, interval: string): number {
-  if (interval === "yearly") return Math.round(valueInCents / 12);
-  if (interval === "weekly") return Math.round(valueInCents * 4.33);
-  return valueInCents;
+function intervalToMonths(interval: string): number {
+  if (interval === "yearly") return 12;
+  if (interval === "semiannual") return 6;
+  if (interval === "quarterly") return 3;
+  return 1;
 }
 
 function computeNextBilling(startedAt: Date, interval: string): Date | null {
@@ -20,33 +30,45 @@ function computeNextBilling(startedAt: Date, interval: string): Date | null {
   const start = dayjs(startedAt);
   if (!start.isValid()) return null;
 
-  const unit = interval === "yearly" ? "year" : interval === "weekly" ? "week" : "month";
-  let next = start;
-  while (next.isBefore(now) || next.isSame(now, "day")) {
-    next = next.add(1, unit);
+  if (interval === "weekly") {
+    let next = start;
+    while (next.isBefore(now) || next.isSame(now, "day")) next = next.add(1, "week");
+    return next.toDate();
   }
+
+  const months = intervalToMonths(interval);
+  let next = start;
+  while (next.isBefore(now) || next.isSame(now, "day")) next = next.add(months, "month");
   return next.toDate();
 }
 
 function computeRenewalCount(startedAt: Date, interval: string): number {
-  const now = dayjs();
+  const point = dayjs();
   const start = dayjs(startedAt);
   if (!start.isValid()) return 0;
 
-  if (interval === "yearly") return Math.max(0, now.diff(start, "year"));
-  if (interval === "weekly") return Math.max(0, now.diff(start, "week"));
-  return Math.max(0, now.diff(start, "month"));
+  if (interval === "weekly") return Math.max(0, point.diff(start, "week"));
+
+  const months = intervalToMonths(interval);
+  const totalMonths = Math.max(0, point.diff(start, "month"));
+  return Math.floor(totalMonths / months);
 }
 
 interface GetActiveSubscriptionsParams {
   page?: number;
   limit?: number;
   status?: SubscriptionStatusFilter;
+  planId?: string;
+  billingInterval?: BillingIntervalFilter;
+  nextBilling?: NextBillingFilter;
+  sortField?: SubscriptionSortField;
+  sortDir?: SortDirection;
 }
 
 interface GetActiveSubscriptionsResult {
   data: IActiveSubscription[];
   pagination: IPaginationMeta;
+  availablePlans: IAvailablePlan[];
 }
 
 export async function getActiveSubscriptions(
@@ -60,6 +82,8 @@ export async function getActiveSubscriptions(
   const limit = params.limit ?? 20;
   const offset = (page - 1) * limit;
   const statusFilter = params.status ?? "all";
+  const sortField = params.sortField ?? "nextBilling";
+  const sortDir = params.sortDir ?? "asc";
 
   const defaultStatuses: ("active" | "trialing" | "past_due")[] = [
     "active",
@@ -77,53 +101,107 @@ export async function getActiveSubscriptions(
         ? eq(subscriptions.status, "canceled")
         : inArray(subscriptions.status, [statusFilter as "active" | "trialing" | "past_due"]);
 
-  const baseWhere = and(
+  const baseWhereClauses = [
     eq(subscriptions.organizationId, organizationId),
-    statusCondition
-  );
+    statusCondition,
+    ...(params.planId ? [eq(subscriptions.planId, params.planId)] : []),
+    ...(params.billingInterval && params.billingInterval !== "all"
+      ? [eq(subscriptions.billingInterval, params.billingInterval)]
+      : []),
+  ];
 
-  const [totalResult] = await db
-    .select({ count: count() })
+  const baseWhere = and(...baseWhereClauses);
+
+  const allOrgRows = await db
+    .select()
     .from(subscriptions)
-    .where(baseWhere);
+    .where(eq(subscriptions.organizationId, organizationId));
 
-  const total = Number(totalResult?.count ?? 0);
+  const planMap = new Map<string, { planId: string; planName: string; count: number }>();
+  for (const row of allOrgRows) {
+    if (!planMap.has(row.planId)) {
+      planMap.set(row.planId, { planId: row.planId, planName: row.planName, count: 0 });
+    }
+    planMap.get(row.planId)!.count += 1;
+  }
+  const availablePlans = Array.from(planMap.values()).sort((a, b) =>
+    a.planName.localeCompare(b.planName)
+  );
 
   const rows = await db
     .select()
     .from(subscriptions)
-    .where(baseWhere)
-    .orderBy(desc(subscriptions.startedAt))
-    .limit(limit)
-    .offset(offset);
+    .where(baseWhere);
+
+  const now = dayjs();
+
+  const mapped = rows.map((s) => {
+    const monthlyValue = normalizeToMonthly(s.valueInCents, s.billingInterval);
+    const renewalCount = computeRenewalCount(s.startedAt, s.billingInterval);
+    const estimatedLtvInCents = monthlyValue * Math.max(renewalCount, 1);
+    const nextBillingAt =
+      s.status === "canceled" ? null : computeNextBilling(s.startedAt, s.billingInterval);
+    return {
+      subscriptionId: s.subscriptionId,
+      customerId: s.customerId,
+      planName: s.planName,
+      planId: s.planId,
+      valueInCents: s.valueInCents,
+      billingInterval: s.billingInterval,
+      status: s.status,
+      startedAt: s.startedAt,
+      canceledAt: s.canceledAt,
+      renewalCount,
+      nextBillingAt,
+      estimatedLtvInCents,
+    };
+  });
+
+  const filtered = mapped.filter((item) => {
+    if (!params.nextBilling || params.nextBilling === "all") return true;
+    if (!item.nextBillingAt) return false;
+
+    const next = dayjs(item.nextBillingAt);
+
+    if (params.nextBilling === "today") return next.isSame(now, "day");
+    if (params.nextBilling === "7d") return next.isAfter(now) && next.isBefore(now.add(7, "day").endOf("day"));
+    if (params.nextBilling === "30d") return next.isAfter(now) && next.isBefore(now.add(30, "day").endOf("day"));
+
+    return true;
+  });
+
+  const dirMultiplier = sortDir === "asc" ? 1 : -1;
+
+  filtered.sort((a, b) => {
+    if (sortField === "value") {
+      return (a.valueInCents - b.valueInCents) * dirMultiplier;
+    }
+    if (sortField === "ltv") {
+      return (a.estimatedLtvInCents - b.estimatedLtvInCents) * dirMultiplier;
+    }
+    if (sortField === "renewals") {
+      return (a.renewalCount - b.renewalCount) * dirMultiplier;
+    }
+    if (sortField === "startedAt") {
+      return (a.startedAt.getTime() - b.startedAt.getTime()) * dirMultiplier;
+    }
+    if (!a.nextBillingAt && !b.nextBillingAt) return 0;
+    if (!a.nextBillingAt) return 1;
+    if (!b.nextBillingAt) return -1;
+    return (a.nextBillingAt.getTime() - b.nextBillingAt.getTime()) * dirMultiplier;
+  });
+
+  const total = filtered.length;
+  const paginated = filtered.slice(offset, offset + limit);
 
   return {
-    data: rows.map((s) => {
-      const monthlyValue = normalizeToMonthly(s.valueInCents, s.billingInterval);
-      const renewalCount = computeRenewalCount(s.startedAt, s.billingInterval);
-      const estimatedLtvInCents = monthlyValue * Math.max(renewalCount, 1);
-      const nextBillingAt =
-        s.status === "canceled" ? null : computeNextBilling(s.startedAt, s.billingInterval);
-      return {
-        subscriptionId: s.subscriptionId,
-        customerId: s.customerId,
-        planName: s.planName,
-        planId: s.planId,
-        valueInCents: s.valueInCents,
-        billingInterval: s.billingInterval,
-        status: s.status,
-        startedAt: s.startedAt,
-        canceledAt: s.canceledAt,
-        renewalCount,
-        nextBillingAt,
-        estimatedLtvInCents,
-      };
-    }),
+    data: paginated,
     pagination: {
       page,
       limit,
       total,
       total_pages: Math.ceil(total / limit),
     },
+    availablePlans,
   };
 }

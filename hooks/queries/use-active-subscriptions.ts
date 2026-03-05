@@ -1,21 +1,45 @@
 import { useQuery } from "@tanstack/react-query";
 import { getActiveSubscriptions } from "@/actions/dashboard/get-active-subscriptions.action";
-import type { SubscriptionStatusFilter } from "@/interfaces/mrr.interface";
+import type {
+  SubscriptionStatusFilter,
+  BillingIntervalFilter,
+  NextBillingFilter,
+  SubscriptionSortField,
+  SortDirection,
+} from "@/interfaces/mrr.interface";
+
+interface UseActiveSubscriptionsParams {
+  page?: number;
+  status?: SubscriptionStatusFilter;
+  planId?: string;
+  billingInterval?: BillingIntervalFilter;
+  nextBilling?: NextBillingFilter;
+  sortField?: SubscriptionSortField;
+  sortDir?: SortDirection;
+}
 
 export const getActiveSubscriptionsQueryKey = (
   organizationId: string,
-  page: number,
-  status: SubscriptionStatusFilter
-) => ["dashboard", "active-subscriptions", organizationId, page, status];
+  params: UseActiveSubscriptionsParams
+) => ["dashboard", "active-subscriptions", organizationId, params];
 
 export function useActiveSubscriptions(
   organizationId: string | undefined,
-  page: number = 1,
-  status: SubscriptionStatusFilter = "all"
+  params: UseActiveSubscriptionsParams = {}
 ) {
   return useQuery({
-    queryKey: getActiveSubscriptionsQueryKey(organizationId ?? "", page, status),
-    queryFn: () => getActiveSubscriptions(organizationId!, { page, limit: 20, status }),
+    queryKey: getActiveSubscriptionsQueryKey(organizationId ?? "", params),
+    queryFn: () =>
+      getActiveSubscriptions(organizationId!, {
+        page: params.page ?? 1,
+        limit: 20,
+        status: params.status ?? "all",
+        planId: params.planId,
+        billingInterval: params.billingInterval,
+        nextBilling: params.nextBilling,
+        sortField: params.sortField,
+        sortDir: params.sortDir,
+      }),
     enabled: !!organizationId,
   });
 }

@@ -30,8 +30,7 @@ const BANDS = [
 
 const COLORS = {
   new: "#22c55e",
-  expansion: "#06b6d4",
-  reactivated: "#8b5cf6",
+  renewal: "#3b82f6",
   active: "#6366f1",
   canceled: "#ef4444",
   pastdue: "#f97316",
@@ -100,24 +99,18 @@ interface FlowLink {
 }
 
 function buildFlowNodes(data: IMrrOverview): { inputs: FlowNode[]; outputs: FlowNode[] } {
-  const active = data.activeSubscriptions;
-  const newMrr = data.totalNewMrr ?? 0;
-  const expansionMrr = data.totalExpansionMrr ?? 0;
-  const churnedMrr = data.totalChurnedMrr ?? 0;
+  const newCount = data.newSubscriptions ?? 0;
+  const renewalCount = data.renewalSubscriptions ?? 0;
+  const churnedCount = data.churnedSubscriptions ?? 0;
   const pastDue = data.pastDueSubscriptions ?? 0;
-
-  const newCount = active > 0 && newMrr > 0 ? Math.max(1, Math.round(active * 0.15)) : 0;
-  const expansionCount = expansionMrr > 0 ? Math.max(1, Math.round(active * 0.05)) : 0;
-  const churnedCount = churnedMrr > 0 ? Math.max(1, Math.round(active * (data.churnRate / 100))) : 0;
 
   return {
     inputs: [
-      { key: "new", label: "Novos", value: newCount, color: COLORS.new },
-      { key: "expansion", label: "Expansão", value: expansionCount, color: COLORS.expansion },
-      { key: "reactivated", label: "Reativados", value: 0, color: COLORS.reactivated },
+      { key: "new", label: "Novas assinaturas", value: newCount, color: COLORS.new },
+      { key: "renewal", label: "Renovações", value: renewalCount, color: COLORS.renewal },
     ],
     outputs: [
-      { key: "canceled", label: "Cancelados", value: churnedCount, color: COLORS.canceled },
+      { key: "canceled", label: "Cancelamentos", value: churnedCount, color: COLORS.canceled },
       { key: "pastdue", label: "Inadimplentes", value: pastDue, color: COLORS.pastdue },
     ],
   };
@@ -503,7 +496,7 @@ export function SubscriberFlowSankey({ data, isLoading }: SubscriberFlowSankeyPr
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <h3 className="text-sm font-bold text-zinc-100">Fluxo de Assinantes</h3>
       <p className="mt-0.5 text-xs text-zinc-500 mb-2">
-        Entradas (Novos, Expansão) → Base Ativa → Saídas (Churn, Inadimplência)
+        Novas e renovações → Base Ativa → Cancelamentos e inadimplência no período
       </p>
       {isLoading ? (
         <Skeleton className="h-48 w-full rounded-lg bg-zinc-800" />

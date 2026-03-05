@@ -3,6 +3,12 @@
 import Link from "next/link";
 import { IFinancialData } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { fmtBRLDecimal, fmtInt } from "@/utils/format";
 import {
   IconCurrencyDollar,
@@ -17,6 +23,7 @@ import {
   IconCalculator,
   IconChartPie,
   IconArrowRight,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 import type { IProfitAndLoss } from "@/interfaces/cost.interface";
 
@@ -64,9 +71,10 @@ interface KpiCardProps {
   current?: number;
   previous?: number;
   hero?: boolean;
+  tooltip?: string;
 }
 
-function KpiCard({ label, value, previousLabel, subLabel, icon: Icon, color, bgColor, current, previous, hero }: KpiCardProps) {
+function KpiCard({ label, value, previousLabel, subLabel, icon: Icon, color, bgColor, current, previous, hero, tooltip }: KpiCardProps) {
   const hasPrev = previous !== undefined && previous > 0 && current !== undefined;
 
   const variationBadge = hasPrev && current !== undefined && previous !== undefined ? (
@@ -76,15 +84,38 @@ function KpiCard({ label, value, previousLabel, subLabel, icon: Icon, color, bgC
   return (
     <div className={`rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 sm:p-4 flex flex-col gap-1 ${hero ? "sm:col-span-2" : ""}`}>
       <div className="flex items-center justify-between gap-1 min-w-0">
-        <span className="text-[10px] font-semibold uppercase tracking-tight sm:tracking-widest text-zinc-500 truncate min-w-0">
-          {label}
-        </span>
+        <div className="flex items-center gap-1 min-w-0">
+          <span className="text-[10px] font-semibold uppercase tracking-tight sm:tracking-widest text-zinc-500 truncate min-w-0">
+            {label}
+          </span>
+          {tooltip && (
+            <TooltipProvider delayDuration={100}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="shrink-0 text-zinc-700 hover:text-zinc-400 transition-colors focus:outline-none"
+                    aria-label={`Informação sobre ${label}`}
+                  >
+                    <IconInfoCircle size={11} />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  className="max-w-[220px] bg-zinc-800 border-zinc-700 text-zinc-200 text-xs leading-relaxed"
+                >
+                  {tooltip}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+        </div>
         <div className={`flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-md shrink-0 ${bgColor}`}>
           <Icon size={11} className={color} />
         </div>
       </div>
       <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-1.5">
-        <span className={`font-bold font-mono leading-none ${color} ${hero ? "text-2xl sm:text-3xl" : "text-lg sm:text-xl"}`}>
+        <span className={`font-bold font-mono leading-none whitespace-nowrap ${color} ${hero ? "text-xl sm:text-2xl" : "text-base sm:text-lg"}`}>
           {value}
         </span>
         {variationBadge && <span className="flex">{variationBadge}</span>}
@@ -166,7 +197,6 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
   const prevRecurring = data?.previousRecurringRevenueInCents;
   const prevOneTime = data?.previousOneTimeRevenueInCents;
   const prevTicket = data?.previousAverageTicketInCents;
-  const prevPayments = data?.previousTotalPayments;
   const prevNetProfit = data?.previousNetProfitInCents;
   const prevMargin = data?.previousMarginPercent;
   const prevLost = data?.previousLostRevenueInCents;
@@ -198,6 +228,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
           bgColor="bg-cyan-600/20"
           current={recurring}
           previous={prevRecurring}
+          tooltip="Receita proveniente de assinaturas e cobranças recorrentes no período."
         />
         <KpiCard
           label="Avulso"
@@ -209,17 +240,19 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
           bgColor="bg-sky-600/20"
           current={oneTime}
           previous={prevOneTime}
+          tooltip="Receita de vendas únicas, não ligadas a assinaturas."
         />
         <KpiCard
           label="Ticket Médio"
           value={fmtBRLDecimal((data?.averageTicketInCents ?? 0) / 100)}
           previousLabel={prevTicket !== undefined ? fmtBRLDecimal(prevTicket / 100) : undefined}
-          subLabel={prevPayments !== undefined ? undefined : `${data?.totalPayments ?? 0} pagamentos`}
+          subLabel={`${data?.totalPayments ?? 0} pagamentos`}
           icon={IconReceipt}
           color="text-violet-400"
           bgColor="bg-violet-600/20"
           current={data?.averageTicketInCents ?? 0}
           previous={prevTicket}
+          tooltip="Valor médio por transação no período. Calculado como Receita Bruta ÷ número de pagamentos."
         />
       </div>
 
@@ -232,14 +265,16 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
           icon={IconWallet}
           color="text-rose-400"
           bgColor="bg-rose-600/20"
+          tooltip="Valor total de cupons e descontos aplicados em pagamentos no período. Reduz a receita líquida."
         />
         <KpiCard
           label="Custos Variáveis"
           value={fmtBRLDecimal((pl?.totalVariableCostsInCents ?? 0) / 100)}
           subLabel="% configurados sobre receita"
-          icon={IconMinus}
+          icon={IconCalculator}
           color="text-orange-400"
           bgColor="bg-orange-600/20"
+          tooltip="Custos que crescem proporcionalmente à receita — como taxas de gateway, comissões e impostos. Calculados como percentual da receita bruta."
         />
         <KpiCard
           label="Custos Fixos"
@@ -248,6 +283,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
           icon={IconCalculator}
           color="text-red-400"
           bgColor="bg-red-600/20"
+          tooltip="Despesas mensais que não variam com a receita — como ferramentas, salários e aluguel. Rateadas proporcionalmente quando o período é menor que um mês."
         />
       </div>
 
@@ -260,6 +296,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
           icon={IconTrendingUp}
           color={(pl?.operatingProfitInCents ?? 0) >= 0 ? "text-indigo-400" : "text-red-400"}
           bgColor={(pl?.operatingProfitInCents ?? 0) >= 0 ? "bg-indigo-600/20" : "bg-red-600/20"}
+          tooltip="Receita Bruta menos descontos e custos variáveis. Mostra a saúde operacional antes dos custos fixos."
         />
         <KpiCard
           label="Lucro Líquido"
@@ -271,6 +308,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
           bgColor={(pl?.netProfitInCents ?? 0) >= 0 ? "bg-emerald-600/20" : "bg-red-600/20"}
           current={pl?.netProfitInCents}
           previous={prevNetProfit}
+          tooltip="O que sobra depois de descontar todos os custos (variáveis + fixos + descontos) da receita bruta. É o lucro real do período."
         />
         <KpiCard
           label="Margem Líquida"
@@ -282,6 +320,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
           bgColor={(pl?.marginPercent ?? 0) >= 0 ? "bg-amber-600/20" : "bg-red-600/20"}
           current={pl?.marginPercent}
           previous={prevMargin}
+          tooltip="Percentual da receita bruta que se converte em lucro líquido. Acima de 20% é saudável para SaaS."
         />
       </div>
 

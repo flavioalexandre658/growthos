@@ -16,14 +16,25 @@ export interface IMrrOverview {
   previousActiveSubscriptions?: number;
   totalNewMrr?: number;
   totalExpansionMrr?: number;
-  totalChurnedMrr?: number;
   totalContractionMrr?: number;
+  totalChurnedMrr?: number;
   pastDueSubscriptions?: number;
+  newSubscriptions?: number;
+  churnedSubscriptions?: number;
+  renewalSubscriptions?: number;
+  totalPeriodRevenue?: number;
+  totalPaymentCount?: number;
+  previousPeriodRevenue?: number;
+  nrr?: number;
+  previousNrr?: number;
+  forecastNext30dRevenue?: number;
+  forecastNext30dCount?: number;
 }
 
 export interface IMrrMovementEntry {
   date: string;
   newMrr: number;
+  renewalMrr: number;
   expansionMrr: number;
   contractionMrr: number;
   churnedMrr: number;
@@ -36,6 +47,14 @@ export interface IMrrGrowthEntry {
 }
 
 export type SubscriptionStatusFilter = "all" | "active" | "trialing" | "past_due" | "canceled";
+
+export type BillingIntervalFilter = "all" | "monthly" | "quarterly" | "semiannual" | "yearly" | "weekly";
+
+export type NextBillingFilter = "all" | "today" | "7d" | "30d";
+
+export type SubscriptionSortField = "nextBilling" | "value" | "ltv" | "renewals" | "startedAt";
+
+export type SortDirection = "asc" | "desc";
 
 export interface IActiveSubscription {
   subscriptionId: string;
@@ -50,4 +69,10 @@ export interface IActiveSubscription {
   renewalCount: number;
   nextBillingAt: Date | null;
   estimatedLtvInCents: number;
+}
+
+export interface IAvailablePlan {
+  planId: string;
+  planName: string;
+  count: number;
 }

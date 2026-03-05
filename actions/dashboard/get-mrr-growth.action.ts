@@ -6,15 +6,10 @@ import { eq, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { subscriptions, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { normalizeToMonthly } from "@/utils/billing";
 import dayjs from "@/utils/dayjs";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 import type { IMrrGrowthEntry } from "@/interfaces/mrr.interface";
-
-function normalizeToMonthly(valueInCents: number, interval: string): number {
-  if (interval === "yearly") return Math.round(valueInCents / 12);
-  if (interval === "weekly") return Math.round(valueInCents * 4.33);
-  return valueInCents;
-}
 
 export async function getMrrGrowth(
   organizationId: string,

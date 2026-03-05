@@ -6,14 +6,20 @@ import { decrypt } from "@/lib/crypto";
 import { hashAnonymous } from "@/lib/hash";
 import { eq } from "drizzle-orm";
 import { createHash } from "crypto";
+import type { BillingInterval } from "@/utils/billing";
 
 function stripeEventHash(orgId: string, externalId: string): string {
   return createHash("sha256").update(`${orgId}:${externalId}`).digest("hex").slice(0, 32);
 }
 
-function mapBillingInterval(interval: string): "monthly" | "yearly" | "weekly" {
+function mapBillingInterval(interval: string, intervalCount = 1): BillingInterval {
   if (interval === "year") return "yearly";
   if (interval === "week") return "weekly";
+  if (interval === "month") {
+    if (intervalCount === 3) return "quarterly";
+    if (intervalCount === 6) return "semiannual";
+    if (intervalCount === 12) return "yearly";
+  }
   return "monthly";
 }
 
@@ -105,6 +111,7 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventId
       billingType: "recurring",
       subscriptionId,
       customerId: hashAnonymous(customerId),
+      paymentMethod: "credit_card",
       provider: "stripe",
       eventHash: stripeEventHash(orgId, eventId),
       createdAt: new Date(invoice.created * 1000),
@@ -128,6 +135,7 @@ async function handleSubscriptionCanceled(
     typeof sub.customer === "string" ? sub.customer : sub.customer.id;
   const item = sub.items.data[0];
   const interval = item?.price.recurring?.interval ?? "month";
+  const intervalCount = item?.price.recurring?.interval_count ?? 1;
 
   await db
     .insert(events)
@@ -137,7 +145,7 @@ async function handleSubscriptionCanceled(
       grossValueInCents: item?.price.unit_amount ?? 0,
       currency: sub.currency.toUpperCase(),
       billingType: "recurring",
-      billingInterval: mapBillingInterval(interval),
+      billingInterval: mapBillingInterval(interval, intervalCount),
       subscriptionId: sub.id,
       customerId: hashAnonymous(customerId),
       provider: "stripe",
