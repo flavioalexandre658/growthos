@@ -81,7 +81,7 @@ export async function POST(
 async function handleStripeEvent(orgId: string, event: Stripe.Event) {
   switch (event.type) {
     case "invoice.payment_succeeded":
-      await handleInvoicePaid(orgId, event.data.object as Stripe.Invoice);
+      await handleInvoicePaid(orgId, event.data.object as Stripe.Invoice, event.created);
       break;
     case "payment_intent.succeeded":
       await handlePaymentIntentSucceeded(
@@ -112,7 +112,7 @@ async function handleStripeEvent(orgId: string, event: Stripe.Event) {
   }
 }
 
-async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice) {
+async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventTimestamp: number) {
   const rawCustomerId =
     typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
   const hashedCustomerId = hashAnonymous(rawCustomerId);
@@ -160,7 +160,7 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice) {
       paymentMethod: "credit_card",
       provider: "stripe",
       eventHash: stripeEventHash(orgId, invoice.id),
-      createdAt: new Date((invoice.status_transitions.paid_at ?? invoice.created) * 1000),
+      createdAt: new Date(eventTimestamp * 1000),
       source: acq?.source ?? null,
       medium: acq?.medium ?? null,
       campaign: acq?.campaign ?? null,
@@ -181,6 +181,7 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice) {
         baseCurrency,
         exchangeRate,
         baseGrossValueInCents,
+        createdAt: new Date(eventTimestamp * 1000),
       },
     });
 
