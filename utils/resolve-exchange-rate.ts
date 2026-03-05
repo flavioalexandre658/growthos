@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { exchangeRates } from "@/db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, lte, desc } from "drizzle-orm";
 
 export async function resolveExchangeRate(
   organizationId: string,
@@ -17,8 +17,10 @@ export async function resolveExchangeRate(
         eq(exchangeRates.organizationId, organizationId),
         eq(exchangeRates.fromCurrency, fromCurrency),
         eq(exchangeRates.toCurrency, toCurrency),
+        lte(exchangeRates.effectiveFrom, new Date()),
       ),
     )
+    .orderBy(desc(exchangeRates.effectiveFrom))
     .limit(1);
 
   return found?.rate ?? null;

@@ -160,21 +160,18 @@ export async function getMrrOverview(
     0
   );
 
-  const renewalEventSubIds = new Set(
-    recurringEventsInPeriod
-      .filter((e) => e.eventType === "renewal")
-      .map((e) => e.subscriptionId)
-      .filter((id): id is string => !!id)
-  );
+  const renewalCount = recurringEventsInPeriod.filter(
+    (e) => e.eventType === "renewal"
+  ).length;
 
-  const legacyRenewingSubIds = new Set(
-    recurringEventsInPeriod
-      .filter((e) => e.eventType === "purchase")
-      .map((e) => e.subscriptionId)
-      .filter((id): id is string => !!id && !newSubIds.has(id))
-  );
+  const legacyRenewalCount = recurringEventsInPeriod.filter(
+    (e) =>
+      e.eventType === "purchase" &&
+      !!e.subscriptionId &&
+      !newSubIds.has(e.subscriptionId)
+  ).length;
 
-  const renewalSubscriptions = renewalEventSubIds.size + legacyRenewingSubIds.size;
+  const renewalSubscriptions = renewalCount + legacyRenewalCount;
 
   const changedEvents = await db
     .select()
