@@ -7,6 +7,7 @@ import { hashAnonymous } from "@/lib/hash";
 import { eq } from "drizzle-orm";
 import { createHash } from "crypto";
 import type { BillingInterval } from "@/utils/billing";
+import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
 
 function stripeEventHash(orgId: string, externalId: string): string {
   return createHash("sha256").update(`${orgId}:${externalId}`).digest("hex").slice(0, 32);
@@ -59,7 +60,6 @@ export async function POST(
 
   const orgId = integration.organizationId;
 
-  // Respond 200 immediately — onConflictDoNothing protects against Stripe retries
   const response = new NextResponse(null, { status: 200 });
 
   await handleStripeEvent(orgId, event).catch((err) => {
@@ -73,6 +73,19 @@ async function handleStripeEvent(orgId: string, event: Stripe.Event) {
   switch (event.type) {
     case "invoice.payment_succeeded":
       await handleInvoicePaid(orgId, event.data.object as Stripe.Invoice, event.id);
+      break;
+    case "payment_intent.succeeded":
+      await handlePaymentIntentSucceeded(
+        orgId,
+        event.data.object as Stripe.PaymentIntent,
+        event.id,
+      );
+      break;
+    case "charge.refunded":
+      await handleChargeRefunded(orgId, event.data.object as Stripe.Charge, event.id);
+      break;
+    case "customer.subscription.created":
+      await handleSubscriptionCreated(orgId, event.data.object as Stripe.Subscription, event.id);
       break;
     case "customer.subscription.deleted":
       await handleSubscriptionCanceled(orgId, event.data.object as Stripe.Subscription, event.id);
@@ -92,14 +105,19 @@ async function handleStripeEvent(orgId: string, event: Stripe.Event) {
 }
 
 async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventId: string) {
-  const customerId =
+  const rawCustomerId =
     typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
+  const hashedCustomerId = hashAnonymous(rawCustomerId);
+
   const subRef = invoice.parent?.subscription_details?.subscription ?? null;
   const subscriptionId = subRef
     ? typeof subRef === "string"
       ? subRef
       : subRef.id
     : null;
+
+  const isRecurring = !!subscriptionId;
+  const acq = await lookupAcquisitionContext(orgId, hashedCustomerId);
 
   await db
     .insert(events)
@@ -108,13 +126,20 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventId
       eventType: "payment",
       grossValueInCents: invoice.amount_paid,
       currency: invoice.currency.toUpperCase(),
-      billingType: "recurring",
+      billingType: isRecurring ? "recurring" : "one_time",
       subscriptionId,
-      customerId: hashAnonymous(customerId),
+      customerId: hashedCustomerId,
       paymentMethod: "credit_card",
       provider: "stripe",
       eventHash: stripeEventHash(orgId, eventId),
       createdAt: new Date(invoice.created * 1000),
+      source: acq?.source ?? null,
+      medium: acq?.medium ?? null,
+      campaign: acq?.campaign ?? null,
+      content: acq?.content ?? null,
+      landingPage: acq?.landingPage ?? null,
+      entryPage: acq?.entryPage ?? null,
+      sessionId: acq?.sessionId ?? null,
     })
     .onConflictDoNothing();
 
@@ -124,6 +149,109 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventId
       .set({ status: "active", updatedAt: new Date() })
       .where(eq(subscriptions.subscriptionId, subscriptionId));
   }
+}
+
+async function handlePaymentIntentSucceeded(
+  orgId: string,
+  pi: Stripe.PaymentIntent,
+  eventId: string,
+) {
+  if (!(pi as Stripe.PaymentIntent & { invoice?: string | null }).invoice) {
+    const rawCustomerId =
+      typeof pi.customer === "string" ? pi.customer : pi.customer?.id ?? null;
+    const hashedCustomerId = rawCustomerId ? hashAnonymous(rawCustomerId) : null;
+
+    const acq = hashedCustomerId
+      ? await lookupAcquisitionContext(orgId, hashedCustomerId)
+      : null;
+
+    const pm = pi.payment_method_types?.[0] ?? "credit_card";
+
+    await db
+      .insert(events)
+      .values({
+        organizationId: orgId,
+        eventType: "payment",
+        grossValueInCents: pi.amount_received ?? pi.amount,
+        currency: pi.currency.toUpperCase(),
+        billingType: "one_time",
+        customerId: hashedCustomerId ?? undefined,
+        paymentMethod: pm,
+        provider: "stripe",
+        eventHash: stripeEventHash(orgId, eventId),
+        createdAt: new Date((pi.created ?? Date.now() / 1000) * 1000),
+        source: acq?.source ?? null,
+        medium: acq?.medium ?? null,
+        campaign: acq?.campaign ?? null,
+        content: acq?.content ?? null,
+        landingPage: acq?.landingPage ?? null,
+        entryPage: acq?.entryPage ?? null,
+        sessionId: acq?.sessionId ?? null,
+      })
+      .onConflictDoNothing();
+  }
+}
+
+async function handleChargeRefunded(orgId: string, charge: Stripe.Charge, eventId: string) {
+  const refundedAmount = charge.amount_refunded;
+  if (!refundedAmount) return;
+
+  const rawCustomerId =
+    typeof charge.customer === "string" ? charge.customer : charge.customer?.id ?? null;
+  const hashedCustomerId = rawCustomerId ? hashAnonymous(rawCustomerId) : null;
+
+  await db
+    .insert(events)
+    .values({
+      organizationId: orgId,
+      eventType: "refund",
+      grossValueInCents: -refundedAmount,
+      currency: charge.currency.toUpperCase(),
+      billingType: "one_time",
+      customerId: hashedCustomerId ?? undefined,
+      provider: "stripe",
+      eventHash: stripeEventHash(orgId, eventId),
+      metadata: { chargeId: charge.id, paymentIntent: charge.payment_intent },
+      createdAt: new Date(),
+    })
+    .onConflictDoNothing();
+}
+
+async function handleSubscriptionCreated(
+  orgId: string,
+  sub: Stripe.Subscription,
+  eventId: string,
+) {
+  const customerId =
+    typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+  const item = sub.items.data[0];
+  const interval = item?.price.recurring?.interval ?? "month";
+  const intervalCount = item?.price.recurring?.interval_count ?? 1;
+  const billingInterval = mapBillingInterval(interval, intervalCount);
+
+  await db
+    .insert(subscriptions)
+    .values({
+      organizationId: orgId,
+      subscriptionId: sub.id,
+      customerId: hashAnonymous(customerId),
+      planId: item?.price.id ?? "unknown",
+      planName: item?.price.nickname ?? item?.price.id ?? "Plano",
+      status: "active",
+      valueInCents: item?.price.unit_amount ?? 0,
+      currency: sub.currency.toUpperCase(),
+      billingInterval,
+      startedAt: new Date(sub.start_date * 1000),
+    })
+    .onConflictDoUpdate({
+      target: [subscriptions.subscriptionId],
+      set: {
+        status: "active",
+        updatedAt: new Date(),
+      },
+    });
+
+  void eventId;
 }
 
 async function handleSubscriptionCanceled(

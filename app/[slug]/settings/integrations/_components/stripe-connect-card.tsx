@@ -12,6 +12,7 @@ import {
   IconChevronUp,
   IconExternalLink,
   IconLoader2,
+  IconInfoCircle,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -218,7 +219,7 @@ function ConnectedCard({
     try {
       const result = await syncHistory(integration.id);
       toast.success(
-        `Histórico importado: ${result.subscriptionsSynced} assinaturas, ${result.invoicesSynced} faturas.`,
+        `Histórico importado: ${result.subscriptionsSynced} assinaturas, ${result.invoicesSynced} recorrentes, ${result.oneTimePaymentsSynced} avulsos.`,
       );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao importar histórico.");
@@ -324,6 +325,51 @@ function ConnectedCard({
         hasWebhookSecret={integration.hasWebhookSecret}
         onSecretSaved={handleSecretSaved}
       />
+
+      <StripeConnectedNotice />
+    </div>
+  );
+}
+
+// ─── Connected Notice ─────────────────────────────────────────────────────────
+
+function StripeConnectedNotice() {
+  return (
+    <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 space-y-3">
+      <div className="flex items-start gap-2.5">
+        <IconInfoCircle size={15} className="text-indigo-400 shrink-0 mt-0.5" />
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-indigo-300">
+            Pagamentos e assinaturas chegam automaticamente via webhook.
+          </p>
+          <div className="rounded-lg bg-amber-500/8 border border-amber-500/20 px-3 py-2">
+            <p className="text-xs text-amber-300/90 leading-relaxed">
+              <span className="font-medium">Atenção:</span> Se você usa o tracker.js, não dispare
+              mais eventos de{" "}
+              <code className="font-mono text-amber-200 bg-amber-500/10 px-1 rounded">payment</code>{" "}
+              do Stripe manualmente — isso duplicaria os dados no dashboard.
+            </p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[11px] text-zinc-500 font-medium uppercase tracking-wide">
+              O tracker.js continua necessário para:
+            </p>
+            <ul className="space-y-1">
+              {[
+                "Pageviews e navegação do site",
+                "Cadastros e eventos do funil",
+                "Pagamentos de outros gateways (Asaas, Kiwify...)",
+                "Contexto de aquisição (UTMs, landing pages)",
+              ].map((item) => (
+                <li key={item} className="flex items-center gap-2 text-xs text-zinc-400">
+                  <span className="w-1 h-1 rounded-full bg-zinc-600 shrink-0" />
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

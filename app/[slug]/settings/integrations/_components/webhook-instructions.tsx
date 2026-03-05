@@ -22,9 +22,12 @@ interface WebhookInstructionsProps {
 
 const WEBHOOK_EVENTS = [
   "invoice.payment_succeeded",
+  "customer.subscription.created",
   "customer.subscription.deleted",
   "customer.subscription.updated",
   "invoice.payment_failed",
+  "payment_intent.succeeded",
+  "charge.refunded",
 ];
 
 export function WebhookInstructions({

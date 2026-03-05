@@ -10,12 +10,15 @@ import { hashAnonymous } from "@/lib/hash";
 import { eq, and } from "drizzle-orm";
 import { createHash } from "crypto";
 import type { BillingInterval } from "@/utils/billing";
+import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
 
 function stripeEventHash(orgId: string, externalId: string): string {
   return createHash("sha256").update(`${orgId}:${externalId}`).digest("hex").slice(0, 32);
 }
 
-function mapStripeStatus(s: Stripe.Subscription.Status): "active" | "canceled" | "past_due" | "trialing" {
+function mapStripeStatus(
+  s: Stripe.Subscription.Status,
+): "active" | "canceled" | "past_due" | "trialing" {
   const map: Record<string, "active" | "canceled" | "past_due" | "trialing"> = {
     active: "active",
     canceled: "canceled",
@@ -30,10 +33,7 @@ function mapStripeStatus(s: Stripe.Subscription.Status): "active" | "canceled" |
 }
 
 function mapBillingInterval(interval: string, intervalCount = 1): BillingInterval {
-  if (interval === "year") {
-    if (intervalCount === 1) return "yearly";
-    return "yearly";
-  }
+  if (interval === "year") return "yearly";
   if (interval === "week") return "weekly";
   if (interval === "month") {
     if (intervalCount === 3) return "quarterly";
@@ -46,7 +46,11 @@ function mapBillingInterval(interval: string, intervalCount = 1): BillingInterva
 export async function syncStripeHistory(
   organizationId: string,
   integrationId: string,
-): Promise<{ subscriptionsSynced: number; invoicesSynced: number }> {
+): Promise<{
+  subscriptionsSynced: number;
+  invoicesSynced: number;
+  oneTimePaymentsSynced: number;
+}> {
   const session = await getServerSession(authOptions);
   if (!session) throw new Error("Unauthorized");
 
@@ -68,6 +72,7 @@ export async function syncStripeHistory(
 
   let subscriptionsSynced = 0;
   let invoicesSynced = 0;
+  let oneTimePaymentsSynced = 0;
   const subIntervalMap = new Map<string, BillingInterval>();
 
   try {
@@ -107,11 +112,15 @@ export async function syncStripeHistory(
       subscriptionsSynced++;
     }
 
+    const invoiceIdsSynced = new Set<string>();
+
     for await (const invoice of stripe.invoices.list({ limit: 100, status: "paid" })) {
       if (!invoice.amount_paid) continue;
 
-      const customerId =
+      const rawCustomerId =
         typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
+      const hashedCustomerId = hashAnonymous(rawCustomerId);
+
       const subRef = invoice.parent?.subscription_details?.subscription ?? null;
       const subscriptionId = subRef
         ? typeof subRef === "string"
@@ -119,9 +128,12 @@ export async function syncStripeHistory(
           : subRef.id
         : null;
 
-      const billingInterval = subscriptionId
-        ? (subIntervalMap.get(subscriptionId) ?? "monthly")
-        : "monthly";
+      const isRecurring = !!subscriptionId;
+      const billingInterval = isRecurring
+        ? (subIntervalMap.get(subscriptionId!) ?? "monthly")
+        : undefined;
+
+      const acq = await lookupAcquisitionContext(organizationId, hashedCustomerId);
 
       await db
         .insert(events)
@@ -130,18 +142,72 @@ export async function syncStripeHistory(
           eventType: "payment",
           grossValueInCents: invoice.amount_paid,
           currency: invoice.currency.toUpperCase(),
-          billingType: "recurring",
-          billingInterval,
+          billingType: isRecurring ? "recurring" : "one_time",
+          billingInterval: billingInterval ?? null,
           subscriptionId,
-          customerId: hashAnonymous(customerId),
+          customerId: hashedCustomerId,
           paymentMethod: "credit_card",
           provider: "stripe",
           eventHash: stripeEventHash(organizationId, invoice.id),
           createdAt: new Date(invoice.created * 1000),
+          source: acq?.source ?? null,
+          medium: acq?.medium ?? null,
+          campaign: acq?.campaign ?? null,
+          content: acq?.content ?? null,
+          landingPage: acq?.landingPage ?? null,
+          entryPage: acq?.entryPage ?? null,
+          sessionId: acq?.sessionId ?? null,
         })
         .onConflictDoNothing();
 
-      invoicesSynced++;
+      invoiceIdsSynced.add(invoice.id);
+
+      if (isRecurring) {
+        invoicesSynced++;
+      } else {
+        oneTimePaymentsSynced++;
+      }
+    }
+
+    for await (const charge of stripe.charges.list({ limit: 100 })) {
+      if (charge.status !== "succeeded") continue;
+      if ((charge as Stripe.Charge & { invoice?: string | null }).invoice) continue;
+      if (!charge.amount) continue;
+
+      const rawCustomerId =
+        typeof charge.customer === "string" ? charge.customer : charge.customer?.id ?? null;
+      const hashedCustomerId = rawCustomerId ? hashAnonymous(rawCustomerId) : null;
+
+      const acq = hashedCustomerId
+        ? await lookupAcquisitionContext(organizationId, hashedCustomerId)
+        : null;
+
+      const pm = charge.payment_method_details?.type ?? "credit_card";
+
+      await db
+        .insert(events)
+        .values({
+          organizationId,
+          eventType: "payment",
+          grossValueInCents: charge.amount,
+          currency: charge.currency.toUpperCase(),
+          billingType: "one_time",
+          customerId: hashedCustomerId ?? undefined,
+          paymentMethod: pm,
+          provider: "stripe",
+          eventHash: stripeEventHash(organizationId, charge.id),
+          createdAt: new Date(charge.created * 1000),
+          source: acq?.source ?? null,
+          medium: acq?.medium ?? null,
+          campaign: acq?.campaign ?? null,
+          content: acq?.content ?? null,
+          landingPage: acq?.landingPage ?? null,
+          entryPage: acq?.entryPage ?? null,
+          sessionId: acq?.sessionId ?? null,
+        })
+        .onConflictDoNothing();
+
+      oneTimePaymentsSynced++;
     }
 
     await db
@@ -165,5 +231,5 @@ export async function syncStripeHistory(
     throw err;
   }
 
-  return { subscriptionsSynced, invoicesSynced };
+  return { subscriptionsSynced, invoicesSynced, oneTimePaymentsSynced };
 }

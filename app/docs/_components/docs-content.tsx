@@ -15,6 +15,10 @@ import {
   IconWorld,
   IconBug,
   IconBolt,
+  IconPlugConnected,
+  IconBrandStripe,
+  IconX,
+  IconArrowRight,
 } from "@tabler/icons-react";
 import { CodeBlock } from "./code-block";
 import { EventCard } from "./event-card";
@@ -60,6 +64,14 @@ const NAV_GROUPS = [
       { value: "typescript", label: "TypeScript" },
       { value: "api", label: "API Reference" },
       { value: "debug", label: "Debug", icon: IconBug },
+    ],
+  },
+  {
+    label: "Integrações",
+    items: [
+      { value: "integration-overview", label: "Visão geral", icon: IconPlugConnected },
+      { value: "integration-stripe", label: "Stripe", icon: IconBrandStripe },
+      { value: "integration-together", label: "Usando os dois juntos" },
     ],
   },
 ];
@@ -110,6 +122,41 @@ const TYPES_CODE = `// src/types/growthos.d.ts\n\nexport type GrowthOSEventType 
 const DEBUG_CODE = `// 1 — Verificar se o tracker carregou\nconsole.log(window.GrowthOS)\n// → { track: ƒ }\n\n// 2 — Disparar evento de teste\nwindow.GrowthOS.track('pageview')\n// → Network: POST /api/track 204\n\n// 3 — Evento com moeda\nwindow.GrowthOS.track('payment', {\n  gross_value: 1.00,\n  currency: 'BRL',\n  product_name: 'Teste'\n})\n// Verificar em Dados → Eventos`;
 
 const DEDUP_CODE = `// ── Client-side: opção dedupe ───────────────────────────────────────────────\n\n// Usando dedupe: true  →  1 evento por tipo por sessão\nwindow.GrowthOS.track('signup', { dedupe: true })\n\n// Usando dedupe: <id>  →  1 evento por ID por sessão (mais preciso)\nwindow.GrowthOS.track('payment', {\n  gross_value: 89.00,\n  dedupe: \`payment-\${invoice.id}\`,  // ← ignorado se já enviado nesta sessão\n})\n\n// ── Server-side: hash automático ─────────────────────────────────────────────\n// O servidor calcula um hash de (event_type + customer_id + gross_value +\n// product_id + subscription_id) em janelas de 5 minutos.\n// Envios idênticos na mesma janela retornam 204 com X-GrowthOS-Duplicate: true\n// e NÃO são registrados novamente.\n\nawait fetch('/api/track', {\n  body: JSON.stringify({\n    key: 'tok_xxx',\n    event_type: 'payment',\n    gross_value: 89.00,\n    customer_id: 'usr_abc123',   // ← inclua sempre para dedup eficaz\n    subscription_id: 'sub_xyz',  // ← ou product_id em pagamentos únicos\n  })\n})`;
+
+const STRIPE_METADATA_CODE = `// Passando customer_id nos metadados do Stripe Checkout
+const session = await stripe.checkout.sessions.create({
+  mode: 'subscription',
+  line_items: [{ price: priceId, quantity: 1 }],
+  metadata: {
+    growthos_customer_id: sha256(user.id + process.env.CUSTOMER_HASH_SALT),
+  },
+  // ...
+})`;
+
+const STRIPE_TOGETHER_FLOW = `// 1 — Usuário chega via Google Ads
+//     GrowthOS (tracker.js): pageview · source: google · session: s_abc
+
+// 2 — Usuário cria conta
+//     GrowthOS (tracker.js): signup · customer_id: hash_xyz · source: google
+
+// 3 — Usuário inicia checkout (PASSE o customer_id aqui)
+window.GrowthOS.track('checkout_started', {
+  gross_value: 79.90,
+  currency: 'BRL',
+  product_name: 'Pro Mensal',
+  customer_id: hash_xyz,  // ← bridge entre tracker.js e Stripe
+})
+
+// 4 — Stripe processa o pagamento
+//     metadata: { growthos_customer_id: "hash_xyz" }
+
+// 5 — Webhook chega no GrowthOS
+//     GrowthOS busca hash_xyz na events table
+//     Encontra: source: google · landing: /pricing
+//     Salva payment com contexto completo ✅
+
+// 6 — Dashboard de Canais
+//     Google Ads → R$ 4.320,00 receita gerada ✅`;
 
 // ─── Checklist items ──────────────────────────────────────────────────────────
 
@@ -364,8 +411,15 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   { name: "gross_value", type: "number", description: "Valor no carrinho", example: "89.00" },
                   { name: "currency", type: "string", required: true, description: "ISO 4217", example: "'BRL'" },
                   { name: "product_id", type: "string", description: "ID do produto", example: "'template-001'" },
+                  { name: "customer_id", type: "string", description: "Hash anônimo do cliente. Recomendado se você usa a integração Stripe — permite linkar o pagamento ao histórico de aquisição.", example: "'hash_xyz'" },
                 ]}
               />
+              <Callout type="tip">
+                Se você usa a <strong>integração com Stripe</strong>, passe{" "}
+                <Mono>customer_id</Mono> no <Mono>checkout_started</Mono>. O GrowthOS usa esse hash para recuperar
+                automaticamente a origem do cliente (UTM, landing page, canal) e atribuí-la ao pagamento que chega via webhook —
+                sem nenhum código extra no backend.
+              </Callout>
 
               <EventCard
                 name="checkout_abandoned"
@@ -631,6 +685,221 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
               <strong>Nunca envie PII no customer_id.</strong> Use sempre um hash anônimo.
               Ex: <Mono>sha256(user.id + salt)</Mono>. Nome, email e CPF nunca devem
               aparecer em nenhum campo do payload.
+            </Callout>
+          </TabsContent>
+
+          {/* INTEGRAÇÃO — VISÃO GERAL */}
+          <TabsContent value="integration-overview" className="mt-0 space-y-6">
+            <SectionHeader title="Integrações" badge="dois modos" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Existem dois modos de enviar dados para o GrowthOS. Você pode usar os dois ao mesmo tempo ou só um — mas precisa entender o que cada um cobre.
+            </p>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center shrink-0">
+                    <IconCode size={13} className="text-indigo-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-zinc-200">Tracker.js</p>
+                  <span className="ml-auto text-[10px] font-mono border border-zinc-700 text-zinc-500 px-1.5 py-px rounded">manual</span>
+                </div>
+                <div className="space-y-1.5">
+                  {[
+                    "Pageviews e navegação",
+                    "Cadastros (signup)",
+                    "Funil de conversão",
+                    "Contexto de aquisição (UTMs)",
+                    "Qualquer gateway de pagamento",
+                    "Eventos customizados",
+                  ].map((item) => (
+                    <p key={item} className="flex items-center gap-2 text-xs text-zinc-400">
+                      <IconCheck size={11} className="text-green-500 shrink-0" />
+                      {item}
+                    </p>
+                  ))}
+                  <div className="pt-1 border-t border-zinc-800/60 space-y-1.5 mt-2">
+                    {[
+                      "Renovações automáticas de assinatura",
+                      "Cancelamentos por inadimplência",
+                      "Histórico anterior à instalação",
+                    ].map((item) => (
+                      <p key={item} className="flex items-center gap-2 text-xs text-zinc-600">
+                        <IconX size={11} className="text-zinc-600 shrink-0" />
+                        {item}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[#635BFF]/20 bg-[#635BFF]/5 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#635BFF]/15 flex items-center justify-center shrink-0">
+                    <IconBrandStripe size={13} className="text-[#635BFF]" />
+                  </div>
+                  <p className="text-sm font-semibold text-zinc-200">Stripe</p>
+                  <span className="ml-auto text-[10px] font-mono border border-zinc-700 text-zinc-500 px-1.5 py-px rounded">automático</span>
+                </div>
+                <div className="space-y-1.5">
+                  {[
+                    "Todo o histórico de pagamentos",
+                    "Assinaturas — criação, renovação",
+                    "Upgrade e cancelamento",
+                    "Pagamentos avulsos (one-time)",
+                    "Inadimplência e reembolsos",
+                    "Zero código adicional",
+                  ].map((item) => (
+                    <p key={item} className="flex items-center gap-2 text-xs text-zinc-400">
+                      <IconCheck size={11} className="text-green-500 shrink-0" />
+                      {item}
+                    </p>
+                  ))}
+                  <div className="pt-1 border-t border-zinc-800/60 space-y-1.5 mt-2">
+                    {[
+                      "Pageviews e navegação do site",
+                      "De onde vieram os clientes (UTMs)",
+                      "Gateways que não sejam Stripe",
+                    ].map((item) => (
+                      <p key={item} className="flex items-center gap-2 text-xs text-zinc-600">
+                        <IconX size={11} className="text-zinc-600 shrink-0" />
+                        {item}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Callout type="warn">
+              <strong>Ponto crítico — conectou o Stripe, não dispare mais eventos de payment manualmente.</strong>
+              <br />
+              O webhook do Stripe e o tracker.js registrariam o mesmo pagamento duas vezes.
+              O GrowthOS detecta a origem pelo campo <code className="font-mono text-xs bg-zinc-800/60 px-1 rounded">provider</code>:{" "}
+              <code className="font-mono text-xs bg-zinc-800/60 px-1 rounded">provider: &quot;stripe&quot;</code> (webhook) vs{" "}
+              <code className="font-mono text-xs bg-zinc-800/60 px-1 rounded">provider: null</code> (tracker.js).
+            </Callout>
+          </TabsContent>
+
+          {/* INTEGRAÇÃO — STRIPE */}
+          <TabsContent value="integration-stripe" className="mt-0 space-y-6">
+            <SectionHeader title="Integração Stripe" badge="automático" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Conecte sua conta do Stripe com uma Restricted Key. O GrowthOS importa o histórico completo e passa a receber eventos em tempo real via webhook — sem nenhuma linha de código adicional.
+            </p>
+
+            <SubSection title="Como conectar — passo a passo">
+              <div className="space-y-2">
+                {[
+                  ["1. Criar Restricted Key", "Stripe Dashboard → Developers → API Keys → Restricted Keys → Create restricted key. Marque Read em: Customers, Subscriptions, Invoices, Charges, Balance transactions."],
+                  ["2. Conectar no GrowthOS", "Configurações → Integrações → Stripe. Cole a Restricted Key (rk_live_...) e clique em Conectar."],
+                  ["3. Importar histórico", "Após conectar, clique em Importar histórico para trazer assinaturas e pagamentos anteriores."],
+                  ["4. Configurar webhook", "Stripe Dashboard → Developers → Webhooks → Add endpoint. Cole a URL gerada pelo GrowthOS. Copie o Signing Secret e cole no campo Webhook Secret."],
+                ].map(([title, desc]) => (
+                  <div key={title} className="flex gap-3 rounded-lg border border-zinc-800/60 px-4 py-3">
+                    <IconArrowRight size={13} className="text-indigo-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-zinc-200">{title}</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SubSection>
+
+            <SubSection title="Eventos capturados via webhook">
+              <div className="rounded-lg border border-zinc-800/60 overflow-hidden">
+                <div className="grid grid-cols-3 text-[11px] font-medium text-zinc-500 uppercase tracking-wider px-4 py-2.5 bg-zinc-900/60 border-b border-zinc-800/60">
+                  <span>Evento Stripe</span>
+                  <span>Tipo no GrowthOS</span>
+                  <span>Dashboard afetado</span>
+                </div>
+                {[
+                  ["invoice.payment_succeeded (com sub)", "payment · recurring", "Recorrência"],
+                  ["invoice.payment_succeeded (sem sub)", "payment · one_time", "Financeiro"],
+                  ["payment_intent.succeeded", "payment · one_time", "Financeiro"],
+                  ["charge.refunded", "refund", "Financeiro (P&L)"],
+                  ["customer.subscription.created", "subscriptions table", "Recorrência"],
+                  ["customer.subscription.deleted", "subscription_canceled", "Recorrência (Churn)"],
+                  ["customer.subscription.updated", "subscription_changed", "Recorrência (MRR)"],
+                  ["invoice.payment_failed", "status: past_due", "Recorrência (Inadimplência)"],
+                ].map(([event, type, dash]) => (
+                  <div key={event} className="grid grid-cols-3 text-sm px-4 py-2.5 border-b border-zinc-800/40 last:border-0">
+                    <code className="font-mono text-xs text-indigo-400">{event}</code>
+                    <span className="text-xs text-zinc-400">{type}</span>
+                    <span className="text-xs text-zinc-500">{dash}</span>
+                  </div>
+                ))}
+              </div>
+            </SubSection>
+
+            <SubSection title="O que NÃO é coberto pelo Stripe">
+              <div className="space-y-1.5">
+                {[
+                  "Pageviews e cliques no site — use o tracker.js",
+                  "Origem do cliente (UTMs, referrer, landing page) — use o tracker.js",
+                  "Eventos do funil antes do pagamento — use o tracker.js",
+                  "Gateways de pagamento que não sejam Stripe — use o tracker.js",
+                ].map((item) => (
+                  <p key={item} className="flex items-center gap-2 text-xs text-zinc-500">
+                    <IconX size={11} className="text-zinc-600 shrink-0" />
+                    {item}
+                  </p>
+                ))}
+              </div>
+            </SubSection>
+
+            <Callout type="info">
+              A Restricted Key é somente leitura — o GrowthOS nunca modifica dados na sua conta Stripe.
+              Ela é armazenada criptografada (AES-256-GCM) e nunca é exposta no frontend.
+            </Callout>
+          </TabsContent>
+
+          {/* INTEGRAÇÃO — USANDO OS DOIS JUNTOS */}
+          <TabsContent value="integration-together" className="mt-0 space-y-6">
+            <SectionHeader title="Usando os dois juntos" badge="cenário ideal" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Quando você usa o tracker.js e o Stripe ao mesmo tempo, o GrowthOS consegue ligar automaticamente cada pagamento ao histórico de navegação do cliente — de qual canal ele veio, qual landing page visitou, qual campanha gerou a venda.
+            </p>
+
+            <SubSection title="O customer_id é a ponte">
+              <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+                O tracker.js salva <Mono>customer_id</Mono> em eventos como{" "}
+                <Mono>signup</Mono> e <Mono>checkout_started</Mono>. Quando o webhook do Stripe chega,
+                o GrowthOS busca esse hash na tabela de eventos e recupera o contexto de aquisição original.
+              </p>
+              <CodeBlock code={STRIPE_TOGETHER_FLOW} lang="js" title="Fluxo completo de uma venda" />
+            </SubSection>
+
+            <SubSection title="Passando customer_id no Stripe Checkout">
+              <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+                Para que o GrowthOS consiga fazer o lookup, passe o <Mono>customer_id</Mono> no{" "}
+                <Mono>metadata</Mono> da sessão do Stripe. Use o mesmo hash anônimo que você passa no tracker.js.
+              </p>
+              <CodeBlock code={STRIPE_METADATA_CODE} lang="ts" title="Backend — criando sessão do Stripe" />
+            </SubSection>
+
+            <SubSection title="Instrução mínima para integração completa">
+              <div className="space-y-2">
+                {[
+                  ["1. Instale o tracker.js no seu site", "Captura a origem do cliente (UTMs, referrer, landing page)"],
+                  ["2. Passe customer_id no checkout_started e no metadata do Stripe", "Cria a ponte entre o comportamento pré-venda e o pagamento"],
+                  ["3. Conecte o Stripe no GrowthOS", "Recebe pagamentos, renovações e cancelamentos automaticamente"],
+                ].map(([title, desc]) => (
+                  <div key={title} className="flex gap-3 rounded-lg border border-zinc-800/60 px-4 py-3">
+                    <IconCheck size={13} className="text-green-500 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-zinc-200">{title}</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SubSection>
+
+            <Callout type="info">
+              <strong>O único caso que não funciona:</strong> o cliente paga sem nunca ter disparado nenhum evento via tracker.js. Nesse caso o pagamento é registrado com{" "}
+              <Mono>source: null</Mono> e aparece como &quot;Direto&quot; no dashboard de canais. Isso é o comportamento correto — se o tracker.js não estava instalado quando o usuário chegou, genuinamente não há como saber a origem.
             </Callout>
           </TabsContent>
 
