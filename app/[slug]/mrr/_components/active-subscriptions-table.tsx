@@ -18,7 +18,6 @@ import { useOrganization } from "@/components/providers/organization-provider";
 import { normalizeToMonthly, INTERVAL_LABELS } from "@/utils/billing";
 import { fmtBRLDecimal } from "@/utils/format";
 import { formatDate } from "@/utils/format-date";
-import dayjs from "dayjs";
 import type {
   IActiveSubscription,
   SubscriptionStatusFilter,
