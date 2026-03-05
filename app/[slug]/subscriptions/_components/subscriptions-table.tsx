@@ -1,0 +1,388 @@
+"use client";
+
+import { useState } from "react";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import "dayjs/locale/pt-br";
+import {
+  IconChevronDown,
+  IconChevronRight,
+  IconChevronLeft,
+  IconLoader2,
+  IconDots,
+  IconCopy,
+  IconCheck,
+} from "@tabler/icons-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { fmtBRLDecimal } from "@/utils/format";
+import { getStatusBadgeClass, BILLING_INTERVAL_LABELS, STATUS_LABELS } from "./subscriptions-filters";
+import type { ISubscriptionListItem } from "@/interfaces/subscription.interface";
+import type { IPaginationMeta } from "@/interfaces/dashboard.interface";
+
+dayjs.extend(relativeTime);
+dayjs.locale("pt-br");
+
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(value).catch(() => {});
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className="ml-1.5 shrink-0 p-0.5 rounded text-zinc-700 hover:text-zinc-300 transition-colors"
+      title="Copiar"
+    >
+      {copied ? (
+        <IconCheck size={11} className="text-emerald-400" />
+      ) : (
+        <IconCopy size={11} />
+      )}
+    </button>
+  );
+}
+
+function DetailField({
+  label,
+  value,
+  mono = false,
+  copyable = false,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  copyable?: boolean;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-3 py-2">
+      <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600 shrink-0 w-[120px]">
+        {label}
+      </span>
+      <div className="flex items-center gap-0 flex-1 min-w-0 justify-end">
+        <span
+          className={cn("text-xs truncate", mono ? "font-mono text-zinc-300" : "text-zinc-300")}
+          title={value}
+        >
+          {value}
+        </span>
+        {copyable && <CopyButton value={value} />}
+      </div>
+    </div>
+  );
+}
+
+function SubscriptionDetailGrid({ item }: { item: ISubscriptionListItem }) {
+  return (
+    <div className="rounded-lg border border-zinc-800/60 bg-zinc-950/50 divide-y divide-zinc-800/40 overflow-hidden">
+      <DetailField label="subscription_id" value={item.subscriptionId} mono copyable />
+      <DetailField label="customer_id" value={item.customerId} mono copyable />
+      <DetailField label="plan_id" value={item.planId} mono copyable />
+      <DetailField label="currency" value={item.currency} />
+      {item.canceledAt && (
+        <DetailField
+          label="canceled_at"
+          value={dayjs(item.canceledAt).format("DD/MM/YYYY HH:mm")}
+        />
+      )}
+    </div>
+  );
+}
+
+function SubscriptionCard({ item }: { item: ISubscriptionListItem }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border-b border-zinc-800/60 px-3 py-3 transition-colors">
+      <div className="flex items-start gap-2.5">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span
+                className={cn(
+                  "rounded-md border px-2 py-0.5 text-[11px] font-semibold shrink-0",
+                  getStatusBadgeClass(item.status)
+                )}
+              >
+                {STATUS_LABELS[item.status] ?? item.status}
+              </span>
+              <span className="text-xs text-zinc-300 truncate font-medium">{item.planName}</span>
+            </div>
+            <span className="text-xs font-mono font-semibold text-emerald-400 shrink-0">
+              {fmtBRLDecimal(item.valueInCents / 100)}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+            <span className="text-zinc-600 font-mono truncate max-w-[160px]">
+              {item.customerId}
+            </span>
+            <span className="text-zinc-600">
+              {BILLING_INTERVAL_LABELS[item.billingInterval] ?? item.billingInterval}
+            </span>
+            <span className="text-zinc-600">
+              Desde {dayjs(item.startedAt).format("DD/MM/YYYY")}
+            </span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="p-1.5 text-zinc-600 hover:text-zinc-300 transition-colors shrink-0"
+        >
+          <IconDots size={14} />
+        </button>
+      </div>
+
+      {expanded && (
+        <div className="mt-2.5 pt-2.5 border-t border-zinc-800/40">
+          <SubscriptionDetailGrid item={item} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SubscriptionRow({ item }: { item: ISubscriptionListItem }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <>
+      <tr className="border-b border-zinc-800/60 transition-colors group/row hover:bg-zinc-900/40">
+        <td className="px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="text-zinc-600 hover:text-zinc-300 transition-colors shrink-0"
+            >
+              {expanded ? <IconChevronDown size={13} /> : <IconChevronRight size={13} />}
+            </button>
+            <span className="text-xs text-zinc-400 font-mono truncate max-w-[160px]">
+              {item.customerId}
+            </span>
+          </div>
+        </td>
+        <td className="px-3 py-2.5 max-w-[180px]">
+          <span className="text-xs text-zinc-200 truncate block">{item.planName}</span>
+        </td>
+        <td className="px-3 py-2.5 text-right">
+          <span className="text-xs font-mono font-semibold text-emerald-400">
+            {fmtBRLDecimal(item.valueInCents / 100)}
+          </span>
+        </td>
+        <td className="px-3 py-2.5">
+          <span className="text-xs text-zinc-400">
+            {BILLING_INTERVAL_LABELS[item.billingInterval] ?? item.billingInterval}
+          </span>
+        </td>
+        <td className="px-3 py-2.5">
+          <span
+            className={cn(
+              "rounded-md border px-2 py-0.5 text-[11px] font-semibold",
+              getStatusBadgeClass(item.status)
+            )}
+          >
+            {STATUS_LABELS[item.status] ?? item.status}
+          </span>
+        </td>
+        <td className="px-3 py-2.5 whitespace-nowrap">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-mono text-zinc-300">
+              {dayjs(item.startedAt).format("DD/MM/YYYY")}
+            </span>
+            <span className="text-[10px] text-zinc-600">{dayjs(item.startedAt).fromNow()}</span>
+          </div>
+        </td>
+        <td className="px-3 py-2.5 whitespace-nowrap">
+          {item.canceledAt ? (
+            <span className="text-xs font-mono text-zinc-500">
+              {dayjs(item.canceledAt).format("DD/MM/YYYY")}
+            </span>
+          ) : (
+            <span className="text-xs text-zinc-700">—</span>
+          )}
+        </td>
+      </tr>
+      {expanded && (
+        <tr className="border-b border-zinc-800/60 bg-zinc-950/60">
+          <td colSpan={7} className="px-4 py-3">
+            <div className="pl-5">
+              <SubscriptionDetailGrid item={item} />
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
+interface SubscriptionsTableProps {
+  data: ISubscriptionListItem[];
+  pagination: IPaginationMeta;
+  isLoading: boolean;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+}
+
+export function SubscriptionsTable({
+  data,
+  pagination,
+  isLoading,
+  onPageChange,
+  onPageSizeChange,
+}: SubscriptionsTableProps) {
+  const paginationStart =
+    pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
+  const paginationEnd = Math.min(pagination.page * pagination.limit, pagination.total);
+
+  const paginationBar = pagination.total > 0 && (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 px-4 py-3">
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-zinc-500 hidden sm:inline">Linhas por página</span>
+        <Select
+          value={String(pagination.limit)}
+          onValueChange={(v) => {
+            onPageSizeChange(Number(v));
+            onPageChange(1);
+          }}
+        >
+          <SelectTrigger className="h-7 w-16 bg-zinc-900 border-zinc-700 text-zinc-300 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="bg-zinc-900 border-zinc-700">
+            {[25, 50, 100].map((s) => (
+              <SelectItem
+                key={s}
+                value={String(s)}
+                className="text-zinc-300 focus:bg-zinc-800 text-xs"
+              >
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="text-xs text-zinc-500 tabular-nums">
+          {paginationStart}–{paginationEnd} de {pagination.total}
+        </span>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-zinc-400 hover:text-zinc-100 disabled:opacity-30"
+            disabled={pagination.page <= 1}
+            onClick={() => onPageChange(pagination.page - 1)}
+          >
+            <IconChevronLeft size={14} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-zinc-400 hover:text-zinc-100 disabled:opacity-30"
+            disabled={pagination.page >= pagination.total_pages}
+            onClick={() => onPageChange(pagination.page + 1)}
+          >
+            <IconChevronRight size={14} />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-zinc-800 bg-zinc-900/80">
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                Cliente
+              </th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                Plano
+              </th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500 text-right">
+                Valor
+              </th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                Intervalo
+              </th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                Status
+              </th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                Iniciou em
+              </th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                Cancelou em
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              Array.from({ length: 10 }).map((_, i) => (
+                <tr key={i} className="border-b border-zinc-800/40">
+                  {Array.from({ length: 7 }).map((_, j) => (
+                    <td key={j} className="px-3 py-3">
+                      <Skeleton className="h-4 w-full rounded bg-zinc-800" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : data.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-12 text-center text-sm text-zinc-600">
+                  Nenhuma assinatura encontrada para os filtros aplicados
+                </td>
+              </tr>
+            ) : (
+              data.map((item) => <SubscriptionRow key={item.id} item={item} />)
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="md:hidden">
+        {isLoading ? (
+          <div className="space-y-0">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="border-b border-zinc-800/40 px-3 py-3.5 space-y-2">
+                <div className="flex justify-between">
+                  <Skeleton className="h-5 w-28 rounded bg-zinc-800" />
+                  <Skeleton className="h-3 w-16 rounded bg-zinc-800" />
+                </div>
+                <Skeleton className="h-3 w-40 rounded bg-zinc-800" />
+              </div>
+            ))}
+          </div>
+        ) : data.length === 0 ? (
+          <div className="px-4 py-12 text-center text-sm text-zinc-600">
+            Nenhuma assinatura encontrada para os filtros aplicados
+          </div>
+        ) : (
+          data.map((item) => <SubscriptionCard key={item.id} item={item} />)
+        )}
+      </div>
+
+      {!isLoading && <div className="md:hidden">{paginationBar}</div>}
+      <div className="hidden md:block">{paginationBar}</div>
+    </div>
+  );
+}

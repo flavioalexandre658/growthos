@@ -27,6 +27,7 @@ import {
   IconTrendingUp,
   IconList,
   IconBug,
+  IconReceipt2,
 } from "@tabler/icons-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,7 @@ import {
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { useOrganization } from "@/components/providers/organization-provider";
+import { useOrgHasData } from "@/hooks/queries/use-org-has-data";
 
 const STORAGE_KEY = "growthos_active_org";
 
@@ -62,8 +64,8 @@ interface NavSection {
   items: NavItemDef[];
 }
 
-function buildNavSections(slug: string): NavSection[] {
-  return [
+function buildNavSections(slug: string, hasData: boolean): NavSection[] {
+  const sections: NavSection[] = [
     {
       title: "Visão Geral",
       items: [
@@ -86,13 +88,6 @@ function buildNavSections(slug: string): NavSection[] {
       ],
     },
     {
-      title: "Dados",
-      items: [
-        { href: `/${slug}/events`, label: "Eventos", icon: IconList, exact: true },
-        { href: `/${slug}/events/debug`, label: "Debug", icon: IconBug, exact: true },
-      ],
-    },
-    {
       title: "Inteligência",
       items: [
         { href: `/${slug}/ai`, label: "Análise com IA", icon: IconSparkles, exact: true, highlight: true },
@@ -100,6 +95,19 @@ function buildNavSections(slug: string): NavSection[] {
       ],
     },
   ];
+
+  if (hasData) {
+    sections.splice(3, 0, {
+      title: "Dados",
+      items: [
+        { href: `/${slug}/events`, label: "Eventos", icon: IconList, exact: true },
+        { href: `/${slug}/subscriptions`, label: "Assinaturas", icon: IconReceipt2, exact: false },
+        { href: `/${slug}/events/debug`, label: "Debug", icon: IconBug, exact: true },
+      ],
+    });
+  }
+
+  return sections;
 }
 
 interface FooterNavSection {
@@ -318,7 +326,8 @@ function SidebarContent({
   onClose?: () => void;
 }) {
   const { organization } = useOrganization();
-  const sections = buildNavSections(slug);
+  const { data: hasData } = useOrgHasData(organization?.id);
+  const sections = buildNavSections(slug, hasData ?? true);
   const footerNav = buildFooterNav(slug);
 
   return (
