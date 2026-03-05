@@ -114,7 +114,7 @@ export function RegionalSection({
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <div className="space-y-2 flex-1 min-w-[180px]">
+          <div className="space-y-2 flex-1 min-w-[140px] sm:min-w-[180px]">
             <Label className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
               Moeda base
             </Label>
@@ -134,7 +134,7 @@ export function RegionalSection({
             </p>
           </div>
 
-          <div className="space-y-2 flex-1 min-w-[180px]">
+          <div className="space-y-2 flex-1 min-w-[140px] sm:min-w-[180px]">
             <Label className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
               Idioma da IA
             </Label>
@@ -160,7 +160,7 @@ export function RegionalSection({
             <select
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
-              className="h-9 flex-1 min-w-[240px] rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none"
+              className="h-9 flex-1 min-w-0 sm:min-w-[240px] rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none"
             >
               {TIMEZONE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>

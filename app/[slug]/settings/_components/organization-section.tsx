@@ -216,7 +216,7 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
           </div>
         </div>
 
-        <div className="flex items-center justify-between rounded-lg border border-red-900/30 bg-red-950/20 px-4 py-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-red-900/30 bg-red-950/20 px-4 py-3">
           <div>
             <p className="text-sm font-medium text-zinc-200">
               Excluir organização
@@ -230,7 +230,7 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
             type="button"
             variant="ghost"
             onClick={() => setIsDeleteOpen(true)}
-            className="gap-2 text-red-400 hover:text-red-300 hover:bg-red-950/50 border border-red-900/40 shrink-0 ml-4"
+            className="gap-2 text-red-400 hover:text-red-300 hover:bg-red-950/50 border border-red-900/40 shrink-0"
           >
             <IconTrash size={14} />
             Excluir

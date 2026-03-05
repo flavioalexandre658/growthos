@@ -280,7 +280,7 @@ function ConnectedCard({
         {isSyncing ? (
           <SyncingOverlay />
         ) : (
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
             {isSyncPending && (
               <div className="flex items-center gap-1.5 text-xs text-amber-400">
                 <IconClockHour4 size={13} />
@@ -294,7 +294,7 @@ function ConnectedCard({
               </div>
             )}
 
-            <div className="ml-auto flex gap-2">
+            <div className="sm:ml-auto flex gap-2">
               <Button
                 variant="outline"
                 size="sm"

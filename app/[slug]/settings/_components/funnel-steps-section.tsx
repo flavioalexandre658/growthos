@@ -143,7 +143,7 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-      <div className="flex items-start justify-between gap-4 p-5 border-b border-zinc-800">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 p-5 border-b border-zinc-800">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-600/20 border border-violet-600/30 shrink-0">
             <IconFilter size={16} className="text-violet-400" />
@@ -234,7 +234,7 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
               <div
                 key={index}
                 className={cn(
-                  "group flex items-center gap-2 rounded-lg border bg-zinc-950/60 p-2.5 transition-all",
+                  "group flex items-center gap-2 rounded-lg border bg-zinc-950/60 p-2.5 transition-all overflow-x-auto",
                   step.hidden
                     ? "border-zinc-800/40 opacity-50"
                     : step.eventType && step.label
@@ -270,7 +270,7 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
                   onChange={(e) => updateStep(index, "eventType", e.target.value)}
                   placeholder="event_type"
                   className={cn(
-                    "h-8 font-mono text-xs bg-zinc-900 border-zinc-700/80 placeholder:text-zinc-700 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-600/50 w-36 shrink-0",
+                    "h-8 font-mono text-xs bg-zinc-900 border-zinc-700/80 placeholder:text-zinc-700 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-600/50 w-24 sm:w-36 shrink-0",
                     step.hidden ? "text-zinc-600" : "text-indigo-300"
                   )}
                 />

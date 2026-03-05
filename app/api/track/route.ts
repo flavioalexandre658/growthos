@@ -127,7 +127,6 @@ function computeEventHash(parts: {
   grossValueInCents: number | null;
   productId: string | null;
   subscriptionId: string | null;
-  landingPage: string | null;
   timestamp: Date;
 }): string {
   const isImportant =
@@ -140,7 +139,6 @@ function computeEventHash(parts: {
     parts.grossValueInCents ?? "",
     parts.productId ?? "",
     parts.subscriptionId ?? "",
-    parts.landingPage ?? "",
   ];
 
   if (!isImportant) {
@@ -436,6 +434,14 @@ export async function POST(req: NextRequest) {
   const isFinancialEvent = FINANCIAL_EVENT_TYPES.has(eventType);
   const isLifecycleEvent = LIFECYCLE_EVENT_TYPES.has(eventType);
 
+  if ((isFinancialEvent || isLifecycleEvent) && !toString(body.customer_id)) {
+    return jsonError(
+      "customer_id is required for financial and lifecycle events",
+      400,
+      origin,
+    );
+  }
+
   const transactionId =
     !dedupeId && isFinancialEvent
       ? extractTransactionId(body as Record<string, unknown>)
@@ -479,7 +485,6 @@ export async function POST(req: NextRequest) {
       grossValueInCents,
       productId: toString(body.product_id),
       subscriptionId: toString(body.subscription_id),
-      landingPage: toString(body.landing_page),
       timestamp: eventTimestamp,
     });
   }

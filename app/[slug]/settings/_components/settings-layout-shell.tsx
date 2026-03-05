@@ -20,7 +20,7 @@ export function SettingsLayoutShell({
         </p>
       </div>
 
-      <div className="flex gap-8 items-start">
+      <div className="flex flex-col lg:flex-row lg:gap-8 lg:items-start">
         <SettingsNav slug={slug} />
         <div className="flex-1 min-w-0">{children}</div>
       </div>

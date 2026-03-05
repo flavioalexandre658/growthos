@@ -332,7 +332,7 @@ export function InstallationSection({
       </div>
 
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-        <div className="flex items-center justify-between p-5 border-b border-zinc-800">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 border-b border-zinc-800">
           <div>
             <h3 className="text-sm font-bold text-zinc-100">{orgName}</h3>
             <p className="text-xs text-zinc-500 mt-0.5">

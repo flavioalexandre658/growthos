@@ -290,11 +290,15 @@ REGRAS OBRIGATÓRIAS
 ════════════════════════════════════════════
 1. NUNCA enviar email, CPF, nome ou qualquer PII em customer_id
    → Sempre use hashAnonymous(user.id) ou hashAnonymous(user.email)
-2. SEMPRE incluir currency: '${currency}' em eventos financeiros
+2. customer_id é OBRIGATÓRIO em eventos financeiros e lifecycle
+   (payment, signup, trial_started, subscription_canceled, subscription_changed)
+   → O servidor retorna HTTP 400 se customer_id estiver ausente nesses eventos
+   → Em eventos customizados (event_custom), customer_id é recomendado sempre que o usuário estiver autenticado
+3. SEMPRE incluir currency: '${currency}' em eventos financeiros
    (payment, checkout_started, checkout_abandoned)
-3. subscription_id deve ser único por assinatura — nunca reutilizar
-4. Eventos de renovação DEVEM ser server-side (sem usuário no browser)
-5. Instalar o script ANTES de qualquer outro script para capturar UTMs
+4. subscription_id deve ser único por assinatura — nunca reutilizar
+5. Eventos de renovação DEVEM ser server-side (sem usuário no browser)
+6. Instalar o script ANTES de qualquer outro script para capturar UTMs
 
 ════════════════════════════════════════════
 VALIDAÇÃO — COMO CONFIRMAR QUE FUNCIONOU

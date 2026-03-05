@@ -152,7 +152,7 @@ export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
-      <div className="flex items-center justify-between p-5 border-b border-zinc-800">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-5 border-b border-zinc-800">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600/20">
             <IconUsers size={14} className="text-indigo-400" />

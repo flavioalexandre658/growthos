@@ -383,7 +383,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   { name: "product_name", type: "string", description: "Nome legível do produto", example: "'Convite Casamento'" },
                   { name: "category", type: "string", description: "Categoria do produto", example: "'casamento'" },
                   { name: "customer_type", type: "string", description: "new | returning", example: "'new'" },
-                  { name: "customer_id", type: "string", description: "Hash anônimo (nunca PII)", example: "'hash_abc'" },
+                  { name: "customer_id", type: "string", required: true, description: "Hash anônimo (nunca PII). Obrigatório — servidor retorna 400 se ausente.", example: "'hash_abc'" },
                   { name: "customer_segment", type: "string", description: "Segmentação do seu negócio", example: "'premium'" },
                   { name: "billing_type", type: "string", description: "recurring | one_time", example: "'one_time'" },
                   { name: "billing_interval", type: "string", description: "monthly | yearly | weekly. Obrigatório se recurring.", example: "'monthly'" },
@@ -398,8 +398,8 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 description="Novo cadastro. Calcula taxa de conversão e funil."
                 variant="secondary"
                 props={[
+                  { name: "customer_id", type: "string", required: true, description: "Hash anônimo (nunca PII). Obrigatório — servidor retorna 400 se ausente.", example: "'hash_abc'" },
                   { name: "customer_type", type: "string", description: "new | returning", example: "'new'" },
-                  { name: "customer_id", type: "string", description: "Hash anônimo", example: "'hash_abc'" },
                 ]}
               />
 
@@ -438,6 +438,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 variant="destructive"
                 props={[
                   { name: "subscription_id", type: "string", required: true, description: "ID da assinatura no seu sistema", example: "'sub_abc'" },
+                  { name: "customer_id", type: "string", required: true, description: "Hash anônimo (nunca PII). Obrigatório — servidor retorna 400 se ausente.", example: "'hash_abc'" },
                   { name: "gross_value", type: "number", description: "MRR que vai parar de entrar", example: "89.00" },
                   { name: "currency", type: "string", required: true, description: "ISO 4217", example: "'BRL'" },
                   { name: "billing_interval", type: "string", description: "monthly | yearly | weekly", example: "'monthly'" },
@@ -451,6 +452,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 variant="secondary"
                 props={[
                   { name: "subscription_id", type: "string", required: true, description: "ID da assinatura", example: "'sub_abc'" },
+                  { name: "customer_id", type: "string", required: true, description: "Hash anônimo (nunca PII). Obrigatório — servidor retorna 400 se ausente.", example: "'hash_abc'" },
                   { name: "previous_plan_id", type: "string", description: "Plano anterior", example: "'plan_basic'" },
                   { name: "new_plan_id", type: "string", description: "Novo plano", example: "'plan_pro'" },
                   { name: "previous_value", type: "number", description: "Valor do plano anterior", example: "49.00" },
@@ -458,7 +460,30 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   { name: "currency", type: "string", required: true, description: "ISO 4217", example: "'BRL'" },
                 ]}
               />
+
+              <EventCard
+                name="event_custom"
+                description="Evento personalizado com qualquer nome. Use para rastrear ações específicas do seu produto — cliques, engajamentos, marcos do funil."
+                variant="outline"
+                props={[
+                  { name: "customer_id", type: "string", description: "Hash anônimo do usuário. Recomendado sempre que o usuário estiver autenticado — conecta o evento ao funil de conversão.", example: "'hash_abc'" },
+                  { name: "gross_value", type: "number", description: "Valor monetário associado à ação, se aplicável", example: "29.90" },
+                  { name: "currency", type: "string", description: "ISO 4217. Necessário se gross_value for informado.", example: "'BRL'" },
+                  { name: "product_id", type: "string", description: "ID do recurso ou produto envolvido", example: "'template-001'" },
+                  { name: "product_name", type: "string", description: "Nome legível do recurso", example: "'Convite Aniversário'" },
+                  { name: "category", type: "string", description: "Categoria para agrupamento nos relatórios", example: "'engajamento'" },
+                  { name: "metadata", type: "object", description: "Dados adicionais livres (máx 20 chaves, strings/números/booleanos)", example: "{ step: 'preview', plan: 'pro' }" },
+                ]}
+              />
             </div>
+
+            <Callout type="warn">
+              <strong>customer_id obrigatório em eventos financeiros e lifecycle.</strong>
+              <br />
+              Os eventos <Mono>payment</Mono>, <Mono>refund</Mono>, <Mono>renewal</Mono>, <Mono>signup</Mono>, <Mono>trial_started</Mono>, <Mono>subscription_canceled</Mono> e <Mono>subscription_changed</Mono> exigem <Mono>customer_id</Mono>. O servidor retorna <strong>HTTP 400</strong> se o campo estiver ausente. Use sempre um hash anônimo — nunca envie email, CPF ou nome.
+              <br />
+              Em eventos customizados (<Mono>event_custom</Mono>), o <Mono>customer_id</Mono> é recomendado sempre que o usuário estiver autenticado, pois vincula a ação ao histórico de aquisição e funil do cliente.
+            </Callout>
           </TabsContent>
 
           {/* DATA ATTRIBUTES */}
