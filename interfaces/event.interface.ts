@@ -4,6 +4,14 @@ export interface IEvent {
   id: string;
   eventType: string;
   grossValueInCents: number | null;
+  currency: string;
+  baseCurrency: string;
+  baseGrossValueInCents: number | null;
+  billingType: string | null;
+  billingReason: string | null;
+  billingInterval: string | null;
+  subscriptionId: string | null;
+  provider: string | null;
   source: string | null;
   medium: string | null;
   campaign: string | null;
@@ -29,6 +37,8 @@ export interface IEventParams extends IDateFilter {
   search?: string;
   min_value?: number;
   max_value?: number;
+  billing_type?: "recurring" | "one_time";
+  provider?: string;
 }
 
 export interface IEventsResult {
@@ -37,6 +47,7 @@ export interface IEventsResult {
   distinctEventTypes: string[];
   distinctSources: string[];
   distinctDevices: string[];
+  distinctProviders: string[];
 }
 
 export interface IEventHealth {

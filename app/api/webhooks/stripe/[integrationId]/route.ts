@@ -125,6 +125,8 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventId
 
   const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
   const isRecurring = !!subscriptionId;
+  const billingReason = (invoice as unknown as Record<string, unknown>).billing_reason as string | null ?? null;
+  const eventType = isRecurring && billingReason === "subscription_cycle" ? "renewal" : "payment";
 
   let billingInterval: string | null = null;
   if (subscriptionId) {
@@ -150,13 +152,14 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventId
     .insert(events)
     .values({
       organizationId: orgId,
-      eventType: "payment",
+      eventType,
       grossValueInCents: invoice.amount_paid,
       currency: eventCurrency,
       baseCurrency,
       exchangeRate,
       baseGrossValueInCents,
       billingType: isRecurring ? "recurring" : "one_time",
+      billingReason,
       billingInterval: billingInterval ?? null,
       subscriptionId,
       customerId: hashedCustomerId,
@@ -172,7 +175,20 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventId
       entryPage: acq?.entryPage ?? null,
       sessionId: acq?.sessionId ?? null,
     })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: [events.organizationId, events.eventHash],
+      set: {
+        eventType,
+        billingType: isRecurring ? "recurring" : "one_time",
+        billingReason,
+        billingInterval: billingInterval ?? null,
+        subscriptionId,
+        currency: eventCurrency,
+        baseCurrency,
+        exchangeRate,
+        baseGrossValueInCents,
+      },
+    });
 
   if (subscriptionId) {
     await db

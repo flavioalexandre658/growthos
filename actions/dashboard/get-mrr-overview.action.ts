@@ -115,28 +115,29 @@ export async function getMrrOverview(
 
   const newSubIds = new Set(newSubsInPeriod.map((s) => s.subscriptionId));
 
-  const paymentEventsInPeriod = await db
+  const recurringEventsInPeriod = await db
     .select({
       subscriptionId: events.subscriptionId,
       grossValueInCents: events.grossValueInCents,
       baseGrossValueInCents: events.baseGrossValueInCents,
+      eventType: events.eventType,
     })
     .from(events)
     .where(
       and(
         eq(events.organizationId, organizationId),
-        eq(events.eventType, "payment"),
+        inArray(events.eventType, ["payment", "renewal"]),
         gte(events.createdAt, startDate),
         lte(events.createdAt, endDate),
         inArray(events.billingType, ["recurring"])
       )
     );
 
-  const totalPeriodRevenue = paymentEventsInPeriod.reduce(
+  const totalPeriodRevenue = recurringEventsInPeriod.reduce(
     (sum, e) => sum + (e.baseGrossValueInCents ?? e.grossValueInCents ?? 0),
     0
   );
-  const totalPaymentCount = paymentEventsInPeriod.length;
+  const totalPaymentCount = recurringEventsInPeriod.length;
 
   const prevPaymentEvents = await db
     .select({
@@ -147,7 +148,7 @@ export async function getMrrOverview(
     .where(
       and(
         eq(events.organizationId, organizationId),
-        eq(events.eventType, "payment"),
+        inArray(events.eventType, ["payment", "renewal"]),
         gte(events.createdAt, previousStartDate),
         lte(events.createdAt, previousEndDate),
         inArray(events.billingType, ["recurring"])
@@ -159,13 +160,21 @@ export async function getMrrOverview(
     0
   );
 
-  const renewingSubIds = new Set(
-    paymentEventsInPeriod
+  const renewalEventSubIds = new Set(
+    recurringEventsInPeriod
+      .filter((e) => e.eventType === "renewal")
+      .map((e) => e.subscriptionId)
+      .filter((id): id is string => !!id)
+  );
+
+  const legacyRenewingSubIds = new Set(
+    recurringEventsInPeriod
+      .filter((e) => e.eventType === "payment")
       .map((e) => e.subscriptionId)
       .filter((id): id is string => !!id && !newSubIds.has(id))
   );
 
-  const renewalSubscriptions = renewingSubIds.size;
+  const renewalSubscriptions = renewalEventSubIds.size + legacyRenewingSubIds.size;
 
   const changedEvents = await db
     .select()

@@ -10,6 +10,8 @@ import type { IDateFilter } from "@/interfaces/dashboard.interface";
 
 const EVENT_TYPE_COLORS: Record<string, string> = {
   payment: "bg-emerald-600/20 text-emerald-300 border-emerald-600/30",
+  renewal: "bg-sky-600/20 text-sky-300 border-sky-600/30",
+  refund: "bg-orange-600/20 text-orange-300 border-orange-600/30",
   checkout_started: "bg-amber-600/20 text-amber-300 border-amber-600/30",
   checkout_abandoned: "bg-red-600/20 text-red-300 border-red-600/30",
   signup: "bg-indigo-600/20 text-indigo-300 border-indigo-600/30",
@@ -28,15 +30,20 @@ interface EventsFiltersProps {
   selectedEventTypes: string[];
   selectedSource: string;
   selectedDevice: string;
+  selectedBillingType: string;
+  selectedProvider: string;
   minValue: string;
   maxValue: string;
   distinctEventTypes: string[];
   distinctSources: string[];
   distinctDevices: string[];
+  distinctProviders: string[];
   onSearch: (v: string) => void;
   onToggleEventType: (v: string) => void;
   onSource: (v: string) => void;
   onDevice: (v: string) => void;
+  onBillingType: (v: string) => void;
+  onProvider: (v: string) => void;
   onMinValue: (v: string) => void;
   onMaxValue: (v: string) => void;
   onClear: () => void;
@@ -49,15 +56,20 @@ export function EventsFilters({
   selectedEventTypes,
   selectedSource,
   selectedDevice,
+  selectedBillingType,
+  selectedProvider,
   minValue,
   maxValue,
   distinctEventTypes,
   distinctSources,
   distinctDevices,
+  distinctProviders,
   onSearch,
   onToggleEventType,
   onSource,
   onDevice,
+  onBillingType,
+  onProvider,
   onMinValue,
   onMaxValue,
   onClear,
@@ -125,6 +137,41 @@ export function EventsFilters({
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold shrink-0">
+            Cobrança
+          </span>
+          <select
+            value={selectedBillingType}
+            onChange={(e) => onBillingType(e.target.value)}
+            className="h-8 rounded-lg border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-300 focus:border-indigo-500 focus:outline-none"
+          >
+            <option value="">Todos</option>
+            <option value="recurring">Assinatura</option>
+            <option value="one_time">Avulso</option>
+          </select>
+        </div>
+
+        {distinctProviders.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold shrink-0">
+              Provider
+            </span>
+            <select
+              value={selectedProvider}
+              onChange={(e) => onProvider(e.target.value)}
+              className="h-8 rounded-lg border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-300 focus:border-indigo-500 focus:outline-none"
+            >
+              <option value="">Todos</option>
+              {distinctProviders.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {distinctSources.length > 0 && (
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold shrink-0">

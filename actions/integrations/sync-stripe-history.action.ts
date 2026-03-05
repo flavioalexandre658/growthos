@@ -155,6 +155,8 @@ export async function syncStripeHistory(
       const billingInterval = isRecurring
         ? (subIntervalMap.get(subscriptionId!) ?? "monthly")
         : undefined;
+      const billingReason = (invoice as unknown as Record<string, unknown>).billing_reason as string | null ?? null;
+      const eventType = isRecurring && billingReason === "subscription_cycle" ? "renewal" : "payment";
 
       const acq = await lookupAcquisitionContext(organizationId, hashedCustomerId);
 
@@ -170,13 +172,14 @@ export async function syncStripeHistory(
         .insert(events)
         .values({
           organizationId,
-          eventType: "payment",
+          eventType,
           grossValueInCents: invoice.amount_paid,
           currency: eventCurrency,
           baseCurrency,
           exchangeRate,
           baseGrossValueInCents: baseValueInCents,
           billingType: isRecurring ? "recurring" : "one_time",
+          billingReason,
           billingInterval: billingInterval ?? null,
           subscriptionId,
           customerId: hashedCustomerId,
@@ -192,7 +195,20 @@ export async function syncStripeHistory(
           entryPage: acq?.entryPage ?? null,
           sessionId: acq?.sessionId ?? null,
         })
-        .onConflictDoNothing();
+        .onConflictDoUpdate({
+          target: [events.organizationId, events.eventHash],
+          set: {
+            eventType,
+            billingType: isRecurring ? "recurring" : "one_time",
+            billingReason,
+            billingInterval: billingInterval ?? null,
+            subscriptionId,
+            currency: eventCurrency,
+            baseCurrency,
+            exchangeRate,
+            baseGrossValueInCents: baseValueInCents,
+          },
+        });
 
       if (isRecurring) {
         invoicesSynced++;
@@ -247,7 +263,16 @@ export async function syncStripeHistory(
           entryPage: acq?.entryPage ?? null,
           sessionId: acq?.sessionId ?? null,
         })
-        .onConflictDoNothing();
+        .onConflictDoUpdate({
+          target: [events.organizationId, events.eventHash],
+          set: {
+            billingType: "one_time",
+            currency: eventCurrency,
+            baseCurrency,
+            exchangeRate,
+            baseGrossValueInCents: baseValueInCents,
+          },
+        });
 
       oneTimePaymentsSynced++;
     }

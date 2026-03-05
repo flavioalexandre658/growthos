@@ -39,6 +39,7 @@ export const events = pgTable(
     sessionId: text("session_id"),
 
     billingType: text("billing_type"),
+    billingReason: text("billing_reason"),
     billingInterval: text("billing_interval"),
     subscriptionId: text("subscription_id"),
     planId: text("plan_id"),

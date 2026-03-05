@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
 import { useDeleteEvent } from "@/hooks/mutations/use-delete-event";
 import { useDeleteEventsBatch } from "@/hooks/mutations/use-delete-events-batch";
 import { getEventTypeBadgeClass } from "./events-filters";
@@ -125,6 +125,14 @@ function EventDetailGrid({ event }: { event: IEvent }) {
   );
 }
 
+function formatEventValue(event: IEvent): string | null {
+  const cents = event.baseGrossValueInCents ?? event.grossValueInCents;
+  if (cents == null) return null;
+  const currency = event.baseCurrency ?? "BRL";
+  const locale = currency === "BRL" ? "pt-BR" : "en-US";
+  return fmtCurrencyDecimal(cents / 100, locale, currency);
+}
+
 function hasEventDetails(event: IEvent) {
   return !!(
     event.sessionId ||
@@ -174,7 +182,7 @@ function EventCard({
         />
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1.5">
-            <div className="flex items-center gap-1.5 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
               <span
                 className={cn(
                   "rounded-md border px-2 py-0.5 text-[11px] font-mono font-semibold shrink-0",
@@ -183,6 +191,16 @@ function EventCard({
               >
                 {event.eventType}
               </span>
+              {event.eventType === "renewal" && (
+                <span className="rounded border border-sky-600/40 bg-sky-600/15 px-1.5 py-0.5 text-[9px] font-semibold text-sky-300 shrink-0">
+                  renovação
+                </span>
+              )}
+              {event.billingType === "recurring" && event.eventType !== "renewal" && event.subscriptionId && (
+                <span className="rounded border border-violet-600/40 bg-violet-600/15 px-1.5 py-0.5 text-[9px] font-semibold text-violet-300 shrink-0">
+                  recorrente
+                </span>
+              )}
               {event.possibleDuplicate && (
                 <span
                   title="Possível duplicata"
@@ -204,9 +222,9 @@ function EventCard({
           </div>
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-            {event.grossValueInCents != null && (
+            {formatEventValue(event) != null && (
               <span className="font-mono font-semibold text-emerald-400">
-                {fmtBRLDecimal(event.grossValueInCents / 100)}
+                {formatEventValue(event)}
               </span>
             )}
             {event.source && <span className="text-zinc-500">{event.source}</span>}
@@ -287,7 +305,7 @@ function EventRow({
           />
         </td>
         <td className="px-3 py-2.5">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
@@ -306,6 +324,21 @@ function EventRow({
             >
               {event.eventType}
             </span>
+            {event.eventType === "renewal" && (
+              <span className="rounded border border-sky-600/40 bg-sky-600/15 px-1.5 py-0.5 text-[9px] font-semibold text-sky-300">
+                renovação
+              </span>
+            )}
+            {event.billingType === "recurring" && event.eventType !== "renewal" && event.subscriptionId && (
+              <span className="rounded border border-violet-600/40 bg-violet-600/15 px-1.5 py-0.5 text-[9px] font-semibold text-violet-300">
+                recorrente
+              </span>
+            )}
+            {event.provider && (
+              <span className="rounded border border-zinc-700/60 bg-zinc-800/60 px-1.5 py-0.5 text-[9px] font-mono text-zinc-500">
+                {event.provider}
+              </span>
+            )}
             {event.possibleDuplicate && (
               <span
                 title="Possível duplicata — outro evento idêntico foi detectado em até 10 minutos"
@@ -318,9 +351,9 @@ function EventRow({
           </div>
         </td>
         <td className="px-3 py-2.5 text-right">
-          {event.grossValueInCents != null ? (
+          {formatEventValue(event) != null ? (
             <span className="text-xs font-mono font-semibold text-emerald-400">
-              {fmtBRLDecimal(event.grossValueInCents / 100)}
+              {formatEventValue(event)}
             </span>
           ) : (
             <span className="text-xs text-zinc-700">—</span>

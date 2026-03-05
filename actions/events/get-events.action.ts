@@ -2,7 +2,7 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { eq, and, gte, lte, inArray, or, ilike, sql } from "drizzle-orm";
+import { eq, and, gte, lte, inArray, or, ilike, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
@@ -20,6 +20,7 @@ export async function getEvents(
       distinctEventTypes: [],
       distinctSources: [],
       distinctDevices: [],
+      distinctProviders: [],
     };
   }
 
@@ -74,6 +75,14 @@ export async function getEvents(
     baseConditions.push(lte(events.grossValueInCents, params.max_value));
   }
 
+  if (params.billing_type) {
+    baseConditions.push(eq(events.billingType, params.billing_type));
+  }
+
+  if (params.provider) {
+    baseConditions.push(eq(events.provider, params.provider));
+  }
+
   const whereClause = and(...baseConditions);
 
   const dupWindowExpr = sql<number>`CASE
@@ -100,6 +109,14 @@ export async function getEvents(
         id: events.id,
         eventType: events.eventType,
         grossValueInCents: events.grossValueInCents,
+        currency: events.currency,
+        baseCurrency: events.baseCurrency,
+        baseGrossValueInCents: events.baseGrossValueInCents,
+        billingType: events.billingType,
+        billingReason: events.billingReason,
+        billingInterval: events.billingInterval,
+        subscriptionId: events.subscriptionId,
+        provider: events.provider,
         source: events.source,
         medium: events.medium,
         campaign: events.campaign,
@@ -127,7 +144,7 @@ export async function getEvents(
 
   const total = Number(totalRow[0]?.count ?? 0);
 
-  const [eventTypeRows, sourceRows, deviceRows] = await Promise.all([
+  const [eventTypeRows, sourceRows, deviceRows, providerRows] = await Promise.all([
     db
       .selectDistinct({ val: events.eventType })
       .from(events)
@@ -159,6 +176,17 @@ export async function getEvents(
           lte(events.createdAt, endDate)
         )
       ),
+    db
+      .selectDistinct({ val: events.provider })
+      .from(events)
+      .where(
+        and(
+          eq(events.organizationId, organizationId),
+          gte(events.createdAt, startDate),
+          lte(events.createdAt, endDate),
+          isNotNull(events.provider)
+        )
+      ),
   ]);
 
   return {
@@ -166,6 +194,14 @@ export async function getEvents(
       id: r.id,
       eventType: r.eventType,
       grossValueInCents: r.grossValueInCents,
+      currency: r.currency,
+      baseCurrency: r.baseCurrency,
+      baseGrossValueInCents: r.baseGrossValueInCents,
+      billingType: r.billingType,
+      billingReason: r.billingReason,
+      billingInterval: r.billingInterval,
+      subscriptionId: r.subscriptionId,
+      provider: r.provider,
       source: r.source,
       medium: r.medium,
       campaign: r.campaign,
@@ -189,5 +225,6 @@ export async function getEvents(
     distinctEventTypes: eventTypeRows.map((r) => r.val).filter(Boolean) as string[],
     distinctSources: sourceRows.map((r) => r.val).filter(Boolean) as string[],
     distinctDevices: deviceRows.map((r) => r.val).filter(Boolean) as string[],
+    distinctProviders: providerRows.map((r) => r.val).filter(Boolean) as string[],
   };
 }

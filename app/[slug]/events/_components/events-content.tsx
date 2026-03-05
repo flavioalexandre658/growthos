@@ -55,6 +55,8 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>(initialEventTypes);
   const [selectedSource, setSelectedSource] = useState("");
   const [selectedDevice, setSelectedDevice] = useState("");
+  const [selectedBillingType, setSelectedBillingType] = useState("");
+  const [selectedProvider, setSelectedProvider] = useState("");
   const [minValue, setMinValue] = useState("");
   const [maxValue, setMaxValue] = useState("");
   const [isExporting, setIsExporting] = useState(false);
@@ -68,6 +70,8 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
     event_types: selectedEventTypes.length > 0 ? selectedEventTypes : undefined,
     source: selectedSource || undefined,
     device: selectedDevice || undefined,
+    billing_type: selectedBillingType ? (selectedBillingType as "recurring" | "one_time") : undefined,
+    provider: selectedProvider || undefined,
     min_value: minValue ? Number(minValue) * 100 : undefined,
     max_value: maxValue ? Number(maxValue) * 100 : undefined,
   };
@@ -79,6 +83,7 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
   const distinctEventTypes = resp?.distinctEventTypes ?? [];
   const distinctSources = resp?.distinctSources ?? [];
   const distinctDevices = resp?.distinctDevices ?? [];
+  const distinctProviders = resp?.distinctProviders ?? [];
 
   const toggleEventType = (et: string) => {
     setSelectedEventTypes((prev) =>
@@ -92,6 +97,8 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
     selectedEventTypes.length > 0 ||
     !!selectedSource ||
     !!selectedDevice ||
+    !!selectedBillingType ||
+    !!selectedProvider ||
     !!minValue ||
     !!maxValue;
 
@@ -100,6 +107,8 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
     setSelectedEventTypes([]);
     setSelectedSource("");
     setSelectedDevice("");
+    setSelectedBillingType("");
+    setSelectedProvider("");
     setMinValue("");
     setMaxValue("");
     setPage(1);
@@ -176,15 +185,20 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
           selectedEventTypes={selectedEventTypes}
           selectedSource={selectedSource}
           selectedDevice={selectedDevice}
+          selectedBillingType={selectedBillingType}
+          selectedProvider={selectedProvider}
           minValue={minValue}
           maxValue={maxValue}
           distinctEventTypes={distinctEventTypes}
           distinctSources={distinctSources}
           distinctDevices={distinctDevices}
+          distinctProviders={distinctProviders}
           onSearch={(v) => { setSearch(v); setPage(1); }}
           onToggleEventType={toggleEventType}
           onSource={(v) => { setSelectedSource(v); setPage(1); }}
           onDevice={(v) => { setSelectedDevice(v); setPage(1); }}
+          onBillingType={(v) => { setSelectedBillingType(v); setPage(1); }}
+          onProvider={(v) => { setSelectedProvider(v); setPage(1); }}
           onMinValue={(v) => { setMinValue(v); setPage(1); }}
           onMaxValue={(v) => { setMaxValue(v); setPage(1); }}
           onClear={handleClearFilters}
