@@ -126,7 +126,7 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventId
   const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
   const isRecurring = !!subscriptionId;
   const billingReason = (invoice as unknown as Record<string, unknown>).billing_reason as string | null ?? null;
-  const eventType = isRecurring && billingReason === "subscription_cycle" ? "renewal" : "payment";
+  const eventType = isRecurring && billingReason === "subscription_cycle" ? "renewal" : "purchase";
 
   let billingInterval: string | null = null;
   if (subscriptionId) {
@@ -227,7 +227,7 @@ async function handlePaymentIntentSucceeded(
       .insert(events)
       .values({
         organizationId: orgId,
-        eventType: "payment",
+        eventType: "purchase",
         grossValueInCents: gross,
         currency: eventCurrency,
         baseCurrency,

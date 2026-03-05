@@ -55,7 +55,7 @@ function toString(value: unknown): string | null {
   return String(value).slice(0, 1000);
 }
 
-const FINANCIAL_EVENT_TYPES = new Set(["payment", "refund", "renewal"]);
+const FINANCIAL_EVENT_TYPES = new Set(["purchase", "refund", "renewal"]);
 
 const LIFECYCLE_EVENT_TYPES = new Set([
   "signup",
@@ -228,7 +228,7 @@ async function handleSubscriptionUpsert(
 
   const billingType = toString(body.billing_type);
 
-  if (eventType === "payment" && billingType === "recurring") {
+  if (eventType === "purchase" && billingType === "recurring") {
     const customerId = toString(body.customer_id) ?? "unknown";
     const planId = toString(body.plan_id) ?? "unknown";
     const planName = toString(body.plan_name) ?? "Unknown Plan";

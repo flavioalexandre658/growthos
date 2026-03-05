@@ -77,7 +77,7 @@ URL (slug + searchParams) → app/[slug]/layout.tsx (valida org)
 | --------------------- | --------- | --------------------------------------------------- |
 | id                    | uuid PK   |                                                     |
 | organization_id       | uuid FK   | Referência para organizations                       |
-| event_type            | text      | pageview, signup, payment, subscription_canceled... |
+| event_type            | text      | pageview, signup, purchase, subscription_canceled... |
 | gross_value_in_cents  | integer   |                                                     |
 | discount_in_cents     | integer   |                                                     |
 | installments          | integer   |                                                     |
@@ -188,7 +188,7 @@ POST /api/track
 4. Validate API key (isActive + expiresAt)
 5. db.insert(events) — sempre
 6. Subscription upsert (condicional):
-   - event_type = 'payment' + billing_type = 'recurring'
+   - event_type = 'purchase' + billing_type = 'recurring'
      → upsert subscriptions (status: active)
      → se primeira vez: organizations.has_recurring_revenue = true
    - event_type = 'subscription_canceled'
@@ -237,7 +237,7 @@ Cada organização define seus `funnelSteps` no onboarding. O `IGenericFunnelDat
 
 Regras de injeção automática:
 - `pageview` é sempre adicionado como etapa 1 se não configurado
-- `checkout_started` é injetado antes de `payment` se existirem dados
+- `checkout_started` é injetado antes de `purchase` se existirem dados
 - `checkout_abandoned` aparece como KPI e coluna separada, não como etapa do funil
 
 ---

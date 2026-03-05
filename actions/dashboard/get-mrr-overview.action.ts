@@ -126,7 +126,7 @@ export async function getMrrOverview(
     .where(
       and(
         eq(events.organizationId, organizationId),
-        inArray(events.eventType, ["payment", "renewal"]),
+        inArray(events.eventType, ["purchase", "renewal"]),
         gte(events.createdAt, startDate),
         lte(events.createdAt, endDate),
         inArray(events.billingType, ["recurring"])
@@ -137,7 +137,7 @@ export async function getMrrOverview(
     (sum, e) => sum + (e.baseGrossValueInCents ?? e.grossValueInCents ?? 0),
     0
   );
-  const totalPaymentCount = recurringEventsInPeriod.length;
+  const totalPurchaseCount = recurringEventsInPeriod.length;
 
   const prevPaymentEvents = await db
     .select({
@@ -148,7 +148,7 @@ export async function getMrrOverview(
     .where(
       and(
         eq(events.organizationId, organizationId),
-        inArray(events.eventType, ["payment", "renewal"]),
+        inArray(events.eventType, ["purchase", "renewal"]),
         gte(events.createdAt, previousStartDate),
         lte(events.createdAt, previousEndDate),
         inArray(events.billingType, ["recurring"])
@@ -169,7 +169,7 @@ export async function getMrrOverview(
 
   const legacyRenewingSubIds = new Set(
     recurringEventsInPeriod
-      .filter((e) => e.eventType === "payment")
+      .filter((e) => e.eventType === "purchase")
       .map((e) => e.subscriptionId)
       .filter((id): id is string => !!id && !newSubIds.has(id))
   );
@@ -331,7 +331,7 @@ export async function getMrrOverview(
     churnedSubscriptions: canceledCount,
     renewalSubscriptions,
     totalPeriodRevenue,
-    totalPaymentCount,
+    totalPurchaseCount,
     previousPeriodRevenue: previousPeriodRevenue > 0 ? previousPeriodRevenue : undefined,
     nrr,
     previousNrr,

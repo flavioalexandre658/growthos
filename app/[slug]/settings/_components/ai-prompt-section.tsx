@@ -17,7 +17,7 @@ interface AiPromptSectionProps {
 }
 
 const FINANCIAL_EVENTS = new Set([
-  "payment",
+  "purchase",
   "checkout_started",
   "checkout_abandoned",
 ]);
@@ -31,8 +31,8 @@ function buildEventExample(
   eventType: string,
   currency: string,
 ): string {
-  if (eventType === "payment") {
-    return `window.GrowthOS.track('payment', {
+  if (eventType === "purchase") {
+    return `window.GrowthOS.track('purchase', {
   dedupe: invoice.id,              // OBRIGATÓRIO: ID único da transação no gateway
   gross_value: 89.00,              // obrigatório
   currency: '${currency}',         // obrigatório sempre
@@ -150,7 +150,7 @@ export function buildPrompt(
     (s) => !s.hidden && s.eventType !== "pageview",
   );
 
-  const hasPayment = visibleSteps.some((s) => s.eventType === "payment");
+  const hasPurchase = visibleSteps.some((s) => s.eventType === "purchase");
   const hasCheckoutStarted = visibleSteps.some(
     (s) => s.eventType === "checkout_started",
   );
@@ -164,7 +164,7 @@ export function buildPrompt(
     .join("\n\n");
 
   const checkoutStartedSection =
-    hasPayment && !hasCheckoutStarted
+    hasPurchase && !hasCheckoutStarted
       ? `
 ────────────────────────────────────────────
 EVENTO OPCIONAL — checkout_started
@@ -198,8 +198,8 @@ await fetch('${baseUrl}/api/track', {
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     key: process.env.GROWTHOS_API_KEY,
-    event_type: 'payment',
-    dedupe_id: 'payment:' + invoice.id,  // OBRIGATÓRIO: ID único da invoice
+    event_type: 'purchase',
+    dedupe_id: 'purchase:' + invoice.id,  // OBRIGATÓRIO: ID único da invoice
     gross_value: subscription.price,
     currency: '${currency}',
     billing_type: 'recurring',
@@ -291,11 +291,11 @@ REGRAS OBRIGATÓRIAS
 1. NUNCA enviar email, CPF, nome ou qualquer PII em customer_id
    → Sempre use hashAnonymous(user.id) ou hashAnonymous(user.email)
 2. customer_id é OBRIGATÓRIO em eventos financeiros e lifecycle
-   (payment, signup, trial_started, subscription_canceled, subscription_changed)
+   (purchase, signup, trial_started, subscription_canceled, subscription_changed)
    → O servidor retorna HTTP 400 se customer_id estiver ausente nesses eventos
    → Em eventos customizados (event_custom), customer_id é recomendado sempre que o usuário estiver autenticado
 3. SEMPRE incluir currency: '${currency}' em eventos financeiros
-   (payment, checkout_started, checkout_abandoned)
+   (purchase, checkout_started, checkout_abandoned)
 4. subscription_id deve ser único por assinatura — nunca reutilizar
 5. Eventos de renovação DEVEM ser server-side (sem usuário no browser)
 6. Instalar o script ANTES de qualquer outro script para capturar UTMs

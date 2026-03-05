@@ -24,7 +24,7 @@ const PRESETS: { label: string; description: string; steps: IFunnelStepConfig[] 
     steps: [
       { eventType: "pageview", label: "Visitas", countUnique: true },
       { eventType: "signup", label: "Cadastros" },
-      { eventType: "payment", label: "Pagamentos" },
+      { eventType: "purchase", label: "Compras" },
     ],
   },
   {
@@ -33,7 +33,7 @@ const PRESETS: { label: string; description: string; steps: IFunnelStepConfig[] 
     steps: [
       { eventType: "signup", label: "Cadastros" },
       { eventType: "trial_started", label: "Trials" },
-      { eventType: "payment", label: "Pagamentos" },
+      { eventType: "purchase", label: "Compras" },
     ],
   },
   {
@@ -42,7 +42,7 @@ const PRESETS: { label: string; description: string; steps: IFunnelStepConfig[] 
     steps: [
       { eventType: "signup", label: "Cadastros" },
       { eventType: "trial_started", label: "Trials" },
-      { eventType: "payment", label: "Pagamentos" },
+      { eventType: "purchase", label: "Compras" },
       { eventType: "subscription_canceled", label: "Churn" },
     ],
   },
@@ -51,7 +51,7 @@ const PRESETS: { label: string; description: string; steps: IFunnelStepConfig[] 
     description: "signup → payment",
     steps: [
       { eventType: "signup", label: "Cadastros" },
-      { eventType: "payment", label: "Pagamentos" },
+      { eventType: "purchase", label: "Compras" },
     ],
   },
   {
@@ -69,7 +69,7 @@ interface StepFunnelConfigProps {
 export function StepFunnelConfig({ organizationId, onComplete }: StepFunnelConfigProps) {
   const [steps, setSteps] = useState<IFunnelStepConfig[]>([
     { eventType: "signup", label: "Cadastros" },
-    { eventType: "payment", label: "Pagamentos" },
+    { eventType: "purchase", label: "Compras" },
   ]);
   const [activePreset, setActivePreset] = useState("Simples");
   const [isLoading, setIsLoading] = useState(false);

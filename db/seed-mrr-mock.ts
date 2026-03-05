@@ -216,7 +216,7 @@ async function seed() {
 
       eventRows.push({
         organizationId: ORG_ID,
-        eventType: "payment",
+        eventType: "purchase",
         billingType: "recurring",
         billingInterval: sub.billingInterval,
         subscriptionId: sub.subscriptionId as string,

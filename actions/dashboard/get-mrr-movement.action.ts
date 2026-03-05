@@ -43,7 +43,7 @@ export async function getMrrMovement(
         eq(events.organizationId, organizationId),
         gte(events.createdAt, startDate),
         lte(events.createdAt, endDate),
-        inArray(events.eventType, ["payment", "subscription_canceled", "subscription_changed"])
+        inArray(events.eventType, ["purchase", "subscription_canceled", "subscription_changed"])
       )
     );
 
@@ -94,7 +94,7 @@ export async function getMrrMovement(
     const resolvedInterval = event.billingInterval ?? subInfo?.billingInterval ?? "monthly";
     const monthly = normalizeToMonthly(event.grossValueInCents ?? 0, resolvedInterval);
 
-    if (event.eventType === "payment" && event.billingType === "recurring" && event.subscriptionId) {
+    if (event.eventType === "purchase" && event.billingType === "recurring" && event.subscriptionId) {
       const startedAt = subInfo?.startedAt;
       const isNew = startedAt
         ? startedAt >= startDate && startedAt <= endDate

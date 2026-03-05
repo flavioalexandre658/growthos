@@ -90,7 +90,7 @@ function buildEventExample(step: IFunnelStepConfig, currency: string): string | 
   }
 
   const examples: Record<string, string> = {
-    payment: `window.GrowthOS.track('payment', {\n  dedupe: invoice.id,           // OBRIGATÓRIO: ID único da transação\n  gross_value: 150.00,          // obrigatório\n  currency: '${currency}',           // obrigatório sempre\n  customer_id: hashAnonymous(user.id), // OBRIGATÓRIO — 400 se ausente\n  discount: 10.00,              // opcional: desconto aplicado\n  payment_method: 'pix',        // pix | credit_card | boleto\n  product_id: 'produto-001',    // opcional mas recomendado\n  category: 'principal',        // opcional\n  customer_type: 'new',         // new | returning\n})`,
+    purchase: `window.GrowthOS.track('purchase', {\n  dedupe: invoice.id,           // OBRIGATÓRIO: ID único da transação\n  gross_value: 150.00,          // obrigatório\n  currency: '${currency}',           // obrigatório sempre\n  customer_id: hashAnonymous(user.id), // OBRIGATÓRIO — 400 se ausente\n  discount: 10.00,              // opcional: desconto aplicado\n  payment_method: 'pix',        // pix | credit_card | boleto\n  product_id: 'produto-001',    // opcional mas recomendado\n  category: 'principal',        // opcional\n  customer_type: 'new',         // new | returning\n})`,
     signup: `window.GrowthOS.track('signup', {\n  dedupe: true,                 // 1 cadastro por sessão (24h)\n  customer_id: hashAnonymous(user.id), // OBRIGATÓRIO — 400 se ausente\n  customer_type: 'new',         // new | returning\n  // contexto automático: source, medium, device, landing_page\n})`,
     trial_started: `window.GrowthOS.track('trial_started', {\n  dedupe: true,                 // 1 trial por sessão (24h)\n  customer_id: hashAnonymous(user.id), // OBRIGATÓRIO — 400 se ausente\n  plan_id: 'plano-pro',\n  plan_name: 'Pro Mensal',\n  // contexto automático: source, medium, device\n})`,
     checkout_started: `window.GrowthOS.track('checkout_started', {\n  gross_value: 89.00,\n  currency: '${currency}',\n  product_id: 'produto-001',\n  customer_id: hashAnonymous(user.id),\n  // abandono automático detectado no beforeunload\n})`,
@@ -278,7 +278,7 @@ export function StepApiKey({
         )}
       </div>
 
-      {funnelSteps.some((s) => s.eventType === "payment") &&
+      {funnelSteps.some((s) => s.eventType === "purchase") &&
         !funnelSteps.some((s) => s.eventType === "checkout_started") && (
           <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/30 px-4 py-3 flex items-start gap-2.5">
             <IconInfoCircle size={14} className="text-indigo-400 mt-0.5 shrink-0" />
@@ -289,7 +289,7 @@ export function StepApiKey({
               </p>
               <p className="text-[11px] text-zinc-500 leading-relaxed">
                 Se o seu fluxo tem um checkout (modal, redirecionamento ou página
-                separada), adicione este evento <strong className="text-zinc-400">antes do payment</strong>.
+                separada), adicione este evento <strong className="text-zinc-400">antes do purchase</strong>.
                 Ele habilita a análise de abandono de checkout — quantos usuários
                 chegaram até aqui mas não converteram. O tracker detecta o abandono
                 automaticamente via <code className="font-mono text-zinc-400">beforeunload</code>.

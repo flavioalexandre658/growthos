@@ -50,7 +50,7 @@ function buildAlerts(data: IGenericFunnelData, slug: string): Alert[] {
       data.revenue > 0
         ? data.revenue /
           Math.max(
-            data.steps.find((s) => s.key === "payment" || s.key === "payments")?.value ?? 1,
+            data.steps.find((s) => s.key === "purchase" || s.key === "purchases")?.value ?? 1,
             1
           )
         : 0;

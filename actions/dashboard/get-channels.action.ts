@@ -132,7 +132,7 @@ export async function getChannels(
           eq(events.organizationId, organizationId),
           gte(events.createdAt, previousStartDate),
           lte(events.createdAt, previousEndDate),
-          eq(events.eventType, "payment")
+          eq(events.eventType, "purchase")
         )
       )
       .groupBy(sql`${channelExpr}`),
@@ -170,13 +170,13 @@ export async function getChannels(
 
   const channelMap = new Map<
     string,
-    { steps: Record<string, number>; revenue: number; paymentCount: number }
+    { steps: Record<string, number>; revenue: number; purchaseCount: number }
   >();
 
   for (const row of rawRows) {
     const normalizedChannel = normalizeChannel(row.channel);
     if (!channelMap.has(normalizedChannel)) {
-      channelMap.set(normalizedChannel, { steps: {}, revenue: 0, paymentCount: 0 });
+      channelMap.set(normalizedChannel, { steps: {}, revenue: 0, purchaseCount: 0 });
     }
     const entry = channelMap.get(normalizedChannel)!;
 
@@ -190,16 +190,16 @@ export async function getChannels(
       entry.steps["checkout_abandoned"] = (entry.steps["checkout_abandoned"] ?? 0) + Number(row.total);
     }
 
-    if (row.eventType === "payment") {
+    if (row.eventType === "purchase") {
       entry.revenue += Number(row.grossRev);
-      entry.paymentCount += Number(row.total);
+      entry.purchaseCount += Number(row.total);
     }
   }
 
   for (const [source, sessions] of pvBySource) {
     const normalizedSource = normalizeChannel(source);
     if (!channelMap.has(normalizedSource)) {
-      channelMap.set(normalizedSource, { steps: {}, revenue: 0, paymentCount: 0 });
+      channelMap.set(normalizedSource, { steps: {}, revenue: 0, purchaseCount: 0 });
     }
     channelMap.get(normalizedSource)!.steps["pageview"] = sessions;
   }
@@ -209,10 +209,10 @@ export async function getChannels(
       const firstStepKey = funnelSteps[0]?.eventType;
       const lastStepKey = funnelSteps[funnelSteps.length - 1]?.eventType;
       const firstCount = firstStepKey ? (data.steps[firstStepKey] ?? 0) : 0;
-      const lastCount = lastStepKey ? (data.steps[lastStepKey] ?? 0) : data.paymentCount;
+      const lastCount = lastStepKey ? (data.steps[lastStepKey] ?? 0) : data.purchaseCount;
       const conversionRate =
         firstCount > 0 ? ((lastCount / firstCount) * 100).toFixed(1) + "%" : "0%";
-      const ticketMedio = data.paymentCount > 0 ? data.revenue / data.paymentCount : 0;
+      const ticketMedio = data.purchaseCount > 0 ? data.revenue / data.purchaseCount : 0;
 
       return {
         channel,

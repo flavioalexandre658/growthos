@@ -62,7 +62,7 @@ export interface IGenericFunnelData {
 
 export interface ITopProduct {
   productName: string;
-  payments: number;
+  purchases: number;
   revenueInCents: number;
 }
 
@@ -126,14 +126,14 @@ export interface ILandingPagesResult {
 
 export interface IPaymentMethodBreakdown {
   method: string;
-  payments: number;
+  purchases: number;
   revenue: number;
   percentage: string;
 }
 
 export interface ICategoryBreakdown {
   category: string;
-  payments: number;
+  purchases: number;
   revenue: number;
   percentage: string;
   marginPercentage?: string;
@@ -165,7 +165,7 @@ export interface IRevenueWindow {
   direction: "up" | "down" | "flat";
 }
 
-export interface IRecentPayment {
+export interface IRecentPurchase {
   id: string;
   productName: string | null;
   grossValueInCents: number;
@@ -175,7 +175,7 @@ export interface IRecentPayment {
 
 export interface IRevenueComparison {
   windows: IRevenueWindow[];
-  recentPayments: IRecentPayment[];
+  recentPurchases: IRecentPurchase[];
 }
 
 export interface IFinancialData {
@@ -183,14 +183,14 @@ export interface IFinancialData {
   totalDiscountsInCents: number;
   lostRevenueInCents: number;
   averageTicketInCents: number;
-  totalPayments: number;
+  totalPurchases: number;
   byPaymentMethod: IPaymentMethodBreakdown[];
   byCategory: ICategoryBreakdown[];
   revenueByBillingType: IRevenueByBillingType;
   pl: import("@/interfaces/cost.interface").IProfitAndLoss | null;
   periodDays: number;
   previousGrossRevenueInCents?: number;
-  previousTotalPayments?: number;
+  previousTotalPurchases?: number;
   previousAverageTicketInCents?: number;
   previousLostRevenueInCents?: number;
   previousNetProfitInCents?: number;

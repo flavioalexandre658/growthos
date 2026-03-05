@@ -35,7 +35,7 @@ export async function getRevenueSegments(
     .where(
       and(
         eq(events.organizationId, organizationId),
-        eq(events.eventType, "payment"),
+        eq(events.eventType, "purchase"),
         gte(events.createdAt, startDate),
         lte(events.createdAt, endDate)
       )

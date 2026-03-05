@@ -22,7 +22,7 @@ export function buildFunnelSteps(
 
 export function getAllQueryEventTypes(funnelSteps: IFunnelStepConfig[]): string[] {
   const types = funnelSteps.map((s) => s.eventType);
-  return [...new Set([...types, "checkout_started", "checkout_abandoned", "payment"])];
+  return [...new Set([...types, "checkout_started", "checkout_abandoned", "purchase"])];
 }
 
 export function injectCheckoutSteps(
@@ -33,7 +33,7 @@ export function injectCheckoutSteps(
   const hasCheckoutStarted = result.some((s) => s.eventType === "checkout_started");
 
   if (!hasCheckoutStarted && (countMap.get("checkout_started")?.total ?? 0) > 0) {
-    const paymentIdx = result.findIndex((s) => s.eventType === "payment");
+    const paymentIdx = result.findIndex((s) => s.eventType === "purchase");
     const insertAt = paymentIdx >= 0 ? paymentIdx : result.length;
     result.splice(insertAt, 0, CHECKOUT_STARTED_STEP);
   }

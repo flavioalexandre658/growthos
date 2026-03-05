@@ -94,24 +94,24 @@ async function fetchAndFormatSection(
       const steps: Record<string, number> = {};
       funnel?.steps.forEach((s) => { steps[s.key] = s.value; });
       const revenue = funnel?.revenue ?? 0;
-      const payments = steps["payment"] ?? 0;
+      const purchases = steps["purchase"] ?? 0;
       const signups = steps["signup"] ?? 0;
       const visits = steps["pageview"] ?? 0;
-      const convRate = visits > 0 ? payments / visits : 0;
-      const ticket = payments > 0 ? revenue / payments : 0;
+      const convRate = visits > 0 ? purchases / visits : 0;
+      const ticket = purchases > 0 ? revenue / purchases : 0;
       return {
         formatted: {
           visitas: visits,
           cadastros: signups,
           edicoes: steps["edit"] ?? 0,
           checkout_iniciado: steps["checkout_started"] ?? 0,
-          pagamentos: payments,
+          pagamentos: purchases,
           receita_bruta: formatBRL(revenue),
           ticket_medio: formatBRL(ticket),
           taxa_conversao: formatPct(convRate * 100),
           checkout_abandonado: funnel?.checkoutAbandoned ?? 0,
         },
-        metrics: { visitas: visits, cadastros: signups, pagamentos: payments, receita_bruta: revenue, ticket_medio: ticket, taxa_conversao: convRate * 100 },
+        metrics: { visitas: visits, cadastros: signups, pagamentos: purchases, receita_bruta: revenue, ticket_medio: ticket, taxa_conversao: convRate * 100 },
       };
     }
     case "channels": {
@@ -119,7 +119,7 @@ async function fetchAndFormatSection(
       const topChannels = (result.data ?? []).slice(0, 10).map((c) => ({
         canal: c.channel,
         visitas: c.steps["pageview"] ?? 0,
-        pagamentos: c.steps["payment"] ?? 0,
+        pagamentos: c.steps["purchase"] ?? 0,
         receita: formatBRL(c.revenue ?? 0),
         ticket_medio: formatBRL(c.ticket_medio ?? 0),
         conversao: c.conversion_rate,
@@ -170,7 +170,7 @@ async function fetchAndFormatSection(
       const topPages = (result.data ?? []).slice(0, 10).map((p) => ({
         url: p.page,
         visitas: p.steps["pageview"] ?? 0,
-        pagamentos: p.steps["payment"] ?? 0,
+        pagamentos: p.steps["purchase"] ?? 0,
         receita: formatBRL(p.revenue ?? 0),
         conversao: p.conversion_rate,
       }));
@@ -247,7 +247,7 @@ async function fetchAndFormatSection(
       result.data.forEach((e) => {
         byType[e.eventType] = (byType[e.eventType] ?? 0) + 1;
       });
-      const payments = byType["payment"] ?? 0;
+      const purchases = byType["purchase"] ?? 0;
       const signups = byType["signup"] ?? 0;
       const pageviews = byType["pageview"] ?? 0;
       const checkouts = byType["checkout_started"] ?? 0;
@@ -255,7 +255,7 @@ async function fetchAndFormatSection(
       return {
         formatted: {
           total_eventos: total,
-          pagamentos: payments,
+          pagamentos: purchases,
           cadastros: signups,
           pageviews: pageviews,
           checkouts_iniciados: checkouts,
@@ -263,7 +263,7 @@ async function fetchAndFormatSection(
         },
         metrics: {
           total_eventos: total,
-          pagamentos: payments,
+          pagamentos: purchases,
           cadastros: signups,
           pageviews: pageviews,
           checkouts_iniciados: checkouts,

@@ -29,7 +29,7 @@ export async function getSourceDistribution(
 
   const funnelSteps = buildFunnelSteps(org.funnelSteps ?? []);
   const firstNonPageview = funnelSteps.find((s) => s.eventType !== "pageview");
-  const targetEventType = firstNonPageview?.eventType ?? "payment";
+  const targetEventType = firstNonPageview?.eventType ?? "purchase";
 
   const rows = await db
     .select({
@@ -61,7 +61,7 @@ export async function getSourceDistribution(
     .where(
       and(
         eq(events.organizationId, organizationId),
-        eq(events.eventType, "payment"),
+        eq(events.eventType, "purchase"),
         gte(events.createdAt, startDate),
         lte(events.createdAt, endDate)
       )

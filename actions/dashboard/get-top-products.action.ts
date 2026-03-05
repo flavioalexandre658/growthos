@@ -29,14 +29,14 @@ export async function getTopProducts(
   const rows = await db
     .select({
       productName: events.productName,
-      payments: sql<number>`COUNT(*)`,
+      purchases: sql<number>`COUNT(*)`,
       revenueInCents: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
     })
     .from(events)
     .where(
       and(
         eq(events.organizationId, organizationId),
-        eq(events.eventType, "payment"),
+        eq(events.eventType, "purchase"),
         isNotNull(events.productName),
         gte(events.createdAt, startDate),
         lte(events.createdAt, endDate)
@@ -48,7 +48,7 @@ export async function getTopProducts(
 
   return rows.map((r) => ({
     productName: r.productName ?? "Sem nome",
-    payments: Number(r.payments),
+    purchases: Number(r.purchases),
     revenueInCents: Number(r.revenueInCents),
   }));
 }

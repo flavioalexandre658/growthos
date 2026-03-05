@@ -64,7 +64,7 @@ export async function syncStripeHistory(
 ): Promise<{
   subscriptionsSynced: number;
   invoicesSynced: number;
-  oneTimePaymentsSynced: number;
+  oneTimePurchasesSynced: number;
 }> {
   const session = await getServerSession(authOptions);
   if (!session) throw new Error("Unauthorized");
@@ -88,7 +88,7 @@ export async function syncStripeHistory(
 
   let subscriptionsSynced = 0;
   let invoicesSynced = 0;
-  let oneTimePaymentsSynced = 0;
+  let oneTimePurchasesSynced = 0;
   const subIntervalMap = new Map<string, BillingInterval>();
 
   try {
@@ -156,7 +156,7 @@ export async function syncStripeHistory(
         ? (subIntervalMap.get(subscriptionId!) ?? "monthly")
         : undefined;
       const billingReason = (invoice as unknown as Record<string, unknown>).billing_reason as string | null ?? null;
-      const eventType = isRecurring && billingReason === "subscription_cycle" ? "renewal" : "payment";
+      const eventType = isRecurring && billingReason === "subscription_cycle" ? "renewal" : "purchase";
 
       const acq = await lookupAcquisitionContext(organizationId, hashedCustomerId);
 
@@ -213,7 +213,7 @@ export async function syncStripeHistory(
       if (isRecurring) {
         invoicesSynced++;
       } else {
-        oneTimePaymentsSynced++;
+        oneTimePurchasesSynced++;
       }
     }
 
@@ -243,7 +243,7 @@ export async function syncStripeHistory(
         .insert(events)
         .values({
           organizationId,
-          eventType: "payment",
+          eventType: "purchase",
           grossValueInCents: charge.amount,
           currency: eventCurrency,
           baseCurrency,
@@ -274,7 +274,7 @@ export async function syncStripeHistory(
           },
         });
 
-      oneTimePaymentsSynced++;
+      oneTimePurchasesSynced++;
     }
 
     await db
@@ -298,5 +298,5 @@ export async function syncStripeHistory(
     throw err;
   }
 
-  return { subscriptionsSynced, invoicesSynced, oneTimePaymentsSynced };
+  return { subscriptionsSynced, invoicesSynced, oneTimePurchasesSynced };
 }

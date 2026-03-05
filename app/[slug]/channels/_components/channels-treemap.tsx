@@ -18,7 +18,7 @@ interface TreemapRect {
   h: number;
   channel: string;
   revenue: number;
-  payments: number;
+  purchases: number;
   conversion_rate: string;
   ticket_medio: number;
   color: string;
@@ -32,7 +32,7 @@ const PAD = 10;
 type SquarifyItem = {
   value: number;
   channel: string;
-  payments: number;
+  purchases: number;
   conversion_rate: string;
   ticket_medio: number;
   color: string;
@@ -140,7 +140,7 @@ function buildRects(
   const mainItems: SquarifyItem[] = withRevenue.map((c, i) => ({
     value: c.revenue,
     channel: c.channel,
-    payments: c.steps["payment"] ?? 0,
+    purchases: c.steps["purchase"] ?? 0,
     conversion_rate: c.conversion_rate,
     ticket_medio: c.ticket_medio,
     color: getChannelColor(c.channel, i),
@@ -157,7 +157,7 @@ function buildRects(
     h: r.h - GAP,
     channel: r.channel,
     revenue: r.value,
-    payments: r.payments,
+    purchases: r.purchases,
     conversion_rate: r.conversion_rate,
     ticket_medio: r.ticket_medio,
     color: r.color,
@@ -220,7 +220,7 @@ function ChannelsTreemapMobile({ data, isLoading }: ChannelsTreemapProps) {
             const color = getChannelColor(channel.channel, idx);
             const name = getChannelName(channel.channel);
             const pct = totalRevenue > 0 ? Math.round((channel.revenue / totalRevenue) * 100) : 0;
-            const payments = channel.steps["payment"] ?? 0;
+            const purchases = channel.steps["purchase"] ?? 0;
 
             return (
               <div
@@ -246,7 +246,7 @@ function ChannelsTreemapMobile({ data, isLoading }: ChannelsTreemapProps) {
                       {fmtBRLDecimal(channel.revenue / 100)}
                     </span>
                     <span className="text-[10px] text-zinc-500 font-mono shrink-0">
-                      {fmtInt(payments)} pag. · conv. {channel.conversion_rate}
+                      {fmtInt(purchases)} comp. · conv. {channel.conversion_rate}
                     </span>
                   </div>
                   <div className="mt-1.5 h-0.5 rounded-full bg-zinc-800">
@@ -470,7 +470,7 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
                           fontSize="10"
                           fontFamily="ui-sans-serif, system-ui, sans-serif"
                         >
-                          {fmtInt(rect.payments)} pag. · conv.{" "}
+                          {fmtInt(rect.purchases)} comp. · conv.{" "}
                           {rect.conversion_rate}
                         </text>
                       )}
@@ -600,7 +600,7 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
                         fontSize="9"
                         fontFamily="ui-sans-serif, system-ui, sans-serif"
                       >
-                        {fmtInt(r.payments)} pag. · conv. {r.conversion_rate}
+                        {fmtInt(r.purchases)} comp. · conv. {r.conversion_rate}
                       </text>
                     </>
                   );

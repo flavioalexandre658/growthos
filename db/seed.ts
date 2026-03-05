@@ -31,7 +31,7 @@ async function seed() {
           funnelSteps: [
             { eventType: "signup", label: "Cadastros" },
             { eventType: "edit", label: "Edições" },
-            { eventType: "payment", label: "Pagamentos" },
+            { eventType: "purchase", label: "Compras" },
           ],
         },
         {
@@ -40,7 +40,7 @@ async function seed() {
           funnelSteps: [
             { eventType: "signup", label: "Cadastros" },
             { eventType: "campaign_created", label: "Campanhas" },
-            { eventType: "payment", label: "Pagamentos" },
+            { eventType: "purchase", label: "Compras" },
           ],
         },
       ])

@@ -297,7 +297,7 @@ function classifyPayment(rawEvent: ProviderEvent): PaymentClassification {
 
     // Tipo de evento de recorrência
     eventType: determineEventType(rawEvent),
-    // "payment"                → renovação ou primeiro pagamento
+    // "purchase"               → renovação ou primeiro pagamento
     // "subscription_canceled"  → cancelamento
     // "subscription_changed"   → upgrade ou downgrade
   };

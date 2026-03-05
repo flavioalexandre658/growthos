@@ -30,7 +30,7 @@ const PRESETS: { label: string; description: string; steps: IFunnelStepConfig[] 
     steps: [
       { eventType: "pageview", label: "Visitas", countUnique: true },
       { eventType: "signup", label: "Cadastros" },
-      { eventType: "payment", label: "Pagamentos" },
+      { eventType: "purchase", label: "Compras" },
     ],
   },
   {
@@ -39,7 +39,7 @@ const PRESETS: { label: string; description: string; steps: IFunnelStepConfig[] 
     steps: [
       { eventType: "signup", label: "Cadastros" },
       { eventType: "trial_started", label: "Trials" },
-      { eventType: "payment", label: "Pagamentos" },
+      { eventType: "purchase", label: "Compras" },
     ],
   },
   {
@@ -48,7 +48,7 @@ const PRESETS: { label: string; description: string; steps: IFunnelStepConfig[] 
     steps: [
       { eventType: "signup", label: "Cadastros" },
       { eventType: "trial_started", label: "Trials" },
-      { eventType: "payment", label: "Pagamentos" },
+      { eventType: "purchase", label: "Compras" },
       { eventType: "subscription_canceled", label: "Churn" },
     ],
   },
@@ -57,7 +57,7 @@ const PRESETS: { label: string; description: string; steps: IFunnelStepConfig[] 
     description: "signup → payment",
     steps: [
       { eventType: "signup", label: "Cadastros" },
-      { eventType: "payment", label: "Pagamentos" },
+      { eventType: "purchase", label: "Compras" },
     ],
   },
   {
@@ -377,7 +377,7 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
           )}
         </div>
 
-        {steps.some((s) => s.eventType === "payment") &&
+        {steps.some((s) => s.eventType === "purchase") &&
           !steps.some((s) => s.eventType === "checkout_started") && (
             <div className="rounded-lg border border-zinc-800/50 bg-zinc-950/40 px-3.5 py-3 flex items-start gap-2">
               <IconInfoCircle size={13} className="text-indigo-500 mt-px shrink-0" />

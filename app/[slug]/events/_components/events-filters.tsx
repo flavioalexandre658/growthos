@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 
 const EVENT_TYPE_COLORS: Record<string, string> = {
-  payment: "bg-emerald-600/20 text-emerald-300 border-emerald-600/30",
+  purchase: "bg-emerald-600/20 text-emerald-300 border-emerald-600/30",
   renewal: "bg-sky-600/20 text-sky-300 border-sky-600/30",
   refund: "bg-orange-600/20 text-orange-300 border-orange-600/30",
   checkout_started: "bg-amber-600/20 text-amber-300 border-amber-600/30",

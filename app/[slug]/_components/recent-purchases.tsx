@@ -6,14 +6,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fmtBRLDecimal } from "@/utils/format";
 import { IconArrowRight } from "@tabler/icons-react";
 import dayjs from "@/utils/dayjs";
-import type { IRecentPayment } from "@/interfaces/dashboard.interface";
+import type { IRecentPurchase } from "@/interfaces/dashboard.interface";
 
-interface RecentPaymentsProps {
-  payments: IRecentPayment[];
+interface RecentPurchasesProps {
+  purchases: IRecentPurchase[];
   isLoading: boolean;
 }
 
-export function RecentPayments({ payments, isLoading }: RecentPaymentsProps) {
+export function RecentPurchases({ purchases, isLoading }: RecentPurchasesProps) {
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ?? "";
 
@@ -21,11 +21,11 @@ export function RecentPayments({ payments, isLoading }: RecentPaymentsProps) {
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-bold text-zinc-100">Últimos Pagamentos</h3>
+          <h3 className="text-sm font-bold text-zinc-100">Últimas Compras</h3>
           <p className="text-[11px] text-zinc-500 mt-0.5">Transações recentes</p>
         </div>
         <Link
-          href={`/${slug}/events?event_types=payment`}
+          href={`/${slug}/events?event_types=purchase`}
           className="flex items-center gap-1 text-[11px] text-zinc-500 hover:text-indigo-400 transition-colors"
         >
           Ver todos
@@ -39,13 +39,13 @@ export function RecentPayments({ payments, isLoading }: RecentPaymentsProps) {
             <Skeleton key={i} className="h-9 w-full bg-zinc-800 rounded-lg" />
           ))}
         </div>
-      ) : payments.length === 0 ? (
+      ) : purchases.length === 0 ? (
         <p className="text-xs text-zinc-700 py-4 text-center">
-          Nenhum pagamento encontrado
+          Nenhuma compra encontrada
         </p>
       ) : (
         <div className="space-y-1">
-          {payments.map((p) => (
+          {purchases.map((p) => (
             <div
               key={p.id}
               className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-zinc-800/40 transition-colors group"

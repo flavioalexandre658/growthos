@@ -23,7 +23,7 @@ export const organizations = pgTable("organizations", {
     .notNull()
     .default([
       { eventType: "signup", label: "Cadastros" },
-      { eventType: "payment", label: "Pagamentos" },
+      { eventType: "purchase", label: "Compras" },
     ]),
   timezone: text("timezone").notNull().default("America/Sao_Paulo"),
   currency: text("currency").notNull().default("BRL"),

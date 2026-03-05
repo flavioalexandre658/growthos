@@ -105,23 +105,23 @@ const HOOK_CODE = `'use client'\n\nimport { useCallback } from 'react'\nimport t
 
 const HOOK_USAGE = `'use client'\n\nimport { useTracker } from '@/hooks/use-tracker'\n\nexport function CheckoutButton({ product, price }) {\n  const { track } = useTracker()\n\n  const handleCheckout = async () => {\n    track('checkout_started', {\n      gross_value: price,\n      currency: 'BRL',\n      product_id: product.id,\n      product_name: product.name,\n    })\n    await openCheckout(product.id)\n  }\n\n  return <button onClick={handleCheckout}>Comprar R$ {price}</button>\n}`;
 
-const PAYMENT_CODE = `window.GrowthOS.track('payment', {\n  // Deduplicação — OBRIGATÓRIO para eventos financeiros\n  dedupe: invoice.id,       // ID único da transação no gateway\n\n  // Financeiro — obrigatório\n  gross_value: 150.00,\n  currency: 'BRL',          // ISO 4217 — sempre informe\n\n  // Financeiro — opcional\n  discount: 10.00,          // desconto aplicado em reais\n  installments: 1,\n  payment_method: 'pix',    // pix | credit_card | boleto | debit_card\n\n  // Produto — opcional mas recomendado\n  product_id: 'template-casamento-001',\n  product_name: 'Convite Casamento Premium',\n  category: 'casamento',\n\n  // Cliente — opcional mas recomendado\n  customer_type: 'new',     // new | returning\n  customer_id: 'hash_anonimo',\n  customer_segment: 'premium',\n  customer_cohort: '2024-Q1',\n})`;
+const PAYMENT_CODE = `window.GrowthOS.track('purchase', {\n  // Deduplicação — OBRIGATÓRIO para eventos financeiros\n  dedupe: invoice.id,       // ID único da transação no gateway\n\n  // Financeiro — obrigatório\n  gross_value: 150.00,\n  currency: 'BRL',          // ISO 4217 — sempre informe\n\n  // Financeiro — opcional\n  discount: 10.00,          // desconto aplicado em reais\n  installments: 1,\n  payment_method: 'pix',    // pix | credit_card | boleto | debit_card\n\n  // Produto — opcional mas recomendado\n  product_id: 'template-casamento-001',\n  product_name: 'Convite Casamento Premium',\n  category: 'casamento',\n\n  // Cliente — opcional mas recomendado\n  customer_type: 'new',     // new | returning\n  customer_id: 'hash_anonimo',\n  customer_segment: 'premium',\n  customer_cohort: '2024-Q1',\n})`;
 
-const RECURRING_PAYMENT = `// Primeiro pagamento de assinatura\nwindow.GrowthOS.track('payment', {\n  dedupe: invoice.id,           // ID único da invoice no gateway\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_type: 'recurring',\n  billing_interval: 'monthly',\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  plan_name: 'Pro Mensal',\n  customer_id: 'hash_cliente',\n})\n\n// Cancelamento de assinatura\nwindow.GrowthOS.track('subscription_canceled', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_interval: 'monthly',\n  reason: 'user_canceled', // user_canceled | payment_failed | upgraded | downgraded\n})\n\n// Upgrade de plano\nwindow.GrowthOS.track('subscription_changed', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  previous_plan_id: 'plan_basic',\n  new_plan_id: 'plan_pro',\n  previous_value: 49.00,\n  new_value: 89.00,\n  billing_interval: 'monthly',\n  currency: 'BRL',\n})`;
+const RECURRING_PAYMENT = `// Primeiro pagamento de assinatura\nwindow.GrowthOS.track('purchase', {\n  dedupe: invoice.id,           // ID único da invoice no gateway\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_type: 'recurring',\n  billing_interval: 'monthly',\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  plan_name: 'Pro Mensal',\n  customer_id: 'hash_cliente',\n})\n\n// Cancelamento de assinatura\nwindow.GrowthOS.track('subscription_canceled', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_interval: 'monthly',\n  reason: 'user_canceled', // user_canceled | payment_failed | upgraded | downgraded\n})\n\n// Upgrade de plano\nwindow.GrowthOS.track('subscription_changed', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  previous_plan_id: 'plan_basic',\n  new_plan_id: 'plan_pro',\n  previous_value: 49.00,\n  new_value: 89.00,\n  billing_interval: 'monthly',\n  currency: 'BRL',\n})`;
 
-const SERVER_FETCH = `// Node.js / Next.js — renovação mensal às 3h da manhã\nawait fetch(\`\${process.env.GROWTHOS_URL}/api/track\`, {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    key: process.env.GROWTHOS_API_KEY,\n    event_type: 'payment',\n    gross_value: 89.00,\n    currency: 'BRL',\n    billing_type: 'recurring',\n    billing_interval: 'monthly',\n    subscription_id: subscription.id,\n    plan_id: subscription.planId,\n    customer_id: hashCustomerId(subscription.customerId),\n  }),\n})`;
+const SERVER_FETCH = `// Node.js / Next.js — renovação mensal às 3h da manhã\nawait fetch(\`\${process.env.GROWTHOS_URL}/api/track\`, {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    key: process.env.GROWTHOS_API_KEY,\n    event_type: 'purchase',\n    gross_value: 89.00,\n    currency: 'BRL',\n    billing_type: 'recurring',\n    billing_interval: 'monthly',\n    subscription_id: subscription.id,\n    plan_id: subscription.planId,\n    customer_id: hashCustomerId(subscription.customerId),\n  }),\n})`;
 
-const SERVER_CURL = `curl -X POST https://growthos.app/api/track \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "key": "tok_convitede_xxx",\n    "event_type": "payment",\n    "gross_value": 89.00,\n    "currency": "BRL",\n    "billing_type": "recurring",\n    "subscription_id": "sub_abc123"\n  }'`;
+const SERVER_CURL = `curl -X POST https://growthos.app/api/track \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "key": "tok_convitede_xxx",\n    "event_type": "purchase",\n    "gross_value": 89.00,\n    "currency": "BRL",\n    "billing_type": "recurring",\n    "subscription_id": "sub_abc123"\n  }'`;
 
-const SERVER_PYTHON = `import requests\n\nrequests.post('https://growthos.app/api/track', json={\n    'key': 'tok_convitede_xxx',\n    'event_type': 'payment',\n    'gross_value': 89.00,\n    'currency': 'BRL',\n    'billing_type': 'recurring',\n    'subscription_id': 'sub_abc123',\n})`;
+const SERVER_PYTHON = `import requests\n\nrequests.post('https://growthos.app/api/track', json={\n    'key': 'tok_convitede_xxx',\n    'event_type': 'purchase',\n    'gross_value': 89.00,\n    'currency': 'BRL',\n    'billing_type': 'recurring',\n    'subscription_id': 'sub_abc123',\n})`;
 
-const DATA_ATTRS = `<!-- Botão de pagamento -->\n<button\n  data-growthos="payment"\n  data-growthos-value="89.90"\n  data-growthos-currency="BRL"\n  data-growthos-product_id="template-001"\n  data-growthos-product_name="Convite Casamento"\n  data-growthos-payment_method="pix"\n  data-growthos-dedupe="invoice-001"\n>\n  Pagar com PIX\n</button>\n\n<!-- Cadastro -->\n<button\n  data-growthos="signup"\n  data-growthos-customer_type="new"\n  data-growthos-dedupe="true"\n>\n  Criar conta grátis\n</button>`;
+const DATA_ATTRS = `<!-- Botão de compra -->\n<button\n  data-growthos="purchase"\n  data-growthos-value="89.90"\n  data-growthos-currency="BRL"\n  data-growthos-product_id="template-001"\n  data-growthos-product_name="Convite Casamento"\n  data-growthos-payment_method="pix"\n  data-growthos-dedupe="invoice-001"\n>\n  Pagar com PIX\n</button>\n\n<!-- Cadastro -->\n<button\n  data-growthos="signup"\n  data-growthos-customer_type="new"\n  data-growthos-dedupe="true"\n>\n  Criar conta grátis\n</button>`;
 
-const TYPES_CODE = `// src/types/growthos.d.ts\n\nexport type GrowthOSEventType =\n  | 'pageview'\n  | 'signup'\n  | 'trial_started'\n  | 'checkout_started'\n  | 'checkout_abandoned'\n  | 'payment'\n  | 'subscription_canceled'\n  | 'subscription_changed'\n\nexport type GrowthOSCurrency = 'BRL' | 'USD' | 'EUR' | 'GBP' | 'ARS' | string\nexport type GrowthOSPaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'boleto' | string\nexport type GrowthOSBillingInterval = 'monthly' | 'yearly' | 'weekly'\nexport type GrowthOSBillingType = 'recurring' | 'one_time'\nexport type GrowthOSCustomerType = 'new' | 'returning'\n\nexport interface GrowthOSEventData {\n  // Financeiro\n  gross_value?: number\n  discount?: number              // desconto aplicado em reais\n  installments?: number\n  payment_method?: GrowthOSPaymentMethod\n  currency?: GrowthOSCurrency      // ISO 4217 — padrão: moeda da org\n\n  // Produto\n  product_id?: string\n  product_name?: string\n  category?: string\n\n  // Cliente\n  customer_type?: GrowthOSCustomerType\n  customer_id?: string             // hash anônimo — NUNCA email/CPF\n  customer_segment?: string\n  customer_cohort?: string\n\n  // Recorrência\n  billing_type?: GrowthOSBillingType\n  billing_interval?: GrowthOSBillingInterval\n  subscription_id?: string\n  plan_id?: string\n  plan_name?: string\n\n  // Subscription events\n  previous_plan_id?: string\n  new_plan_id?: string\n  previous_value?: number\n  new_value?: number\n  reason?: 'user_canceled' | 'payment_failed' | 'upgraded' | 'downgraded' | 'exit' | 'timeout'\n\n  // Livre\n  metadata?: Record<string, unknown>\n}\n\ndeclare global {\n  interface Window {\n    GrowthOS: {\n      track: (eventType: GrowthOSEventType, data?: GrowthOSEventData) => void\n    }\n  }\n}`;
+const TYPES_CODE = `// src/types/growthos.d.ts\n\nexport type GrowthOSEventType =\n  | 'pageview'\n  | 'signup'\n  | 'trial_started'\n  | 'checkout_started'\n  | 'checkout_abandoned'\n  | 'purchase'\n  | 'subscription_canceled'\n  | 'subscription_changed'\n\nexport type GrowthOSCurrency = 'BRL' | 'USD' | 'EUR' | 'GBP' | 'ARS' | string\nexport type GrowthOSPaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'boleto' | string\nexport type GrowthOSBillingInterval = 'monthly' | 'yearly' | 'weekly'\nexport type GrowthOSBillingType = 'recurring' | 'one_time'\nexport type GrowthOSCustomerType = 'new' | 'returning'\n\nexport interface GrowthOSEventData {\n  // Financeiro\n  gross_value?: number\n  discount?: number              // desconto aplicado em reais\n  installments?: number\n  payment_method?: GrowthOSPaymentMethod\n  currency?: GrowthOSCurrency      // ISO 4217 — padrão: moeda da org\n\n  // Produto\n  product_id?: string\n  product_name?: string\n  category?: string\n\n  // Cliente\n  customer_type?: GrowthOSCustomerType\n  customer_id?: string             // hash anônimo — NUNCA email/CPF\n  customer_segment?: string\n  customer_cohort?: string\n\n  // Recorrência\n  billing_type?: GrowthOSBillingType\n  billing_interval?: GrowthOSBillingInterval\n  subscription_id?: string\n  plan_id?: string\n  plan_name?: string\n\n  // Subscription events\n  previous_plan_id?: string\n  new_plan_id?: string\n  previous_value?: number\n  new_value?: number\n  reason?: 'user_canceled' | 'payment_failed' | 'upgraded' | 'downgraded' | 'exit' | 'timeout'\n\n  // Livre\n  metadata?: Record<string, unknown>\n}\n\ndeclare global {\n  interface Window {\n    GrowthOS: {\n      track: (eventType: GrowthOSEventType, data?: GrowthOSEventData) => void\n    }\n  }\n}`;
 
-const DEBUG_CODE = `// 1 — Verificar se o tracker carregou\nconsole.log(window.GrowthOS)\n// → { track: ƒ }\n\n// 2 — Disparar evento de teste\nwindow.GrowthOS.track('pageview')\n// → Network: POST /api/track 204\n\n// 3 — Evento com moeda\nwindow.GrowthOS.track('payment', {\n  gross_value: 1.00,\n  currency: 'BRL',\n  product_name: 'Teste'\n})\n// Verificar em Dados → Eventos`;
+const DEBUG_CODE = `// 1 — Verificar se o tracker carregou\nconsole.log(window.GrowthOS)\n// → { track: ƒ }\n\n// 2 — Disparar evento de teste\nwindow.GrowthOS.track('pageview')\n// → Network: POST /api/track 204\n\n// 3 — Evento com moeda\nwindow.GrowthOS.track('purchase', {\n  gross_value: 1.00,\n  currency: 'BRL',\n  product_name: 'Teste'\n})\n// Verificar em Dados → Eventos`;
 
-const DEDUP_CODE = `// ── Client-side: localStorage com TTL de 24h ────────────────────────────────\n\n// dedupe: true  →  1 evento por tipo (persiste entre abas e reloads, 24h)\nwindow.GrowthOS.track('signup', { dedupe: true })\n\n// dedupe: <id>  →  1 evento por ID (OBRIGATÓRIO para payment/refund)\n// Use SEMPRE o ID da transação do gateway — nunca um valor gerado no client\nwindow.GrowthOS.track('payment', {\n  gross_value: 89.00,\n  dedupe: invoice.id,  // ← "inv_stripe_xxx" — imutável e único\n})\n// O tracker envia automaticamente dedupe_id ao servidor quando dedupe é string.\n// Isso garante dedup server-side deterministico via SHA256(orgId:dedupe_id).\n\n// ── Server-side: duas camadas ────────────────────────────────────────────────\n// 1. Se dedupe_id presente → hash SHA256 determinístico (sem janela de tempo)\n//    Mesmo invoice.id = mesmo hash, sempre. Proteção máxima.\n//\n// 2. Se dedupe_id ausente → hash de fallback com janela diária (24h)\n//    Usa: event_type + customer_id + gross_value + product_id + subscription_id\n//    Menos preciso — duas compras idênticas no mesmo dia seriam deduplicadas.\n//\n// Envios duplicados retornam 204 com X-GrowthOS-Duplicate: true\n// Eventos financeiros sem dedupe_id retornam X-GrowthOS-Warning no header.\n\nawait fetch('/api/track', {\n  body: JSON.stringify({\n    key: 'tok_xxx',\n    event_type: 'payment',\n    gross_value: 89.00,\n    dedupe_id: 'payment:inv_stripe_xxx', // ← obrigatório para dedup confiável\n    customer_id: 'usr_abc123',\n    subscription_id: 'sub_xyz',\n  })\n})`;
+const DEDUP_CODE = `// ── Client-side: localStorage com TTL de 24h ────────────────────────────────\n\n// dedupe: true  →  1 evento por tipo (persiste entre abas e reloads, 24h)\nwindow.GrowthOS.track('signup', { dedupe: true })\n\n// dedupe: <id>  →  1 evento por ID (OBRIGATÓRIO para purchase/refund)\n// Use SEMPRE o ID da transação do gateway — nunca um valor gerado no client\nwindow.GrowthOS.track('purchase', {\n  gross_value: 89.00,\n  dedupe: invoice.id,  // ← "inv_stripe_xxx" — imutável e único\n})\n// O tracker envia automaticamente dedupe_id ao servidor quando dedupe é string.\n// Isso garante dedup server-side deterministico via SHA256(orgId:dedupe_id).\n\n// ── Server-side: duas camadas ────────────────────────────────────────────────\n// 1. Se dedupe_id presente → hash SHA256 determinístico (sem janela de tempo)\n//    Mesmo invoice.id = mesmo hash, sempre. Proteção máxima.\n//\n// 2. Se dedupe_id ausente → hash de fallback com janela diária (24h)\n//    Usa: event_type + customer_id + gross_value + product_id + subscription_id\n//    Menos preciso — duas compras idênticas no mesmo dia seriam deduplicadas.\n//\n// Envios duplicados retornam 204 com X-GrowthOS-Duplicate: true\n// Eventos financeiros sem dedupe_id retornam X-GrowthOS-Warning no header.\n\nawait fetch('/api/track', {\n  body: JSON.stringify({\n    key: 'tok_xxx',\n    event_type: 'purchase',\n    gross_value: 89.00,\n    dedupe_id: 'purchase:inv_stripe_xxx', // ← obrigatório para dedup confiável\n    customer_id: 'usr_abc123',\n    subscription_id: 'sub_xyz',\n  })\n})`;
 
 const STRIPE_METADATA_CODE = `// Passando customer_id nos metadados do Stripe Checkout
 const session = await stripe.checkout.sessions.create({
@@ -153,7 +153,7 @@ window.GrowthOS.track('checkout_started', {
 // 5 — Webhook chega no GrowthOS
 //     GrowthOS busca hash_xyz na events table
 //     Encontra: source: google · landing: /pricing
-//     Salva payment com contexto completo ✅
+//     Salva purchase com contexto completo ✅
 
 // 6 — Dashboard de Canais
 //     Google Ads → R$ 4.320,00 receita gerada ✅`;
@@ -358,7 +358,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
               Para eventos que dependem de lógica do sistema. Sempre passe{" "}
               <Mono className="text-amber-400">currency</Mono> em eventos financeiros.
             </p>
-            <CodeBlock code={PAYMENT_CODE} lang="js" title="payment — mais importante" />
+            <CodeBlock code={PAYMENT_CODE} lang="js" title="purchase — mais importante" />
           </TabsContent>
 
           {/* REFERÊNCIA */}
@@ -370,8 +370,8 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
 
             <div className="space-y-5">
               <EventCard
-                name="payment"
-                description="Pagamento confirmado. Alimenta faturamento, P&L, ticket médio e ROAS."
+                name="purchase"
+                description="Compra confirmada. Alimenta faturamento, P&L, ticket médio e ROAS."
                 variant="default"
                 props={[
                   { name: "gross_value", type: "number", required: true, description: "Valor bruto cobrado", example: "150.00" },
@@ -480,7 +480,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             <Callout type="warn">
               <strong>customer_id obrigatório em eventos financeiros e lifecycle.</strong>
               <br />
-              Os eventos <Mono>payment</Mono>, <Mono>refund</Mono>, <Mono>renewal</Mono>, <Mono>signup</Mono>, <Mono>trial_started</Mono>, <Mono>subscription_canceled</Mono> e <Mono>subscription_changed</Mono> exigem <Mono>customer_id</Mono>. O servidor retorna <strong>HTTP 400</strong> se o campo estiver ausente. Use sempre um hash anônimo — nunca envie email, CPF ou nome.
+              Os eventos <Mono>purchase</Mono>, <Mono>refund</Mono>, <Mono>renewal</Mono>, <Mono>signup</Mono>, <Mono>trial_started</Mono>, <Mono>subscription_canceled</Mono> e <Mono>subscription_changed</Mono> exigem <Mono>customer_id</Mono>. O servidor retorna <strong>HTTP 400</strong> se o campo estiver ausente. Use sempre um hash anônimo — nunca envie email, CPF ou nome.
               <br />
               Em eventos customizados (<Mono>event_custom</Mono>), o <Mono>customer_id</Mono> é recomendado sempre que o usuário estiver autenticado, pois vincula a ação ao histórico de aquisição e funil do cliente.
             </Callout>
@@ -494,12 +494,12 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             </p>
             <CodeBlock code={DATA_ATTRS} lang="html" title="HTML — data attributes" />
             <AttrTable rows={[
-              { name: "data-growthos", required: "sim", desc: "Define o tipo do evento", example: "payment" },
+              { name: "data-growthos", required: "sim", desc: "Define o tipo do evento", example: "purchase" },
               { name: "data-growthos-value", required: "não", desc: "gross_value (converte ponto decimal)", example: "89.90" },
               { name: "data-growthos-currency", required: "não", desc: "ISO 4217 — padrão: moeda da org", example: "BRL" },
               { name: "data-growthos-product_id", required: "não", desc: "ID do produto", example: "template-001" },
               { name: "data-growthos-payment_method", required: "não", desc: "Método de pagamento", example: "pix" },
-              { name: "data-growthos-dedupe", required: "não", desc: "'true' para dedup por tipo, ou ID único da transação para dedup preciso (obrigatório em payment)", example: "invoice-001" },
+              { name: "data-growthos-dedupe", required: "não", desc: "'true' para dedup por tipo, ou ID único da transação para dedup preciso (obrigatório em purchase)", example: "invoice-001" },
             ]} />
           </TabsContent>
 
@@ -513,7 +513,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             </p>
             <CodeBlock code={DEDUP_CODE} lang="js" title="Deduplicação" />
             <Callout type="warn">
-              Para eventos financeiros (<Mono>payment</Mono>, <Mono>refund</Mono>, <Mono>renewal</Mono>),
+              Para eventos financeiros (<Mono>purchase</Mono>, <Mono>refund</Mono>, <Mono>renewal</Mono>),
               sempre passe <Mono>dedupe</Mono> com o ID unico da transacao no gateway (ex: <Mono>invoice.id</Mono>).
               Para eventos de ciclo de vida de assinatura (<Mono>subscription_canceled</Mono>, <Mono>subscription_changed</Mono>),
               passe <Mono>dedupe: subscription.id</Mono> — o servidor tambem usa <Mono>subscription_id</Mono> como chave
@@ -626,7 +626,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
 
             <SubSection title="Enviando eventos com moeda">
               <CodeBlock
-                code={`// Mesma moeda da org — currency é opcional\nwindow.GrowthOS.track('payment', {\n  gross_value: 89.00,\n  currency: 'BRL',\n})\n\n// Moeda diferente — requer taxa configurada\nwindow.GrowthOS.track('payment', {\n  gross_value: 15.00,\n  currency: 'USD', // precisa de USD→BRL em Configurações\n})`}
+                code={`// Mesma moeda da org — currency é opcional\nwindow.GrowthOS.track('purchase', {\n  gross_value: 89.00,\n  currency: 'BRL',\n})\n\n// Moeda diferente — requer taxa configurada\nwindow.GrowthOS.track('purchase', {\n  gross_value: 15.00,\n  currency: 'USD', // precisa de USD→BRL em Configurações\n})`}
                 lang="js"
                 title="tracker.js"
               />
@@ -662,7 +662,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             <SubSection title="Campos do payload">
               <AttrTable rows={[
                 { name: "key", required: "sim", desc: "API key da organização", example: "tok_xxx" },
-                { name: "event_type", required: "sim", desc: "Tipo do evento", example: "payment" },
+                { name: "event_type", required: "sim", desc: "Tipo do evento", example: "purchase" },
                 { name: "gross_value", required: "não", desc: "Valor bruto (decimal)", example: "89.90" },
                 { name: "currency", required: "não", desc: "ISO 4217 — padrão: moeda da org", example: "BRL" },
                 { name: "customer_id", required: "não", desc: "ID do cliente (melhora dedup server-side)", example: "usr_abc123" },
@@ -802,7 +802,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             </div>
 
             <Callout type="warn">
-              <strong>Ponto crítico — conectou o Stripe, não dispare mais eventos de payment manualmente.</strong>
+              <strong>Ponto crítico — conectou o Stripe, não dispare mais eventos de purchase manualmente.</strong>
               <br />
               O webhook do Stripe e o tracker.js registrariam o mesmo pagamento duas vezes.
               O GrowthOS detecta a origem pelo campo <code className="font-mono text-xs bg-zinc-800/60 px-1 rounded">provider</code>:{" "}
@@ -845,9 +845,9 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   <span>Dashboard afetado</span>
                 </div>
                 {[
-                  ["invoice.payment_succeeded (com sub)", "payment · recurring", "Recorrência"],
-                  ["invoice.payment_succeeded (sem sub)", "payment · one_time", "Financeiro"],
-                  ["payment_intent.succeeded", "payment · one_time", "Financeiro"],
+                  ["invoice.payment_succeeded (com sub)", "purchase · recurring", "Recorrência"],
+                  ["invoice.payment_succeeded (sem sub)", "purchase · one_time", "Financeiro"],
+                  ["payment_intent.succeeded", "purchase · one_time", "Financeiro"],
                   ["charge.refunded", "refund", "Financeiro (P&L)"],
                   ["customer.subscription.created", "subscriptions table", "Recorrência"],
                   ["customer.subscription.deleted", "subscription_canceled", "Recorrência (Churn)"],

@@ -219,7 +219,7 @@ function ConnectedCard({
     try {
       const result = await syncHistory(integration.id);
       toast.success(
-        `Histórico importado: ${result.subscriptionsSynced} assinaturas, ${result.invoicesSynced} recorrentes, ${result.oneTimePaymentsSynced} avulsos.`,
+        `Histórico importado: ${result.subscriptionsSynced} assinaturas, ${result.invoicesSynced} recorrentes, ${result.oneTimePurchasesSynced} avulsos.`,
       );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao importar histórico.");
@@ -346,7 +346,7 @@ function StripeConnectedNotice() {
             <p className="text-xs text-amber-300/90 leading-relaxed">
               <span className="font-medium">Atenção:</span> Se você usa o tracker.js, não dispare
               mais eventos de{" "}
-              <code className="font-mono text-amber-200 bg-amber-500/10 px-1 rounded">payment</code>{" "}
+              <code className="font-mono text-amber-200 bg-amber-500/10 px-1 rounded">purchase</code>{" "}
               do Stripe manualmente — isso duplicaria os dados no dashboard.
             </p>
           </div>

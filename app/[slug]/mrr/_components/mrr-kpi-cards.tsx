@@ -223,7 +223,7 @@ export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
   const estimatedLtv = data?.estimatedLtv ?? 0;
   const mrrGrowthRate = data?.mrrGrowthRate ?? 0;
   const totalPeriodRevenue = data?.totalPeriodRevenue ?? 0;
-  const totalPaymentCount = data?.totalPaymentCount ?? 0;
+  const totalPurchaseCount = data?.totalPurchaseCount ?? 0;
   const renewalSubscriptions = data?.renewalSubscriptions ?? 0;
   const nrr = data?.nrr ?? 0;
   const forecastNext30dRevenue = data?.forecastNext30dRevenue ?? 0;
@@ -288,7 +288,7 @@ export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
           hero
           label="Receita no Período"
           value={fmtBRLDecimal(totalPeriodRevenue / 100)}
-          subLabel={`${totalPaymentCount} pagamento${totalPaymentCount !== 1 ? "s" : ""} no período`}
+          subLabel={`${totalPurchaseCount} compra${totalPurchaseCount !== 1 ? "s" : ""} no período`}
           icon={IconZoomMoney}
           color="text-emerald-400"
           bgColor="bg-emerald-600/20"
@@ -299,7 +299,7 @@ export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
         <KpiCard
           label="Renovações"
           value={String(renewalSubscriptions)}
-          subLabel={`${totalPaymentCount} cobranças no período`}
+          subLabel={`${totalPurchaseCount} cobranças no período`}
           icon={IconRefresh}
           color="text-sky-400"
           bgColor="bg-sky-600/20"

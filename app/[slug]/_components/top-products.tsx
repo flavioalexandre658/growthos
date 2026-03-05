@@ -71,7 +71,7 @@ export function TopProducts({ data, isLoading }: TopProductsProps) {
                     {fmtBRLDecimal(p.revenueInCents / 100)}
                   </span>
                   <span className="text-[10px] font-mono text-zinc-600 tabular-nums shrink-0 w-8 text-right">
-                    {fmtInt(p.payments)}×
+                    {fmtInt(p.purchases)}×
                   </span>
                 </div>
                 <div className="ml-6 h-1 rounded-full bg-zinc-800/80 overflow-hidden">

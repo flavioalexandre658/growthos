@@ -116,7 +116,7 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
           rows={
             financial?.byPaymentMethod.map((r) => ({
               name: r.method,
-              payments: r.payments,
+              payments: r.purchases,
               revenue: r.revenue,
               percentage: r.percentage,
             })) ?? []
@@ -129,7 +129,7 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
           rows={
             financial?.byCategory.map((r) => ({
               name: r.category,
-              payments: r.payments,
+              payments: r.purchases,
               revenue: r.revenue,
               percentage: r.percentage,
               marginPercentage: r.marginPercentage,

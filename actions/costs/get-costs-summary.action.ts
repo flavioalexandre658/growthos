@@ -29,8 +29,8 @@ export async function getCostsSummary(organizationId: string): Promise<ICostsSum
 
   const [summary] = await db
     .select({
-      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} = 'payment'), 0)`,
-      totalDiscounts: sql<number>`COALESCE(SUM(${events.discountInCents}) FILTER (WHERE ${events.eventType} = 'payment'), 0)`,
+      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} = 'purchase'), 0)`,
+      totalDiscounts: sql<number>`COALESCE(SUM(${events.discountInCents}) FILTER (WHERE ${events.eventType} = 'purchase'), 0)`,
     })
     .from(events)
     .where(baseCondition);
@@ -43,7 +43,7 @@ export async function getCostsSummary(organizationId: string): Promise<ICostsSum
       revenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
     })
     .from(events)
-    .where(and(baseCondition, eq(events.eventType, "payment")))
+    .where(and(baseCondition, eq(events.eventType, "purchase")))
     .groupBy(events.paymentMethod, events.billingType, events.category);
 
   const revenueBySegment: IRevenueBySegment = { paymentMethod: {}, billingType: {}, category: {} };

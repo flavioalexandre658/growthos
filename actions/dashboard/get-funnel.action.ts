@@ -78,21 +78,21 @@ export async function getFunnel(
   const revenueResult = await db
     .select({
       grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
-      payments: sql<number>`COUNT(*)`,
+      purchases: sql<number>`COUNT(*)`,
     })
     .from(events)
     .where(
       and(
         eq(events.organizationId, organizationId),
-        eq(events.eventType, "payment"),
+        eq(events.eventType, "purchase"),
         gte(events.createdAt, startDate),
         lte(events.createdAt, endDate)
       )
     );
 
-  const revenue = revenueResult[0] ?? { grossRevenue: 0, payments: 0 };
+  const revenue = revenueResult[0] ?? { grossRevenue: 0, purchases: 0 };
   const grossRevenue = Number(revenue.grossRevenue);
-  const paymentCount = Number(revenue.payments);
+  const purchaseCount = Number(revenue.purchases);
 
   const prevEventRows = await db
     .select({
@@ -126,7 +126,7 @@ export async function getFunnel(
     .where(
       and(
         eq(events.organizationId, organizationId),
-        eq(events.eventType, "payment"),
+        eq(events.eventType, "purchase"),
         gte(events.createdAt, previousStartDate),
         lte(events.createdAt, previousEndDate)
       )
@@ -160,8 +160,8 @@ export async function getFunnel(
     rates.push({ key: "total_conversion", label: "Conversão Total", value: totalRate });
   }
 
-  const ticketMedio = paymentCount > 0
-    ? `R$ ${(grossRevenue / 100 / paymentCount).toFixed(2).replace(".", ",")}`
+  const ticketMedio = purchaseCount > 0
+    ? `R$ ${(grossRevenue / 100 / purchaseCount).toFixed(2).replace(".", ",")}`
     : "R$ 0,00";
 
   const checkoutAbandoned = countMap.get("checkout_abandoned")?.total ?? 0;

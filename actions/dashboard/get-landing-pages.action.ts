@@ -105,7 +105,7 @@ export async function getLandingPages(
 
   const pageMap = new Map<
     string,
-    { steps: Record<string, number>; revenue: number; paymentCount: number }
+    { steps: Record<string, number>; revenue: number; purchaseCount: number }
   >();
 
   for (const row of rawRows) {
@@ -113,7 +113,7 @@ export async function getLandingPages(
     if (search && !row.page.toLowerCase().includes(search.toLowerCase())) continue;
 
     if (!pageMap.has(row.page)) {
-      pageMap.set(row.page, { steps: {}, revenue: 0, paymentCount: 0 });
+      pageMap.set(row.page, { steps: {}, revenue: 0, purchaseCount: 0 });
     }
     const entry = pageMap.get(row.page)!;
 
@@ -127,16 +127,16 @@ export async function getLandingPages(
       entry.steps["checkout_abandoned"] = Number(row.total);
     }
 
-    if (row.eventType === "payment") {
+    if (row.eventType === "purchase") {
       entry.revenue = Number(row.grossRev);
-      entry.paymentCount = Number(row.total);
+      entry.purchaseCount = Number(row.total);
     }
   }
 
   for (const [entryPage, sessions] of pvByEntryPage) {
     if (search && !entryPage.toLowerCase().includes(search.toLowerCase())) continue;
     if (!pageMap.has(entryPage)) {
-      pageMap.set(entryPage, { steps: {}, revenue: 0, paymentCount: 0 });
+      pageMap.set(entryPage, { steps: {}, revenue: 0, purchaseCount: 0 });
     }
     pageMap.get(entryPage)!.steps["pageview"] = sessions;
   }
@@ -146,7 +146,7 @@ export async function getLandingPages(
       const firstStepKey = funnelSteps[0]?.eventType;
       const lastStepKey = funnelSteps[funnelSteps.length - 1]?.eventType;
       const firstCount = firstStepKey ? (data.steps[firstStepKey] ?? 0) : 0;
-      const lastCount = lastStepKey ? (data.steps[lastStepKey] ?? 0) : data.paymentCount;
+      const lastCount = lastStepKey ? (data.steps[lastStepKey] ?? 0) : data.purchaseCount;
       const conversionRate =
         firstCount > 0 ? ((lastCount / firstCount) * 100).toFixed(1) + "%" : "0%";
 

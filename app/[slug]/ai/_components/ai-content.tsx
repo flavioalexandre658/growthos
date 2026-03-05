@@ -564,7 +564,7 @@ export function AiContent() {
     const topProds = topProducts?.slice(0, 5).map((p) => ({
       produto: p.productName,
       receita: `R$ ${(p.revenueInCents / 100).toFixed(2)}`,
-      pagamentos: p.payments,
+      pagamentos: p.purchases,
     }));
 
     const perfil = organization?.aiProfile

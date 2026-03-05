@@ -317,7 +317,7 @@ export function InstallationSection({
             },
             {
               label: "3. Dispare eventos manuais",
-              desc: "Use GrowthOS.track('payment', {...}) para enviar dados financeiros",
+              desc: "Use GrowthOS.track('purchase', {...}) para enviar dados financeiros",
             },
           ].map((step) => (
             <div

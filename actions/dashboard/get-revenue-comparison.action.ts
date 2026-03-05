@@ -19,7 +19,7 @@ async function queryRevenue(
     .where(
       and(
         eq(events.organizationId, organizationId),
-        eq(events.eventType, "payment"),
+        eq(events.eventType, "purchase"),
         gte(events.createdAt, startDate),
         lte(events.createdAt, endDate)
       )
@@ -91,7 +91,7 @@ export async function getRevenueComparison(
     })
   );
 
-  const recentPaymentsRows = await db
+  const recentPurchasesRows = await db
     .select({
       id: events.id,
       productName: events.productName,
@@ -103,7 +103,7 @@ export async function getRevenueComparison(
     .where(
       and(
         eq(events.organizationId, organizationId),
-        eq(events.eventType, "payment")
+        eq(events.eventType, "purchase")
       )
     )
     .orderBy(desc(events.createdAt))
@@ -111,7 +111,7 @@ export async function getRevenueComparison(
 
   return {
     windows: windowResults,
-    recentPayments: recentPaymentsRows.map((r) => ({
+    recentPurchases: recentPurchasesRows.map((r) => ({
       id: r.id,
       productName: r.productName,
       grossValueInCents: Number(r.grossValueInCents ?? 0),

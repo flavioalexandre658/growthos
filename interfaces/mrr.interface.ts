@@ -23,7 +23,7 @@ export interface IMrrOverview {
   churnedSubscriptions?: number;
   renewalSubscriptions?: number;
   totalPeriodRevenue?: number;
-  totalPaymentCount?: number;
+  totalPurchaseCount?: number;
   previousPeriodRevenue?: number;
   nrr?: number;
   previousNrr?: number;

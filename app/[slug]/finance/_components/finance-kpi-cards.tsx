@@ -246,7 +246,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
           label="Ticket Médio"
           value={fmtBRLDecimal((data?.averageTicketInCents ?? 0) / 100)}
           previousLabel={prevTicket !== undefined ? fmtBRLDecimal(prevTicket / 100) : undefined}
-          subLabel={`${data?.totalPayments ?? 0} pagamentos`}
+          subLabel={`${data?.totalPurchases ?? 0} compras`}
           icon={IconReceipt}
           color="text-violet-400"
           bgColor="bg-violet-600/20"
