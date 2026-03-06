@@ -1,14 +1,14 @@
 (function () {
   "use strict";
 
-  var QUEUE_KEY = "growthos_queue";
-  var UTM_KEY = "growthos_utm";
-  var SESSION_KEY = "growthos_sid";
-  var CHECKOUT_KEY = "growthos_checkout";
-  var DEDUP_KEY = "growthos_dedup";
+  var QUEUE_KEY = "groware_queue";
+  var UTM_KEY = "groware_utm";
+  var SESSION_KEY = "groware_sid";
+  var CHECKOUT_KEY = "groware_checkout";
+  var DEDUP_KEY = "groware_dedup";
   var DEDUP_TTL_MS = 24 * 60 * 60 * 1000;
   var DEDUP_TTL_FINANCIAL_MS = 365 * 24 * 60 * 60 * 1000;
-  var OPT_OUT_KEY = "growthos_opt_out";
+  var OPT_OUT_KEY = "groware_opt_out";
   var FINANCIAL_EVENT_TYPES = [
     "payment",
     "refund",
@@ -18,8 +18,8 @@
     "subscription_canceled",
     "subscription_changed",
   ];
-  var ENTRY_KEY = "growthos_entry";
-  var FAILED_KEY = "growthos_failed_events";
+  var ENTRY_KEY = "groware_entry";
+  var FAILED_KEY = "groware_failed_events";
   var FAILED_MAX = 50;
   var FAILED_TTL_MS = 7 * 24 * 60 * 60 * 1000;
   var FAILED_MAX_ATTEMPTS = 3;
@@ -562,15 +562,15 @@
     document.addEventListener("click", function (e) {
       var el = e.target;
       while (el && el !== document.body) {
-        var eventType = el.getAttribute && el.getAttribute("data-growthos");
+        var eventType = el.getAttribute && el.getAttribute("data-groware");
         if (eventType) {
           var data = {};
           var attrs = el.attributes;
           for (var i = 0; i < attrs.length; i++) {
             var attr = attrs[i];
-            if (attr.name.indexOf("data-growthos-") === 0) {
+            if (attr.name.indexOf("data-groware-") === 0) {
               var key = attr.name
-                .replace("data-growthos-", "")
+                .replace("data-groware-", "")
                 .replace(/-/g, "_");
               var val = attr.value;
               if (key === "dedupe") {
@@ -633,7 +633,7 @@
     window.addEventListener("load", init);
   }
 
-  window.GrowthOS = {
+  window.Groware = {
     track: track,
     clearDedupe: clearDedup,
     failedEvents: function () {

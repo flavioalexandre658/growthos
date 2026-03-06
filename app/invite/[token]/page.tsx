@@ -9,7 +9,7 @@ interface InvitePageProps {
 }
 
 export const metadata = {
-  title: "Aceitar convite | GrowthOS",
+  title: "Aceitar convite | Groware",
 };
 
 export default async function InvitePage({ params }: InvitePageProps) {
@@ -26,13 +26,13 @@ export default async function InvitePage({ params }: InvitePageProps) {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
             <IconChartBar size={18} className="text-white" />
           </div>
-          <span className="text-sm font-bold text-zinc-100">GrowthOS</span>
+          <span className="text-sm font-bold text-zinc-100">Groware</span>
         </div>
 
         <div className="space-y-2">
           <h2 className="text-2xl font-bold text-zinc-100">Convite de equipe</h2>
           <p className="text-sm text-zinc-500">
-            Você foi convidado para colaborar em um workspace do GrowthOS.
+            Você foi convidado para colaborar em um workspace do Groware.
           </p>
         </div>
 

@@ -71,7 +71,7 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
 
   const slugValue = form.watch("slug");
   const baseUrl =
-    typeof window !== "undefined" ? window.location.origin : "https://growthos.dev";
+    typeof window !== "undefined" ? window.location.origin : "https://groware.io";
 
   const onSubmit = async (data: FormData) => {
     setIsSaving(true);

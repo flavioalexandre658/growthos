@@ -2,7 +2,7 @@ import { IconChartBar } from "@tabler/icons-react";
 import { ForgotPasswordForm } from "./_components/forgot-password-form";
 
 export const metadata = {
-  title: "Recuperar senha | GrowthOS",
+  title: "Recuperar senha | Groware",
 };
 
 export default function ForgotPasswordPage() {
@@ -13,7 +13,7 @@ export default function ForgotPasswordPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
             <IconChartBar size={18} className="text-white" />
           </div>
-          <span className="text-sm font-bold text-zinc-100">GrowthOS</span>
+          <span className="text-sm font-bold text-zinc-100">Groware</span>
         </div>
 
         <div className="space-y-2">

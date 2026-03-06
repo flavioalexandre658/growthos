@@ -48,7 +48,7 @@ export async function register(input: z.infer<typeof schema>) {
 
   sendEmail({
     to: user.email,
-    subject: `Bem-vindo ao GrowthOS, ${user.name}!`,
+    subject: `Bem-vindo ao Groware, ${user.name}!`,
     html: welcomeEmail({
       userName: user.name,
       dashboardUrl: `${baseUrl}/organizations`,

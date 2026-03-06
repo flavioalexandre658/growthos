@@ -134,7 +134,7 @@ export function WebhookInstructions({
         <IconAlertTriangle size={14} className="text-amber-400 shrink-0 mt-0.5" />
         <p className="text-xs text-amber-300/80">
           O Signing Secret é diferente da Restricted Key. Sem ele qualquer requisição poderia enviar
-          eventos falsos para o GrowthOS.
+          eventos falsos para o Groware.
         </p>
       </div>
     </div>

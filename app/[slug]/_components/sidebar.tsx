@@ -49,7 +49,7 @@ import { cn } from "@/lib/utils";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useOrgHasData } from "@/hooks/queries/use-org-has-data";
 
-const STORAGE_KEY = "growthos_active_org";
+const STORAGE_KEY = "groware_active_org";
 
 interface NavItemDef {
   href: string;
@@ -344,7 +344,7 @@ function SidebarContent({
               <IconChartBar size={14} className="text-white" />
             </div>
             <div>
-              <span className="text-sm font-bold text-zinc-100">GrowthOS</span>
+              <span className="text-sm font-bold text-zinc-100">Groware</span>
               {organization && (
                 <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-widest text-indigo-500">
                   {organization.name}
@@ -448,7 +448,7 @@ export function Sidebar({ slug }: { slug: string }) {
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600">
             <IconChartBar size={14} className="text-white" />
           </div>
-          <span className="text-sm font-bold text-zinc-100">GrowthOS</span>
+          <span className="text-sm font-bold text-zinc-100">Groware</span>
         </div>
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>

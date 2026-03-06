@@ -6,7 +6,7 @@ import { LoginForm } from "./_components/login-form";
 import { IconChartBar } from "@tabler/icons-react";
 
 export const metadata = {
-  title: "Login | GrowthOS",
+  title: "Login | Groware",
 };
 
 export default async function LoginPage() {
@@ -37,7 +37,7 @@ export default async function LoginPage() {
             <IconChartBar size={18} className="text-white" />
           </div>
           <span className="text-sm font-bold text-zinc-100 tracking-tight">
-            GrowthOS
+            Groware
           </span>
         </div>
 
@@ -157,7 +157,7 @@ export default async function LoginPage() {
           </div>
 
           <p className="text-xs text-zinc-700">
-            © {new Date().getFullYear()} GrowthOS · Acompanhamento em tempo real
+            © {new Date().getFullYear()} Groware · Acompanhamento em tempo real
             de receita, funil e canais.
           </p>
         </div>
@@ -171,7 +171,7 @@ export default async function LoginPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
                 <IconChartBar size={18} className="text-white" />
               </div>
-              <span className="text-sm font-bold text-zinc-100">GrowthOS</span>
+              <span className="text-sm font-bold text-zinc-100">Groware</span>
             </div>
           </div>
 

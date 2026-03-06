@@ -1,4 +1,4 @@
-# GrowthOS — Arquitetura de Integrações com Gateways
+# Groware — Arquitetura de Integrações com Gateways
 
 > Este documento descreve o padrão de integração implementado com o Stripe.
 > Deve ser usado como referência para integrar novos providers: Asaas, Kiwify, Hotmart, Mercado Pago, etc.
@@ -7,7 +7,7 @@
 
 ## Visão Geral
 
-O GrowthOS suporta dois modos de receber dados financeiros:
+O Groware suporta dois modos de receber dados financeiros:
 
 | Modo                       | Como funciona                                 | Melhor para                                 |
 | -------------------------- | --------------------------------------------- | ------------------------------------------- |
@@ -35,7 +35,7 @@ Sem uma ponte entre os dois, o relatório de Canais fica cego para receita gerad
 
 ### A Solução — Lookup Reverso na Events Table
 
-Quando o webhook chega com o `customer_id`, o GrowthOS busca o contexto de aquisição diretamente na `events table`, onde o tracker.js já salvou tudo:
+Quando o webhook chega com o `customer_id`, o Groware busca o contexto de aquisição diretamente na `events table`, onde o tracker.js já salvou tudo:
 
 ```
 Webhook chega → customer_id: "hash_xyz"
@@ -88,11 +88,11 @@ hashAnonymous(user.id); // → "a3f8c2d1e4b5..."
 ### No tracker.js (browser)
 
 ```javascript
-window.GrowthOS.track("signup", {
+window.Groware.track("signup", {
   customer_id: hashAnonymous(user.id), // ← hash do ID interno
 });
 
-window.GrowthOS.track("checkout_started", {
+window.Groware.track("checkout_started", {
   customer_id: hashAnonymous(user.id),
   gross_value: 79.9,
   currency: "BRL",
@@ -105,7 +105,7 @@ window.GrowthOS.track("checkout_started", {
 // Stripe
 stripe.checkout.sessions.create({
   metadata: {
-    growthos_customer_id: hashAnonymous(user.id), // ← mesmo hash
+    groware_customer_id: hashAnonymous(user.id), // ← mesmo hash
   },
 });
 
@@ -308,7 +308,7 @@ function classifyPayment(rawEvent: ProviderEvent): PaymentClassification {
 
 Cada provider usa nomes diferentes para os mesmos estados:
 
-| Estado GrowthOS | Stripe     | Asaas       | Kiwify     | Hotmart      |
+| Estado Groware | Stripe     | Asaas       | Kiwify     | Hotmart      |
 | --------------- | ---------- | ----------- | ---------- | ------------ |
 | `active`        | `active`   | `ACTIVE`    | `active`   | `APPROVED`   |
 | `canceled`      | `canceled` | `CANCELLED` | `canceled` | `CANCELLED`  |
@@ -488,13 +488,13 @@ Sync histórico
 Webhook handler
 [ ] app/api/webhooks/[provider]/route.ts
 [ ] Validar assinatura do webhook
-[ ] Mapear eventos do provider para eventos GrowthOS
+[ ] Mapear eventos do provider para eventos Groware
 [ ] Implementar deduplicação com providerEventId
 [ ] Implementar lookup reverso de contexto de aquisição
 
 Status mapper
 [ ] lib/integrations/status-mappers.ts
-[ ] Mapear todos os status do provider para o padrão GrowthOS
+[ ] Mapear todos os status do provider para o padrão Groware
 
 UI
 [ ] Card do provider na tela de Configurações → Integrações
@@ -517,16 +517,16 @@ O cliente deve passar nos metadados do checkout de qualquer gateway:
 
 | Campo                  | Obrigatório | Descrição                                         |
 | ---------------------- | ----------- | ------------------------------------------------- |
-| `growthos_customer_id` | **Sim**     | Hash anônimo do ID do usuário — chave da linkagem |
+| `groware_customer_id` | **Sim**     | Hash anônimo do ID do usuário — chave da linkagem |
 
-Com só esse campo, o GrowthOS resolve o contexto de aquisição via lookup reverso na events table.
+Com só esse campo, o Groware resolve o contexto de aquisição via lookup reverso na events table.
 
 ### Por provider
 
 ```typescript
 // Stripe
 stripe.checkout.sessions.create({
-  metadata: { growthos_customer_id: hashAnonymous(user.id) },
+  metadata: { groware_customer_id: hashAnonymous(user.id) },
 });
 
 // Asaas (futuramente)
@@ -556,13 +556,13 @@ asaas.payments.create({
    events table: checkout_started · customer_id: hash_xyz · gross_value: 79.90
 
 4. Backend cria checkout no Stripe com metadata:
-   { growthos_customer_id: "hash_xyz" }
+   { groware_customer_id: "hash_xyz" }
 
 5. Usuário paga no Stripe
 
-6. Stripe dispara webhook → GrowthOS recebe
+6. Stripe dispara webhook → Groware recebe
 
-7. GrowthOS:
+7. Groware:
    a. Extrai customer_id: "hash_xyz" do metadata
    b. Busca contexto na events table (lookup reverso)
    c. Encontra: source: google · campaign: black-friday · landing: /pricing

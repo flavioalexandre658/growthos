@@ -70,11 +70,11 @@ async function seed() {
     const passwordHash = await bcrypt.hash("admin123", 12);
     await db.insert(users).values({
       name: "Admin",
-      email: "admin@growthos.com",
+      email: "admin@groware.io",
       passwordHash,
       role: "ADMIN",
     });
-    console.log("Admin user created: admin@growthos.com / admin123");
+    console.log("Admin user created: admin@groware.io / admin123");
   }
 
   console.log("Seed completed.");

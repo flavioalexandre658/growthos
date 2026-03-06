@@ -2,7 +2,7 @@ import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { FinanceContent } from "./_components/finance-content";
 
 export const metadata = {
-  title: "Financeiro | GrowthOS",
+  title: "Financeiro | Groware",
 };
 
 interface FinancePageProps {

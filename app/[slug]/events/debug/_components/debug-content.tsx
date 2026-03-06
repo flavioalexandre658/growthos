@@ -813,7 +813,7 @@ export function DebugContent() {
                   </p>
                   <div>
                     <label className="text-[11px] text-zinc-600 uppercase tracking-wider">
-                      URL base do GrowthOS
+                      URL base do Groware
                     </label>
                     <input
                       value={baseUrl}

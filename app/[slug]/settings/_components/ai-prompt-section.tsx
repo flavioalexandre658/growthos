@@ -32,7 +32,7 @@ function buildEventExample(
   currency: string,
 ): string {
   if (eventType === "purchase") {
-    return `window.GrowthOS.track('purchase', {
+    return `window.Groware.track('purchase', {
   dedupe: invoice.id,              // OBRIGATÓRIO: ID único da transação no gateway
   gross_value: 89.00,              // obrigatório
   currency: '${currency}',         // obrigatório sempre
@@ -48,7 +48,7 @@ function buildEventExample(
   }
 
   if (eventType === "checkout_started") {
-    return `window.GrowthOS.track('checkout_started', {
+    return `window.Groware.track('checkout_started', {
   gross_value: 89.00,
   currency: '${currency}',
   product_id: product.id,
@@ -58,7 +58,7 @@ function buildEventExample(
   }
 
   if (eventType === "checkout_abandoned") {
-    return `window.GrowthOS.track('checkout_abandoned', {
+    return `window.Groware.track('checkout_abandoned', {
   gross_value: 89.00,
   currency: '${currency}',
   reason: 'exit',                  // exit | payment_failed | timeout
@@ -67,7 +67,7 @@ function buildEventExample(
   }
 
   if (eventType === "signup") {
-    return `window.GrowthOS.track('signup', {
+    return `window.Groware.track('signup', {
   dedupe: true,                    // 1 cadastro por sessão (24h)
   customer_type: 'new',            // new | returning
   customer_id: hashAnonymous(user.id), // NUNCA email ou CPF
@@ -75,7 +75,7 @@ function buildEventExample(
   }
 
   if (eventType === "trial_started") {
-    return `window.GrowthOS.track('trial_started', {
+    return `window.Groware.track('trial_started', {
   dedupe: true,                    // 1 trial por sessão (24h)
   plan_id: plan.id,
   plan_name: plan.name,
@@ -84,7 +84,7 @@ function buildEventExample(
   }
 
   if (eventType === "subscription_canceled") {
-    return `window.GrowthOS.track('subscription_canceled', {
+    return `window.Groware.track('subscription_canceled', {
   dedupe: subscription.id,         // ID único da assinatura no gateway
   subscription_id: subscription.id,
   gross_value: subscription.price,
@@ -95,7 +95,7 @@ function buildEventExample(
   }
 
   if (eventType === "subscription_changed") {
-    return `window.GrowthOS.track('subscription_changed', {
+    return `window.Groware.track('subscription_changed', {
   dedupe: subscription.id,         // ID único da assinatura no gateway
   subscription_id: subscription.id,
   previous_plan_id: subscription.previousPlanId,
@@ -111,7 +111,7 @@ function buildEventExample(
   const hasSubscription = SUBSCRIPTION_EVENTS.has(eventType);
 
   if (hasFinancial) {
-    return `window.GrowthOS.track('${eventType}', {
+    return `window.Groware.track('${eventType}', {
   gross_value: /* valor em ${currency} */,
   currency: '${currency}',
   product_id: product.id,
@@ -120,14 +120,14 @@ function buildEventExample(
   }
 
   if (hasSubscription) {
-    return `window.GrowthOS.track('${eventType}', {
+    return `window.Groware.track('${eventType}', {
   subscription_id: subscription.id,
   currency: '${currency}',
   customer_id: hashAnonymous(user.id),
 })`;
   }
 
-  return `window.GrowthOS.track('${eventType}', {
+  return `window.Groware.track('${eventType}', {
   product_id: /* ID do recurso envolvido */,
   customer_id: hashAnonymous(user.id),
 })`;
@@ -174,7 +174,7 @@ Não é obrigatório, mas habilita a análise de abandono de checkout no dashboa
 (quantos usuários iniciaram o checkout mas não pagaram).
 
 // CHECKOUT INICIADO — disparar ao abrir o checkout
-window.GrowthOS.track('checkout_started', {
+window.Groware.track('checkout_started', {
   gross_value: 89.00,
   currency: '${currency}',
   product_id: product.id,
@@ -197,7 +197,7 @@ await fetch('${baseUrl}/api/track', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    key: process.env.GROWTHOS_API_KEY,
+    key: process.env.GROWARE_API_KEY,
     event_type: 'purchase',
     dedupe_id: 'purchase:' + invoice.id,  // OBRIGATÓRIO: ID único da invoice
     gross_value: subscription.price,
@@ -215,7 +215,7 @@ await fetch('${baseUrl}/api/track', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    key: process.env.GROWTHOS_API_KEY,
+    key: process.env.GROWARE_API_KEY,
     event_type: 'subscription_canceled',
     dedupe_id: 'subscription_canceled:' + subscription.id,
     subscription_id: subscription.id,
@@ -227,12 +227,12 @@ await fetch('${baseUrl}/api/track', {
 })`
     : "";
 
-  return `Você é um engenheiro sênior. Integre o GrowthOS no projeto abaixo seguindo exatamente as instruções.
+  return `Você é um engenheiro sênior. Integre o Groware no projeto abaixo seguindo exatamente as instruções.
 
 ════════════════════════════════════════════
-CONTEXTO — O QUE É O GROWTHOS
+CONTEXTO — O QUE É O GROWARE
 ════════════════════════════════════════════
-GrowthOS é uma ferramenta de Growth Analytics. Um script JS (tracker.js) é
+Groware é uma ferramenta de Growth Analytics. Um script JS (tracker.js) é
 instalado no site e envia eventos para a API. Os eventos alimentam dashboards
 de funil, receita, canais de aquisição, MRR e churn.
 
@@ -276,14 +276,14 @@ import { createHash } from 'crypto'
 
 export function hashAnonymous(id: string): string {
   return createHash('sha256')
-    .update(id + (process.env.GROWTHOS_HASH_SALT ?? 'growthos'))
+    .update(id + (process.env.GROWARE_HASH_SALT ?? 'groware'))
     .digest('hex')
     .slice(0, 32)
 }
 
 // .env.local
-GROWTHOS_HASH_SALT=uma_string_aleatoria_secreta
-GROWTHOS_API_KEY=${apiKey}
+GROWARE_HASH_SALT=uma_string_aleatoria_secreta
+GROWARE_API_KEY=${apiKey}
 
 ════════════════════════════════════════════
 REGRAS OBRIGATÓRIAS
@@ -306,10 +306,10 @@ VALIDAÇÃO — COMO CONFIRMAR QUE FUNCIONOU
 1. Abra o site com ?utm_source=teste&utm_medium=cpc na URL
 2. Execute cada fluxo do funil manualmente (cadastro, edição, pagamento)
 3. Abra DevTools → Network e confirme POST /api/track com status 204
-4. Acesse GrowthOS → Dados → Eventos e verifique os eventos aparecendo
+4. Acesse Groware → Dados → Eventos e verifique os eventos aparecendo
 5. Para diagnóstico adicional adicione data-debug="true" no script:
    <script async src="${baseUrl}/tracker.js" data-key="${apiKey}" data-debug="true"></script>
-   e verifique os logs [GrowthOS] no console do browser
+   e verifique os logs [Groware] no console do browser
 
 Se tiver dúvidas sobre algum evento ou campo, consulte a documentação:
 ${baseUrl}/docs

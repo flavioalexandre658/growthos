@@ -3,7 +3,7 @@ import { IconChartBar } from "@tabler/icons-react";
 import { ResetPasswordForm } from "./_components/reset-password-form";
 
 export const metadata = {
-  title: "Nova senha | GrowthOS",
+  title: "Nova senha | Groware",
 };
 
 export default function ResetPasswordPage() {
@@ -14,7 +14,7 @@ export default function ResetPasswordPage() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
             <IconChartBar size={18} className="text-white" />
           </div>
-          <span className="text-sm font-bold text-zinc-100">GrowthOS</span>
+          <span className="text-sm font-bold text-zinc-100">Groware</span>
         </div>
 
         <div className="space-y-2">

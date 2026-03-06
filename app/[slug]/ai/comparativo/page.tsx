@@ -1,7 +1,7 @@
 import { ComparisonContent } from "./_components/comparison-content";
 
 export const metadata = {
-  title: "Comparativo com IA | GrowthOS",
+  title: "Comparativo com IA | Groware",
 };
 
 export default function ComparativoPage() {

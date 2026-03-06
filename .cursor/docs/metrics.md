@@ -1,12 +1,12 @@
-# GrowthOS — Métricas, Dados e Estatísticas
+# Groware — Métricas, Dados e Estatísticas
 
-Este documento descreve de forma completa todos os dados, métricas e estatísticas que o GrowthOS coleta, processa e exibe.
+Este documento descreve de forma completa todos os dados, métricas e estatísticas que o Groware coleta, processa e exibe.
 
 ---
 
 ## 1. Coleta de Dados — tracker.js
 
-O `public/tracker.js` é um script JavaScript embeddable que os clientes instalam em seus sites. Ele é a única fonte de dados primária do GrowthOS.
+O `public/tracker.js` é um script JavaScript embeddable que os clientes instalam em seus sites. Ele é a única fonte de dados primária do Groware.
 
 ### Tipos de evento suportados
 

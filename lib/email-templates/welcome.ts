@@ -10,7 +10,7 @@ export function welcomeEmail(params: IWelcomeEmailParams): string {
 
   const content = `
     <p style="color:#6366f1; font-size:12px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; margin-bottom:20px;">
-      BEM-VINDO AO GROWTHOS
+      BEM-VINDO AO GROWARE
     </p>
 
     <h1 style="color:#fafafa; font-size:24px; font-weight:700; letter-spacing:-0.5px; margin-bottom:12px; line-height:1.3;">
@@ -18,7 +18,7 @@ export function welcomeEmail(params: IWelcomeEmailParams): string {
     </h1>
 
     <p style="color:#a1a1aa; font-size:14px; line-height:1.7; margin-bottom:0;">
-      Sua conta foi criada com sucesso. O GrowthOS vai te ajudar a entender exatamente
+      Sua conta foi criada com sucesso. O Groware vai te ajudar a entender exatamente
       de onde vem seu crescimento, quais canais convertem melhor e onde você está perdendo receita.
     </p>
 
@@ -71,6 +71,6 @@ export function welcomeEmail(params: IWelcomeEmailParams): string {
 
   return baseEmailLayout(
     content,
-    `Bem-vindo ao GrowthOS, ${userName}`
+    `Bem-vindo ao Groware, ${userName}`
   );
 }

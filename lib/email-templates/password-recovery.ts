@@ -20,7 +20,7 @@ export function passwordRecoveryEmail(params: IPasswordRecoveryEmailParams): str
 
     <p style="color:#a1a1aa; font-size:14px; line-height:1.7; margin-bottom:0;">
       Olá, <strong style="color:#d4d4d8;">${userName}</strong>. Recebemos uma solicitação para redefinir
-      a senha da sua conta no GrowthOS. Clique no botão abaixo para criar uma nova senha.
+      a senha da sua conta no Groware. Clique no botão abaixo para criar uma nova senha.
     </p>
 
     ${ctaButton("Redefinir senha", resetUrl)}
@@ -55,6 +55,6 @@ export function passwordRecoveryEmail(params: IPasswordRecoveryEmailParams): str
 
   return baseEmailLayout(
     content,
-    "Redefinição de senha solicitada para sua conta GrowthOS"
+    "Redefinição de senha solicitada para sua conta Groware"
   );
 }

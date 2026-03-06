@@ -21,7 +21,7 @@ Você é um engenheiro de software sênior especializado em desenvolvimento web 
 
 ## Regras Gerais de Código
 
-- Nome do projeto: **GrowthOS**
+- Nome do projeto: **Groware**
 - SEMPRE use TypeScript
 - Use nomes descritivos: `isLoading`, `hasError`, `handleSubmit`
 - Use **kebab-case** para arquivos e pastas: `dashboard-get-invites.action.ts`

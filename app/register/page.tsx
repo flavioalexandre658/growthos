@@ -10,7 +10,7 @@ import {
 } from "@tabler/icons-react";
 
 export const metadata = {
-  title: "Criar conta | GrowthOS",
+  title: "Criar conta | Groware",
 };
 
 export default async function RegisterPage() {
@@ -38,7 +38,7 @@ export default async function RegisterPage() {
             <IconChartBar size={18} className="text-white" />
           </div>
           <span className="text-sm font-bold text-zinc-100 tracking-tight">
-            GrowthOS
+            Groware
           </span>
         </div>
 
@@ -107,7 +107,7 @@ export default async function RegisterPage() {
           </div>
 
           <p className="text-xs text-zinc-700">
-            © {new Date().getFullYear()} GrowthOS · Decisões melhores,
+            © {new Date().getFullYear()} Groware · Decisões melhores,
             crescimento consistente.
           </p>
         </div>
@@ -120,7 +120,7 @@ export default async function RegisterPage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
                 <IconChartBar size={18} className="text-white" />
               </div>
-              <span className="text-sm font-bold text-zinc-100">GrowthOS</span>
+              <span className="text-sm font-bold text-zinc-100">Groware</span>
             </div>
           </div>
 

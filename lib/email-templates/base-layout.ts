@@ -36,7 +36,7 @@ export function baseEmailLayout(content: string, previewText?: string): string {
                     <span style="color:#fff; font-size:18px; font-weight:700; line-height:36px; display:block;">G</span>
                   </td>
                   <td style="padding-left:10px; vertical-align:middle;">
-                    <span style="color:#fafafa; font-size:16px; font-weight:700; letter-spacing:-0.3px;">GrowthOS</span>
+                    <span style="color:#fafafa; font-size:16px; font-weight:700; letter-spacing:-0.3px;">Groware</span>
                   </td>
                 </tr>
               </table>
@@ -63,10 +63,10 @@ export function baseEmailLayout(content: string, previewText?: string): string {
           <tr>
             <td style="text-align:center;">
               <p style="color:#52525b; font-size:12px; line-height:1.6;">
-                GrowthOS · Plataforma de Growth Analytics
+                Groware · Plataforma de Growth Analytics
               </p>
               <p style="color:#3f3f46; font-size:11px; margin-top:4px;">
-                Você está recebendo este email porque possui uma conta no GrowthOS.
+                Você está recebendo este email porque possui uma conta no Groware.
               </p>
             </td>
           </tr>

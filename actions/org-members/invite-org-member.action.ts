@@ -48,7 +48,7 @@ export async function inviteOrgMember(input: z.infer<typeof schema>) {
 
   await sendEmail({
     to: data.email,
-    subject: `Você foi convidado para ${org?.name ?? "um workspace"} no GrowthOS`,
+    subject: `Você foi convidado para ${org?.name ?? "um workspace"} no Groware`,
     html: teamInviteEmail({
       inviteeEmail: data.email,
       orgName: org?.name ?? "workspace",

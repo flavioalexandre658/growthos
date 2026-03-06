@@ -48,7 +48,7 @@ export function LoginForm() {
     setIsLoading(false);
 
     if (result?.ok) {
-      toast.success("Bem-vindo ao GrowthOS!");
+      toast.success("Bem-vindo ao Groware!");
       router.push("/organizations");
       router.refresh();
       return;
@@ -76,7 +76,7 @@ export function LoginForm() {
           <Input
             id="email"
             type="email"
-            placeholder="admin@growthos.com"
+            placeholder="admin@groware.io"
             autoComplete="email"
             className={cn(
               "pl-9 bg-zinc-900/50 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 h-11",
@@ -142,7 +142,7 @@ export function LoginForm() {
           </>
         ) : (
           <>
-            Entrar no GrowthOS
+            Entrar no Groware
             <IconArrowRight
               size={16}
               className="transition-transform group-hover:translate-x-0.5"

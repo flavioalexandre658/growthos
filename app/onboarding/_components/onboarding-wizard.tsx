@@ -21,7 +21,7 @@ const STEPS = [
   { number: 6, label: "Dashboard" },
 ];
 
-const LS_KEY = "growthos_onboarding_step";
+const LS_KEY = "groware_onboarding_step";
 
 function calcInitialStep(
   existingOrg: IOrganization | null,
@@ -77,7 +77,7 @@ export function OnboardingWizard({
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
             <IconChartBar size={16} className="text-white" />
           </div>
-          <span className="text-sm font-bold text-zinc-100">GrowthOS</span>
+          <span className="text-sm font-bold text-zinc-100">Groware</span>
         </div>
         <p className="text-xs text-zinc-600">
           Olá,{" "}

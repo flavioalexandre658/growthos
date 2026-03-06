@@ -8,7 +8,7 @@ import { OnboardingWizard } from "./_components/onboarding-wizard";
 import type { IOrganization } from "@/interfaces/organization.interface";
 
 export const metadata = {
-  title: "Configuração inicial | GrowthOS",
+  title: "Configuração inicial | Groware",
 };
 
 interface OnboardingPageProps {

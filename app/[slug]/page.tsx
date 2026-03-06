@@ -2,7 +2,7 @@ import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { OverviewContent } from "./_components/overview-content";
 
 export const metadata = {
-  title: "Visão Geral | GrowthOS",
+  title: "Visão Geral | Groware",
 };
 
 interface DashboardPageProps {

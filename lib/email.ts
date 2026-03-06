@@ -19,7 +19,7 @@ export async function sendEmail(params: ISendEmailParams): Promise<void> {
   const toAddresses = Array.isArray(params.to) ? params.to : [params.to];
 
   const command = new SendEmailCommand({
-    Source: process.env.AWS_SES_FROM_EMAIL ?? "noreply@growthos.app",
+    Source: process.env.AWS_SES_FROM_EMAIL ?? "noreply@groware.io",
     Destination: {
       ToAddresses: toAddresses,
     },

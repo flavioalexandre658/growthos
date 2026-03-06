@@ -9,6 +9,8 @@ import {
   IconExternalLink,
   IconEyeOff,
   IconEye,
+  IconRefresh,
+  IconRepeat,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +21,12 @@ import { updatePublicPageSettings } from "@/actions/organizations/update-public-
 import { DEFAULT_PUBLIC_PAGE_SETTINGS } from "@/db/schema/organization.schema";
 import type { IOrganization } from "@/interfaces/organization.interface";
 import type { IPublicPageSettings } from "@/interfaces/public-page.interface";
+
+const RECURRING_KEYS = ["showMrr", "showSubscribers", "showChurn", "showArpu", "showSankey"] as const;
+const ONE_TIME_KEYS = ["showRevenue", "showTicketMedio", "showRepurchaseRate", "showRevenueSplit"] as const;
+
+type RecurringKey = typeof RECURRING_KEYS[number];
+type OneTimeKey = typeof ONE_TIME_KEYS[number];
 
 interface ToggleProps {
   checked: boolean;
@@ -67,6 +75,62 @@ function MetricToggle({ label, description, checked, onChange }: MetricTogglePro
   );
 }
 
+interface MetricBlockProps {
+  title: string;
+  icon: React.ReactNode;
+  accentClass: string;
+  activeCount: number;
+  totalCount: number;
+  allOff: boolean;
+  onBulkToggle: () => void;
+  children: React.ReactNode;
+}
+
+function MetricBlock({
+  title,
+  icon,
+  accentClass,
+  activeCount,
+  totalCount,
+  allOff,
+  onBulkToggle,
+  children,
+}: MetricBlockProps) {
+  return (
+    <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-zinc-800">
+        <div className="flex items-center gap-2">
+          <span className={cn("shrink-0", accentClass)}>{icon}</span>
+          <p className="text-[11px] font-semibold text-zinc-300 uppercase tracking-wider">
+            {title}
+          </p>
+          <span className="text-[10px] font-mono text-zinc-600 bg-zinc-800/80 px-1.5 py-0.5 rounded">
+            {activeCount}/{totalCount}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onBulkToggle}
+          className="flex items-center gap-1 text-[11px] font-semibold text-zinc-500 hover:text-zinc-300 transition-colors shrink-0"
+        >
+          {allOff ? (
+            <>
+              <IconEye size={12} />
+              Exibir todas
+            </>
+          ) : (
+            <>
+              <IconEyeOff size={12} />
+              Ocultar todas
+            </>
+          )}
+        </button>
+      </div>
+      <div className="px-4">{children}</div>
+    </div>
+  );
+}
+
 interface PublicPageSectionProps {
   org: IOrganization;
 }
@@ -86,6 +150,31 @@ export function PublicPageSection({ org }: PublicPageSectionProps) {
   const updateSetting = <K extends keyof IPublicPageSettings>(key: K, value: IPublicPageSettings[K]) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
+
+  const bulkSetRecurring = (value: boolean) => {
+    setSettings((prev) => {
+      const next = { ...prev };
+      for (const key of RECURRING_KEYS) {
+        (next as Record<string, boolean>)[key] = value;
+      }
+      return next;
+    });
+  };
+
+  const bulkSetOneTime = (value: boolean) => {
+    setSettings((prev) => {
+      const next = { ...prev };
+      for (const key of ONE_TIME_KEYS) {
+        (next as Record<string, boolean>)[key] = value;
+      }
+      return next;
+    });
+  };
+
+  const recurringActiveCount = RECURRING_KEYS.filter((k) => settings[k as RecurringKey]).length;
+  const oneTimeActiveCount = ONE_TIME_KEYS.filter((k) => settings[k as OneTimeKey]).length;
+  const recurringAllOff = recurringActiveCount === 0;
+  const oneTimeAllOff = oneTimeActiveCount === 0;
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -160,7 +249,7 @@ export function PublicPageSection({ org }: PublicPageSectionProps) {
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden">
           <div className="px-4 py-3 border-b border-zinc-800">
             <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-semibold">
-              Métricas visíveis
+              Configurações gerais
             </p>
           </div>
           <div className="px-4">
@@ -171,60 +260,6 @@ export function PublicPageSection({ org }: PublicPageSectionProps) {
               onChange={(v) => updateSetting("showAbsoluteValues", v)}
             />
             <MetricToggle
-              label="MRR"
-              description="Receita Recorrente Mensal"
-              checked={settings.showMrr}
-              onChange={(v) => updateSetting("showMrr", v)}
-            />
-            <MetricToggle
-              label="Assinantes ativos"
-              description="Total de assinantes ativos"
-              checked={settings.showSubscribers}
-              onChange={(v) => updateSetting("showSubscribers", v)}
-            />
-            <MetricToggle
-              label="Churn"
-              description="Taxa de cancelamento mensal de assinantes"
-              checked={settings.showChurn}
-              onChange={(v) => updateSetting("showChurn", v)}
-            />
-            <MetricToggle
-              label="ARPU"
-              description="Receita média por assinante"
-              checked={settings.showArpu}
-              onChange={(v) => updateSetting("showArpu", v)}
-            />
-            <MetricToggle
-              label="Receita mensal"
-              description="Receita total do mês (vendas avulsas e recorrência)"
-              checked={settings.showRevenue}
-              onChange={(v) => updateSetting("showRevenue", v)}
-            />
-            <MetricToggle
-              label="Ticket médio"
-              description="Valor médio por pedido ou venda"
-              checked={settings.showTicketMedio}
-              onChange={(v) => updateSetting("showTicketMedio", v)}
-            />
-            <MetricToggle
-              label="Taxa de recompra"
-              description="Percentual de clientes que voltaram a comprar nos últimos 90 dias"
-              checked={settings.showRepurchaseRate}
-              onChange={(v) => updateSetting("showRepurchaseRate", v)}
-            />
-            <MetricToggle
-              label="Split de receita"
-              description="Barra mostrando proporção recorrente vs avulso"
-              checked={settings.showRevenueSplit}
-              onChange={(v) => updateSetting("showRevenueSplit", v)}
-            />
-            <MetricToggle
-              label="Sankey de assinantes"
-              description="Fluxo visual de novas assinaturas, renovações e cancelamentos"
-              checked={settings.showSankey}
-              onChange={(v) => updateSetting("showSankey", v)}
-            />
-            <MetricToggle
               label="Gráfico de evolução"
               description="Gráfico de linha com histórico de receita/MRR"
               checked={settings.showGrowthChart}
@@ -232,6 +267,82 @@ export function PublicPageSection({ org }: PublicPageSectionProps) {
             />
           </div>
         </div>
+
+        <MetricBlock
+          title="Recorrente"
+          icon={<IconRepeat size={13} />}
+          accentClass="text-indigo-400"
+          activeCount={recurringActiveCount}
+          totalCount={RECURRING_KEYS.length}
+          allOff={recurringAllOff}
+          onBulkToggle={() => bulkSetRecurring(recurringAllOff)}
+        >
+          <MetricToggle
+            label="MRR"
+            description="Receita Recorrente Mensal"
+            checked={settings.showMrr}
+            onChange={(v) => updateSetting("showMrr", v)}
+          />
+          <MetricToggle
+            label="Assinantes ativos"
+            description="Total de assinantes ativos"
+            checked={settings.showSubscribers}
+            onChange={(v) => updateSetting("showSubscribers", v)}
+          />
+          <MetricToggle
+            label="Churn"
+            description="Taxa de cancelamento mensal de assinantes"
+            checked={settings.showChurn}
+            onChange={(v) => updateSetting("showChurn", v)}
+          />
+          <MetricToggle
+            label="ARPU"
+            description="Receita média por assinante"
+            checked={settings.showArpu}
+            onChange={(v) => updateSetting("showArpu", v)}
+          />
+          <MetricToggle
+            label="Sankey de assinantes"
+            description="Fluxo visual de novas assinaturas, renovações e cancelamentos"
+            checked={settings.showSankey}
+            onChange={(v) => updateSetting("showSankey", v)}
+          />
+        </MetricBlock>
+
+        <MetricBlock
+          title="Avulso"
+          icon={<IconRefresh size={13} />}
+          accentClass="text-amber-400"
+          activeCount={oneTimeActiveCount}
+          totalCount={ONE_TIME_KEYS.length}
+          allOff={oneTimeAllOff}
+          onBulkToggle={() => bulkSetOneTime(oneTimeAllOff)}
+        >
+          <MetricToggle
+            label="Receita mensal"
+            description="Receita total do mês (vendas avulsas e recorrência)"
+            checked={settings.showRevenue}
+            onChange={(v) => updateSetting("showRevenue", v)}
+          />
+          <MetricToggle
+            label="Ticket médio"
+            description="Valor médio por pedido ou venda"
+            checked={settings.showTicketMedio}
+            onChange={(v) => updateSetting("showTicketMedio", v)}
+          />
+          <MetricToggle
+            label="Taxa de recompra"
+            description="Percentual de clientes que voltaram a comprar nos últimos 90 dias"
+            checked={settings.showRepurchaseRate}
+            onChange={(v) => updateSetting("showRepurchaseRate", v)}
+          />
+          <MetricToggle
+            label="Split de receita"
+            description="Barra mostrando proporção recorrente vs avulso"
+            checked={settings.showRevenueSplit}
+            onChange={(v) => updateSetting("showRevenueSplit", v)}
+          />
+        </MetricBlock>
 
         <div className="flex justify-end">
           <Button

@@ -6,7 +6,7 @@ import { getOrganizations } from "@/actions/organizations/get-organizations.acti
 import { OrganizationsContent } from "./_components/organizations-content";
 
 export const metadata = {
-  title: "Organizações | GrowthOS",
+  title: "Organizações | Groware",
 };
 
 export default async function OrganizationsPage() {

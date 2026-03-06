@@ -14,7 +14,7 @@ export default function DocsLayout({
             <IconBolt size={13} className="text-indigo-400" />
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-sm font-semibold text-zinc-100">GrowthOS</span>
+            <span className="text-sm font-semibold text-zinc-100">Groware</span>
             <span className="text-zinc-700 text-sm">/</span>
             <span className="text-sm text-zinc-500">Docs</span>
           </div>

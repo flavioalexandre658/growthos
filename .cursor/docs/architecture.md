@@ -1,11 +1,11 @@
-# GrowthOS — Arquitetura do Sistema
+# Groware — Arquitetura do Sistema
 
 ## Visão Geral
 
-O GrowthOS é uma plataforma de Growth Analytics multi-tenant que coleta dados via `tracker.js` embeddável, processa eventos em tempo real, calcula P&L com custos locais e gera análises com IA.
+O Groware é uma plataforma de Growth Analytics multi-tenant que coleta dados via `tracker.js` embeddável, processa eventos em tempo real, calcula P&L com custos locais e gera análises com IA.
 
 ```
-GrowthOS
+Groware
 ├── Tracking
 │   ├── public/tracker.js     → script embeddável (browser)
 │   └── /api/track            → endpoint de ingestão (server-side também)

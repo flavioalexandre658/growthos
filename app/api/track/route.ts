@@ -461,13 +461,13 @@ export async function POST(req: NextRequest) {
 
   if (missingDedupeOnPayment) {
     console.warn(
-      `[GrowthOS] ${eventType} event without dedupe_id or transaction identifier — org: ${apiKey.organizationId}, session: ${toString(body.session_id)}`
+      `[Groware] ${eventType} event without dedupe_id or transaction identifier — org: ${apiKey.organizationId}, session: ${toString(body.session_id)}`
     );
   }
 
   if (missingSubscriptionId) {
     console.warn(
-      `[GrowthOS] ${eventType} event without subscription_id — org: ${apiKey.organizationId}, session: ${toString(body.session_id)}`
+      `[Groware] ${eventType} event without subscription_id — org: ${apiKey.organizationId}, session: ${toString(body.session_id)}`
     );
   }
 
@@ -539,17 +539,17 @@ export async function POST(req: NextRequest) {
   };
 
   if (missingDedupeOnPayment) {
-    responseHeaders["X-GrowthOS-Warning"] =
+    responseHeaders["X-Groware-Warning"] =
       "Financial event without dedupe_id. Deduplication relies on fallback hash. Pass dedupe with a unique transaction ID for reliable dedup.";
   }
 
   if (missingSubscriptionId) {
-    responseHeaders["X-GrowthOS-Warning"] =
+    responseHeaders["X-Groware-Warning"] =
       "Subscription lifecycle event without subscription_id. Deduplication relies on fallback daily hash. Pass subscription_id for reliable dedup.";
   }
 
   if (inserted.length === 0) {
-    responseHeaders["X-GrowthOS-Duplicate"] = "true";
+    responseHeaders["X-Groware-Duplicate"] = "true";
     return new NextResponse(null, { status: 204, headers: responseHeaders });
   }
 

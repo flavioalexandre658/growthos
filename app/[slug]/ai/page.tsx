@@ -1,7 +1,7 @@
 import { AiContent } from "./_components/ai-content";
 
 export const metadata = {
-  title: "Análise com IA | GrowthOS",
+  title: "Análise com IA | Groware",
 };
 
 export default function AiPage() {

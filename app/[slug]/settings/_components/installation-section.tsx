@@ -317,7 +317,7 @@ export function InstallationSection({
             },
             {
               label: "3. Dispare eventos manuais",
-              desc: "Use GrowthOS.track('purchase', {...}) para enviar dados financeiros",
+              desc: "Use Groware.track('purchase', {...}) para enviar dados financeiros",
             },
           ].map((step) => (
             <div
@@ -383,7 +383,7 @@ export function InstallationSection({
                 </p>
                 <div>
                   <label className="text-[11px] text-zinc-600 uppercase tracking-wider">
-                    URL base do GrowthOS
+                    URL base do Groware
                   </label>
                   <input
                     value={baseUrl}
@@ -398,7 +398,7 @@ export function InstallationSection({
                   <code className="text-zinc-400">&lt;head&gt;</code> de qualquer
                   página do seu site. O tracker.js captura automaticamente
                   pageviews, UTMs, device e referrer. Use{" "}
-                  <code className="text-zinc-400">window.GrowthOS.track()</code>{" "}
+                  <code className="text-zinc-400">window.Groware.track()</code>{" "}
                   para eventos manuais.
                 </p>
               </div>

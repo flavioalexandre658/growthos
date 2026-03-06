@@ -30,7 +30,7 @@ export function PublicFooter({ verified, updatedAt }: PublicFooterProps) {
         className="flex items-center gap-1.5 text-[10px] text-zinc-700 hover:text-zinc-500 transition-colors"
       >
         <IconChartBar size={11} />
-        <span className="font-medium">GrowthOS</span>
+        <span className="font-medium">Groware</span>
       </Link>
     </footer>
   );

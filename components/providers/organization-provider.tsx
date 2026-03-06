@@ -10,7 +10,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useOrganizations } from "@/hooks/queries/use-organizations";
 import type { IOrganization } from "@/interfaces/organization.interface";
 
-const STORAGE_KEY = "growthos_active_org";
+const STORAGE_KEY = "groware_active_org";
 
 interface OrganizationContextValue {
   organization: IOrganization | null;

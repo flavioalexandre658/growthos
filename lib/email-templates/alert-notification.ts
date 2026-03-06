@@ -114,6 +114,6 @@ export function alertNotificationEmail(params: IAlertNotificationEmailParams): s
 
   return baseEmailLayout(
     content,
-    `Alerta GrowthOS: ${config.label} — ${orgName}`
+    `Alerta Groware: ${config.label} — ${orgName}`
   );
 }

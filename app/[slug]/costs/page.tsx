@@ -1,7 +1,7 @@
 import { CostsContent } from "./_components/costs-content";
 
 export const metadata = {
-  title: "Custos | GrowthOS",
+  title: "Custos | Groware",
 };
 
 export default function CostsPage() {

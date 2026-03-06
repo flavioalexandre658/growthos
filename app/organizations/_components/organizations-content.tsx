@@ -22,7 +22,7 @@ import type { IOrganization } from "@/interfaces/organization.interface";
 dayjs.extend(relativeTime);
 dayjs.locale("pt-br");
 
-const STORAGE_KEY = "growthos_active_org";
+const STORAGE_KEY = "groware_active_org";
 
 interface OrganizationsContentProps {
   initialOrgs: IOrganization[];
@@ -132,7 +132,7 @@ export function OrganizationsContent({
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
             <IconChartBar size={16} className="text-white" />
           </div>
-          <span className="text-sm font-bold text-zinc-100">GrowthOS</span>
+          <span className="text-sm font-bold text-zinc-100">Groware</span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -155,7 +155,7 @@ export function OrganizationsContent({
         <div className="mb-8 flex items-end justify-between">
           <div>
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-indigo-500">
-              GrowthOS
+              Groware
             </p>
             <h1 className="text-2xl font-bold text-zinc-100">
               Suas organizações

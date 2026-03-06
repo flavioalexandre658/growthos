@@ -52,14 +52,14 @@ export function StepTour({
   const baseUrl =
     typeof window !== "undefined"
       ? window.location.origin
-      : "https://growthos.dev";
+      : "https://groware.io";
 
   const handleFinish = async () => {
     setIsLoading(true);
     try {
       await completeOnboarding();
       await update({ onboardingCompleted: true });
-      toast.success("Bem-vindo ao GrowthOS!");
+      toast.success("Bem-vindo ao Groware!");
       window.location.href = slug ? `/${slug}` : "/organizations";
     } catch {
       toast.error("Erro ao finalizar onboarding.");

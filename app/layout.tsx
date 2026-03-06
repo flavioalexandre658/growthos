@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GrowthOS, Convitede",
+  title: "Groware, Convitede",
   description: "Painel de Growth & Analytics da Convitede",
 };
 

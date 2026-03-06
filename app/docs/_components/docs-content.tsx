@@ -97,50 +97,50 @@ const buildInstallHtml = (baseUrl: string) =>
   `<script\n  async\n  src="${baseUrl}/tracker.js"\n  data-key="tok_xxx"\n></script>`;
 
 const buildInstallNextjs = (baseUrl: string) =>
-  `import Script from 'next/script'\n\nexport default function RootLayout({ children }) {\n  return (\n    <html>\n      <head />\n      <body>\n        {children}\n        <Script\n          src="${baseUrl}/tracker.js"\n          data-key={process.env.NEXT_PUBLIC_GROWTHOS_KEY}\n          strategy="afterInteractive"\n        />\n      </body>\n    </html>\n  )\n}`;
+  `import Script from 'next/script'\n\nexport default function RootLayout({ children }) {\n  return (\n    <html>\n      <head />\n      <body>\n        {children}\n        <Script\n          src="${baseUrl}/tracker.js"\n          data-key={process.env.NEXT_PUBLIC_GROWARE_KEY}\n          strategy="afterInteractive"\n        />\n      </body>\n    </html>\n  )\n}`;
 
-const ENV_CODE = `NEXT_PUBLIC_GROWTHOS_KEY=tok_convitede_xxx`;
+const ENV_CODE = `NEXT_PUBLIC_GROWARE_KEY=tok_convitede_xxx`;
 
-const HOOK_CODE = `'use client'\n\nimport { useCallback } from 'react'\nimport type { GrowthOSEventType, GrowthOSEventData } from '@/types/growthos'\n\nexport function useTracker() {\n  const track = useCallback(\n    (eventType: GrowthOSEventType, data?: GrowthOSEventData) => {\n      if (typeof window === 'undefined') return\n      if (!window.GrowthOS) return\n      window.GrowthOS.track(eventType, data)\n    },\n    []\n  )\n  return { track }\n}`;
+const HOOK_CODE = `'use client'\n\nimport { useCallback } from 'react'\nimport type { GrowareEventType, GrowareEventData } from '@/types/groware'\n\nexport function useTracker() {\n  const track = useCallback(\n    (eventType: GrowareEventType, data?: GrowareEventData) => {\n      if (typeof window === 'undefined') return\n      if (!window.Groware) return\n      window.Groware.track(eventType, data)\n    },\n    []\n  )\n  return { track }\n}`;
 
 const HOOK_USAGE = `'use client'\n\nimport { useTracker } from '@/hooks/use-tracker'\n\nexport function CheckoutButton({ product, price }) {\n  const { track } = useTracker()\n\n  const handleCheckout = async () => {\n    track('checkout_started', {\n      gross_value: price,\n      currency: 'BRL',\n      product_id: product.id,\n      product_name: product.name,\n    })\n    await openCheckout(product.id)\n  }\n\n  return <button onClick={handleCheckout}>Comprar R$ {price}</button>\n}`;
 
-const PAYMENT_CODE = `window.GrowthOS.track('purchase', {\n  // Deduplicação — OBRIGATÓRIO para eventos financeiros\n  dedupe: invoice.id,       // ID único da transação no gateway\n\n  // Financeiro — obrigatório\n  gross_value: 150.00,\n  currency: 'BRL',          // ISO 4217 — sempre informe\n\n  // Financeiro — opcional\n  discount: 10.00,          // desconto aplicado em reais\n  installments: 1,\n  payment_method: 'pix',    // pix | credit_card | boleto | debit_card\n\n  // Produto — opcional mas recomendado\n  product_id: 'template-casamento-001',\n  product_name: 'Convite Casamento Premium',\n  category: 'casamento',\n\n  // Cliente — opcional mas recomendado\n  customer_type: 'new',     // new | returning\n  customer_id: 'hash_anonimo',\n  customer_segment: 'premium',\n  customer_cohort: '2024-Q1',\n})`;
+const PAYMENT_CODE = `window.Groware.track('purchase', {\n  // Deduplicação — OBRIGATÓRIO para eventos financeiros\n  dedupe: invoice.id,       // ID único da transação no gateway\n\n  // Financeiro — obrigatório\n  gross_value: 150.00,\n  currency: 'BRL',          // ISO 4217 — sempre informe\n\n  // Financeiro — opcional\n  discount: 10.00,          // desconto aplicado em reais\n  installments: 1,\n  payment_method: 'pix',    // pix | credit_card | boleto | debit_card\n\n  // Produto — opcional mas recomendado\n  product_id: 'template-casamento-001',\n  product_name: 'Convite Casamento Premium',\n  category: 'casamento',\n\n  // Cliente — opcional mas recomendado\n  customer_type: 'new',     // new | returning\n  customer_id: 'hash_anonimo',\n  customer_segment: 'premium',\n  customer_cohort: '2024-Q1',\n})`;
 
-const RECURRING_PAYMENT = `// Primeiro pagamento de assinatura\nwindow.GrowthOS.track('purchase', {\n  dedupe: invoice.id,           // ID único da invoice no gateway\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_type: 'recurring',\n  billing_interval: 'monthly',\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  plan_name: 'Pro Mensal',\n  customer_id: 'hash_cliente',\n})\n\n// Cancelamento de assinatura\nwindow.GrowthOS.track('subscription_canceled', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_interval: 'monthly',\n  reason: 'user_canceled', // user_canceled | payment_failed | upgraded | downgraded\n})\n\n// Upgrade de plano\nwindow.GrowthOS.track('subscription_changed', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  previous_plan_id: 'plan_basic',\n  new_plan_id: 'plan_pro',\n  previous_value: 49.00,\n  new_value: 89.00,\n  billing_interval: 'monthly',\n  currency: 'BRL',\n})`;
+const RECURRING_PAYMENT = `// Primeiro pagamento de assinatura\nwindow.Groware.track('purchase', {\n  dedupe: invoice.id,           // ID único da invoice no gateway\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_type: 'recurring',\n  billing_interval: 'monthly',\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  plan_name: 'Pro Mensal',\n  customer_id: 'hash_cliente',\n})\n\n// Cancelamento de assinatura\nwindow.Groware.track('subscription_canceled', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_interval: 'monthly',\n  reason: 'user_canceled', // user_canceled | payment_failed | upgraded | downgraded\n})\n\n// Upgrade de plano\nwindow.Groware.track('subscription_changed', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  previous_plan_id: 'plan_basic',\n  new_plan_id: 'plan_pro',\n  previous_value: 49.00,\n  new_value: 89.00,\n  billing_interval: 'monthly',\n  currency: 'BRL',\n})`;
 
-const SERVER_FETCH = `// Node.js / Next.js — renovação mensal às 3h da manhã\nawait fetch(\`\${process.env.GROWTHOS_URL}/api/track\`, {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    key: process.env.GROWTHOS_API_KEY,\n    event_type: 'purchase',\n    gross_value: 89.00,\n    currency: 'BRL',\n    billing_type: 'recurring',\n    billing_interval: 'monthly',\n    subscription_id: subscription.id,\n    plan_id: subscription.planId,\n    customer_id: hashCustomerId(subscription.customerId),\n  }),\n})`;
+const SERVER_FETCH = `// Node.js / Next.js — renovação mensal às 3h da manhã\nawait fetch(\`\${process.env.GROWARE_URL}/api/track\`, {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    key: process.env.GROWARE_API_KEY,\n    event_type: 'purchase',\n    gross_value: 89.00,\n    currency: 'BRL',\n    billing_type: 'recurring',\n    billing_interval: 'monthly',\n    subscription_id: subscription.id,\n    plan_id: subscription.planId,\n    customer_id: hashCustomerId(subscription.customerId),\n  }),\n})`;
 
-const SERVER_CURL = `curl -X POST https://growthos.app/api/track \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "key": "tok_convitede_xxx",\n    "event_type": "purchase",\n    "gross_value": 89.00,\n    "currency": "BRL",\n    "billing_type": "recurring",\n    "subscription_id": "sub_abc123"\n  }'`;
+const SERVER_CURL = `curl -X POST https://groware.io/api/track \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "key": "tok_convitede_xxx",\n    "event_type": "purchase",\n    "gross_value": 89.00,\n    "currency": "BRL",\n    "billing_type": "recurring",\n    "subscription_id": "sub_abc123"\n  }'`;
 
-const SERVER_PYTHON = `import requests\n\nrequests.post('https://growthos.app/api/track', json={\n    'key': 'tok_convitede_xxx',\n    'event_type': 'purchase',\n    'gross_value': 89.00,\n    'currency': 'BRL',\n    'billing_type': 'recurring',\n    'subscription_id': 'sub_abc123',\n})`;
+const SERVER_PYTHON = `import requests\n\nrequests.post('https://groware.io/api/track', json={\n    'key': 'tok_convitede_xxx',\n    'event_type': 'purchase',\n    'gross_value': 89.00,\n    'currency': 'BRL',\n    'billing_type': 'recurring',\n    'subscription_id': 'sub_abc123',\n})`;
 
-const DATA_ATTRS = `<!-- Botão de compra -->\n<button\n  data-growthos="purchase"\n  data-growthos-value="89.90"\n  data-growthos-currency="BRL"\n  data-growthos-product_id="template-001"\n  data-growthos-product_name="Convite Casamento"\n  data-growthos-payment_method="pix"\n  data-growthos-dedupe="invoice-001"\n>\n  Pagar com PIX\n</button>\n\n<!-- Cadastro -->\n<button\n  data-growthos="signup"\n  data-growthos-customer_type="new"\n  data-growthos-dedupe="true"\n>\n  Criar conta grátis\n</button>`;
+const DATA_ATTRS = `<!-- Botão de compra -->\n<button\n  data-groware="purchase"\n  data-groware-value="89.90"\n  data-groware-currency="BRL"\n  data-groware-product_id="template-001"\n  data-groware-product_name="Convite Casamento"\n  data-groware-payment_method="pix"\n  data-groware-dedupe="invoice-001"\n>\n  Pagar com PIX\n</button>\n\n<!-- Cadastro -->\n<button\n  data-groware="signup"\n  data-groware-customer_type="new"\n  data-groware-dedupe="true"\n>\n  Criar conta grátis\n</button>`;
 
-const TYPES_CODE = `// src/types/growthos.d.ts\n\nexport type GrowthOSEventType =\n  | 'pageview'\n  | 'signup'\n  | 'trial_started'\n  | 'checkout_started'\n  | 'checkout_abandoned'\n  | 'purchase'\n  | 'subscription_canceled'\n  | 'subscription_changed'\n\nexport type GrowthOSCurrency = 'BRL' | 'USD' | 'EUR' | 'GBP' | 'ARS' | string\nexport type GrowthOSPaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'boleto' | string\nexport type GrowthOSBillingInterval = 'monthly' | 'yearly' | 'weekly'\nexport type GrowthOSBillingType = 'recurring' | 'one_time'\nexport type GrowthOSCustomerType = 'new' | 'returning'\n\nexport interface GrowthOSEventData {\n  // Financeiro\n  gross_value?: number\n  discount?: number              // desconto aplicado em reais\n  installments?: number\n  payment_method?: GrowthOSPaymentMethod\n  currency?: GrowthOSCurrency      // ISO 4217 — padrão: moeda da org\n\n  // Produto\n  product_id?: string\n  product_name?: string\n  category?: string\n\n  // Cliente\n  customer_type?: GrowthOSCustomerType\n  customer_id?: string             // hash anônimo — NUNCA email/CPF\n  customer_segment?: string\n  customer_cohort?: string\n\n  // Recorrência\n  billing_type?: GrowthOSBillingType\n  billing_interval?: GrowthOSBillingInterval\n  subscription_id?: string\n  plan_id?: string\n  plan_name?: string\n\n  // Subscription events\n  previous_plan_id?: string\n  new_plan_id?: string\n  previous_value?: number\n  new_value?: number\n  reason?: 'user_canceled' | 'payment_failed' | 'upgraded' | 'downgraded' | 'exit' | 'timeout'\n\n  // Livre\n  metadata?: Record<string, unknown>\n}\n\ndeclare global {\n  interface Window {\n    GrowthOS: {\n      track: (eventType: GrowthOSEventType, data?: GrowthOSEventData) => void\n    }\n  }\n}`;
+const TYPES_CODE = `// src/types/groware.d.ts\n\nexport type GrowareEventType =\n  | 'pageview'\n  | 'signup'\n  | 'trial_started'\n  | 'checkout_started'\n  | 'checkout_abandoned'\n  | 'purchase'\n  | 'subscription_canceled'\n  | 'subscription_changed'\n\nexport type GrowareCurrency = 'BRL' | 'USD' | 'EUR' | 'GBP' | 'ARS' | string\nexport type GrowarePaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'boleto' | string\nexport type GrowareBillingInterval = 'monthly' | 'yearly' | 'weekly'\nexport type GrowareBillingType = 'recurring' | 'one_time'\nexport type GrowareCustomerType = 'new' | 'returning'\n\nexport interface GrowareEventData {\n  // Financeiro\n  gross_value?: number\n  discount?: number              // desconto aplicado em reais\n  installments?: number\n  payment_method?: GrowarePaymentMethod\n  currency?: GrowareCurrency      // ISO 4217 — padrão: moeda da org\n\n  // Produto\n  product_id?: string\n  product_name?: string\n  category?: string\n\n  // Cliente\n  customer_type?: GrowareCustomerType\n  customer_id?: string             // hash anônimo — NUNCA email/CPF\n  customer_segment?: string\n  customer_cohort?: string\n\n  // Recorrência\n  billing_type?: GrowareBillingType\n  billing_interval?: GrowareBillingInterval\n  subscription_id?: string\n  plan_id?: string\n  plan_name?: string\n\n  // Subscription events\n  previous_plan_id?: string\n  new_plan_id?: string\n  previous_value?: number\n  new_value?: number\n  reason?: 'user_canceled' | 'payment_failed' | 'upgraded' | 'downgraded' | 'exit' | 'timeout'\n\n  // Livre\n  metadata?: Record<string, unknown>\n}\n\ndeclare global {\n  interface Window {\n    Groware: {\n      track: (eventType: GrowareEventType, data?: GrowareEventData) => void\n    }\n  }\n}`;
 
-const DEBUG_CODE = `// 1 — Verificar se o tracker carregou\nconsole.log(window.GrowthOS)\n// → { track: ƒ }\n\n// 2 — Disparar evento de teste\nwindow.GrowthOS.track('pageview')\n// → Network: POST /api/track 204\n\n// 3 — Evento com moeda\nwindow.GrowthOS.track('purchase', {\n  gross_value: 1.00,\n  currency: 'BRL',\n  product_name: 'Teste'\n})\n// Verificar em Dados → Eventos`;
+const DEBUG_CODE = `// 1 — Verificar se o tracker carregou\nconsole.log(window.Groware)\n// → { track: ƒ }\n\n// 2 — Disparar evento de teste\nwindow.Groware.track('pageview')\n// → Network: POST /api/track 204\n\n// 3 — Evento com moeda\nwindow.Groware.track('purchase', {\n  gross_value: 1.00,\n  currency: 'BRL',\n  product_name: 'Teste'\n})\n// Verificar em Dados → Eventos`;
 
-const DEDUP_CODE = `// ── Client-side: localStorage com TTL de 24h ────────────────────────────────\n\n// dedupe: true  →  1 evento por tipo (persiste entre abas e reloads, 24h)\nwindow.GrowthOS.track('signup', { dedupe: true })\n\n// dedupe: <id>  →  1 evento por ID (OBRIGATÓRIO para purchase/refund)\n// Use SEMPRE o ID da transação do gateway — nunca um valor gerado no client\nwindow.GrowthOS.track('purchase', {\n  gross_value: 89.00,\n  dedupe: invoice.id,  // ← "inv_stripe_xxx" — imutável e único\n})\n// O tracker envia automaticamente dedupe_id ao servidor quando dedupe é string.\n// Isso garante dedup server-side deterministico via SHA256(orgId:dedupe_id).\n\n// ── Server-side: duas camadas ────────────────────────────────────────────────\n// 1. Se dedupe_id presente → hash SHA256 determinístico (sem janela de tempo)\n//    Mesmo invoice.id = mesmo hash, sempre. Proteção máxima.\n//\n// 2. Se dedupe_id ausente → hash de fallback com janela diária (24h)\n//    Usa: event_type + customer_id + gross_value + product_id + subscription_id\n//    Menos preciso — duas compras idênticas no mesmo dia seriam deduplicadas.\n//\n// Envios duplicados retornam 204 com X-GrowthOS-Duplicate: true\n// Eventos financeiros sem dedupe_id retornam X-GrowthOS-Warning no header.\n\nawait fetch('/api/track', {\n  body: JSON.stringify({\n    key: 'tok_xxx',\n    event_type: 'purchase',\n    gross_value: 89.00,\n    dedupe_id: 'purchase:inv_stripe_xxx', // ← obrigatório para dedup confiável\n    customer_id: 'usr_abc123',\n    subscription_id: 'sub_xyz',\n  })\n})`;
+const DEDUP_CODE = `// ── Client-side: localStorage com TTL de 24h ────────────────────────────────\n\n// dedupe: true  →  1 evento por tipo (persiste entre abas e reloads, 24h)\nwindow.Groware.track('signup', { dedupe: true })\n\n// dedupe: <id>  →  1 evento por ID (OBRIGATÓRIO para purchase/refund)\n// Use SEMPRE o ID da transação do gateway — nunca um valor gerado no client\nwindow.Groware.track('purchase', {\n  gross_value: 89.00,\n  dedupe: invoice.id,  // ← "inv_stripe_xxx" — imutável e único\n})\n// O tracker envia automaticamente dedupe_id ao servidor quando dedupe é string.\n// Isso garante dedup server-side deterministico via SHA256(orgId:dedupe_id).\n\n// ── Server-side: duas camadas ────────────────────────────────────────────────\n// 1. Se dedupe_id presente → hash SHA256 determinístico (sem janela de tempo)\n//    Mesmo invoice.id = mesmo hash, sempre. Proteção máxima.\n//\n// 2. Se dedupe_id ausente → hash de fallback com janela diária (24h)\n//    Usa: event_type + customer_id + gross_value + product_id + subscription_id\n//    Menos preciso — duas compras idênticas no mesmo dia seriam deduplicadas.\n//\n// Envios duplicados retornam 204 com X-Groware-Duplicate: true\n// Eventos financeiros sem dedupe_id retornam X-Groware-Warning no header.\n\nawait fetch('/api/track', {\n  body: JSON.stringify({\n    key: 'tok_xxx',\n    event_type: 'purchase',\n    gross_value: 89.00,\n    dedupe_id: 'purchase:inv_stripe_xxx', // ← obrigatório para dedup confiável\n    customer_id: 'usr_abc123',\n    subscription_id: 'sub_xyz',\n  })\n})`;
 
 const STRIPE_METADATA_CODE = `// Passando customer_id nos metadados do Stripe Checkout
 const session = await stripe.checkout.sessions.create({
   mode: 'subscription',
   line_items: [{ price: priceId, quantity: 1 }],
   metadata: {
-    growthos_customer_id: sha256(user.id + process.env.CUSTOMER_HASH_SALT),
+    groware_customer_id: sha256(user.id + process.env.CUSTOMER_HASH_SALT),
   },
   // ...
 })`;
 
 const STRIPE_TOGETHER_FLOW = `// 1 — Usuário chega via Google Ads
-//     GrowthOS (tracker.js): pageview · source: google · session: s_abc
+//     Groware (tracker.js): pageview · source: google · session: s_abc
 
 // 2 — Usuário cria conta
-//     GrowthOS (tracker.js): signup · customer_id: hash_xyz · source: google
+//     Groware (tracker.js): signup · customer_id: hash_xyz · source: google
 
 // 3 — Usuário inicia checkout (PASSE o customer_id aqui)
-window.GrowthOS.track('checkout_started', {
+window.Groware.track('checkout_started', {
   gross_value: 79.90,
   currency: 'BRL',
   product_name: 'Pro Mensal',
@@ -148,10 +148,10 @@ window.GrowthOS.track('checkout_started', {
 })
 
 // 4 — Stripe processa o pagamento
-//     metadata: { growthos_customer_id: "hash_xyz" }
+//     metadata: { groware_customer_id: "hash_xyz" }
 
-// 5 — Webhook chega no GrowthOS
-//     GrowthOS busca hash_xyz na events table
+// 5 — Webhook chega no Groware
+//     Groware busca hash_xyz na events table
 //     Encontra: source: google · landing: /pricing
 //     Salva purchase com contexto completo ✅
 
@@ -162,7 +162,7 @@ window.GrowthOS.track('checkout_started', {
 
 const CHECKLIST = [
   { label: "Script carregou sem erro no Network", detail: "Network → tracker.js → status 200" },
-  { label: "window.GrowthOS existe no console", detail: "typeof window.GrowthOS === 'object'" },
+  { label: "window.Groware existe no console", detail: "typeof window.Groware === 'object'" },
   { label: "UTMs capturados corretamente", detail: "Acesse /?utm_source=teste e confira o payload no Network" },
   { label: "POST /api/track retorna 204", detail: "Disparar evento manual e verificar no Network" },
   { label: "Currency presente em eventos financeiros", detail: "Payload deve ter currency: 'BRL' (ou a moeda da venda)" },
@@ -283,7 +283,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             <SubSection title="Atributos do script">
               <AttrTable rows={[
                 { name: "data-key", required: "sim", desc: "API key da organização. Obtida em Configurações.", example: "tok_convitede_xxx" },
-                { name: "data-debug", required: "não", desc: 'Habilita logs no console: "[GrowthOS] track: evento {...}".', example: "true" },
+                { name: "data-debug", required: "não", desc: 'Habilita logs no console: "[Groware] track: evento {...}".', example: "true" },
                 { name: "data-auto-abandon", required: "não", desc: "Desabilita detecção automática de checkout_abandoned no beforeunload.", example: "false" },
               ]} />
             </SubSection>
@@ -305,12 +305,12 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             <CodeBlock code={ENV_CODE} lang="bash" title=".env.local" />
 
             <Callout type="warn">
-              Nunca exponha a API key no client-side de forma pública. A chave no tracker é segura pois é validada pelo GrowthOS — mas nunca a use em chamadas autenticadas de admin.
+              Nunca exponha a API key no client-side de forma pública. A chave no tracker é segura pois é validada pelo Groware — mas nunca a use em chamadas autenticadas de admin.
             </Callout>
 
             <SubSection title="Hook reutilizável (recomendado)">
               <p className="text-sm text-zinc-400 leading-relaxed mb-4">
-                Encapsula <Mono>window.GrowthOS</Mono> com tipagem TypeScript e proteção SSR.
+                Encapsula <Mono>window.Groware</Mono> com tipagem TypeScript e proteção SSR.
               </p>
               <CodeBlock code={HOOK_CODE} lang="ts" title="hooks/use-tracker.ts" />
               <CodeBlock code={HOOK_USAGE} lang="tsx" title="Usando em um componente" />
@@ -353,7 +353,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
 
           {/* EVENTOS MANUAIS */}
           <TabsContent value="manual" className="mt-0 space-y-6">
-            <SectionHeader title="Eventos Manuais" badge="window.GrowthOS.track" />
+            <SectionHeader title="Eventos Manuais" badge="window.Groware.track" />
             <p className="text-sm text-zinc-400 leading-relaxed">
               Para eventos que dependem de lógica do sistema. Sempre passe{" "}
               <Mono className="text-amber-400">currency</Mono> em eventos financeiros.
@@ -416,7 +416,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
               />
               <Callout type="tip">
                 Se você usa a <strong>integração com Stripe</strong>, passe{" "}
-                <Mono>customer_id</Mono> no <Mono>checkout_started</Mono>. O GrowthOS usa esse hash para recuperar
+                <Mono>customer_id</Mono> no <Mono>checkout_started</Mono>. O Groware usa esse hash para recuperar
                 automaticamente a origem do cliente (UTM, landing page, canal) e atribuí-la ao pagamento que chega via webhook —
                 sem nenhum código extra no backend.
               </Callout>
@@ -494,12 +494,12 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             </p>
             <CodeBlock code={DATA_ATTRS} lang="html" title="HTML — data attributes" />
             <AttrTable rows={[
-              { name: "data-growthos", required: "sim", desc: "Define o tipo do evento", example: "purchase" },
-              { name: "data-growthos-value", required: "não", desc: "gross_value (converte ponto decimal)", example: "89.90" },
-              { name: "data-growthos-currency", required: "não", desc: "ISO 4217 — padrão: moeda da org", example: "BRL" },
-              { name: "data-growthos-product_id", required: "não", desc: "ID do produto", example: "template-001" },
-              { name: "data-growthos-payment_method", required: "não", desc: "Método de pagamento", example: "pix" },
-              { name: "data-growthos-dedupe", required: "não", desc: "'true' para dedup por tipo, ou ID único da transação para dedup preciso (obrigatório em purchase)", example: "invoice-001" },
+              { name: "data-groware", required: "sim", desc: "Define o tipo do evento", example: "purchase" },
+              { name: "data-groware-value", required: "não", desc: "gross_value (converte ponto decimal)", example: "89.90" },
+              { name: "data-groware-currency", required: "não", desc: "ISO 4217 — padrão: moeda da org", example: "BRL" },
+              { name: "data-groware-product_id", required: "não", desc: "ID do produto", example: "template-001" },
+              { name: "data-groware-payment_method", required: "não", desc: "Método de pagamento", example: "pix" },
+              { name: "data-groware-dedupe", required: "não", desc: "'true' para dedup por tipo, ou ID único da transação para dedup preciso (obrigatório em purchase)", example: "invoice-001" },
             ]} />
           </TabsContent>
 
@@ -520,7 +520,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
               deterministica de fallback se presente. O tracker envia automaticamente <Mono>dedupe_id</Mono> ao servidor,
               que gera um hash SHA256 deterministico — garantindo dedup perfeito independente de reloads, novas abas ou
               visitas futuras. Sem identificadores de dedup, o servidor usa um hash de fallback com janela diaria (24h) e
-              retorna <Mono>X-GrowthOS-Warning</Mono> no header.
+              retorna <Mono>X-Groware-Warning</Mono> no header.
             </Callout>
           </TabsContent>
 
@@ -593,7 +593,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             </SubSection>
 
             <Callout type="warn">
-              O <Mono>subscription_id</Mono> é a chave que o GrowthOS usa para manter o estado da assinatura
+              O <Mono>subscription_id</Mono> é a chave que o Groware usa para manter o estado da assinatura
               na tabela <Mono>subscriptions</Mono>. Use sempre o ID do seu gateway ou sistema —
               nunca reutilize o mesmo ID para assinaturas diferentes.
             </Callout>
@@ -626,7 +626,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
 
             <SubSection title="Enviando eventos com moeda">
               <CodeBlock
-                code={`// Mesma moeda da org — currency é opcional\nwindow.GrowthOS.track('purchase', {\n  gross_value: 89.00,\n  currency: 'BRL',\n})\n\n// Moeda diferente — requer taxa configurada\nwindow.GrowthOS.track('purchase', {\n  gross_value: 15.00,\n  currency: 'USD', // precisa de USD→BRL em Configurações\n})`}
+                code={`// Mesma moeda da org — currency é opcional\nwindow.Groware.track('purchase', {\n  gross_value: 89.00,\n  currency: 'BRL',\n})\n\n// Moeda diferente — requer taxa configurada\nwindow.Groware.track('purchase', {\n  gross_value: 15.00,\n  currency: 'USD', // precisa de USD→BRL em Configurações\n})`}
                 lang="js"
                 title="tracker.js"
               />
@@ -643,9 +643,9 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
           <TabsContent value="typescript" className="mt-0 space-y-6">
             <SectionHeader title="TypeScript" />
             <p className="text-sm text-zinc-400 leading-relaxed">
-              Copie para <Mono>src/types/growthos.d.ts</Mono> para tipagem completa no projeto.
+              Copie para <Mono>src/types/groware.d.ts</Mono> para tipagem completa no projeto.
             </p>
-            <CodeBlock code={TYPES_CODE} lang="ts" title="src/types/growthos.d.ts" />
+            <CodeBlock code={TYPES_CODE} lang="ts" title="src/types/groware.d.ts" />
           </TabsContent>
 
           {/* API REFERENCE */}
@@ -666,7 +666,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 { name: "gross_value", required: "não", desc: "Valor bruto (decimal)", example: "89.90" },
                 { name: "currency", required: "não", desc: "ISO 4217 — padrão: moeda da org", example: "BRL" },
                 { name: "customer_id", required: "não", desc: "ID do cliente (melhora dedup server-side)", example: "usr_abc123" },
-                { name: "...outros", required: "não", desc: "Qualquer campo de GrowthOSEventData", example: "" },
+                { name: "...outros", required: "não", desc: "Qualquer campo de GrowareEventData", example: "" },
               ]} />
             </SubSection>
 
@@ -722,7 +722,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
           <TabsContent value="integration-overview" className="mt-0 space-y-6">
             <SectionHeader title="Integrações" badge="dois modos" />
             <p className="text-sm text-zinc-400 leading-relaxed">
-              Existem dois modos de enviar dados para o GrowthOS. Você pode usar os dois ao mesmo tempo ou só um — mas precisa entender o que cada um cobre.
+              Existem dois modos de enviar dados para o Groware. Você pode usar os dois ao mesmo tempo ou só um — mas precisa entender o que cada um cobre.
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -805,7 +805,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
               <strong>Ponto crítico — conectou o Stripe, não dispare mais eventos de purchase manualmente.</strong>
               <br />
               O webhook do Stripe e o tracker.js registrariam o mesmo pagamento duas vezes.
-              O GrowthOS detecta a origem pelo campo <code className="font-mono text-xs bg-zinc-800/60 px-1 rounded">provider</code>:{" "}
+              O Groware detecta a origem pelo campo <code className="font-mono text-xs bg-zinc-800/60 px-1 rounded">provider</code>:{" "}
               <code className="font-mono text-xs bg-zinc-800/60 px-1 rounded">provider: &quot;stripe&quot;</code> (webhook) vs{" "}
               <code className="font-mono text-xs bg-zinc-800/60 px-1 rounded">provider: null</code> (tracker.js).
             </Callout>
@@ -815,16 +815,16 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
           <TabsContent value="integration-stripe" className="mt-0 space-y-6">
             <SectionHeader title="Integração Stripe" badge="automático" />
             <p className="text-sm text-zinc-400 leading-relaxed">
-              Conecte sua conta do Stripe com uma Restricted Key. O GrowthOS importa o histórico completo e passa a receber eventos em tempo real via webhook — sem nenhuma linha de código adicional.
+              Conecte sua conta do Stripe com uma Restricted Key. O Groware importa o histórico completo e passa a receber eventos em tempo real via webhook — sem nenhuma linha de código adicional.
             </p>
 
             <SubSection title="Como conectar — passo a passo">
               <div className="space-y-2">
                 {[
                   ["1. Criar Restricted Key", "Stripe Dashboard → Developers → API Keys → Restricted Keys → Create restricted key. Marque Read em: Customers, Subscriptions, Invoices, Charges, Balance transactions."],
-                  ["2. Conectar no GrowthOS", "Configurações → Integrações → Stripe. Cole a Restricted Key (rk_live_...) e clique em Conectar."],
+                  ["2. Conectar no Groware", "Configurações → Integrações → Stripe. Cole a Restricted Key (rk_live_...) e clique em Conectar."],
                   ["3. Importar histórico", "Após conectar, clique em Importar histórico para trazer assinaturas e pagamentos anteriores."],
-                  ["4. Configurar webhook", "Stripe Dashboard → Developers → Webhooks → Add endpoint. Cole a URL gerada pelo GrowthOS. Copie o Signing Secret e cole no campo Webhook Secret."],
+                  ["4. Configurar webhook", "Stripe Dashboard → Developers → Webhooks → Add endpoint. Cole a URL gerada pelo Groware. Copie o Signing Secret e cole no campo Webhook Secret."],
                 ].map(([title, desc]) => (
                   <div key={title} className="flex gap-3 rounded-lg border border-zinc-800/60 px-4 py-3">
                     <IconArrowRight size={13} className="text-indigo-400 shrink-0 mt-0.5" />
@@ -841,7 +841,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
               <div className="rounded-lg border border-zinc-800/60 overflow-hidden">
                 <div className="grid grid-cols-3 text-[11px] font-medium text-zinc-500 uppercase tracking-wider px-4 py-2.5 bg-zinc-900/60 border-b border-zinc-800/60">
                   <span>Evento Stripe</span>
-                  <span>Tipo no GrowthOS</span>
+                  <span>Tipo no Groware</span>
                   <span>Dashboard afetado</span>
                 </div>
                 {[
@@ -880,7 +880,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             </SubSection>
 
             <Callout type="info">
-              A Restricted Key é somente leitura — o GrowthOS nunca modifica dados na sua conta Stripe.
+              A Restricted Key é somente leitura — o Groware nunca modifica dados na sua conta Stripe.
               Ela é armazenada criptografada (AES-256-GCM) e nunca é exposta no frontend.
             </Callout>
           </TabsContent>
@@ -889,21 +889,21 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
           <TabsContent value="integration-together" className="mt-0 space-y-6">
             <SectionHeader title="Usando os dois juntos" badge="cenário ideal" />
             <p className="text-sm text-zinc-400 leading-relaxed">
-              Quando você usa o tracker.js e o Stripe ao mesmo tempo, o GrowthOS consegue ligar automaticamente cada pagamento ao histórico de navegação do cliente — de qual canal ele veio, qual landing page visitou, qual campanha gerou a venda.
+              Quando você usa o tracker.js e o Stripe ao mesmo tempo, o Groware consegue ligar automaticamente cada pagamento ao histórico de navegação do cliente — de qual canal ele veio, qual landing page visitou, qual campanha gerou a venda.
             </p>
 
             <SubSection title="O customer_id é a ponte">
               <p className="text-sm text-zinc-400 leading-relaxed mb-4">
                 O tracker.js salva <Mono>customer_id</Mono> em eventos como{" "}
                 <Mono>signup</Mono> e <Mono>checkout_started</Mono>. Quando o webhook do Stripe chega,
-                o GrowthOS busca esse hash na tabela de eventos e recupera o contexto de aquisição original.
+                o Groware busca esse hash na tabela de eventos e recupera o contexto de aquisição original.
               </p>
               <CodeBlock code={STRIPE_TOGETHER_FLOW} lang="js" title="Fluxo completo de uma venda" />
             </SubSection>
 
             <SubSection title="Passando customer_id no Stripe Checkout">
               <p className="text-sm text-zinc-400 leading-relaxed mb-4">
-                Para que o GrowthOS consiga fazer o lookup, passe o <Mono>customer_id</Mono> no{" "}
+                Para que o Groware consiga fazer o lookup, passe o <Mono>customer_id</Mono> no{" "}
                 <Mono>metadata</Mono> da sessão do Stripe. Use o mesmo hash anônimo que você passa no tracker.js.
               </p>
               <CodeBlock code={STRIPE_METADATA_CODE} lang="ts" title="Backend — criando sessão do Stripe" />
@@ -914,7 +914,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 {[
                   ["1. Instale o tracker.js no seu site", "Captura a origem do cliente (UTMs, referrer, landing page)"],
                   ["2. Passe customer_id no checkout_started e no metadata do Stripe", "Cria a ponte entre o comportamento pré-venda e o pagamento"],
-                  ["3. Conecte o Stripe no GrowthOS", "Recebe pagamentos, renovações e cancelamentos automaticamente"],
+                  ["3. Conecte o Stripe no Groware", "Recebe pagamentos, renovações e cancelamentos automaticamente"],
                 ].map(([title, desc]) => (
                   <div key={title} className="flex gap-3 rounded-lg border border-zinc-800/60 px-4 py-3">
                     <IconCheck size={13} className="text-green-500 shrink-0 mt-0.5" />

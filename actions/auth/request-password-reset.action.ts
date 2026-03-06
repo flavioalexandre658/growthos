@@ -37,7 +37,7 @@ export async function requestPasswordReset(input: z.infer<typeof schema>) {
 
   await sendEmail({
     to: user.email,
-    subject: "Redefinição de senha — GrowthOS",
+    subject: "Redefinição de senha — Groware",
     html: passwordRecoveryEmail({
       userName: user.name,
       resetUrl,

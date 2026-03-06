@@ -34,7 +34,7 @@ export function teamInviteEmail(params: ITeamInviteEmailParams): string {
 
     <p style="color:#a1a1aa; font-size:14px; line-height:1.7; margin-bottom:0;">
       <strong style="color:#d4d4d8;">${inviterName}</strong> convidou você para participar do workspace
-      <strong style="color:#d4d4d8;">${orgName}</strong> no GrowthOS como
+      <strong style="color:#d4d4d8;">${orgName}</strong> no Groware como
       <strong style="color:#d4d4d8;">${ROLE_LABELS[role]}</strong>.
     </p>
 
@@ -69,6 +69,6 @@ export function teamInviteEmail(params: ITeamInviteEmailParams): string {
 
   return baseEmailLayout(
     content,
-    `${inviterName} convidou você para o ${orgName} no GrowthOS`
+    `${inviterName} convidou você para o ${orgName} no Groware`
   );
 }

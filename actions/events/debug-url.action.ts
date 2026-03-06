@@ -44,7 +44,7 @@ export async function debugUrl(input: z.infer<typeof schema>): Promise<IDebugRes
     const response = await fetch(data.url, {
       signal: controller.signal,
       headers: {
-        "User-Agent": "GrowthOS-Debugger/1.0",
+        "User-Agent": "Groware-Debugger/1.0",
       },
     });
 

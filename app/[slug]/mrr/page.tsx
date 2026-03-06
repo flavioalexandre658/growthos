@@ -2,7 +2,7 @@ import type { IDateFilter } from "@/interfaces/dashboard.interface";
 import { MrrContent } from "./_components/mrr-content";
 
 export const metadata = {
-  title: "Recorrência | GrowthOS",
+  title: "Recorrência | Groware",
 };
 
 interface MrrPageProps {

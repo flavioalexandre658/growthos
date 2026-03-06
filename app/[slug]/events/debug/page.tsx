@@ -1,7 +1,7 @@
 import { DebugContent } from "./_components/debug-content";
 
 export const metadata = {
-  title: "Debug do Tracker | GrowthOS",
+  title: "Debug do Tracker | Groware",
 };
 
 export default function DebugPage() {
