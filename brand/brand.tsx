@@ -121,7 +121,7 @@ const GrowareIcon = ({ size = 48 }) => {
 };
 
 // ─── Logo Lockup ─────────────────────────────────────────────────────────────
-const GrowareLogo = ({ size = "md" }) => {
+const GrowareLogo = ({ size = "md" }: { size?: "sm" | "md" | "lg" | "xl" }) => {
   const cfg = {
     sm: { icon: 26, fontSize: "15px", gap: "9px", track: "-0.035em" },
     md: { icon: 36, fontSize: "21px", gap: "11px", track: "-0.04em" },
@@ -313,7 +313,7 @@ export default function App() {
             padding: "36px 48px",
           }}
         >
-          {["sm", "md", "lg", "xl"].map((s) => (
+          {(["sm", "md", "lg", "xl"] as const).map((s) => (
             <div
               key={s}
               style={{ display: "flex", alignItems: "center", gap: "20px" }}
@@ -375,12 +375,14 @@ export default function App() {
                 marginTop: "4px",
               }}
             >
-              {[
-                ["Overview", true],
-                ["Revenue", false],
-                ["Channels", false],
-                ["MRR", false],
-              ].map(([label, active]) => (
+              {(
+                [
+                  ["Overview", true],
+                  ["Revenue", false],
+                  ["Channels", false],
+                  ["MRR", false],
+                ] as [string, boolean][]
+              ).map(([label, active]) => (
                 <div
                   key={label}
                   style={{
