@@ -50,7 +50,7 @@ function MetricCard({
   );
 }
 
-function buildRecurringCards(metrics: IPublicMetrics, org: IPublicOrgData): React.ReactNode[] {
+export function PublicMetricsGrid({ metrics, org }: PublicMetricsGridProps) {
   const cards: React.ReactNode[] = [];
 
   if (metrics.activeSubscriptions !== null && metrics.activeSubscriptions !== undefined) {
@@ -123,12 +123,6 @@ function buildRecurringCards(metrics: IPublicMetrics, org: IPublicOrgData): Reac
     );
   }
 
-  return cards;
-}
-
-function buildOneTimeCards(metrics: IPublicMetrics, org: IPublicOrgData): React.ReactNode[] {
-  const cards: React.ReactNode[] = [];
-
   if (metrics.uniqueCustomers !== null && metrics.uniqueCustomers !== undefined) {
     cards.push(
       <MetricCard
@@ -184,94 +178,6 @@ function buildOneTimeCards(metrics: IPublicMetrics, org: IPublicOrgData): React.
     );
   }
 
-  return cards;
-}
-
-function buildHybridCards(metrics: IPublicMetrics, org: IPublicOrgData): React.ReactNode[] {
-  const cards: React.ReactNode[] = [];
-
-  if (metrics.mrr !== null && metrics.mrr !== undefined) {
-    const mrrValue =
-      typeof metrics.mrr.value === "number"
-        ? new Intl.NumberFormat(org.locale, {
-            style: "currency",
-            currency: org.currency,
-            maximumFractionDigits: 0,
-          }).format(metrics.mrr.value / 100)
-        : String(metrics.mrr.value);
-
-    cards.push(
-      <MetricCard
-        key="mrr"
-        label="MRR"
-        value={mrrValue}
-        subLabel="receita recorrente mensal"
-        icon={IconCurrencyDollar}
-        color="text-indigo-400"
-        bgColor="bg-indigo-950/50"
-      />,
-    );
-  }
-
-  if (metrics.uniqueCustomers !== null && metrics.uniqueCustomers !== undefined) {
-    cards.push(
-      <MetricCard
-        key="customers"
-        label="Clientes"
-        value={
-          typeof metrics.uniqueCustomers.value === "number"
-            ? metrics.uniqueCustomers.value
-            : String(metrics.uniqueCustomers.value)
-        }
-        subLabel="clientes únicos no mês"
-        icon={IconUserDollar}
-        color="text-violet-400"
-        bgColor="bg-violet-950/50"
-      />,
-    );
-  }
-
-  if (metrics.ticketMedio !== null && metrics.ticketMedio !== undefined) {
-    const ticketValue =
-      typeof metrics.ticketMedio.value === "number"
-        ? new Intl.NumberFormat(org.locale, {
-            style: "currency",
-            currency: org.currency,
-            maximumFractionDigits: 0,
-          }).format(metrics.ticketMedio.value / 100)
-        : String(metrics.ticketMedio.value);
-
-    cards.push(
-      <MetricCard
-        key="ticket"
-        label="Ticket médio"
-        value={ticketValue}
-        subLabel="valor médio por pedido"
-        icon={IconReceipt}
-        color="text-amber-400"
-        bgColor="bg-amber-950/50"
-      />,
-    );
-  }
-
-  return cards;
-}
-
-export function PublicMetricsGrid({ metrics, org, businessMode }: PublicMetricsGridProps) {
-  let cards: React.ReactNode[];
-
-  switch (businessMode) {
-    case "recurring":
-      cards = buildRecurringCards(metrics, org);
-      break;
-    case "one_time":
-      cards = buildOneTimeCards(metrics, org);
-      break;
-    case "hybrid":
-      cards = buildHybridCards(metrics, org);
-      break;
-  }
-
   if (cards.length === 0) return null;
 
   return (
@@ -279,8 +185,8 @@ export function PublicMetricsGrid({ metrics, org, businessMode }: PublicMetricsG
       className={`grid gap-3 ${
         cards.length === 1
           ? "grid-cols-1"
-          : cards.length === 3
-            ? "grid-cols-3"
+          : cards.length >= 3
+            ? "grid-cols-2 sm:grid-cols-3"
             : "grid-cols-2"
       }`}
     >

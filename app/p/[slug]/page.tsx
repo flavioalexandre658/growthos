@@ -49,16 +49,12 @@ export async function generateMetadata({ params }: PublicPageProps) {
   let primaryStr: string | null = null;
   let primaryLabel = "";
 
-  if (data.businessMode === "recurring") {
-    if (data.metrics.mrr && typeof data.metrics.mrr.value === "number") {
-      primaryStr = fmt(data.metrics.mrr.value);
-      primaryLabel = "MRR";
-    }
-  } else {
-    if (data.metrics.monthlyRevenue && typeof data.metrics.monthlyRevenue.value === "number") {
-      primaryStr = fmt(data.metrics.monthlyRevenue.value);
-      primaryLabel = data.businessMode === "hybrid" ? "Receita Total" : "Receita";
-    }
+  if (data.metrics.mrr && typeof data.metrics.mrr.value === "number") {
+    primaryStr = fmt(data.metrics.mrr.value);
+    primaryLabel = "MRR";
+  } else if (data.metrics.monthlyRevenue && typeof data.metrics.monthlyRevenue.value === "number") {
+    primaryStr = fmt(data.metrics.monthlyRevenue.value);
+    primaryLabel = "Receita";
   }
 
   const descParts = [
@@ -96,19 +92,21 @@ export default async function PublicPage({ params }: PublicPageProps) {
   if (!data) notFound();
 
   const month = getFormattedMonth();
-  const mode = data.businessMode;
 
-  const hasRecurringMetrics =
-    data.metrics.mrr !== null ||
+  const hasMrr = data.metrics.mrr !== null && data.metrics.mrr !== undefined;
+  const hasRevenue = data.metrics.monthlyRevenue !== null && data.metrics.monthlyRevenue !== undefined;
+
+  const hasRecurringSecondary =
     data.metrics.activeSubscriptions !== null ||
     data.metrics.churnRate !== null ||
     data.metrics.arpu !== null;
 
-  const hasRevenueMetrics =
-    data.metrics.monthlyRevenue !== null ||
+  const hasRevenueSecondary =
     data.metrics.uniqueCustomers !== null ||
     data.metrics.ticketMedio !== null ||
     data.metrics.repurchaseRate !== null;
+
+  const hasSecondaryMetrics = hasRecurringSecondary || hasRevenueSecondary;
 
   return (
     <main className="min-h-screen bg-[#09090b] text-white relative">
@@ -128,7 +126,7 @@ export default async function PublicPage({ params }: PublicPageProps) {
         <div className="space-y-4">
           <PublicHeader org={data.org} month={month} />
 
-          {mode === "recurring" && data.metrics.mrr && (
+          {hasMrr && (
             <PublicHeroMrr
               metrics={data.metrics}
               org={data.org}
@@ -136,16 +134,25 @@ export default async function PublicPage({ params }: PublicPageProps) {
             />
           )}
 
-          {(mode === "one_time" || mode === "hybrid") && data.metrics.monthlyRevenue && (
+          {!hasMrr && hasRevenue && (
             <PublicHeroRevenue
               metrics={data.metrics}
               org={data.org}
               revenueHistory={data.charts.revenueHistory}
-              businessMode={mode}
+              businessMode={data.businessMode}
             />
           )}
 
-          {mode === "hybrid" && data.metrics.revenueSplit && (
+          {hasMrr && hasRevenue && (
+            <PublicHeroRevenue
+              metrics={data.metrics}
+              org={data.org}
+              revenueHistory={data.charts.revenueHistory}
+              businessMode={data.businessMode}
+            />
+          )}
+
+          {data.metrics.revenueSplit && (
             <PublicRevenueSplitBar
               recurring={data.metrics.revenueSplit.recurring}
               oneTime={data.metrics.revenueSplit.oneTime}
@@ -154,39 +161,31 @@ export default async function PublicPage({ params }: PublicPageProps) {
             />
           )}
 
-          {mode === "recurring" && hasRecurringMetrics && (
-            <PublicMetricsGrid metrics={data.metrics} org={data.org} businessMode={mode} />
+          {hasSecondaryMetrics && (
+            <PublicMetricsGrid
+              metrics={data.metrics}
+              org={data.org}
+              businessMode={data.businessMode}
+            />
           )}
 
-          {mode === "one_time" && hasRevenueMetrics && (
-            <PublicMetricsGrid metrics={data.metrics} org={data.org} businessMode={mode} />
+          {data.charts.mrrHistory && data.charts.mrrHistory.length > 0 && (
+            <PublicMrrChart
+              data={data.charts.mrrHistory}
+              currency={data.org.currency}
+              locale={data.org.locale}
+            />
           )}
 
-          {mode === "hybrid" && (hasRecurringMetrics || hasRevenueMetrics) && (
-            <PublicMetricsGrid metrics={data.metrics} org={data.org} businessMode={mode} />
+          {data.charts.revenueHistory && data.charts.revenueHistory.length > 0 && (
+            <PublicRevenueChart
+              data={data.charts.revenueHistory}
+              currency={data.org.currency}
+              locale={data.org.locale}
+            />
           )}
 
-          {(mode === "recurring" || mode === "hybrid") &&
-            data.charts.mrrHistory &&
-            data.charts.mrrHistory.length > 0 && (
-              <PublicMrrChart
-                data={data.charts.mrrHistory}
-                currency={data.org.currency}
-                locale={data.org.locale}
-              />
-            )}
-
-          {(mode === "one_time" || mode === "hybrid") &&
-            data.charts.revenueHistory &&
-            data.charts.revenueHistory.length > 0 && (
-              <PublicRevenueChart
-                data={data.charts.revenueHistory}
-                currency={data.org.currency}
-                locale={data.org.locale}
-              />
-            )}
-
-          {(mode === "recurring" || mode === "hybrid") && data.charts.sankey && (
+          {data.charts.sankey && (
             <PublicSankey
               data={data.charts.sankey}
               currency={data.org.currency}

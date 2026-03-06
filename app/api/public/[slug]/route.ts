@@ -62,23 +62,32 @@ export async function GET(
 
   const verified = !!stripeIntegration;
 
-  const revenueMetrics = await getPublicRevenueMetrics(org.id);
+  const needsAnyMrrMetric = settings.showMrr || settings.showSubscribers || settings.showChurn || settings.showArpu;
+  const needsAnyRevenueMetric = settings.showRevenue || settings.showTicketMedio || settings.showRepurchaseRate || settings.showRevenueSplit;
+
+  const [rawMetrics, revenueMetrics, mrrHistory, revenueHistory, sankeyData] = await Promise.all([
+    needsAnyMrrMetric ? getPublicMetrics(org.id) : null,
+    needsAnyRevenueMetric ? getPublicRevenueMetrics(org.id) : null,
+    needsAnyMrrMetric && settings.showGrowthChart ? getPublicMrrHistory(org.id, 12) : null,
+    needsAnyRevenueMetric && settings.showGrowthChart ? getPublicRevenueHistory(org.id, 12) : null,
+    settings.showSankey ? getPublicSankeyData(org.id) : null,
+  ]);
+
+  const resolvedRevenueMetrics = revenueMetrics ?? {
+    monthlyRevenue: 0,
+    revenueGrowthRate: 0,
+    uniqueCustomers: 0,
+    ticketMedio: 0,
+    repurchaseRate: 0,
+    recurringRevenue: 0,
+    oneTimeRevenue: 0,
+  };
 
   const businessMode = detectBusinessMode(
     org.hasRecurringRevenue,
-    revenueMetrics.oneTimeRevenue,
-    revenueMetrics.recurringRevenue,
+    resolvedRevenueMetrics.oneTimeRevenue,
+    resolvedRevenueMetrics.recurringRevenue,
   );
-
-  const needsMrr = businessMode === "recurring" || businessMode === "hybrid";
-  const needsRevenue = businessMode === "one_time" || businessMode === "hybrid";
-
-  const [rawMetrics, mrrHistory, revenueHistory, sankeyData] = await Promise.all([
-    needsMrr ? getPublicMetrics(org.id) : null,
-    needsMrr && settings.showGrowthChart ? getPublicMrrHistory(org.id, 12) : null,
-    needsRevenue && settings.showGrowthChart ? getPublicRevenueHistory(org.id, 12) : null,
-    needsMrr && settings.showSankey ? getPublicSankeyData(org.id) : null,
-  ]);
 
   const response: IPublicPageData = {
     org: {
@@ -92,10 +101,10 @@ export async function GET(
     },
     businessMode,
     metrics: {
-      mrr: needsMrr && rawMetrics && settings.showMrr
+      mrr: rawMetrics && settings.showMrr
         ? maskValue(rawMetrics.mrr, settings.showAbsoluteValues, org.currency, org.locale)
         : null,
-      activeSubscriptions: needsMrr && rawMetrics && settings.showSubscribers
+      activeSubscriptions: rawMetrics && settings.showSubscribers
         ? {
             value: settings.showAbsoluteValues
               ? rawMetrics.activeSubscriptions
@@ -104,26 +113,26 @@ export async function GET(
                 : "0",
           }
         : null,
-      churnRate: needsMrr && rawMetrics && settings.showChurn ? rawMetrics.churnRate : null,
-      arpu: needsMrr && rawMetrics && settings.showArpu
+      churnRate: rawMetrics && settings.showChurn ? rawMetrics.churnRate : null,
+      arpu: rawMetrics && settings.showArpu
         ? maskValue(rawMetrics.arpu, settings.showAbsoluteValues, org.currency, org.locale)
         : null,
-      mrrGrowthRate: needsMrr && rawMetrics ? rawMetrics.mrrGrowthRate : null,
+      mrrGrowthRate: rawMetrics ? rawMetrics.mrrGrowthRate : null,
 
-      monthlyRevenue: needsRevenue && settings.showRevenue
+      monthlyRevenue: revenueMetrics && settings.showRevenue
         ? maskValue(revenueMetrics.monthlyRevenue, settings.showAbsoluteValues, org.currency, org.locale)
         : null,
-      revenueGrowthRate: needsRevenue ? revenueMetrics.revenueGrowthRate : null,
-      uniqueCustomers: needsRevenue && settings.showRevenue
+      revenueGrowthRate: revenueMetrics ? revenueMetrics.revenueGrowthRate : null,
+      uniqueCustomers: revenueMetrics && settings.showRevenue
         ? { value: revenueMetrics.uniqueCustomers }
         : null,
-      ticketMedio: needsRevenue && settings.showTicketMedio
+      ticketMedio: revenueMetrics && settings.showTicketMedio
         ? maskValue(revenueMetrics.ticketMedio, settings.showAbsoluteValues, org.currency, org.locale)
         : null,
-      repurchaseRate: needsRevenue && settings.showRepurchaseRate
+      repurchaseRate: revenueMetrics && settings.showRepurchaseRate
         ? revenueMetrics.repurchaseRate
         : null,
-      revenueSplit: businessMode === "hybrid" && settings.showRevenueSplit
+      revenueSplit: revenueMetrics && settings.showRevenueSplit && revenueMetrics.recurringRevenue + revenueMetrics.oneTimeRevenue > 0
         ? { recurring: revenueMetrics.recurringRevenue, oneTime: revenueMetrics.oneTimeRevenue }
         : null,
     },
