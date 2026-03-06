@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql, isNotNull, inArray } from "drizzle-orm";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
-import { events, organizations } from "@/db/schema";
+import { payments, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import type { IDateFilter, ITopProduct } from "@/interfaces/dashboard.interface";
 
@@ -29,22 +29,22 @@ export async function getTopProducts(
 
   const rows = await db
     .select({
-      productName: events.productName,
+      productName: payments.productName,
       purchases: sql<number>`COUNT(*)`,
-      revenueInCents: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
+      revenueInCents: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
     })
-    .from(events)
+    .from(payments)
     .where(
       and(
-        eq(events.organizationId, organizationId),
-        inArray(events.eventType, REVENUE_EVENT_TYPES),
-        isNotNull(events.productName),
-        gte(events.createdAt, startDate),
-        lte(events.createdAt, endDate)
+        eq(payments.organizationId, organizationId),
+        inArray(payments.eventType, REVENUE_EVENT_TYPES),
+        isNotNull(payments.productName),
+        gte(payments.createdAt, startDate),
+        lte(payments.createdAt, endDate)
       )
     )
-    .groupBy(events.productName)
-    .orderBy(sql`SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) DESC`)
+    .groupBy(payments.productName)
+    .orderBy(sql`SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})) DESC`)
     .limit(5);
 
   return rows.map((r) => ({

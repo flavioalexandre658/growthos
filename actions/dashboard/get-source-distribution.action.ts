@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
-import { events, organizations } from "@/db/schema";
+import { events, organizations, payments } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import { buildFunnelSteps } from "@/utils/build-funnel-steps";
 import type { IDateFilter, ISourceDistribution } from "@/interfaces/dashboard.interface";
@@ -55,19 +55,19 @@ export async function getSourceDistribution(
 
   const revenueRows = await db
     .select({
-      source: sql<string>`COALESCE(${events.source}, 'direct')`,
-      revenueInCents: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
+      source: sql<string>`COALESCE(${payments.source}, 'direct')`,
+      revenueInCents: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
     })
-    .from(events)
+    .from(payments)
     .where(
       and(
-        eq(events.organizationId, organizationId),
-        inArray(events.eventType, REVENUE_EVENT_TYPES),
-        gte(events.createdAt, startDate),
-        lte(events.createdAt, endDate)
+        eq(payments.organizationId, organizationId),
+        inArray(payments.eventType, REVENUE_EVENT_TYPES),
+        gte(payments.createdAt, startDate),
+        lte(payments.createdAt, endDate)
       )
     )
-    .groupBy(sql`COALESCE(${events.source}, 'direct')`);
+    .groupBy(sql`COALESCE(${payments.source}, 'direct')`);
 
   const revenueMap = new Map(
     revenueRows.map((r) => [r.source, Number(r.revenueInCents)])

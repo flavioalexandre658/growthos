@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
-import { events, organizations } from "@/db/schema";
+import { events, organizations, payments } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import { getPageviewSessionsByChannel } from "@/utils/get-pageview-counts";
 import {
@@ -102,6 +102,12 @@ export async function getChannels(
     ELSE COALESCE("source", 'direct') || '_organic'
   END`);
 
+  const channelExprPayments = sql.raw(`CASE
+    WHEN COALESCE("source", 'direct') = 'direct' AND COALESCE("medium", 'direct') = 'direct' THEN 'direct'
+    WHEN COALESCE("medium", '') IN (${paidList}) THEN COALESCE("source", 'direct') || '_paid'
+    ELSE COALESCE("source", 'direct') || '_organic'
+  END`);
+
   const [rawRows, prevRawRows] = await Promise.all([
     db
       .select({
@@ -109,7 +115,6 @@ export async function getChannels(
         eventType: events.eventType,
         total: sql<number>`COUNT(*)`,
         uniqueTotal: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
-        grossRev: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
       })
       .from(events)
       .where(
@@ -124,20 +129,38 @@ export async function getChannels(
 
     db
       .select({
-        channel: sql<string>`${channelExpr}`,
-        grossRev: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
+        channel: sql<string>`${channelExprPayments}`,
+        grossRev: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
       })
-      .from(events)
+      .from(payments)
       .where(
         and(
-          eq(events.organizationId, organizationId),
-          gte(events.createdAt, previousStartDate),
-          lte(events.createdAt, previousEndDate),
-          inArray(events.eventType, REVENUE_EVENT_TYPES)
+          eq(payments.organizationId, organizationId),
+          gte(payments.createdAt, previousStartDate),
+          lte(payments.createdAt, previousEndDate),
+          inArray(payments.eventType, REVENUE_EVENT_TYPES)
         )
       )
-      .groupBy(sql`${channelExpr}`),
+      .groupBy(sql`${channelExprPayments}`),
   ]);
+
+  const revenueRows = await db
+    .select({
+      channel: sql<string>`${channelExprPayments}`,
+      eventType: payments.eventType,
+      grossRev: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
+      purchaseCount: sql<number>`COUNT(*)`,
+    })
+    .from(payments)
+    .where(
+      and(
+        eq(payments.organizationId, organizationId),
+        gte(payments.createdAt, startDate),
+        lte(payments.createdAt, endDate),
+        inArray(payments.eventType, REVENUE_EVENT_TYPES)
+      )
+    )
+    .groupBy(sql`${channelExprPayments}`, payments.eventType);
 
   const pvBySource = await getPageviewSessionsByChannel(
     organizationId,
@@ -190,11 +213,16 @@ export async function getChannels(
     } else if (row.eventType === "checkout_abandoned" && trackedInMeta.has("checkout_abandoned")) {
       entry.steps["checkout_abandoned"] = (entry.steps["checkout_abandoned"] ?? 0) + Number(row.total);
     }
+  }
 
-    if (row.eventType === "purchase" || row.eventType === "renewal") {
-      entry.revenue += Number(row.grossRev);
-      entry.purchaseCount += Number(row.total);
+  for (const row of revenueRows) {
+    const normalizedChannel = normalizeChannel(row.channel);
+    if (!channelMap.has(normalizedChannel)) {
+      channelMap.set(normalizedChannel, { steps: {}, revenue: 0, purchaseCount: 0 });
     }
+    const entry = channelMap.get(normalizedChannel)!;
+    entry.revenue += Number(row.grossRev);
+    entry.purchaseCount += Number(row.purchaseCount);
   }
 
   for (const [source, sessions] of pvBySource) {

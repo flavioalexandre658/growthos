@@ -1,4 +1,5 @@
 import { pgTable, uuid, text, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
+import { users } from "./user.schema";
 
 export interface IFunnelStepConfig {
   eventType: string;
@@ -65,6 +66,7 @@ export const organizations = pgTable("organizations", {
     .$type<IPublicPageSettings>()
     .default(DEFAULT_PUBLIC_PAGE_SETTINGS),
   publicDescription: text("public_description"),
+  createdByUserId: uuid("created_by_user_id").references(() => users.id),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

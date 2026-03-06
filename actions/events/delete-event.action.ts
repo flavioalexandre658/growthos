@@ -2,10 +2,10 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { events } from "@/db/schema";
+import { events, payments } from "@/db/schema";
 
 const schema = z.object({
   id: z.string().uuid(),
@@ -18,8 +18,22 @@ export async function deleteEvent(input: z.infer<typeof schema>) {
 
   const data = schema.parse(input);
 
-  return db
+  const deleted = await db
     .delete(events)
     .where(and(eq(events.id, data.id), eq(events.organizationId, data.organizationId)))
-    .returning();
+    .returning({ eventHash: events.eventHash });
+
+  const eventHash = deleted[0]?.eventHash;
+  if (eventHash) {
+    await db
+      .delete(payments)
+      .where(
+        and(
+          eq(payments.organizationId, data.organizationId),
+          eq(payments.eventHash, eventHash)
+        )
+      );
+  }
+
+  return deleted;
 }

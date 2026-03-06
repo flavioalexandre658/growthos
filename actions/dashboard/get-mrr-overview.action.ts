@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { subscriptions, organizations, events } from "@/db/schema";
+import { subscriptions, organizations, events, payments } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import { normalizeToMonthly } from "@/utils/billing";
 import dayjs from "@/utils/dayjs";
@@ -117,19 +117,19 @@ export async function getMrrOverview(
 
   const recurringEventsInPeriod = await db
     .select({
-      subscriptionId: events.subscriptionId,
-      grossValueInCents: events.grossValueInCents,
-      baseGrossValueInCents: events.baseGrossValueInCents,
-      eventType: events.eventType,
+      subscriptionId: payments.subscriptionId,
+      grossValueInCents: payments.grossValueInCents,
+      baseGrossValueInCents: payments.baseGrossValueInCents,
+      eventType: payments.eventType,
     })
-    .from(events)
+    .from(payments)
     .where(
       and(
-        eq(events.organizationId, organizationId),
-        inArray(events.eventType, ["purchase", "renewal"]),
-        gte(events.createdAt, startDate),
-        lte(events.createdAt, endDate),
-        inArray(events.billingType, ["recurring"])
+        eq(payments.organizationId, organizationId),
+        inArray(payments.eventType, ["purchase", "renewal"]),
+        gte(payments.createdAt, startDate),
+        lte(payments.createdAt, endDate),
+        inArray(payments.billingType, ["recurring"])
       )
     );
 
@@ -141,17 +141,17 @@ export async function getMrrOverview(
 
   const prevPaymentEvents = await db
     .select({
-      grossValueInCents: events.grossValueInCents,
-      baseGrossValueInCents: events.baseGrossValueInCents,
+      grossValueInCents: payments.grossValueInCents,
+      baseGrossValueInCents: payments.baseGrossValueInCents,
     })
-    .from(events)
+    .from(payments)
     .where(
       and(
-        eq(events.organizationId, organizationId),
-        inArray(events.eventType, ["purchase", "renewal"]),
-        gte(events.createdAt, previousStartDate),
-        lte(events.createdAt, previousEndDate),
-        inArray(events.billingType, ["recurring"])
+        eq(payments.organizationId, organizationId),
+        inArray(payments.eventType, ["purchase", "renewal"]),
+        gte(payments.createdAt, previousStartDate),
+        lte(payments.createdAt, previousEndDate),
+        inArray(payments.billingType, ["recurring"])
       )
     );
 
@@ -175,13 +175,13 @@ export async function getMrrOverview(
 
   const changedEvents = await db
     .select()
-    .from(events)
+    .from(payments)
     .where(
       and(
-        eq(events.organizationId, organizationId),
-        eq(events.eventType, "subscription_changed"),
-        gte(events.createdAt, startDate),
-        lte(events.createdAt, endDate)
+        eq(payments.organizationId, organizationId),
+        eq(payments.eventType, "subscription_changed"),
+        gte(payments.createdAt, startDate),
+        lte(payments.createdAt, endDate)
       )
     );
 

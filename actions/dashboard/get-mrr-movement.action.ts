@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { events, organizations, subscriptions } from "@/db/schema";
+import { events, organizations, subscriptions, payments } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import { normalizeToMonthly } from "@/utils/billing";
 import dayjs from "@/utils/dayjs";
@@ -37,13 +37,13 @@ export async function getMrrMovement(
 
   const relevantEvents = await db
     .select()
-    .from(events)
+    .from(payments)
     .where(
       and(
-        eq(events.organizationId, organizationId),
-        gte(events.createdAt, startDate),
-        lte(events.createdAt, endDate),
-        inArray(events.eventType, ["purchase", "renewal", "subscription_canceled", "subscription_changed"])
+        eq(payments.organizationId, organizationId),
+        gte(payments.createdAt, startDate),
+        lte(payments.createdAt, endDate),
+        inArray(payments.eventType, ["purchase", "renewal", "subscription_canceled", "subscription_changed"])
       )
     );
 

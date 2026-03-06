@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
-import { events, organizations } from "@/db/schema";
+import { payments, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 import type { IRevenueBySegment } from "@/interfaces/cost.interface";
@@ -28,20 +28,20 @@ export async function getRevenueSegments(
 
   const rows = await db
     .select({
-      paymentMethod: events.paymentMethod,
-      billingType: events.billingType,
-      revenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
+      paymentMethod: payments.paymentMethod,
+      billingType: payments.billingType,
+      revenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
     })
-    .from(events)
+    .from(payments)
     .where(
       and(
-        eq(events.organizationId, organizationId),
-        inArray(events.eventType, REVENUE_EVENT_TYPES),
-        gte(events.createdAt, startDate),
-        lte(events.createdAt, endDate)
+        eq(payments.organizationId, organizationId),
+        inArray(payments.eventType, REVENUE_EVENT_TYPES),
+        gte(payments.createdAt, startDate),
+        lte(payments.createdAt, endDate)
       )
     )
-    .groupBy(events.paymentMethod, events.billingType);
+    .groupBy(payments.paymentMethod, payments.billingType);
 
   const paymentMethod: Record<string, number> = {};
   const billingType: Record<string, number> = {};

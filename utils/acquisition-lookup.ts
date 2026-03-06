@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { events } from "@/db/schema";
+import { events, payments } from "@/db/schema";
 import { and, eq, isNotNull, asc } from "drizzle-orm";
 
 export interface AcquisitionContext {
@@ -16,7 +16,7 @@ export async function lookupAcquisitionContext(
   orgId: string,
   customerId: string,
 ): Promise<AcquisitionContext | null> {
-  const rows = await db
+  const recentRows = await db
     .select({
       source: events.source,
       medium: events.medium,
@@ -37,5 +37,29 @@ export async function lookupAcquisitionContext(
     .orderBy(asc(events.createdAt))
     .limit(1);
 
-  return rows[0] ?? null;
+  if (recentRows[0]) return recentRows[0];
+
+  const historicalRows = await db
+    .select({
+      source: payments.source,
+      medium: payments.medium,
+      campaign: payments.campaign,
+      content: payments.content,
+      landingPage: payments.landingPage,
+      entryPage: payments.entryPage,
+      sessionId: payments.sessionId,
+    })
+    .from(payments)
+    .where(
+      and(
+        eq(payments.organizationId, orgId),
+        eq(payments.customerId, customerId),
+        isNotNull(payments.source),
+        eq(payments.billingReason, "subscription_create"),
+      ),
+    )
+    .orderBy(asc(payments.createdAt))
+    .limit(1);
+
+  return historicalRows[0] ?? null;
 }

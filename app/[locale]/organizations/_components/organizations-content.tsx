@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
+import Link from "next/link";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -14,9 +15,13 @@ import {
   IconChevronRight,
   IconGitBranch,
   IconCalendar,
+  IconCreditCard,
+  IconAlertTriangle,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { GrowareLogo } from "@/components/groware-logo";
+import { useBilling } from "@/hooks/queries/use-billing";
+import { formatEventsLimit } from "@/utils/plans";
 import type { IOrganization } from "@/interfaces/organization.interface";
 
 dayjs.extend(relativeTime);
@@ -27,6 +32,7 @@ const STORAGE_KEY = "groware_active_org";
 interface OrganizationsContentProps {
   initialOrgs: IOrganization[];
   userName: string | null | undefined;
+  firstOrgSlug?: string | null;
 }
 
 function OrgCard({ org, onSelect }: { org: IOrganization; onSelect: () => void }) {
@@ -105,10 +111,12 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
 export function OrganizationsContent({
   initialOrgs,
   userName,
+  firstOrgSlug,
 }: OrganizationsContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [orgs] = useState<IOrganization[]>(initialOrgs);
+  const { data: billing } = useBilling();
 
   useEffect(() => {
     if (searchParams.get("new") === "1") {
@@ -125,6 +133,13 @@ export function OrganizationsContent({
     router.push("/onboarding?new-org=1");
   };
 
+  const atOrgLimit =
+    billing &&
+    billing.plan.maxOrgs !== Infinity &&
+    billing.ownedOrgsCount >= billing.plan.maxOrgs;
+
+  const settingsSlug = firstOrgSlug ?? orgs[0]?.slug;
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-800/60 bg-zinc-950/80 px-6 py-4 backdrop-blur-sm">
@@ -135,6 +150,15 @@ export function OrganizationsContent({
             <span className="hidden text-xs text-zinc-500 sm:block">
               {userName}
             </span>
+          )}
+          {settingsSlug && (
+            <Link
+              href={`/${settingsSlug}/settings/billing`}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+            >
+              <IconCreditCard size={14} />
+              <span className="hidden sm:block">Plano</span>
+            </Link>
           )}
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
@@ -147,6 +171,57 @@ export function OrganizationsContent({
       </header>
 
       <div className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
+        {billing && (
+          <div className="mb-6 flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <IconCreditCard size={15} className="text-indigo-400 shrink-0" />
+              <div>
+                <span className="text-xs font-medium text-zinc-300">
+                  Plano {billing.plan.name}
+                </span>
+                <span className="ml-2 text-xs text-zinc-500">
+                  {billing.ownedOrgsCount} / {billing.plan.maxOrgs === Infinity ? "∞" : billing.plan.maxOrgs} org
+                  {billing.plan.maxOrgs !== 1 ? "s" : ""}
+                </span>
+                <span className="ml-3 text-xs text-zinc-500">
+                  {billing.usage.total.toLocaleString("pt-BR")} / {formatEventsLimit(billing.usage.limit)} eventos este mês
+                </span>
+              </div>
+            </div>
+            {settingsSlug && (
+              <Link
+                href={`/${settingsSlug}/settings/billing`}
+                className="text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors"
+              >
+                Ver detalhes →
+              </Link>
+            )}
+          </div>
+        )}
+
+        {atOrgLimit && (
+          <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+            <IconAlertTriangle size={15} className="text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs text-amber-300 font-medium">
+                Limite de organizações atingido
+              </p>
+              <p className="text-xs text-amber-400/70 mt-0.5">
+                Seu plano {billing?.plan.name} permite no máximo{" "}
+                {billing?.plan.maxOrgs} organização(ões).{" "}
+                {settingsSlug && (
+                  <Link
+                    href={`/${settingsSlug}/settings/billing`}
+                    className="underline hover:text-amber-300"
+                  >
+                    Faça upgrade para criar mais.
+                  </Link>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="mb-8 flex items-end justify-between">
           <div>
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-indigo-500">
@@ -165,7 +240,8 @@ export function OrganizationsContent({
               onClick={handleCreateNew}
               variant="outline"
               size="sm"
-              className="gap-2 border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-indigo-500/50 hover:bg-zinc-800 hover:text-zinc-100"
+              disabled={!!atOrgLimit}
+              className="gap-2 border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-indigo-500/50 hover:bg-zinc-800 hover:text-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <IconPlus size={14} />
               Nova organização
@@ -185,22 +261,24 @@ export function OrganizationsContent({
               />
             ))}
 
-            <button
-              onClick={handleCreateNew}
-              className="flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-700 bg-transparent p-5 text-center transition-all duration-200 hover:border-indigo-500/50 hover:bg-zinc-900/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-zinc-700 text-zinc-600">
-                <IconPlus size={18} />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-zinc-500">
-                  Nova organização
-                </p>
-                <p className="mt-0.5 text-xs text-zinc-600">
-                  Adicionar workspace
-                </p>
-              </div>
-            </button>
+            {!atOrgLimit && (
+              <button
+                onClick={handleCreateNew}
+                className="flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-700 bg-transparent p-5 text-center transition-all duration-200 hover:border-indigo-500/50 hover:bg-zinc-900/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-zinc-700 text-zinc-600">
+                  <IconPlus size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-zinc-500">
+                    Nova organização
+                  </p>
+                  <p className="mt-0.5 text-xs text-zinc-600">
+                    Adicionar workspace
+                  </p>
+                </div>
+              </button>
+            )}
           </div>
         )}
 

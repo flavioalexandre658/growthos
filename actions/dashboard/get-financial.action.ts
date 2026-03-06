@@ -6,7 +6,7 @@ import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 
 import { db } from "@/db";
-import { events, fixedCosts, variableCosts, organizations } from "@/db/schema";
+import { events, payments, fixedCosts, variableCosts, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import { resolvePeriodDays } from "@/utils/resolve-period-days";
 import { buildProfitAndLoss } from "@/utils/build-pl";
@@ -34,7 +34,13 @@ export async function getFinancial(
   const previousEndDate = new Date(startDate.getTime() - 1);
   const previousStartDate = new Date(startDate.getTime() - periodMs);
 
-  const baseCondition = and(
+  const paymentsCondition = and(
+    eq(payments.organizationId, organizationId),
+    gte(payments.createdAt, startDate),
+    lte(payments.createdAt, endDate)
+  );
+
+  const eventsCondition = and(
     eq(events.organizationId, organizationId),
     gte(events.createdAt, startDate),
     lte(events.createdAt, endDate)
@@ -42,19 +48,27 @@ export async function getFinancial(
 
   const [summary] = await db
     .select({
-      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal')), 0)`,
-      totalDiscounts: sql<number>`COALESCE(SUM(${events.discountInCents}) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal')), 0)`,
-      lostRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} = 'checkout_abandoned'), 0)`,
-      totalPurchases: sql<number>`COUNT(*) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal'))`,
-      recurringRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal') AND ${events.billingType} = 'recurring'), 0)`,
-      oneTimeRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal') AND (${events.billingType} != 'recurring' OR ${events.billingType} IS NULL)), 0)`,
+      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})) FILTER (WHERE ${payments.eventType} IN ('purchase', 'renewal')), 0)`,
+      totalDiscounts: sql<number>`COALESCE(SUM(${payments.discountInCents}) FILTER (WHERE ${payments.eventType} IN ('purchase', 'renewal')), 0)`,
+      totalPurchases: sql<number>`COUNT(*) FILTER (WHERE ${payments.eventType} IN ('purchase', 'renewal'))`,
+      recurringRevenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})) FILTER (WHERE ${payments.eventType} IN ('purchase', 'renewal') AND ${payments.billingType} = 'recurring'), 0)`,
+      oneTimeRevenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})) FILTER (WHERE ${payments.eventType} IN ('purchase', 'renewal') AND (${payments.billingType} != 'recurring' OR ${payments.billingType} IS NULL)), 0)`,
+    })
+    .from(payments)
+    .where(paymentsCondition);
+
+  const [lostRevenueRow] = await db
+    .select({
+      lostRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
     })
     .from(events)
-    .where(baseCondition);
+    .where(
+      and(eventsCondition, eq(events.eventType, "checkout_abandoned"))
+    );
 
   const grossRevenue = Number(summary?.grossRevenue ?? 0);
   const totalDiscounts = Number(summary?.totalDiscounts ?? 0);
-  const lostRevenue = Number(summary?.lostRevenue ?? 0);
+  const lostRevenue = Number(lostRevenueRow?.lostRevenue ?? 0);
   const totalPurchases = Number(summary?.totalPurchases ?? 0);
   const recurringRevenue = Number(summary?.recurringRevenue ?? 0);
   const oneTimeRevenue = Number(summary?.oneTimeRevenue ?? 0);
@@ -62,23 +76,23 @@ export async function getFinancial(
 
   const methodRows = await db
     .select({
-      method: sql<string>`COALESCE(${events.paymentMethod}, 'unknown')`,
-      payments: sql<number>`COUNT(*)`,
-      revenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
+      method: sql<string>`COALESCE(${payments.paymentMethod}, 'unknown')`,
+      paymentsCount: sql<number>`COUNT(*)`,
+      revenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
     })
-    .from(events)
+    .from(payments)
     .where(
       and(
-        baseCondition,
-        inArray(events.eventType, REVENUE_EVENT_TYPES)
+        paymentsCondition,
+        inArray(payments.eventType, REVENUE_EVENT_TYPES)
       )
     )
-    .groupBy(sql`COALESCE(${events.paymentMethod}, 'unknown')`)
-    .orderBy(sql`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0) DESC`);
+    .groupBy(sql`COALESCE(${payments.paymentMethod}, 'unknown')`)
+    .orderBy(sql`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0) DESC`);
 
   const byPaymentMethod = methodRows.map((row) => ({
     method: row.method,
-    purchases: Number(row.payments),
+    purchases: Number(row.paymentsCount),
     revenue: Number(row.revenue),
     percentage: grossRevenue > 0
       ? ((Number(row.revenue) / grossRevenue) * 100).toFixed(1) + "%"
@@ -87,19 +101,19 @@ export async function getFinancial(
 
   const categoryRows = await db
     .select({
-      category: sql<string>`COALESCE(${events.category}, 'sem categoria')`,
-      payments: sql<number>`COUNT(*)`,
-      revenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
+      category: sql<string>`COALESCE(${payments.category}, 'sem categoria')`,
+      paymentsCount: sql<number>`COUNT(*)`,
+      revenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
     })
-    .from(events)
+    .from(payments)
     .where(
       and(
-        baseCondition,
-        inArray(events.eventType, REVENUE_EVENT_TYPES)
+        paymentsCondition,
+        inArray(payments.eventType, REVENUE_EVENT_TYPES)
       )
     )
-    .groupBy(sql`COALESCE(${events.category}, 'sem categoria')`)
-    .orderBy(sql`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0) DESC`);
+    .groupBy(sql`COALESCE(${payments.category}, 'sem categoria')`)
+    .orderBy(sql`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0) DESC`);
 
   const totalVariableCostRate = grossRevenue > 0
     ? (await db
@@ -115,7 +129,7 @@ export async function getFinancial(
     const estimatedMargin = rev > 0 ? ((rev - variableCostForCategory) / rev) * 100 : 0;
     return {
       category: row.category,
-      purchases: Number(row.payments),
+      purchases: Number(row.paymentsCount),
       revenue: rev,
       percentage: grossRevenue > 0
         ? ((rev / grossRevenue) * 100).toFixed(1) + "%"
@@ -126,19 +140,19 @@ export async function getFinancial(
 
   const segmentRows = await db
     .select({
-      paymentMethod: events.paymentMethod,
-      billingType: events.billingType,
-      category: events.category,
-      revenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
+      paymentMethod: payments.paymentMethod,
+      billingType: payments.billingType,
+      category: payments.category,
+      revenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
     })
-    .from(events)
+    .from(payments)
     .where(
       and(
-        baseCondition,
-        inArray(events.eventType, REVENUE_EVENT_TYPES)
+        paymentsCondition,
+        inArray(payments.eventType, REVENUE_EVENT_TYPES)
       )
     )
-    .groupBy(events.paymentMethod, events.billingType, events.category);
+    .groupBy(payments.paymentMethod, payments.billingType, payments.category);
 
   const revenueBySegment: IRevenueBySegment = { paymentMethod: {}, billingType: {}, category: {} };
   for (const row of segmentRows) {
@@ -169,7 +183,13 @@ export async function getFinancial(
     eventCosts
   );
 
-  const prevBaseCondition = and(
+  const prevPaymentsCondition = and(
+    eq(payments.organizationId, organizationId),
+    gte(payments.createdAt, previousStartDate),
+    lte(payments.createdAt, previousEndDate)
+  );
+
+  const prevEventsCondition = and(
     eq(events.organizationId, organizationId),
     gte(events.createdAt, previousStartDate),
     lte(events.createdAt, previousEndDate)
@@ -177,20 +197,26 @@ export async function getFinancial(
 
   const [prevSummary] = await db
     .select({
-      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal')), 0)`,
-      lostRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} = 'checkout_abandoned'), 0)`,
-      totalPurchases: sql<number>`COUNT(*) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal'))`,
-      recurringRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal') AND ${events.billingType} = 'recurring'), 0)`,
-      oneTimeRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal') AND (${events.billingType} != 'recurring' OR ${events.billingType} IS NULL)), 0)`,
-      totalDiscounts: sql<number>`COALESCE(SUM(${events.discountInCents}) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal')), 0)`,
+      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})) FILTER (WHERE ${payments.eventType} IN ('purchase', 'renewal')), 0)`,
+      totalPurchases: sql<number>`COUNT(*) FILTER (WHERE ${payments.eventType} IN ('purchase', 'renewal'))`,
+      recurringRevenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})) FILTER (WHERE ${payments.eventType} IN ('purchase', 'renewal') AND ${payments.billingType} = 'recurring'), 0)`,
+      oneTimeRevenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})) FILTER (WHERE ${payments.eventType} IN ('purchase', 'renewal') AND (${payments.billingType} != 'recurring' OR ${payments.billingType} IS NULL)), 0)`,
+      totalDiscounts: sql<number>`COALESCE(SUM(${payments.discountInCents}) FILTER (WHERE ${payments.eventType} IN ('purchase', 'renewal')), 0)`,
+    })
+    .from(payments)
+    .where(prevPaymentsCondition);
+
+  const [prevLostRevenueRow] = await db
+    .select({
+      lostRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
     })
     .from(events)
-    .where(prevBaseCondition);
+    .where(and(prevEventsCondition, eq(events.eventType, "checkout_abandoned")));
 
   const prevGrossRevenue = Number(prevSummary?.grossRevenue ?? 0);
   const prevTotalPurchases = Number(prevSummary?.totalPurchases ?? 0);
   const prevAverageTicket = prevTotalPurchases > 0 ? Math.round(prevGrossRevenue / prevTotalPurchases) : 0;
-  const prevLostRevenue = Number(prevSummary?.lostRevenue ?? 0);
+  const prevLostRevenue = Number(prevLostRevenueRow?.lostRevenue ?? 0);
   const prevRecurringRevenue = Number(prevSummary?.recurringRevenue ?? 0);
   const prevOneTimeRevenue = Number(prevSummary?.oneTimeRevenue ?? 0);
 

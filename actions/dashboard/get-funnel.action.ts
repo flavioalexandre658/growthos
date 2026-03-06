@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
-import { events, organizations } from "@/db/schema";
+import { events, organizations, payments } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import { getPageviewTotalSessions } from "@/utils/get-pageview-counts";
 import {
@@ -78,16 +78,16 @@ export async function getFunnel(
 
   const revenueResult = await db
     .select({
-      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
+      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
       purchases: sql<number>`COUNT(*)`,
     })
-    .from(events)
+    .from(payments)
     .where(
       and(
-        eq(events.organizationId, organizationId),
-        inArray(events.eventType, REVENUE_EVENT_TYPES),
-        gte(events.createdAt, startDate),
-        lte(events.createdAt, endDate)
+        eq(payments.organizationId, organizationId),
+        inArray(payments.eventType, REVENUE_EVENT_TYPES),
+        gte(payments.createdAt, startDate),
+        lte(payments.createdAt, endDate)
       )
     );
 
@@ -121,15 +121,15 @@ export async function getFunnel(
 
   const prevRevenueResult = await db
     .select({
-      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
+      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
     })
-    .from(events)
+    .from(payments)
     .where(
       and(
-        eq(events.organizationId, organizationId),
-        inArray(events.eventType, REVENUE_EVENT_TYPES),
-        gte(events.createdAt, previousStartDate),
-        lte(events.createdAt, previousEndDate)
+        eq(payments.organizationId, organizationId),
+        inArray(payments.eventType, REVENUE_EVENT_TYPES),
+        gte(payments.createdAt, previousStartDate),
+        lte(payments.createdAt, previousEndDate)
       )
     );
   const previousRevenue = Number(prevRevenueResult[0]?.grossRevenue ?? 0);

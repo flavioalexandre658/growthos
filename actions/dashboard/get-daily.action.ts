@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { events, organizations } from "@/db/schema";
+import { events, organizations, payments } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import { getPageviewSessionsByDate } from "@/utils/get-pageview-counts";
 import {
@@ -46,7 +46,6 @@ export async function getDaily(
       eventType: events.eventType,
       total: sql<number>`COUNT(*)`,
       uniqueTotal: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
-      grossRev: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
     })
     .from(events)
     .where(
@@ -59,6 +58,31 @@ export async function getDaily(
     )
     .groupBy(dateTzExpr, events.eventType)
     .orderBy(sql`${dateTzExpr} ASC`);
+
+  const tzLiteralP = sql.raw(`'${tz.replace(/'/g, "")}'`);
+  const dateTzExprP = sql`DATE(${payments.createdAt} AT TIME ZONE 'UTC' AT TIME ZONE ${tzLiteralP})`;
+
+  const revenueRows = await db
+    .select({
+      date: sql<string>`${dateTzExprP}::text`,
+      grossRev: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
+    })
+    .from(payments)
+    .where(
+      and(
+        eq(payments.organizationId, organizationId),
+        gte(payments.createdAt, startDate),
+        lte(payments.createdAt, endDate),
+        inArray(payments.eventType, ["purchase", "renewal"])
+      )
+    )
+    .groupBy(dateTzExprP)
+    .orderBy(sql`${dateTzExprP} ASC`);
+
+  const revenueByDate = new Map<string, number>();
+  for (const row of revenueRows) {
+    revenueByDate.set(row.date, Number(row.grossRev));
+  }
 
   const pvByDate = await getPageviewSessionsByDate(
     organizationId,
@@ -103,10 +127,13 @@ export async function getDaily(
     } else if (row.eventType === "checkout_abandoned" && trackedInMeta.has("checkout_abandoned")) {
       entry.steps["checkout_abandoned"] = Number(row.total);
     }
+  }
 
-    if (row.eventType === "purchase" || row.eventType === "renewal") {
-      entry.revenue = (entry.revenue ?? 0) + Number(row.grossRev);
+  for (const [date, rev] of revenueByDate) {
+    if (!dateMap.has(date)) {
+      dateMap.set(date, { steps: {}, revenue: 0 });
     }
+    dateMap.get(date)!.revenue = rev;
   }
 
   for (const [date, sessions] of pvByDate) {

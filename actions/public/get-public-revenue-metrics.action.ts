@@ -2,7 +2,7 @@
 
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { events } from "@/db/schema";
+import { payments } from "@/db/schema";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import dayjs from "@/utils/dayjs";
 
@@ -27,28 +27,28 @@ export async function getPublicRevenueMetrics(
 
   const baseWhere = (start: Date, end: Date) =>
     and(
-      eq(events.organizationId, organizationId),
-      inArray(events.eventType, [...REVENUE_EVENT_TYPES]),
-      gte(events.createdAt, start),
-      lte(events.createdAt, end),
+      eq(payments.organizationId, organizationId),
+      inArray(payments.eventType, [...REVENUE_EVENT_TYPES]),
+      gte(payments.createdAt, start),
+      lte(payments.createdAt, end),
     );
 
   const [currentSummary] = await db
     .select({
-      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
+      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
       purchaseCount: sql<number>`COUNT(*)`,
-      uniqueCustomers: sql<number>`COUNT(DISTINCT ${events.customerId})`,
-      recurringRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.billingType} = 'recurring'), 0)`,
-      oneTimeRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.billingType} != 'recurring' OR ${events.billingType} IS NULL), 0)`,
+      uniqueCustomers: sql<number>`COUNT(DISTINCT ${payments.customerId})`,
+      recurringRevenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})) FILTER (WHERE ${payments.billingType} = 'recurring'), 0)`,
+      oneTimeRevenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})) FILTER (WHERE ${payments.billingType} != 'recurring' OR ${payments.billingType} IS NULL), 0)`,
     })
-    .from(events)
+    .from(payments)
     .where(baseWhere(currentStart, currentEnd));
 
   const [prevSummary] = await db
     .select({
-      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
+      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
     })
-    .from(events)
+    .from(payments)
     .where(baseWhere(prevStart, prevEnd));
 
   const monthlyRevenue = Number(currentSummary?.grossRevenue ?? 0);
@@ -69,26 +69,26 @@ export async function getPublicRevenueMetrics(
 
   const [repurchaseData] = await db
     .select({
-      totalCustomers: sql<number>`COUNT(DISTINCT ${events.customerId})`,
-      repeatCustomers: sql<number>`COUNT(DISTINCT ${events.customerId}) FILTER (WHERE ${events.customerId} IN (
-        SELECT ${events.customerId} FROM ${events}
-        WHERE ${events.organizationId} = ${organizationId}
-          AND ${events.eventType} IN ('purchase', 'renewal')
-          AND ${events.createdAt} >= ${ninetyDaysAgo}
-          AND ${events.createdAt} <= ${currentEnd}
-          AND ${events.customerId} IS NOT NULL
-        GROUP BY ${events.customerId}
+      totalCustomers: sql<number>`COUNT(DISTINCT ${payments.customerId})`,
+      repeatCustomers: sql<number>`COUNT(DISTINCT ${payments.customerId}) FILTER (WHERE ${payments.customerId} IN (
+        SELECT customer_id FROM payments
+        WHERE organization_id = ${organizationId}
+          AND event_type IN ('purchase', 'renewal')
+          AND created_at >= ${ninetyDaysAgo}
+          AND created_at <= ${currentEnd}
+          AND customer_id IS NOT NULL
+        GROUP BY customer_id
         HAVING COUNT(*) > 1
       ))`,
     })
-    .from(events)
+    .from(payments)
     .where(
       and(
-        eq(events.organizationId, organizationId),
-        inArray(events.eventType, [...REVENUE_EVENT_TYPES]),
-        gte(events.createdAt, ninetyDaysAgo),
-        lte(events.createdAt, currentEnd),
-        sql`${events.customerId} IS NOT NULL`,
+        eq(payments.organizationId, organizationId),
+        inArray(payments.eventType, [...REVENUE_EVENT_TYPES]),
+        gte(payments.createdAt, ninetyDaysAgo),
+        lte(payments.createdAt, currentEnd),
+        sql`${payments.customerId} IS NOT NULL`,
       ),
     );
 

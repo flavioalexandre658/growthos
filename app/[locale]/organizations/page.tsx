@@ -21,11 +21,12 @@ export default async function OrganizationsPage() {
   }
 
   const orgs = await getOrganizations();
+  const firstOrgSlug = orgs[0]?.slug ?? null;
 
   return (
     <main className="min-h-screen bg-zinc-950">
       <Suspense>
-        <OrganizationsContent initialOrgs={orgs} userName={session.user.name} />
+        <OrganizationsContent initialOrgs={orgs} userName={session.user.name} firstOrgSlug={firstOrgSlug} />
       </Suspense>
     </main>
   );

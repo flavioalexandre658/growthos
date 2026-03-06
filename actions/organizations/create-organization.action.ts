@@ -1,11 +1,12 @@
 "use server";
 
 import { getServerSession } from "next-auth";
-import { eq } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
-import { organizations } from "@/db/schema";
+import { organizations, users, orgMembers } from "@/db/schema";
+import { getPlan } from "@/utils/plans";
 
 const schema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -20,6 +21,29 @@ export async function createOrganization(input: z.infer<typeof schema>) {
   if (!session?.user) throw new Error("Unauthorized");
 
   const data = schema.parse(input);
+
+  const [userRow] = await db
+    .select({ planSlug: users.planSlug })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1);
+
+  const plan = getPlan(userRow?.planSlug ?? "free");
+
+  if (plan.maxOrgs !== Infinity) {
+    const [countRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(orgMembers)
+      .where(and(eq(orgMembers.userId, session.user.id), eq(orgMembers.role, "owner")));
+
+    const ownedCount = Number(countRow?.count ?? 0);
+
+    if (ownedCount >= plan.maxOrgs) {
+      throw new Error(
+        `Seu plano ${plan.name} permite no máximo ${plan.maxOrgs} organização(ões). Faça upgrade para criar mais.`,
+      );
+    }
+  }
 
   const [existing] = await db
     .select({ id: organizations.id })
@@ -36,8 +60,16 @@ export async function createOrganization(input: z.infer<typeof schema>) {
     .values({
       name: data.name,
       slug: data.slug,
+      createdByUserId: session.user.id,
     })
     .returning();
+
+  await db.insert(orgMembers).values({
+    organizationId: org.id,
+    userId: session.user.id,
+    role: "owner",
+    acceptedAt: new Date(),
+  });
 
   return org;
 }

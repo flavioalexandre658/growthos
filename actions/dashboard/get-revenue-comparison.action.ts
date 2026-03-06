@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql, desc, inArray } from "drizzle-orm";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
-import { events, organizations } from "@/db/schema";
+import { payments, organizations } from "@/db/schema";
 import dayjs from "@/utils/dayjs";
 import type { IRevenueComparison, IRevenueWindow } from "@/interfaces/dashboard.interface";
 
@@ -15,14 +15,14 @@ async function queryRevenue(
   endDate: Date
 ): Promise<number> {
   const [row] = await db
-    .select({ total: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)` })
-    .from(events)
+    .select({ total: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)` })
+    .from(payments)
     .where(
       and(
-        eq(events.organizationId, organizationId),
-        inArray(events.eventType, REVENUE_EVENT_TYPES),
-        gte(events.createdAt, startDate),
-        lte(events.createdAt, endDate)
+        eq(payments.organizationId, organizationId),
+        inArray(payments.eventType, REVENUE_EVENT_TYPES),
+        gte(payments.createdAt, startDate),
+        lte(payments.createdAt, endDate)
       )
     );
   return Number(row?.total ?? 0);
@@ -94,20 +94,20 @@ export async function getRevenueComparison(
 
   const recentPurchasesRows = await db
     .select({
-      id: events.id,
-      productName: events.productName,
-      grossValueInCents: events.grossValueInCents,
-      source: events.source,
-      createdAt: events.createdAt,
+      id: payments.id,
+      productName: payments.productName,
+      grossValueInCents: payments.grossValueInCents,
+      source: payments.source,
+      createdAt: payments.createdAt,
     })
-    .from(events)
+    .from(payments)
     .where(
       and(
-        eq(events.organizationId, organizationId),
-        inArray(events.eventType, REVENUE_EVENT_TYPES)
+        eq(payments.organizationId, organizationId),
+        inArray(payments.eventType, REVENUE_EVENT_TYPES)
       )
     )
-    .orderBy(desc(events.createdAt))
+    .orderBy(desc(payments.createdAt))
     .limit(5);
 
   return {

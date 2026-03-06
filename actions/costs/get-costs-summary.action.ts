@@ -3,7 +3,7 @@
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
-import { events, fixedCosts, variableCosts, organizations } from "@/db/schema";
+import { payments, fixedCosts, variableCosts, organizations } from "@/db/schema";
 import { buildProfitAndLoss } from "@/utils/build-pl";
 import { resolvePeriodDays } from "@/utils/resolve-period-days";
 import { resolveDateRange } from "@/utils/resolve-date-range";
@@ -23,29 +23,29 @@ export async function getCostsSummary(organizationId: string): Promise<ICostsSum
   const periodDays = resolvePeriodDays(filter, tz);
 
   const baseCondition = and(
-    eq(events.organizationId, organizationId),
-    gte(events.createdAt, startDate),
-    lte(events.createdAt, endDate)
+    eq(payments.organizationId, organizationId),
+    gte(payments.createdAt, startDate),
+    lte(payments.createdAt, endDate)
   );
 
   const [summary] = await db
     .select({
-      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal')), 0)`,
-      totalDiscounts: sql<number>`COALESCE(SUM(${events.discountInCents}) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal')), 0)`,
+      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})) FILTER (WHERE ${payments.eventType} IN ('purchase', 'renewal')), 0)`,
+      totalDiscounts: sql<number>`COALESCE(SUM(${payments.discountInCents}) FILTER (WHERE ${payments.eventType} IN ('purchase', 'renewal')), 0)`,
     })
-    .from(events)
+    .from(payments)
     .where(baseCondition);
 
   const segmentRows = await db
     .select({
-      paymentMethod: events.paymentMethod,
-      billingType: events.billingType,
-      category: events.category,
-      revenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
+      paymentMethod: payments.paymentMethod,
+      billingType: payments.billingType,
+      category: payments.category,
+      revenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
     })
-    .from(events)
-    .where(and(baseCondition, inArray(events.eventType, REVENUE_EVENT_TYPES)))
-    .groupBy(events.paymentMethod, events.billingType, events.category);
+    .from(payments)
+    .where(and(baseCondition, inArray(payments.eventType, REVENUE_EVENT_TYPES)))
+    .groupBy(payments.paymentMethod, payments.billingType, payments.category);
 
   const revenueBySegment: IRevenueBySegment = { paymentMethod: {}, billingType: {}, category: {} };
   for (const row of segmentRows) {

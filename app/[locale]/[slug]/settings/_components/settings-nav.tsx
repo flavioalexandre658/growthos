@@ -12,6 +12,7 @@ import {
   IconBuilding,
   IconPlug,
   IconShare,
+  IconCreditCard,
 } from "@tabler/icons-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -23,6 +24,7 @@ export interface SettingsSection {
 }
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
+  { id: "billing", label: "Plano & Uso", icon: <IconCreditCard size={14} /> },
   { id: "installation", label: "Instalação", icon: <IconCode size={14} /> },
   { id: "integrations", label: "Integrações", icon: <IconPlug size={14} /> },
   { id: "regional", label: "Regional", icon: <IconWorld size={14} /> },

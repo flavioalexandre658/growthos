@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { events, organizations } from "@/db/schema";
+import { events, organizations, payments } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import { getPageviewSessionsByEntryPage } from "@/utils/get-pageview-counts";
 import {
@@ -66,7 +66,6 @@ export async function getLandingPages(
       eventType: events.eventType,
       total: sql<number>`COUNT(*)`,
       uniqueTotal: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
-      grossRev: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
     })
     .from(events)
     .where(
@@ -79,6 +78,31 @@ export async function getLandingPages(
       )
     )
     .groupBy(events.entryPage, events.eventType);
+
+  const revenueByPage = await db
+    .select({
+      page: payments.entryPage,
+      grossRev: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
+      purchaseCount: sql<number>`COUNT(*)`,
+    })
+    .from(payments)
+    .where(
+      and(
+        eq(payments.organizationId, organizationId),
+        gte(payments.createdAt, startDate),
+        lte(payments.createdAt, endDate),
+        sql`${payments.entryPage} IS NOT NULL`,
+        inArray(payments.eventType, ["purchase", "renewal"])
+      )
+    )
+    .groupBy(payments.entryPage);
+
+  const revenuePageMap = new Map<string, { revenue: number; purchaseCount: number }>();
+  for (const row of revenueByPage) {
+    if (row.page) {
+      revenuePageMap.set(row.page, { revenue: Number(row.grossRev), purchaseCount: Number(row.purchaseCount) });
+    }
+  }
 
   const pvByEntryPage = await getPageviewSessionsByEntryPage(
     organizationId,
@@ -126,11 +150,16 @@ export async function getLandingPages(
     } else if (row.eventType === "checkout_abandoned" && trackedInMeta.has("checkout_abandoned")) {
       entry.steps["checkout_abandoned"] = Number(row.total);
     }
+  }
 
-    if (row.eventType === "purchase" || row.eventType === "renewal") {
-      entry.revenue += Number(row.grossRev);
-      entry.purchaseCount += Number(row.total);
+  for (const [pagePath, revData] of revenuePageMap) {
+    if (search && !pagePath.toLowerCase().includes(search.toLowerCase())) continue;
+    if (!pageMap.has(pagePath)) {
+      pageMap.set(pagePath, { steps: {}, revenue: 0, purchaseCount: 0 });
     }
+    const entry = pageMap.get(pagePath)!;
+    entry.revenue = revData.revenue;
+    entry.purchaseCount = revData.purchaseCount;
   }
 
   for (const [entryPage, sessions] of pvByEntryPage) {

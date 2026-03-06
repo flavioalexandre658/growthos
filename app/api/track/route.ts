@@ -2,9 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq, and, sql } from "drizzle-orm";
 import { createHash } from "crypto";
 import { db } from "@/db";
-import { apiKeys, events, subscriptions, organizations, pageviewAggregates } from "@/db/schema";
+import { apiKeys, events, subscriptions, organizations, pageviewAggregates, users, usageMonthly } from "@/db/schema";
 import { resolveExchangeRate as resolveRate } from "@/utils/resolve-exchange-rate";
 import { checkRateLimit } from "@/utils/rate-limiter";
+import { insertPayment } from "@/utils/insert-payment";
+import { getOrgOwnerId } from "@/utils/get-plan-usage";
+import { getPlan } from "@/utils/plans";
+import { hasAlertBeenSent, markAlertSent } from "@/utils/quota-alert-cache";
+import { quotaUsageEmail } from "@/lib/email-templates/quota-usage";
+import { sendEmail } from "@/lib/email";
 import dayjs from "@/utils/dayjs";
 
 const MAX_PAYLOAD_BYTES = 64 * 1024;
@@ -64,7 +70,13 @@ function toString(value: unknown): string | null {
   return String(value).slice(0, 1000);
 }
 
-const FINANCIAL_EVENT_TYPES = new Set(["purchase", "refund", "renewal"]);
+const PAYMENT_EVENT_TYPES = new Set([
+  "purchase",
+  "refund",
+  "renewal",
+  "subscription_canceled",
+  "subscription_changed",
+]);
 
 const LIFECYCLE_EVENT_TYPES = new Set([
   "signup",
@@ -147,7 +159,7 @@ function computeEventHash(parts: {
   timestamp: Date;
 }): string {
   const isImportant =
-    FINANCIAL_EVENT_TYPES.has(parts.eventType) ||
+    PAYMENT_EVENT_TYPES.has(parts.eventType) ||
     LIFECYCLE_EVENT_TYPES.has(parts.eventType);
 
   const segments: (string | number)[] = [
@@ -397,6 +409,35 @@ export async function POST(req: NextRequest) {
   const orgTimezone = org?.timezone ?? "America/Sao_Paulo";
   const orgCurrency = org?.currency ?? "BRL";
 
+  const ownerId = await getOrgOwnerId(apiKey.organizationId);
+
+  if (ownerId) {
+    const [ownerRow] = await db
+      .select({ planSlug: users.planSlug })
+      .from(users)
+      .where(eq(users.id, ownerId))
+      .limit(1);
+
+    const plan = getPlan(ownerRow?.planSlug ?? "free");
+    const yearMonth = dayjs().format("YYYY-MM");
+
+    const [usageRow] = await db
+      .select({ total: sql<number>`COALESCE(SUM(events_count), 0)` })
+      .from(usageMonthly)
+      .where(
+        and(
+          eq(usageMonthly.userId, ownerId),
+          eq(usageMonthly.yearMonth, yearMonth),
+        ),
+      );
+
+    const currentUsage = Number(usageRow?.total ?? 0);
+
+    if (currentUsage >= plan.maxEventsPerMonth) {
+      return jsonError("Monthly event quota exceeded. Upgrade your plan to continue tracking.", 429, origin);
+    }
+  }
+
   if (eventType === "pageview") {
     await handlePageview(
       apiKey.organizationId,
@@ -453,7 +494,7 @@ export async function POST(req: NextRequest) {
       ? rawDedupeId
       : null;
 
-  const isFinancialEvent = FINANCIAL_EVENT_TYPES.has(eventType);
+  const isFinancialEvent = PAYMENT_EVENT_TYPES.has(eventType);
   const isLifecycleEvent = LIFECYCLE_EVENT_TYPES.has(eventType);
 
   if ((isFinancialEvent || isLifecycleEvent) && !toString(body.customer_id)) {
@@ -573,6 +614,183 @@ export async function POST(req: NextRequest) {
   if (inserted.length === 0) {
     responseHeaders["X-Groware-Duplicate"] = "true";
     return new NextResponse(null, { status: 204, headers: responseHeaders });
+  }
+
+  if (ownerId) {
+    const yearMonth = dayjs().format("YYYY-MM");
+    db.insert(usageMonthly)
+      .values({
+        userId: ownerId,
+        organizationId: apiKey.organizationId,
+        yearMonth,
+        eventsCount: 1,
+      })
+      .onConflictDoUpdate({
+        target: [usageMonthly.userId, usageMonthly.organizationId, usageMonthly.yearMonth],
+        set: {
+          eventsCount: sql`${usageMonthly.eventsCount} + 1`,
+          updatedAt: new Date(),
+        },
+      })
+      .execute()
+      .then(async () => {
+        try {
+          const [ownerRow] = await db
+            .select({ planSlug: users.planSlug, email: users.email, name: users.name })
+            .from(users)
+            .where(eq(users.id, ownerId))
+            .limit(1);
+
+          if (!ownerRow?.email) return;
+
+          const plan = getPlan(ownerRow.planSlug ?? "free");
+          if (plan.maxEventsPerMonth === Infinity) return;
+
+          const [usageRow] = await db
+            .select({ total: sql<number>`COALESCE(SUM(events_count), 0)` })
+            .from(usageMonthly)
+            .where(
+              and(
+                eq(usageMonthly.userId, ownerId),
+                eq(usageMonthly.yearMonth, yearMonth),
+              ),
+            );
+
+          const newUsage = Number(usageRow?.total ?? 0);
+          const limit = plan.maxEventsPerMonth;
+          const percentage = Math.floor((newUsage / limit) * 100);
+          const threshold80 = Math.floor(limit * 0.8);
+
+          const orgBreakdownRows = await db
+            .select({
+              organizationId: usageMonthly.organizationId,
+              eventsCount: usageMonthly.eventsCount,
+            })
+            .from(usageMonthly)
+            .where(
+              and(
+                eq(usageMonthly.userId, ownerId),
+                eq(usageMonthly.yearMonth, yearMonth),
+              ),
+            );
+
+          const orgIds = orgBreakdownRows.map((r) => r.organizationId);
+          const orgNameMap: Record<string, string> = {};
+
+          if (orgIds.length > 0) {
+            const orgNameRows = await db
+              .select({ id: organizations.id, name: organizations.name })
+              .from(organizations);
+            for (const o of orgNameRows) orgNameMap[o.id] = o.name;
+          }
+
+          const orgBreakdown = orgBreakdownRows.map((r) => ({
+            name: orgNameMap[r.organizationId] ?? r.organizationId,
+            eventsCount: r.eventsCount,
+          }));
+
+          const appUrl = process.env.NEXTAUTH_URL ?? "https://app.groware.io";
+
+          if (newUsage >= limit && !hasAlertBeenSent(ownerId, yearMonth, "exceeded")) {
+            markAlertSent(ownerId, yearMonth, "exceeded");
+            const html = quotaUsageEmail({
+              userName: ownerRow.name ?? ownerRow.email,
+              planName: plan.name,
+              usageTotal: newUsage,
+              usageLimit: limit,
+              percentage: Math.min(100, percentage),
+              orgBreakdown,
+              upgradeUrl: `${appUrl}/organizations`,
+              dashboardUrl: appUrl,
+              isExceeded: true,
+            });
+            sendEmail({
+              to: ownerRow.email,
+              subject: "Rastreamento pausado — limite de eventos atingido",
+              html,
+            }).catch((err) => {
+              console.error("[Groware] failed to send quota exceeded email", {
+                userId: ownerId,
+                error: err instanceof Error ? err.message : String(err),
+              });
+            });
+          } else if (newUsage >= threshold80 && newUsage < limit && !hasAlertBeenSent(ownerId, yearMonth, "warning")) {
+            markAlertSent(ownerId, yearMonth, "warning");
+            const html = quotaUsageEmail({
+              userName: ownerRow.name ?? ownerRow.email,
+              planName: plan.name,
+              usageTotal: newUsage,
+              usageLimit: limit,
+              percentage,
+              orgBreakdown,
+              upgradeUrl: `${appUrl}/organizations`,
+              dashboardUrl: appUrl,
+              isExceeded: false,
+            });
+            sendEmail({
+              to: ownerRow.email,
+              subject: `Aviso: você está em ${percentage}% do limite mensal de eventos`,
+              html,
+            }).catch((err) => {
+              console.error("[Groware] failed to send quota warning email", {
+                userId: ownerId,
+                error: err instanceof Error ? err.message : String(err),
+              });
+            });
+          }
+        } catch (err) {
+          console.error("[Groware] quota alert check failed", {
+            userId: ownerId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      })
+      .catch((err) => {
+        console.error("[Groware] usage_monthly upsert failed", {
+          userId: ownerId,
+          orgId: apiKey.organizationId,
+          yearMonth,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
+  }
+
+  if (PAYMENT_EVENT_TYPES.has(eventType)) {
+    insertPayment({
+      organizationId: apiKey.organizationId,
+      eventType,
+      currency: eventCurrency,
+      baseCurrency: orgCurrency,
+      exchangeRate: resolvedRate,
+      grossValueInCents,
+      baseGrossValueInCents,
+      baseNetValueInCents,
+      discountInCents,
+      installments: toInt(body.installments),
+      paymentMethod: toString(body.payment_method),
+      productId: toString(body.product_id),
+      productName: toString(body.product_name),
+      category: toString(body.category),
+      source: toString(body.source),
+      medium: toString(body.medium),
+      campaign: toString(body.campaign),
+      content: toString(body.content),
+      landingPage: toString(body.landing_page),
+      entryPage: toString(body.entry_page),
+      referrer: toString(body.referrer),
+      device: toString(body.device),
+      customerType: toString(body.customer_type),
+      customerId: toString(body.customer_id),
+      sessionId: toString(body.session_id),
+      billingType: toString(body.billing_type),
+      billingInterval: toString(body.billing_interval),
+      subscriptionId: toString(body.subscription_id),
+      planId: toString(body.plan_id),
+      planName: toString(body.plan_name),
+      metadata,
+      eventHash,
+      createdAt,
+    }).catch(() => {});
   }
 
   await handleSubscriptionUpsert(

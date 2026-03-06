@@ -2,7 +2,7 @@
 
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { events } from "@/db/schema";
+import { payments } from "@/db/schema";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import dayjs from "@/utils/dayjs";
 import type { IPublicRevenueEntry } from "@/interfaces/public-page.interface";
@@ -17,20 +17,20 @@ export async function getPublicRevenueHistory(
 
   const rows = await db
     .select({
-      month: sql<string>`TO_CHAR(${events.createdAt}, 'YYYY-MM-01')`,
-      revenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
+      month: sql<string>`TO_CHAR(${payments.createdAt}, 'YYYY-MM-01')`,
+      revenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
     })
-    .from(events)
+    .from(payments)
     .where(
       and(
-        eq(events.organizationId, organizationId),
-        inArray(events.eventType, [...REVENUE_EVENT_TYPES]),
-        gte(events.createdAt, start),
-        lte(events.createdAt, end),
+        eq(payments.organizationId, organizationId),
+        inArray(payments.eventType, [...REVENUE_EVENT_TYPES]),
+        gte(payments.createdAt, start),
+        lte(payments.createdAt, end),
       ),
     )
-    .groupBy(sql`TO_CHAR(${events.createdAt}, 'YYYY-MM-01')`)
-    .orderBy(sql`TO_CHAR(${events.createdAt}, 'YYYY-MM-01')`);
+    .groupBy(sql`TO_CHAR(${payments.createdAt}, 'YYYY-MM-01')`)
+    .orderBy(sql`TO_CHAR(${payments.createdAt}, 'YYYY-MM-01')`);
 
   const result: IPublicRevenueEntry[] = [];
   for (let i = 0; i < months; i++) {
