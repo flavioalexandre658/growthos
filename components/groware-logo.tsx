@@ -1,9 +1,11 @@
 import { GrowareIcon } from "./groware-icon";
+import { Link } from "@/i18n/routing";
 
 type LogoSize = "sm" | "md" | "lg" | "xl";
 
 interface GrowareLogoProps {
   size?: LogoSize;
+  href?: string | null;
 }
 
 const sizeConfig: Record<LogoSize, { icon: number; fontSize: string; gap: string; track: string }> = {
@@ -13,10 +15,10 @@ const sizeConfig: Record<LogoSize, { icon: number; fontSize: string; gap: string
   xl: { icon: 64, fontSize: "40px", gap: "18px", track: "-0.05em" },
 };
 
-export function GrowareLogo({ size = "md" }: GrowareLogoProps) {
+export function GrowareLogo({ size = "md", href = "/" }: GrowareLogoProps) {
   const c = sizeConfig[size];
 
-  return (
+  const content = (
     <div style={{ display: "flex", alignItems: "center", gap: c.gap }}>
       <GrowareIcon size={c.icon} />
       <span
@@ -32,5 +34,13 @@ export function GrowareLogo({ size = "md" }: GrowareLogoProps) {
         grow<span style={{ color: "#818cf8" }}>are</span>
       </span>
     </div>
+  );
+
+  if (href === null) return content;
+
+  return (
+    <Link href={href} style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+      {content}
+    </Link>
   );
 }

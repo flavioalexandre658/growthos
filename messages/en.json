@@ -1,0 +1,546 @@
+{
+  "nav": {
+    "features": "Features",
+    "integrations": "Integrations",
+    "ai": "AI Analysis",
+    "docs": "Docs",
+    "signIn": "Sign in",
+    "earlyAccess": "Early access"
+  },
+  "footer": {
+    "copyright": "© 2026 Groware. All rights reserved.",
+    "version": "v0.1.0-beta · groware.io",
+    "links": {
+      "docs": "Docs",
+      "changelog": "Changelog",
+      "privacy": "Privacy",
+      "terms": "Terms"
+    }
+  },
+  "cta": {
+    "emailPlaceholder": "you@email.com",
+    "emailPlaceholderWork": "Your work email",
+    "submitHero": "Start for free →",
+    "submitCta": "Request access →",
+    "successToast": "You're on the list! We'll reach out soon.",
+    "invalidEmail": "Enter a valid email"
+  },
+  "landing": {
+    "hero": {
+      "badge": "Now in early access",
+      "badgeSuffix": " · Stripe integration available",
+      "headline1": "From funnel to real profit.",
+      "headline2": "Everything in one place.",
+      "subheadline": "MRR, acquisition channels, real P&L and AI analysis — connected in a single dashboard. Built for SaaS founders who want to grow with clarity.",
+      "disclaimer": "No credit card · Free during beta",
+      "mockupLabel": "groware.io / overview",
+      "overview": "Overview",
+      "overviewSub": "Consolidated period performance",
+      "stages": "Stages",
+      "last30": "Last 30 days ▾",
+      "kpis": {
+        "pageviews": "Pageviews",
+        "signups": "Sign-ups",
+        "checkouts": "Checkouts",
+        "payments": "Payments",
+        "revenue": "Revenue",
+        "avgTicket": "Avg. Ticket"
+      },
+      "funnel": "Conversion Funnel",
+      "revenueByChannel": "Revenue by Channel"
+    },
+    "problem": {
+      "label": "// the problem",
+      "headline1": "Your data is scattered everywhere,",
+      "headline2": "nothing is connected.",
+      "description": "MRR in Stripe. Costs in a spreadsheet. Acquisition in Google Analytics. P&L in Excel. Nothing talks to each other — and you spend hours connecting the dots manually.",
+      "items": [
+        {
+          "icon": "📊",
+          "title": "Stripe Dashboard",
+          "desc": "Shows revenue — but not where it came from, what it cost, or what your real margin is."
+        },
+        {
+          "icon": "📋",
+          "title": "Spreadsheets",
+          "desc": "Manual updates, broken formulas, always a month behind. Nobody trusts the numbers."
+        },
+        {
+          "icon": "📉",
+          "title": "Google Analytics",
+          "desc": "Pageviews and sessions — but zero connection to revenue, subscriptions, or real business results."
+        }
+      ],
+      "solutionTitle": "Groware connects all of it.",
+      "solutionDesc": "One script. One webhook. Funnel → MRR → channels → costs → margin → AI insight — all in real time. Everything your growth team and CFO need, in one place."
+    },
+    "features": {
+      "label": "// features",
+      "headline1": "Everything you need to",
+      "headline2": "grow with clarity.",
+      "items": [
+        {
+          "title": "Overview",
+          "desc": "Real-time funnel, KPIs with vs. prior period delta and daily chart. See visits → sign-ups → checkouts → revenue in one screen.",
+          "tags": ["funnel", "KPIs", "daily"]
+        },
+        {
+          "title": "Recurring Revenue (MRR)",
+          "desc": "MRR, ARR, ARPU, LTV, Churn Rate, Revenue Churn. Subscriber flow Sankey and movement chart: New / Expansion / Contraction / Churn.",
+          "tags": ["MRR", "ARR", "LTV", "churn"]
+        },
+        {
+          "title": "Financials",
+          "desc": "Gross revenue, net revenue, discounts and average ticket. Breakdown by payment method (card, bank transfer) and product category.",
+          "tags": ["revenue", "ticket", "methods"]
+        },
+        {
+          "title": "Costs & P&L",
+          "desc": "Add fixed and variable costs (absolute or % of revenue). Real-time P&L: Gross Revenue → Gross Profit → Net Profit → Real Margin.",
+          "tags": ["P&L", "margin", "costs"]
+        },
+        {
+          "title": "Acquisition Channels",
+          "desc": "Revenue, funnel stages, conversion rate and average ticket by source. Visual heatmap and sortable table by any column.",
+          "tags": ["UTMs", "source", "ROI"]
+        },
+        {
+          "title": "Landing Pages",
+          "desc": "Which entry pages generate the most revenue? Full funnel metrics by URL, with search, sorting and pagination.",
+          "tags": ["URL", "entry", "conversion"]
+        },
+        {
+          "title": "Events & Debug",
+          "desc": "Real-time event table. Filter by type, billing model, date. Automatic alerts for IDs missing deduplication.",
+          "tags": ["real-time", "debug", "dedupe"]
+        },
+        {
+          "title": "Subscriptions",
+          "desc": "Active, in trial, past due, canceled — with plan, interval, normalized monthly value and customer ID. Full history.",
+          "tags": ["status", "plans", "intervals"]
+        },
+        {
+          "title": "Period Comparison",
+          "desc": "Compare two date ranges — overview, channels, financials or landing pages. Side by side or AI summary.",
+          "tags": ["diff", "trends", "compare"]
+        }
+      ]
+    },
+    "code": {
+      "label": "// setup",
+      "headline1": "From zero to full analytics",
+      "headline2": "in 5 minutes.",
+      "description": "One script tag for funnel and acquisition. One webhook for payments and subscriptions. No backend changes.",
+      "tabLabel": "tracker.js · installation",
+      "codeComment1": "// 1. Add to your <head>",
+      "codeComment2": "// 2. Track events",
+      "codeComment3": "// 3. Track payments (server-side)",
+      "steps": [
+        {
+          "title": "Add the script tag",
+          "desc": "Add one line in your <head> with your API Key. Pageviews, UTMs, device and session are tracked automatically.",
+          "time": "~1 min"
+        },
+        {
+          "title": "Track funnel events",
+          "desc": "Call Groware.track() on sign-up, checkout and payment events. The SDK is < 3 kB.",
+          "time": "~5 min"
+        },
+        {
+          "title": "Connect your gateway",
+          "desc": "Paste your Stripe Restricted Key. Groware imports the full history and starts receiving webhooks automatically.",
+          "time": "~2 min"
+        }
+      ]
+    },
+    "integrations": {
+      "label": "// integrations",
+      "headline1": "Works with",
+      "headline2": "your stack.",
+      "description": "Native gateway integrations do the heavy lifting. History sync, real-time webhooks and conversion attribution built in.",
+      "statusLive": "● Available",
+      "statusSoon": "⟳ Coming soon",
+      "items": [
+        {
+          "name": "Stripe",
+          "desc": "Full history, subscriptions, renewals, churn. Restricted Key — read-only, no risk.",
+          "status": "live"
+        },
+        {
+          "name": "Asaas",
+          "desc": "PIX, bank slip, credit card. The dominant gateway for Brazilian SaaS — full native integration.",
+          "status": "soon"
+        },
+        {
+          "name": "Kiwify",
+          "desc": "Digital products and info-products. Payment events, refunds and subscription lifecycle.",
+          "status": "soon"
+        },
+        {
+          "name": "Hotmart",
+          "desc": "Digital marketplace integration. Purchases, subscriptions and affiliate tracking.",
+          "status": "soon"
+        },
+        {
+          "name": "Mercado Pago",
+          "desc": "Payments for marketplace and e-commerce. The most popular platform in Latin America.",
+          "status": "soon"
+        },
+        {
+          "name": "tracker.js",
+          "desc": "Your universal fallback. Works with any checkout. < 3 kB, zero dependencies, auto-tracking.",
+          "status": "live"
+        },
+        {
+          "name": "Gemini AI",
+          "desc": "Powered by Google Gemini. Analyzes P&L + funnel + channels + recurring revenue. Real-time streaming.",
+          "status": "live"
+        },
+        {
+          "name": "REST API",
+          "desc": "Send server-side events from any language. Node, Python, Go, Ruby, PHP — any stack.",
+          "status": "live"
+        }
+      ]
+    },
+    "ai": {
+      "label": "// ai analysis",
+      "headline1": "P&L + funnel + channels.",
+      "headline2": "AI analyzes everything.",
+      "description": "Click \"Analyze with AI\" on the Costs screen and Groware sends your full P&L, funnel and channels to Gemini — returning prioritized insights with real-time streaming.",
+      "panelTitle": "AI Analysis",
+      "panelSub": "Gemini analyzes your costs and identifies opportunities",
+      "compareBtn": "Compare Periods",
+      "analyzeBtn": "Analyze with AI",
+      "plLabel": "P&L for Period — Jan 2026",
+      "aiLabel": "Generated Analysis · Gemini 1.5 Flash",
+      "features": [
+        {
+          "title": "Real business context",
+          "desc": "AI receives detailed P&L (fixed, variable, margins), funnel with conversion rates, average ticket and organization name."
+        },
+        {
+          "title": "Period comparison",
+          "desc": "Compare two date ranges with AI analysis. Understand what changed between periods with a clear, structured response."
+        },
+        {
+          "title": "Real-time streaming",
+          "desc": "The response arrives fragment by fragment, directly in the dashboard. Blinking cursor while the AI thinks."
+        }
+      ],
+      "mockupPlItems": [
+        { "label": "GROSS REVENUE", "value": "$48,240" },
+        { "label": "VARIABLE COSTS", "value": "- $7,120" },
+        { "label": "OPERATING INCOME", "value": "$41,120" },
+        { "label": "FIXED COSTS", "value": "- $11,400" },
+        { "label": "NET INCOME", "value": "$29,720" },
+        { "label": "REAL MARGIN", "value": "61.6%" }
+      ],
+      "mockupDiagnosisHeader": "## Diagnosis",
+      "mockupDiagnosisLine": "Your real margin of <highlight>61.6%</highlight> is <above>above average</above> for B2C SaaS.",
+      "mockupOpportunitiesHeader": "## Opportunities",
+      "mockupOp1": "Fixed costs represent <warn>23.6%</warn> of revenue.",
+      "mockupOp2": "Gateway fee <warn>$4,200</warn> → evaluate negotiated plan.",
+      "mockupOp3": "Average ticket grew <good>+8.1%</good> — upsell signal.",
+      "mockupRecsHeader": "## Recommendations",
+      "mockupRec1": "1. Negotiate processing fee with Stripe",
+      "mockupRec2": "2. Review redundant SaaS tools",
+      "mockupRec3": "3. Accelerate upsell with MRR expansion"
+    },
+    "metrics": {
+      "label": "// revenue attribution",
+      "headline1": "Know exactly where",
+      "headline2": "every dollar comes from.",
+      "description": "Each payment is attributed to its acquisition source — even payments made via gateway webhook, months after the first click.",
+      "tableTitle": "Channel Breakdown",
+      "tableSub": "5 channels with revenue · sorted by revenue",
+      "columns": {
+        "channel": "Channel",
+        "signups": "Sign-ups",
+        "payments": "Payments",
+        "conversion": "Conversion",
+        "revenue": "Revenue",
+        "vs": "vs previous"
+      },
+      "filters": ["Revenue", "Conversion", "Ticket"]
+    },
+    "ctaSection": {
+      "badge": "FREE DURING BETA",
+      "headline1": "Stop guessing.",
+      "headline2": "Start",
+      "headline3": "growing with clarity.",
+      "description": "Get early access to Groware and turn your scattered data into growth decisions — before your competitors do.",
+      "disclaimer": "Free during beta · No card · 5-minute setup"
+    },
+    "strip": [
+      "MRR & ARR",
+      "Churn Analysis",
+      "ROI by Channel",
+      "Real P&L",
+      "AI Analysis",
+      "Stripe Integration",
+      "Asaas Integration",
+      "Funnel Tracking",
+      "Landing Pages",
+      "Event Debug",
+      "Multi-tenant",
+      "tracker.js"
+    ]
+  },
+  "auth": {
+    "login": {
+      "pageTitle": "Sign in",
+      "tagline": "Growth · Analytics · AI",
+      "brandHeadline": "Data that transforms decisions.",
+      "brandSub": "Visualize revenue, costs and conversion in real time. Identify opportunities with intelligent analysis.",
+      "mockupLabel": "dashboard, overview",
+      "mockupRevenue": "Revenue",
+      "mockupConversion": "Conversion",
+      "mockupTicket": "Avg. ticket",
+      "mockupChartLabel": "Revenue, last 7 days",
+      "mockupChartDelta": "+18% vs previous week",
+      "mockupDays": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+      "mockupChannels": "3 active channels · Instagram, Google, Direct",
+      "copyright": "© 2026 Groware · Real-time tracking of revenue, funnel and channels.",
+      "title": "Sign in to Groware",
+      "subtitle": "Good to have you back. Sign in to your account.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@company.com",
+      "passwordLabel": "Password",
+      "forgotPassword": "Forgot your password?",
+      "submitBtn": "Sign in to Groware",
+      "submittingBtn": "Signing in...",
+      "noAccount": "Don't have an account?",
+      "createAccount": "Create account",
+      "welcomeBack": "Welcome to Groware!",
+      "invalidCredentials": "Invalid email or password, or you don't have access.",
+      "loginError": "Login error. Please try again.",
+      "emailError": "Invalid email",
+      "passwordRequired": "Password is required"
+    },
+    "register": {
+      "pageTitle": "Create account",
+      "tagline": "Growth Intelligence",
+      "brandHeadline": "The intelligence behind your growth.",
+      "brandSub": "Discover where the profit is, where the waste is, and what to optimize first — with data and intelligent analysis.",
+      "copyright": "© 2026 Groware · Better decisions, consistent growth.",
+      "title": "Create your account",
+      "subtitle": "Start tracking your growth data in minutes.",
+      "nameLabel": "Name",
+      "namePlaceholder": "Your name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@company.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Minimum 6 characters",
+      "confirmPasswordLabel": "Confirm Password",
+      "confirmPasswordPlaceholder": "Repeat password",
+      "submitBtn": "Create account",
+      "submittingBtn": "Creating account...",
+      "alreadyHaveAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "termsNote": "By creating an account, you agree to our terms of use.",
+      "successToast": "Account created! Let's get everything set up.",
+      "loginAfterRegisterError": "Account created, but error signing in. Try signing in manually.",
+      "genericError": "Error creating account. Please try again.",
+      "nameMin": "Name must be at least 2 characters",
+      "emailError": "Invalid email",
+      "passwordMin": "Password must be at least 6 characters",
+      "confirmRequired": "Password confirmation is required",
+      "passwordMismatch": "Passwords do not match",
+      "features": [
+        {
+          "title": "Real-time revenue",
+          "desc": "Gross and net revenue, average ticket and margin by channel, all updated automatically."
+        },
+        {
+          "title": "Conversion funnel",
+          "desc": "Visualize every step of the journey and identify exactly where customers are dropping off."
+        },
+        {
+          "title": "AI analysis",
+          "desc": "Compare periods and receive automatic reports on profit optimization opportunities."
+        }
+      ]
+    },
+    "forgotPassword": {
+      "pageTitle": "Reset password",
+      "title": "Reset password",
+      "subtitle": "Enter your email and we'll send you a link to reset your password.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@email.com",
+      "submitBtn": "Send instructions",
+      "submittingBtn": "Sending...",
+      "backToLogin": "Back to sign in",
+      "sentTitle": "Email sent",
+      "sentDesc": "If {email} has an account, you'll receive instructions shortly.",
+      "notReceived": "Didn't receive it? Check your spam folder or",
+      "tryAgain": "try again",
+      "emailError": "Invalid email"
+    },
+    "resetPassword": {
+      "pageTitle": "New password",
+      "title": "New password",
+      "subtitle": "Choose a secure password for your account.",
+      "passwordLabel": "New password",
+      "confirmPasswordLabel": "Confirm new password",
+      "submitBtn": "Reset password",
+      "submittingBtn": "Resetting...",
+      "invalidToken": "Invalid link.",
+      "requestNew": "Request new link",
+      "doneTitle": "Password reset",
+      "doneDesc": "Your password has been updated. Redirecting to sign in...",
+      "tokenError": "Invalid token. Please request a new recovery link.",
+      "passwordMin": "Password must be at least 6 characters",
+      "confirmRequired": "Confirmation is required",
+      "passwordMismatch": "Passwords do not match",
+      "resetError": "Error resetting password."
+    }
+  },
+  "privacy": {
+    "pageTitle": "Privacy Policy",
+    "label": "// legal",
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: March 2026",
+    "sections": [
+      {
+        "title": "1. Information we collect",
+        "content": "Groware collects information necessary to provide the analytics service. This includes event data sent by your script (tracker.js), payment data synced via gateway integrations, and your account information (name, email, organization).",
+        "extra": "Event data is processed anonymously by default. We recommend using the hashAnonymous() function to anonymize customer identifiers before sending them to Groware."
+      },
+      {
+        "title": "2. How we use your data",
+        "intro": "We use your data exclusively to:",
+        "items": [
+          "Provide the contracted dashboards and analyses",
+          "Process and display revenue, funnel and channel metrics",
+          "Generate AI analyses based on your organization's context",
+          "Send notifications about configured alerts and reports",
+          "Improve the quality and reliability of the service"
+        ]
+      },
+      {
+        "title": "3. Data sharing",
+        "content": "We do not sell, rent or share your personal data with third parties for commercial purposes. Data may be shared with service providers essential to platform operation, such as cloud infrastructure providers, always subject to confidentiality agreements."
+      },
+      {
+        "title": "4. Security",
+        "content": "We use encryption in transit (TLS) and at rest to protect your data. Access to API keys and integrations is done with the minimum necessary permissions (read-only for Stripe). We recommend keeping your API keys secure and not sharing them publicly."
+      },
+      {
+        "title": "5. Data retention",
+        "content": "We retain your data while your account is active. Upon requesting account closure, your data will be deleted within 30 days, except where there is a legal obligation to retain it."
+      },
+      {
+        "title": "6. Your rights (GDPR)",
+        "intro": "In accordance with applicable data protection laws, you have the right to:",
+        "items": [
+          "Confirmation of the existence of processing of your data",
+          "Access to your personal data",
+          "Correction of incomplete, inaccurate or outdated data",
+          "Data portability to another provider",
+          "Deletion of personal data processed with your consent",
+          "Withdrawal of consent at any time"
+        ]
+      },
+      {
+        "title": "7. Cookies",
+        "content": "We use essential cookies for authentication and session management. We do not use third-party tracking cookies for advertising purposes."
+      },
+      {
+        "title": "8. Contact",
+        "content": "To exercise your rights, for privacy questions or data deletion requests, contact us at",
+        "email": "privacy@groware.io"
+      }
+    ]
+  },
+  "terms": {
+    "pageTitle": "Terms of Use",
+    "label": "// legal",
+    "title": "Terms of Use",
+    "lastUpdated": "Last updated: March 2026",
+    "sections": [
+      {
+        "title": "1. Acceptance of terms",
+        "content": "By accessing or using Groware, you agree to these Terms of Use and our Privacy Policy. If you do not agree with any part of these terms, you may not use the service."
+      },
+      {
+        "title": "2. Service description",
+        "content": "Groware is a growth and revenue analytics platform for SaaS companies and digital businesses. The service includes MRR dashboards, acquisition channel analysis, P&L, event tracking and AI-powered analysis."
+      },
+      {
+        "title": "3. Beta period",
+        "content": "Groware is currently in early access (beta). During this period, the service is offered free of charge. We reserve the right to change plans and pricing with reasonable prior notice to users before the official launch."
+      },
+      {
+        "title": "4. Acceptable use",
+        "intro": "You agree not to use Groware to:",
+        "items": [
+          "Violate any applicable law or regulation",
+          "Transmit sensitive personal data without the data subject's proper consent",
+          "Attempt to gain unauthorized access to other users' systems or data",
+          "Reverse engineer or copy the service",
+          "Send non-anonymized customer data that could identify individuals"
+        ]
+      },
+      {
+        "title": "5. Your responsibilities",
+        "content": "You are responsible for maintaining the security of your access credentials and API keys. Groware is not responsible for damages resulting from unauthorized use of your account by third parties.",
+        "extra": "You are also responsible for ensuring that data sent to Groware complies with GDPR and other applicable data protection laws for your business."
+      },
+      {
+        "title": "6. Intellectual property",
+        "content": "Groware and all its content — including interface, code, brand and documentation — are the exclusive property of Groware and protected by intellectual property laws. These terms do not grant you any license over Groware's intellectual property, except the limited right to use the service."
+      },
+      {
+        "title": "7. Limitation of liability",
+        "content": "The service is provided \"as is\" during the beta period. Groware does not guarantee uninterrupted availability or absence of errors. In no circumstances shall Groware be liable for indirect, incidental or consequential damages arising from the use or inability to use the service."
+      },
+      {
+        "title": "8. Changes to terms",
+        "content": "We may update these Terms of Use periodically. We will notify users of significant changes by email or via notice on the platform. Continued use of the service after changes constitutes acceptance of the new terms."
+      },
+      {
+        "title": "9. Contact",
+        "content": "For questions about these Terms of Use, contact us at",
+        "email": "legal@groware.io"
+      }
+    ]
+  },
+  "changelog": {
+    "pageTitle": "Changelog",
+    "label": "// changelog",
+    "title": "What changed.",
+    "description": "Track all updates, improvements and new features in Groware.",
+    "releases": [
+      {
+        "version": "v0.1.0-beta",
+        "date": "Mar 2026",
+        "tag": "beta",
+        "items": [
+          "Dashboard with funnel, KPIs and daily revenue chart",
+          "MRR module with growth, movement and subscriber Sankey",
+          "Financials with breakdown by payment method and product category",
+          "Costs & P&L with waterfall and AI analysis",
+          "Acquisition channels with UTM attribution",
+          "Landing Pages with funnel metrics by URL",
+          "Event table with debug and deduplication alerts",
+          "Active, trial and canceled subscription management",
+          "Period comparison with AI analysis",
+          "Native Stripe integration (webhooks + full history sync)",
+          "AI analysis via Google Gemini 1.5 Flash with streaming",
+          "tracker.js — tracking script (2.1 kB, zero dependencies)",
+          "Shareable public page per organization",
+          "Multi-tenant with team support and email invites",
+          "Regional settings (currency, timezone)"
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "defaultTitle": "Groware — Growth Analytics for SaaS",
+    "defaultDescription": "Revenue, MRR, acquisition channels and P&L in one dashboard. Integrates Stripe, Asaas, Kiwify and Hotmart. Built for SaaS founders.",
+    "ogTitle": "Groware — Growth Analytics for SaaS",
+    "ogDescription": "Revenue, MRR, acquisition channels and P&L in one dashboard. Integrates Stripe, Asaas, Kiwify and Hotmart.",
+    "ogLocale": "en_US"
+  }
+}
