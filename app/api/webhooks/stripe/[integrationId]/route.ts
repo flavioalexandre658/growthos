@@ -109,6 +109,10 @@ async function handleStripeEvent(orgId: string, event: Stripe.Event) {
     case "invoice.payment_failed":
       await handlePaymentFailed(orgId, event.data.object as Stripe.Invoice);
       break;
+    case "payment_intent.succeeded":
+      await handlePaymentIntentSucceeded(orgId, event.data.object as Stripe.PaymentIntent, event.created);
+      shouldCheckMilestones = true;
+      break;
   }
 
   if (shouldCheckMilestones) {
@@ -389,6 +393,77 @@ async function handleSubscriptionUpdated(
       createdAt: new Date(),
     })
     .onConflictDoNothing();
+}
+
+async function handlePaymentIntentSucceeded(
+  orgId: string,
+  paymentIntent: Stripe.PaymentIntent,
+  eventTimestamp: number,
+) {
+  if (paymentIntent.invoice) return;
+  if (!paymentIntent.amount_received) return;
+
+  const rawCustomerId =
+    typeof paymentIntent.customer === "string"
+      ? paymentIntent.customer
+      : paymentIntent.customer?.id ?? null;
+  const hashedCustomerId = rawCustomerId ? hashAnonymous(rawCustomerId) : null;
+  const acq = hashedCustomerId
+    ? await lookupAcquisitionContext(orgId, hashedCustomerId)
+    : null;
+
+  const eventCurrency = paymentIntent.currency.toUpperCase();
+  const orgCurrency = await getOrgCurrency(orgId);
+  const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
+    orgId,
+    eventCurrency,
+    orgCurrency,
+    paymentIntent.amount_received,
+  );
+
+  const pm =
+    typeof paymentIntent.payment_method === "string"
+      ? "credit_card"
+      : (paymentIntent.payment_method?.type ?? "credit_card");
+
+  await db
+    .insert(events)
+    .values({
+      organizationId: orgId,
+      eventType: "purchase",
+      grossValueInCents: paymentIntent.amount_received,
+      currency: eventCurrency,
+      baseCurrency,
+      exchangeRate,
+      baseGrossValueInCents,
+      billingType: "one_time",
+      billingReason: null,
+      billingInterval: null,
+      subscriptionId: null,
+      customerId: hashedCustomerId ?? undefined,
+      paymentMethod: pm,
+      provider: "stripe",
+      eventHash: stripeEventHash(orgId, paymentIntent.id),
+      createdAt: new Date(eventTimestamp * 1000),
+      source: acq?.source ?? null,
+      medium: acq?.medium ?? null,
+      campaign: acq?.campaign ?? null,
+      content: acq?.content ?? null,
+      landingPage: acq?.landingPage ?? null,
+      entryPage: acq?.entryPage ?? null,
+      sessionId: acq?.sessionId ?? null,
+    })
+    .onConflictDoUpdate({
+      target: [events.organizationId, events.eventHash],
+      set: {
+        grossValueInCents: paymentIntent.amount_received,
+        currency: eventCurrency,
+        baseCurrency,
+        exchangeRate,
+        baseGrossValueInCents,
+        createdAt: new Date(eventTimestamp * 1000),
+      },
+    });
 }
 
 async function handlePaymentFailed(orgId: string, invoice: Stripe.Invoice) {

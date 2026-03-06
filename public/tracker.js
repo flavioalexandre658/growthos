@@ -1,6 +1,23 @@
 (function () {
   "use strict";
 
+  var BOT_PATTERN =
+    /bot|crawler|spider|headless|curl|python|wget|scrapy|puppeteer|playwright|selenium|phantomjs|slurp|mediapartners|facebookexternalhit|bingpreview|googlebot|yandexbot|baiduspider|duckduckbot|applebot|semrush|ahrefs|mj12bot|dotbot|petalbot|bytespider|gptbot|claudebot|cohere-ai|ia_archiver|archive\.org_bot|screaming.frog|linkchecker|sitebulb|netcraftsurvey|httpx|go-http-client|java\/|okhttp|axios|node-fetch|undici|postman|insomnia|ahrefsbot|rogerbot|twitterbot|linkedinbot|embedly|quora.link|outbrain|pinterest|slack|vkshare|whatsapp|flipboard|tumblr|nuzzel|discourse|telegrambot|w3c_validator|feedfetcher|netsystemsresearch|seznambot|sogou|exabot|konqueror|megaindex|grapeshot|proximic|blexbot|yeti|admantx|turnitin|grammarly|funnelback|centurybot|bubing|httrack|ltx71|panscient|ccbot|amazonbot|imagesiftbot|dataforseo/i;
+
+  function isBot() {
+    try {
+      var ua = navigator.userAgent || "";
+      if (!ua || ua.length < 15) return true;
+      if (BOT_PATTERN.test(ua)) return true;
+      if (navigator.webdriver === true) return true;
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  if (isBot()) return;
+
   var QUEUE_KEY = "groware_queue";
   var UTM_KEY = "groware_utm";
   var SESSION_KEY = "groware_sid";
