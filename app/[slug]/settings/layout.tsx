@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import { SettingsLayoutShell } from "./_components/settings-layout-shell";
+
+export const metadata: Metadata = {
+  title: "Configurações",
+  description: "Gerencie as configurações da sua organização no Groware.",
+};
 
 interface SettingsLayoutProps {
   children: React.ReactNode;

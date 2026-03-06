@@ -2,7 +2,7 @@ import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { ChannelsContent } from "./_components/channels-content";
 
 export const metadata = {
-  title: "Canais | Groware",
+  title: "Canais",
 };
 
 interface ChannelsPageProps {

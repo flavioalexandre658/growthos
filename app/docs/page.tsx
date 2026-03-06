@@ -1,7 +1,7 @@
 import { DocsContent } from "./_components/docs-content";
 
 export const metadata = {
-  title: "Documentação | Groware",
+  title: "Documentação",
 };
 
 export default function DocsPage() {

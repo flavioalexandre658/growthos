@@ -2,18 +2,18 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { signOut } from "next-auth/react";
 import {
   IconLayoutDashboard,
   IconBrandGoogle,
   IconCurrencyDollar,
-  IconChartBar,
   IconMenu2,
   IconX,
   IconLogout,
   IconChevronLeft,
   IconChevronRight,
+  IconChevronDown,
   IconWorldWww,
   IconCalculator,
   IconBuilding,
@@ -29,6 +29,8 @@ import {
   IconBug,
   IconReceipt2,
 } from "@tabler/icons-react";
+import { GrowareIcon } from "@/components/groware-icon";
+import { GrowareLogo } from "@/components/groware-logo";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import {
@@ -330,6 +332,24 @@ function SidebarContent({
   const sections = buildNavSections(slug, hasData ?? true);
   const footerNav = buildFooterNav(slug);
 
+  const navRef = useRef<HTMLElement>(null);
+  const [showScrollFade, setShowScrollFade] = useState(true);
+
+  const checkScroll = useCallback(() => {
+    const el = navRef.current;
+    if (!el) return;
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 8;
+    setShowScrollFade(!atBottom);
+  }, []);
+
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    checkScroll();
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    return () => el.removeEventListener("scroll", checkScroll);
+  }, [checkScroll]);
+
   return (
     <div className="flex h-full flex-col bg-zinc-950 border-r border-zinc-800/60">
       <div
@@ -340,24 +360,15 @@ function SidebarContent({
       >
         {!collapsed && (
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600">
-              <IconChartBar size={14} className="text-white" />
-            </div>
-            <div>
-              <span className="text-sm font-bold text-zinc-100">Groware</span>
-              {organization && (
-                <span className="ml-1.5 text-[10px] font-semibold uppercase tracking-widest text-indigo-500">
-                  {organization.name}
-                </span>
-              )}
-            </div>
+            <GrowareLogo size="sm" />
+            {organization && (
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-indigo-500">
+                {organization.name}
+              </span>
+            )}
           </div>
         )}
-        {collapsed && (
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600">
-            <IconChartBar size={14} className="text-white" />
-          </div>
-        )}
+        {collapsed && <GrowareIcon size={28} />}
         {onCollapse && (
           <button
             onClick={onCollapse}
@@ -378,25 +389,33 @@ function SidebarContent({
 
       <OrgSwitcher slug={slug} collapsed={collapsed} />
 
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-1">
-        <Suspense>
-          {sections.map((section) => (
-            <div key={section.title}>
-              <SectionLabel title={section.title} collapsed={collapsed} />
-              <div className="space-y-0.5">
-                {section.items.map((item) => (
-                  <NavItem
-                    key={item.href}
-                    {...item}
-                    collapsed={collapsed}
-                    onClick={onClose}
-                  />
-                ))}
+      <div className="relative flex-1 min-h-0">
+        <nav ref={navRef} className="h-full space-y-0.5 overflow-y-auto px-3 py-1">
+          <Suspense>
+            {sections.map((section) => (
+              <div key={section.title}>
+                <SectionLabel title={section.title} collapsed={collapsed} />
+                <div className="space-y-0.5">
+                  {section.items.map((item) => (
+                    <NavItem
+                      key={item.href}
+                      {...item}
+                      collapsed={collapsed}
+                      onClick={onClose}
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </Suspense>
-      </nav>
+            ))}
+          </Suspense>
+        </nav>
+
+        {showScrollFade && !collapsed && (
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 flex flex-col items-center justify-end pb-1.5 bg-gradient-to-t from-zinc-950 via-zinc-950/80 to-transparent">
+            <IconChevronDown size={13} className="text-indigo-500/60 animate-bounce" />
+          </div>
+        )}
+      </div>
 
       <div
         className={cn(
@@ -444,12 +463,7 @@ export function Sidebar({ slug }: { slug: string }) {
       </aside>
 
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-14 px-4 bg-zinc-950 border-b border-zinc-800/60">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600">
-            <IconChartBar size={14} className="text-white" />
-          </div>
-          <span className="text-sm font-bold text-zinc-100">Groware</span>
-        </div>
+        <GrowareLogo size="sm" />
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon" className="text-zinc-400">

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
-import { IconChartBar, IconRosetteDiscountCheck } from "@tabler/icons-react";
+import { IconRosetteDiscountCheck } from "@tabler/icons-react";
+import { GrowareIcon } from "@/components/groware-icon";
 
 interface PublicFooterProps {
   verified: boolean;
@@ -29,7 +30,7 @@ export function PublicFooter({ verified, updatedAt }: PublicFooterProps) {
         href="/"
         className="flex items-center gap-1.5 text-[10px] text-zinc-700 hover:text-zinc-500 transition-colors"
       >
-        <IconChartBar size={11} />
+        <GrowareIcon size={14} />
         <span className="font-medium">Groware</span>
       </Link>
     </footer>

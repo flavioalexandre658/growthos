@@ -2,7 +2,7 @@ import type { IDateFilter } from "@/interfaces/dashboard.interface";
 import { SubscriptionsContent } from "./_components/subscriptions-content";
 
 export const metadata = {
-  title: "Assinaturas | Groware",
+  title: "Assinaturas",
 };
 
 interface SubscriptionsPageProps {

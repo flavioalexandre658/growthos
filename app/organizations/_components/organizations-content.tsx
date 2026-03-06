@@ -7,7 +7,6 @@ import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
 import relativeTime from "dayjs/plugin/relativeTime";
 import {
-  IconChartBar,
   IconPlus,
   IconBuilding,
   IconLogout,
@@ -17,6 +16,7 @@ import {
   IconCalendar,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
+import { GrowareLogo } from "@/components/groware-logo";
 import type { IOrganization } from "@/interfaces/organization.interface";
 
 dayjs.extend(relativeTime);
@@ -128,12 +128,7 @@ export function OrganizationsContent({
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-800/60 bg-zinc-950/80 px-6 py-4 backdrop-blur-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
-            <IconChartBar size={16} className="text-white" />
-          </div>
-          <span className="text-sm font-bold text-zinc-100">Groware</span>
-        </div>
+        <GrowareLogo size="sm" />
 
         <div className="flex items-center gap-3">
           {userName && (

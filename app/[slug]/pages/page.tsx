@@ -2,7 +2,7 @@ import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { PagesContent } from "./_components/pages-content";
 
 export const metadata = {
-  title: "Páginas | Groware",
+  title: "Páginas",
 };
 
 interface PagesPageProps {

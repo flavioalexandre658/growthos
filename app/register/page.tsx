@@ -3,14 +3,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { RegisterForm } from "./_components/register-form";
 import {
-  IconChartBar,
   IconChartLine,
   IconTargetArrow,
   IconSparkles,
 } from "@tabler/icons-react";
+import { GrowareLogo } from "@/components/groware-logo";
 
 export const metadata = {
-  title: "Criar conta | Groware",
+  title: "Criar conta",
 };
 
 export default async function RegisterPage() {
@@ -33,13 +33,8 @@ export default async function RegisterPage() {
           }}
         />
 
-        <div className="absolute top-10 left-10 z-10 flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
-            <IconChartBar size={18} className="text-white" />
-          </div>
-          <span className="text-sm font-bold text-zinc-100 tracking-tight">
-            Groware
-          </span>
+        <div className="absolute top-10 left-10 z-10">
+          <GrowareLogo size="sm" />
         </div>
 
         <div className="relative z-10 w-full max-w-md space-y-8">
@@ -116,11 +111,8 @@ export default async function RegisterPage() {
       <div className="flex w-full lg:w-1/2 items-center justify-center p-6">
         <div className="w-full max-w-sm space-y-8">
           <div className="space-y-1 lg:hidden">
-            <div className="flex items-center gap-2 mb-6">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
-                <IconChartBar size={18} className="text-white" />
-              </div>
-              <span className="text-sm font-bold text-zinc-100">Groware</span>
+            <div className="mb-6">
+              <GrowareLogo size="sm" />
             </div>
           </div>
 

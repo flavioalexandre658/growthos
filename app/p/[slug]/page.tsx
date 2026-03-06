@@ -70,7 +70,7 @@ export async function generateMetadata({ params }: PublicPageProps) {
   const description = data.org.description ?? descParts.join(" · ");
 
   return {
-    title: `${data.org.name} · Métricas públicas`,
+    title: `${data.org.name} | Métricas públicas`,
     description,
     openGraph: {
       title: `${data.org.name}${primaryStr ? ` — ${primaryStr} ${primaryLabel}` : ""}`,

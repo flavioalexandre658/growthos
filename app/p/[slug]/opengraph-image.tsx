@@ -332,7 +332,7 @@ export default async function OGImage({ params }: OGImageProps) {
               <span style={{ color: "#fff", fontSize: 14, fontWeight: 800 }}>G</span>
             </div>
             <span style={{ color: "#52525b", fontSize: 13, fontWeight: 600 }}>
-              powered by GrowthOS
+              powered by Groware
             </span>
           </div>
         </div>

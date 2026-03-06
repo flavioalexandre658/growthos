@@ -2,7 +2,7 @@ import type { IDateFilter } from "@/interfaces/dashboard.interface";
 import { EventsContent } from "./_components/events-content";
 
 export const metadata = {
-  title: "Eventos | Groware",
+  title: "Eventos",
 };
 
 interface EventsPageProps {

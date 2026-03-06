@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { IconChartBar, IconCheck } from "@tabler/icons-react";
+import { IconCheck } from "@tabler/icons-react";
+import { GrowareLogo } from "@/components/groware-logo";
 import { cn } from "@/lib/utils";
 import { StepCreateOrg } from "./step-create-org";
 import { StepRegionalConfig } from "./step-regional-config";
@@ -73,12 +74,7 @@ export function OnboardingWizard({
   return (
     <div className="w-full max-w-lg space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600">
-            <IconChartBar size={16} className="text-white" />
-          </div>
-          <span className="text-sm font-bold text-zinc-100">Groware</span>
-        </div>
+        <GrowareLogo size="sm" />
         <p className="text-xs text-zinc-600">
           Olá,{" "}
           <span className="text-zinc-400 font-semibold">
