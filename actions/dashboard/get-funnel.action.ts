@@ -3,6 +3,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
+import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
 import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
@@ -84,7 +85,7 @@ export async function getFunnel(
     .where(
       and(
         eq(events.organizationId, organizationId),
-        eq(events.eventType, "purchase"),
+        inArray(events.eventType, REVENUE_EVENT_TYPES),
         gte(events.createdAt, startDate),
         lte(events.createdAt, endDate)
       )
@@ -126,7 +127,7 @@ export async function getFunnel(
     .where(
       and(
         eq(events.organizationId, organizationId),
-        eq(events.eventType, "purchase"),
+        inArray(events.eventType, REVENUE_EVENT_TYPES),
         gte(events.createdAt, previousStartDate),
         lte(events.createdAt, previousEndDate)
       )

@@ -9,3 +9,5 @@ export * from "./pageview-aggregate.schema";
 export * from "./alert-config.schema";
 export * from "./org-member.schema";
 export * from "./integration.schema";
+export * from "./password-reset.schema";
+export * from "./milestone.schema";

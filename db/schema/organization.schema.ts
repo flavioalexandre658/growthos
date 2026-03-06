@@ -14,6 +14,26 @@ export interface IAiProfileConfig {
   monthlyGoal?: number;
 }
 
+export interface IPublicPageSettings {
+  showAbsoluteValues: boolean;
+  showMrr: boolean;
+  showSubscribers: boolean;
+  showChurn: boolean;
+  showArpu: boolean;
+  showGrowthChart: boolean;
+  showSankey: boolean;
+}
+
+export const DEFAULT_PUBLIC_PAGE_SETTINGS: IPublicPageSettings = {
+  showAbsoluteValues: true,
+  showMrr: true,
+  showSubscribers: true,
+  showChurn: true,
+  showArpu: false,
+  showGrowthChart: true,
+  showSankey: true,
+};
+
 export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
@@ -32,6 +52,11 @@ export const organizations = pgTable("organizations", {
   language: text("language").notNull().default("pt-BR"),
   hasRecurringRevenue: boolean("has_recurring_revenue").notNull().default(false),
   aiProfile: jsonb("ai_profile").$type<IAiProfileConfig>(),
+  publicPageEnabled: boolean("public_page_enabled").notNull().default(false),
+  publicPageSettings: jsonb("public_page_settings")
+    .$type<IPublicPageSettings>()
+    .default(DEFAULT_PUBLIC_PAGE_SETTINGS),
+  publicDescription: text("public_description"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

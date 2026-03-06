@@ -2,7 +2,8 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { eq, and, gte, lte, sql, desc } from "drizzle-orm";
+import { eq, and, gte, lte, sql, desc, inArray } from "drizzle-orm";
+import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
 import { events, organizations } from "@/db/schema";
 import dayjs from "@/utils/dayjs";
@@ -19,7 +20,7 @@ async function queryRevenue(
     .where(
       and(
         eq(events.organizationId, organizationId),
-        eq(events.eventType, "purchase"),
+        inArray(events.eventType, REVENUE_EVENT_TYPES),
         gte(events.createdAt, startDate),
         lte(events.createdAt, endDate)
       )
@@ -103,7 +104,7 @@ export async function getRevenueComparison(
     .where(
       and(
         eq(events.organizationId, organizationId),
-        eq(events.eventType, "purchase")
+        inArray(events.eventType, REVENUE_EVENT_TYPES)
       )
     )
     .orderBy(desc(events.createdAt))

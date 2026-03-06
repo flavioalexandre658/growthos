@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { extractSubscriptionIdFromInvoice, mapBillingInterval, stripeEventHash } from "@/utils/stripe-helpers";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
+import { checkMilestones } from "@/utils/milestones";
 
 async function getOrgCurrency(orgId: string): Promise<string> {
   const [org] = await db
@@ -79,15 +80,19 @@ export async function POST(
 }
 
 async function handleStripeEvent(orgId: string, event: Stripe.Event) {
+  let shouldCheckMilestones = false;
+
   switch (event.type) {
     case "invoice.payment_succeeded":
       await handleInvoicePaid(orgId, event.data.object as Stripe.Invoice, event.created);
+      shouldCheckMilestones = true;
       break;
     case "charge.refunded":
       await handleChargeRefunded(orgId, event.data.object as Stripe.Charge);
       break;
     case "customer.subscription.created":
       await handleSubscriptionCreated(orgId, event.data.object as Stripe.Subscription, event.id);
+      shouldCheckMilestones = true;
       break;
     case "customer.subscription.deleted":
       await handleSubscriptionCanceled(orgId, event.data.object as Stripe.Subscription, event.id);
@@ -99,10 +104,17 @@ async function handleStripeEvent(orgId: string, event: Stripe.Event) {
         event.data.previous_attributes as Partial<Stripe.Subscription> | undefined,
         event.id,
       );
+      shouldCheckMilestones = true;
       break;
     case "invoice.payment_failed":
       await handlePaymentFailed(orgId, event.data.object as Stripe.Invoice);
       break;
+  }
+
+  if (shouldCheckMilestones) {
+    checkMilestones(orgId).catch((err) => {
+      console.error("[milestone-check]", err);
+    });
   }
 }
 

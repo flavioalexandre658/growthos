@@ -5,6 +5,8 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { db } from "@/db";
 import { users } from "@/db/schema";
+import { sendEmail } from "@/lib/email";
+import { welcomeEmail } from "@/lib/email-templates/welcome";
 
 const schema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -41,6 +43,19 @@ export async function register(input: z.infer<typeof schema>) {
       onboardingCompleted: false,
     })
     .returning({ id: users.id, name: users.name, email: users.email });
+
+  const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
+
+  sendEmail({
+    to: user.email,
+    subject: `Bem-vindo ao GrowthOS, ${user.name}!`,
+    html: welcomeEmail({
+      userName: user.name,
+      dashboardUrl: `${baseUrl}/organizations`,
+    }),
+  }).catch((err) => {
+    console.error("[welcome-email]", err);
+  });
 
   return user;
 }

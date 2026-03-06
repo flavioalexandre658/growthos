@@ -1,4 +1,5 @@
 import type { IAiProfile } from "./ai.interface";
+import type { IPublicPageSettings } from "./public-page.interface";
 
 export interface IFunnelStep {
   eventType: string;
@@ -19,6 +20,9 @@ export interface IOrganization {
   language: string;
   hasRecurringRevenue: boolean;
   aiProfile?: IAiProfile;
+  publicPageEnabled: boolean;
+  publicPageSettings?: IPublicPageSettings;
+  publicDescription?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

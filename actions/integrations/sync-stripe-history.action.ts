@@ -147,8 +147,18 @@ export async function syncStripeHistory(
       subscriptionsSynced++;
     }
 
-    for await (const invoice of stripe.invoices.list({ limit: 100, status: "paid" })) {
+    const invoicePaymentIntentIds = new Set<string>();
+
+    for await (const invoice of stripe.invoices.list({ limit: 100, status: "paid", expand: ["data.payments"] })) {
       if (!invoice.amount_paid) continue;
+
+      const paymentsData = (invoice as Stripe.Invoice & { payments?: { data?: Array<{ payment?: { payment_intent?: string | { id: string } | null } }> } }).payments?.data ?? [];
+      for (const ip of paymentsData) {
+        const pi = ip.payment?.payment_intent;
+        if (!pi) continue;
+        const piId = typeof pi === "string" ? pi : pi.id;
+        if (piId) invoicePaymentIntentIds.add(piId);
+      }
 
       const rawCustomerId =
         typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
@@ -229,8 +239,10 @@ export async function syncStripeHistory(
       if (charge.status !== "succeeded") continue;
       if (!charge.amount) continue;
 
-      const chargeInvoiceId = (charge as Stripe.Charge & { invoice?: string | null }).invoice;
-      if (chargeInvoiceId) continue;
+      const chargePaymentIntentId = typeof charge.payment_intent === "string"
+        ? charge.payment_intent
+        : charge.payment_intent?.id ?? null;
+      if (chargePaymentIntentId && invoicePaymentIntentIds.has(chargePaymentIntentId)) continue;
 
       const rawCustomerId =
         typeof charge.customer === "string" ? charge.customer : charge.customer?.id ?? null;

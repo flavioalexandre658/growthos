@@ -1,6 +1,7 @@
 "use server";
 
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
+import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
 import { events, fixedCosts, variableCosts, organizations } from "@/db/schema";
 import { buildProfitAndLoss } from "@/utils/build-pl";
@@ -29,8 +30,8 @@ export async function getCostsSummary(organizationId: string): Promise<ICostsSum
 
   const [summary] = await db
     .select({
-      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} = 'purchase'), 0)`,
-      totalDiscounts: sql<number>`COALESCE(SUM(${events.discountInCents}) FILTER (WHERE ${events.eventType} = 'purchase'), 0)`,
+      grossRevenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal')), 0)`,
+      totalDiscounts: sql<number>`COALESCE(SUM(${events.discountInCents}) FILTER (WHERE ${events.eventType} IN ('purchase', 'renewal')), 0)`,
     })
     .from(events)
     .where(baseCondition);
@@ -43,7 +44,7 @@ export async function getCostsSummary(organizationId: string): Promise<ICostsSum
       revenue: sql<number>`COALESCE(SUM(COALESCE(${events.baseGrossValueInCents}, ${events.grossValueInCents})), 0)`,
     })
     .from(events)
-    .where(and(baseCondition, eq(events.eventType, "purchase")))
+    .where(and(baseCondition, inArray(events.eventType, REVENUE_EVENT_TYPES)))
     .groupBy(events.paymentMethod, events.billingType, events.category);
 
   const revenueBySegment: IRevenueBySegment = { paymentMethod: {}, billingType: {}, category: {} };

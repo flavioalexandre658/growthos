@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import toast from "react-hot-toast";
 import { IconLoader2, IconLock, IconMail, IconArrowRight } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
@@ -90,9 +91,17 @@ export function LoginForm() {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">
-          Senha
-        </Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password" className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">
+            Senha
+          </Label>
+          <Link
+            href="/forgot-password"
+            className="text-xs text-zinc-600 hover:text-indigo-400 transition-colors"
+          >
+            Esqueceu a senha?
+          </Link>
+        </div>
         <div className="relative">
           <IconLock
             size={16}

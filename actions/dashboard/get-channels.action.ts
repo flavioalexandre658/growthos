@@ -3,6 +3,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
+import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
 import { events, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
@@ -132,7 +133,7 @@ export async function getChannels(
           eq(events.organizationId, organizationId),
           gte(events.createdAt, previousStartDate),
           lte(events.createdAt, previousEndDate),
-          eq(events.eventType, "purchase")
+          inArray(events.eventType, REVENUE_EVENT_TYPES)
         )
       )
       .groupBy(sql`${channelExpr}`),
@@ -190,7 +191,7 @@ export async function getChannels(
       entry.steps["checkout_abandoned"] = (entry.steps["checkout_abandoned"] ?? 0) + Number(row.total);
     }
 
-    if (row.eventType === "purchase") {
+    if (row.eventType === "purchase" || row.eventType === "renewal") {
       entry.revenue += Number(row.grossRev);
       entry.purchaseCount += Number(row.total);
     }

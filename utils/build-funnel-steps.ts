@@ -22,7 +22,7 @@ export function buildFunnelSteps(
 
 export function getAllQueryEventTypes(funnelSteps: IFunnelStepConfig[]): string[] {
   const types = funnelSteps.map((s) => s.eventType);
-  return [...new Set([...types, "checkout_started", "checkout_abandoned", "purchase"])];
+  return [...new Set([...types, "checkout_started", "checkout_abandoned", "purchase", "renewal"])];
 }
 
 export function injectCheckoutSteps(

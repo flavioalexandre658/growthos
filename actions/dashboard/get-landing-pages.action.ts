@@ -127,9 +127,9 @@ export async function getLandingPages(
       entry.steps["checkout_abandoned"] = Number(row.total);
     }
 
-    if (row.eventType === "purchase") {
-      entry.revenue = Number(row.grossRev);
-      entry.purchaseCount = Number(row.total);
+    if (row.eventType === "purchase" || row.eventType === "renewal") {
+      entry.revenue += Number(row.grossRev);
+      entry.purchaseCount += Number(row.total);
     }
   }
 

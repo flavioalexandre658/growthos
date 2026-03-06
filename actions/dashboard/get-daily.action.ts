@@ -104,8 +104,8 @@ export async function getDaily(
       entry.steps["checkout_abandoned"] = Number(row.total);
     }
 
-    if (row.eventType === "purchase") {
-      entry.revenue = Number(row.grossRev);
+    if (row.eventType === "purchase" || row.eventType === "renewal") {
+      entry.revenue = (entry.revenue ?? 0) + Number(row.grossRev);
     }
   }
 

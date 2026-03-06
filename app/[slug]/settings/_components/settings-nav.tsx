@@ -11,6 +11,7 @@ import {
   IconUsers,
   IconBuilding,
   IconPlug,
+  IconShare,
 } from "@tabler/icons-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ export const SETTINGS_SECTIONS: SettingsSection[] = [
   { id: "funnel", label: "Funil", icon: <IconFilter size={14} /> },
   { id: "ai-profile", label: "Perfil IA", icon: <IconBrain size={14} /> },
   { id: "notifications", label: "Notificações", icon: <IconBell size={14} /> },
+  { id: "public-page", label: "Pág. Pública", icon: <IconShare size={14} /> },
   { id: "team", label: "Equipe", icon: <IconUsers size={14} /> },
   {
     id: "organization",
