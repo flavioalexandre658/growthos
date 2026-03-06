@@ -147,27 +147,16 @@ export async function syncStripeHistory(
       subscriptionsSynced++;
     }
 
-    interface InvoiceBillingDetails {
-      invoiceId: string;
-      rawCustomerId: string;
-      amountPaid: number;
-      currency: string;
-      subscriptionId: string | null;
-      isRecurring: boolean;
-      billingReason: string | null;
-      eventType: "renewal" | "purchase";
-      billingInterval: BillingInterval | undefined;
-      paidAt: number;
-    }
-
-    const invoiceBillingMap = new Map<string, InvoiceBillingDetails>();
-    const chargedInvoiceIds = new Set<string>();
-
     for await (const invoice of stripe.invoices.list({ limit: 100, status: "paid" })) {
       if (!invoice.amount_paid) continue;
 
       const rawCustomerId =
         typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
+      const hashedCustomerId = rawCustomerId ? hashAnonymous(rawCustomerId) : undefined;
+      const acq = hashedCustomerId
+        ? await lookupAcquisitionContext(organizationId, hashedCustomerId)
+        : null;
+
       const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
       const isRecurring = !!subscriptionId;
       const billingInterval = isRecurring
@@ -178,72 +167,101 @@ export async function syncStripeHistory(
         isRecurring && billingReason === "subscription_cycle" ? "renewal" : "purchase";
       const paidAt = invoice.status_transitions?.paid_at ?? invoice.created;
 
-      invoiceBillingMap.set(invoice.id, {
-        invoiceId: invoice.id,
-        rawCustomerId,
-        amountPaid: invoice.amount_paid,
-        currency: invoice.currency.toUpperCase(),
-        subscriptionId,
-        isRecurring,
-        billingReason,
-        eventType,
-        billingInterval: billingInterval as BillingInterval | undefined,
-        paidAt,
-      });
-    }
-
-    for await (const charge of stripe.charges.list({ limit: 100, expand: ["data.invoice"] })) {
-      if (charge.status !== "succeeded") continue;
-      if (!charge.amount) continue;
-
-      const invoiceField = (charge as Stripe.Charge & { invoice?: string | Stripe.Invoice | null }).invoice;
-      const chargeInvoiceId =
-        typeof invoiceField === "string"
-          ? invoiceField
-          : invoiceField?.id ?? null;
-      const billing = chargeInvoiceId ? invoiceBillingMap.get(chargeInvoiceId) : undefined;
-
-      if (chargeInvoiceId) chargedInvoiceIds.add(chargeInvoiceId);
-
-      const rawCustomerId =
-        typeof charge.customer === "string"
-          ? charge.customer
-          : charge.customer?.id ?? billing?.rawCustomerId ?? null;
-      const hashedCustomerId = rawCustomerId ? hashAnonymous(rawCustomerId) : null;
-      const acq = hashedCustomerId
-        ? await lookupAcquisitionContext(organizationId, hashedCustomerId)
-        : null;
-
-      const pm = charge.payment_method_details?.type ?? "credit_card";
-      const eventCurrency = (billing?.currency ?? charge.currency).toUpperCase();
-      const grossValue = billing?.amountPaid ?? charge.amount;
+      const eventCurrency = invoice.currency.toUpperCase();
       const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
         organizationId,
         eventCurrency,
         orgCurrency,
-        grossValue,
+        invoice.amount_paid,
       );
-
-      const eventType = billing?.eventType ?? "purchase";
-      const isRecurring = billing?.isRecurring ?? false;
-      const billingReason = billing?.billingReason ?? null;
-      const subscriptionId = billing?.subscriptionId ?? null;
-      const billingInterval = billing?.billingInterval ?? null;
 
       await db
         .insert(events)
         .values({
           organizationId,
           eventType,
-          grossValueInCents: grossValue,
+          grossValueInCents: invoice.amount_paid,
           currency: eventCurrency,
           baseCurrency,
           exchangeRate,
           baseGrossValueInCents: baseValueInCents,
           billingType: isRecurring ? "recurring" : "one_time",
           billingReason,
-          billingInterval,
+          billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
           subscriptionId,
+          customerId: hashedCustomerId,
+          paymentMethod: "credit_card",
+          provider: "stripe",
+          eventHash: stripeEventHash(organizationId, invoice.id),
+          createdAt: new Date(paidAt * 1000),
+          source: acq?.source ?? null,
+          medium: acq?.medium ?? null,
+          campaign: acq?.campaign ?? null,
+          content: acq?.content ?? null,
+          landingPage: acq?.landingPage ?? null,
+          entryPage: acq?.entryPage ?? null,
+          sessionId: acq?.sessionId ?? null,
+        })
+        .onConflictDoUpdate({
+          target: [events.organizationId, events.eventHash],
+          set: {
+            eventType,
+            billingType: isRecurring ? "recurring" : "one_time",
+            billingReason,
+            billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
+            subscriptionId,
+            currency: eventCurrency,
+            baseCurrency,
+            exchangeRate,
+            baseGrossValueInCents: baseValueInCents,
+            createdAt: new Date(paidAt * 1000),
+          },
+        });
+
+      if (isRecurring) {
+        invoicesSynced++;
+      } else {
+        oneTimePurchasesSynced++;
+      }
+    }
+
+    for await (const charge of stripe.charges.list({ limit: 100 })) {
+      if (charge.status !== "succeeded") continue;
+      if (!charge.amount) continue;
+
+      const chargeInvoiceId = (charge as Stripe.Charge & { invoice?: string | null }).invoice;
+      if (chargeInvoiceId) continue;
+
+      const rawCustomerId =
+        typeof charge.customer === "string" ? charge.customer : charge.customer?.id ?? null;
+      const hashedCustomerId = rawCustomerId ? hashAnonymous(rawCustomerId) : null;
+      const acq = hashedCustomerId
+        ? await lookupAcquisitionContext(organizationId, hashedCustomerId)
+        : null;
+
+      const pm = charge.payment_method_details?.type ?? "credit_card";
+      const eventCurrency = charge.currency.toUpperCase();
+      const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
+        organizationId,
+        eventCurrency,
+        orgCurrency,
+        charge.amount,
+      );
+
+      await db
+        .insert(events)
+        .values({
+          organizationId,
+          eventType: "purchase",
+          grossValueInCents: charge.amount,
+          currency: eventCurrency,
+          baseCurrency,
+          exchangeRate,
+          baseGrossValueInCents: baseValueInCents,
+          billingType: "one_time",
+          billingReason: null,
+          billingInterval: null,
+          subscriptionId: null,
           customerId: hashedCustomerId ?? undefined,
           paymentMethod: pm,
           provider: "stripe",
@@ -260,11 +278,6 @@ export async function syncStripeHistory(
         .onConflictDoUpdate({
           target: [events.organizationId, events.eventHash],
           set: {
-            eventType,
-            billingType: isRecurring ? "recurring" : "one_time",
-            billingReason,
-            billingInterval,
-            subscriptionId,
             currency: eventCurrency,
             baseCurrency,
             exchangeRate,
@@ -273,78 +286,7 @@ export async function syncStripeHistory(
           },
         });
 
-      if (isRecurring) {
-        invoicesSynced++;
-      } else {
-        oneTimePurchasesSynced++;
-      }
-    }
-
-    for (const [invoiceId, billing] of invoiceBillingMap.entries()) {
-      if (chargedInvoiceIds.has(invoiceId)) continue;
-
-      const hashedCustomerId = billing.rawCustomerId
-        ? hashAnonymous(billing.rawCustomerId)
-        : undefined;
-      const acq = hashedCustomerId
-        ? await lookupAcquisitionContext(organizationId, hashedCustomerId)
-        : null;
-
-      const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
-        organizationId,
-        billing.currency,
-        orgCurrency,
-        billing.amountPaid,
-      );
-
-      await db
-        .insert(events)
-        .values({
-          organizationId,
-          eventType: billing.eventType,
-          grossValueInCents: billing.amountPaid,
-          currency: billing.currency,
-          baseCurrency,
-          exchangeRate,
-          baseGrossValueInCents: baseValueInCents,
-          billingType: billing.isRecurring ? "recurring" : "one_time",
-          billingReason: billing.billingReason,
-          billingInterval: billing.billingInterval ?? null,
-          subscriptionId: billing.subscriptionId,
-          customerId: hashedCustomerId,
-          paymentMethod: "credit_card",
-          provider: "stripe",
-          eventHash: stripeEventHash(organizationId, billing.invoiceId),
-          createdAt: new Date(billing.paidAt * 1000),
-          source: acq?.source ?? null,
-          medium: acq?.medium ?? null,
-          campaign: acq?.campaign ?? null,
-          content: acq?.content ?? null,
-          landingPage: acq?.landingPage ?? null,
-          entryPage: acq?.entryPage ?? null,
-          sessionId: acq?.sessionId ?? null,
-        })
-        .onConflictDoUpdate({
-          target: [events.organizationId, events.eventHash],
-          set: {
-            eventType: billing.eventType,
-            billingType: billing.isRecurring ? "recurring" : "one_time",
-            billingReason: billing.billingReason,
-            billingInterval: billing.billingInterval ?? null,
-            subscriptionId: billing.subscriptionId,
-            currency: billing.currency,
-            baseCurrency,
-            exchangeRate,
-            baseGrossValueInCents: baseValueInCents,
-            createdAt: new Date(billing.paidAt * 1000),
-          },
-        });
-
-      if (billing.isRecurring) {
-        invoicesSynced++;
-      } else {
-        oneTimePurchasesSynced++;
-      }
+      oneTimePurchasesSynced++;
     }
 
     await db
