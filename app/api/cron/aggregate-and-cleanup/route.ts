@@ -1,13 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import {
-  events,
-  pageviewAggregates,
-  funnelDaily,
-  funnelDailyPages,
-  pageviewDailySessions,
-  pageviewDailyPages,
-} from "@/db/schema";
+import { events } from "@/db/schema";
 import { sql, lt } from "drizzle-orm";
 import dayjs from "@/utils/dayjs";
 

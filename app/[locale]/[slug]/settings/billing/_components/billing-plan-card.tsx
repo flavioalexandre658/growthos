@@ -1,10 +1,9 @@
 "use client";
 
 import { IconCreditCard, IconCheck } from "@tabler/icons-react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { IBillingData } from "@/actions/billing/get-billing.action";
-import { formatEventsLimit, PLANS_LIST } from "@/utils/plans";
+import { formatEventsLimit } from "@/utils/plans";
 
 interface BillingPlanCardProps {
   billing: IBillingData;

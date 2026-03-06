@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { stripe } from "@/lib/stripe";
-import { getPlan, PLANS_LIST } from "@/utils/plans";
+import { getPlan } from "@/utils/plans";
 
 const schema = z.object({
   planSlug: z.enum(["starter", "pro", "scale"]),
