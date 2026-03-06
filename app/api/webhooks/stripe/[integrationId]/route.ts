@@ -83,12 +83,6 @@ async function handleStripeEvent(orgId: string, event: Stripe.Event) {
     case "invoice.payment_succeeded":
       await handleInvoicePaid(orgId, event.data.object as Stripe.Invoice, event.created);
       break;
-    case "payment_intent.succeeded":
-      await handlePaymentIntentSucceeded(
-        orgId,
-        event.data.object as Stripe.PaymentIntent,
-      );
-      break;
     case "charge.refunded":
       await handleChargeRefunded(orgId, event.data.object as Stripe.Charge);
       break;
@@ -190,67 +184,6 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventTi
       .update(subscriptions)
       .set({ status: "active", updatedAt: new Date() })
       .where(eq(subscriptions.subscriptionId, subscriptionId));
-  }
-}
-
-async function handlePaymentIntentSucceeded(
-  orgId: string,
-  pi: Stripe.PaymentIntent,
-) {
-  if (!(pi as Stripe.PaymentIntent & { invoice?: string | null }).invoice) {
-    const rawCustomerId =
-      typeof pi.customer === "string" ? pi.customer : pi.customer?.id ?? null;
-    const hashedCustomerId = rawCustomerId ? hashAnonymous(rawCustomerId) : null;
-
-    const acq = hashedCustomerId
-      ? await lookupAcquisitionContext(orgId, hashedCustomerId)
-      : null;
-
-    const pm = pi.payment_method_types?.[0] ?? "credit_card";
-    const eventCurrency = pi.currency.toUpperCase();
-    const orgCurrency = await getOrgCurrency(orgId);
-    const gross = pi.amount_received ?? pi.amount;
-    const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
-      orgId,
-      eventCurrency,
-      orgCurrency,
-      gross,
-    );
-
-    await db
-      .insert(events)
-      .values({
-        organizationId: orgId,
-        eventType: "purchase",
-        grossValueInCents: gross,
-        currency: eventCurrency,
-        baseCurrency,
-        exchangeRate,
-        baseGrossValueInCents,
-        billingType: "one_time",
-        customerId: hashedCustomerId ?? undefined,
-        paymentMethod: pm,
-        provider: "stripe",
-        eventHash: stripeEventHash(orgId, pi.id),
-        createdAt: new Date((pi.created ?? Date.now() / 1000) * 1000),
-        source: acq?.source ?? null,
-        medium: acq?.medium ?? null,
-        campaign: acq?.campaign ?? null,
-        content: acq?.content ?? null,
-        landingPage: acq?.landingPage ?? null,
-        entryPage: acq?.entryPage ?? null,
-        sessionId: acq?.sessionId ?? null,
-      })
-      .onConflictDoUpdate({
-        target: [events.organizationId, events.eventHash],
-        set: {
-          billingType: "one_time",
-          currency: eventCurrency,
-          baseCurrency,
-          exchangeRate,
-          baseGrossValueInCents,
-        },
-      });
   }
 }
 
