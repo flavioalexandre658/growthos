@@ -313,7 +313,7 @@ function ProblemSection() {
 
   return (
     <section className="px-6 py-20 sm:py-28 max-w-6xl mx-auto">
-      <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">// o problema</p>
+      <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">{"// o problema"}</p>
       <h2
         className="font-display font-extrabold tracking-[-0.04em] leading-[1] max-w-[680px]"
         style={{ fontSize: "clamp(32px, 4.5vw, 58px)" }}
@@ -418,7 +418,7 @@ const features = [
 function FeaturesSection() {
   return (
     <section id="funcionalidades" className="px-6 py-20 sm:py-28 max-w-6xl mx-auto">
-      <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">// funcionalidades</p>
+      <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">{"// funcionalidades"}</p>
       <h2
         className="font-display font-extrabold tracking-[-0.04em] leading-[1] max-w-[680px]"
         style={{ fontSize: "clamp(32px, 4.5vw, 58px)" }}
@@ -617,7 +617,7 @@ function CodeSection() {
       </div>
 
       <div>
-        <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">// configuração</p>
+        <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">{"// configuração"}</p>
         <h2
           className="font-display font-extrabold tracking-[-0.04em] leading-[1] mb-3"
           style={{ fontSize: "clamp(28px, 3.5vw, 44px)" }}
@@ -704,7 +704,7 @@ const integrations = [
 function IntegrationsSection() {
   return (
     <section id="integracoes" className="px-6 py-20 sm:py-28 max-w-6xl mx-auto">
-      <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">// integrações</p>
+      <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">{"// integrações"}</p>
       <h2
         className="font-display font-extrabold tracking-[-0.04em] leading-[1] max-w-[600px]"
         style={{ fontSize: "clamp(32px, 4.5vw, 58px)" }}
@@ -814,7 +814,7 @@ function AiSection() {
       </div>
 
       <div>
-        <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">// análise com ia</p>
+        <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">{"// análise com ia"}</p>
         <h2
           className="font-display font-extrabold tracking-[-0.04em] leading-[1] mb-4"
           style={{ fontSize: "clamp(28px, 3.5vw, 48px)" }}
@@ -824,7 +824,7 @@ function AiSection() {
           <span className="landing-accent-text">IA analisa tudo.</span>
         </h2>
         <p className="text-sm text-zinc-400 leading-relaxed mb-8">
-          Clique em "Analisar com IA" na tela de Custos e o Groware envia seu P&L completo, funil e canais para o Gemini — e retorna insights priorizados com streaming em tempo real.
+          Clique em &quot;Analisar com IA&quot; na tela de Custos e o Groware envia seu P&L completo, funil e canais para o Gemini — e retorna insights priorizados com streaming em tempo real.
         </p>
         <div className="flex flex-col gap-6 sm:gap-7">
           {[
@@ -872,7 +872,7 @@ function MetricsSection() {
   return (
     <section className="px-6 py-20 sm:py-28 max-w-6xl mx-auto">
       <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">
-        // atribuição de receita
+        {"// atribuição de receita"}
       </p>
       <h2
         className="font-display font-extrabold tracking-[-0.04em] leading-[1] max-w-[680px]"

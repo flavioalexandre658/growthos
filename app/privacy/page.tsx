@@ -19,7 +19,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-[#09090b] text-zinc-50">
       <LandingNav />
       <main className="max-w-3xl mx-auto px-6 pt-32 pb-24">
-        <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">// legal</p>
+        <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">{"// legal"}</p>
         <h1
           className="font-display font-extrabold tracking-[-0.04em] leading-[1] mb-3"
           style={{ fontSize: "clamp(36px, 5vw, 56px)" }}

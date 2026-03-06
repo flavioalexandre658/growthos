@@ -19,7 +19,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-[#09090b] text-zinc-50">
       <LandingNav />
       <main className="max-w-3xl mx-auto px-6 pt-32 pb-24">
-        <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">// legal</p>
+        <p className="text-xs font-mono text-indigo-400 tracking-[0.12em] uppercase mb-5">{"// legal"}</p>
         <h1
           className="font-display font-extrabold tracking-[-0.04em] leading-[1] mb-3"
           style={{ fontSize: "clamp(36px, 5vw, 56px)" }}
@@ -92,7 +92,7 @@ export default function TermsPage() {
 
           <Section title="7. Limitação de responsabilidade">
             <p>
-              O serviço é fornecido "como está" durante o período de beta. O Groware não garante disponibilidade
+              O serviço é fornecido &quot;como está&quot; durante o período de beta. O Groware não garante disponibilidade
               ininterrupta ou ausência de erros. Em nenhuma circunstância a Groware será responsável por danos
               indiretos, incidentais ou consequentes decorrentes do uso ou impossibilidade de uso do serviço.
             </p>
