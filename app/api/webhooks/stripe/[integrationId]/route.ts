@@ -400,7 +400,7 @@ async function handlePaymentIntentSucceeded(
   paymentIntent: Stripe.PaymentIntent,
   eventTimestamp: number,
 ) {
-  if (paymentIntent.invoice) return;
+  if ((paymentIntent as unknown as Record<string, unknown>).invoice) return;
   if (!paymentIntent.amount_received) return;
 
   const rawCustomerId =
