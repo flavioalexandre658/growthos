@@ -19,37 +19,42 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: {
     template: "%s | Groware",
-    default: "Groware — Growth Analytics para SaaS brasileiro",
+    default: "Groware — Analytics de crescimento para SaaS",
   },
   description:
-    "Receita, MRR, canais de aquisição e P&L em um dashboard. Integra Stripe, Asaas, Kiwify e Hotmart. Feito para founders de SaaS no Brasil.",
+    "Receita, MRR, canais de aquisição e P&L em um único dashboard. Integra Stripe, Asaas, Kiwify e Hotmart. Feito para founders de SaaS.",
   metadataBase: new URL("https://groware.io"),
 
+  icons: {
+    icon: "/icon",
+    apple: "/apple-icon",
+  },
+
   openGraph: {
-    title: "Groware — Growth Analytics para SaaS brasileiro",
+    title: "Groware — Analytics de crescimento para SaaS",
     description:
-      "Receita, MRR, canais de aquisição e P&L em um dashboard. Integra Stripe, Asaas, Kiwify e Hotmart.",
+      "Receita, MRR, canais de aquisição e P&L em um único dashboard. Integra Stripe, Asaas, Kiwify e Hotmart.",
     url: "https://groware.io",
     siteName: "Groware",
     locale: "pt_BR",
     type: "website",
     images: [
       {
-        url: "/og-image.png",
+        url: "/assets/images/social-preview-br.png",
         width: 1200,
         height: 630,
-        alt: "Groware — Growth Analytics para SaaS brasileiro",
+        alt: "Groware — Analytics de crescimento para SaaS",
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-    title: "Groware — Growth Analytics para SaaS brasileiro",
+    title: "Groware — Analytics de crescimento para SaaS",
     description:
-      "Receita, MRR, canais de aquisição e P&L em um dashboard. Integra Stripe, Asaas, Kiwify e Hotmart.",
+      "Receita, MRR, canais de aquisição e P&L em um único dashboard. Integra Stripe, Asaas, Kiwify e Hotmart.",
     creator: "@flaviobuilds",
-    images: ["/og-image.png"],
+    images: ["/assets/images/social-preview-br.png"],
   },
 
   robots: {

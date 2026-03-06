@@ -1,7 +1,8 @@
-import { IconChartBar, IconRosetteDiscountCheck } from "@tabler/icons-react";
+import { IconRosetteDiscountCheck } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
 import type { IPublicOrgData } from "@/interfaces/public-page.interface";
+import { GrowareIcon } from "@/components/groware-icon";
 
 interface PublicHeaderProps {
   org: IPublicOrgData;
@@ -20,8 +21,8 @@ export function PublicHeader({ org, month }: PublicHeaderProps) {
   return (
     <header className="flex items-start justify-between gap-3 flex-wrap">
       <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 shadow-lg shadow-indigo-500/10 shrink-0 mt-0.5">
-          <IconChartBar size={17} className="text-white" />
+        <div className="shrink-0 mt-0.5">
+          <GrowareIcon size={36} />
         </div>
         <div className="space-y-0.5">
           <div className="flex items-center gap-2 flex-wrap">
