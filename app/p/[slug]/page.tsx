@@ -21,7 +21,7 @@ async function fetchPublicData(slug: string): Promise<IPublicPageData | null> {
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
   const res = await fetch(`${baseUrl}/api/public/${slug}`, {
-    next: { revalidate: 300 },
+    next: { tags: [`public-page-${slug}`] },
   });
 
   if (!res.ok) return null;

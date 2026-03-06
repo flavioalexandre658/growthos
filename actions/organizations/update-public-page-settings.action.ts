@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { eq } from "drizzle-orm";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
@@ -45,10 +46,16 @@ export async function updatePublicPageSettings(input: z.infer<typeof schema>) {
     .where(eq(organizations.id, data.organizationId))
     .returning({
       id: organizations.id,
+      slug: organizations.slug,
       publicPageEnabled: organizations.publicPageEnabled,
       publicPageSettings: organizations.publicPageSettings,
       publicDescription: organizations.publicDescription,
     });
+
+  if (updated?.slug) {
+    revalidateTag(`public-page-${updated.slug}`);
+    revalidatePath(`/p/${updated.slug}`);
+  }
 
   return updated;
 }

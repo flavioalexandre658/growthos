@@ -147,18 +147,8 @@ export async function syncStripeHistory(
       subscriptionsSynced++;
     }
 
-    const invoicePaymentIntentIds = new Set<string>();
-
-    for await (const invoice of stripe.invoices.list({ limit: 100, status: "paid", expand: ["data.payments"] })) {
+    for await (const invoice of stripe.invoices.list({ limit: 100, status: "paid" })) {
       if (!invoice.amount_paid) continue;
-
-      const paymentsData = (invoice as Stripe.Invoice & { payments?: { data?: Array<{ payment?: { payment_intent?: string | { id: string } | null } }> } }).payments?.data ?? [];
-      for (const ip of paymentsData) {
-        const pi = ip.payment?.payment_intent;
-        if (!pi) continue;
-        const piId = typeof pi === "string" ? pi : pi.id;
-        if (piId) invoicePaymentIntentIds.add(piId);
-      }
 
       const rawCustomerId =
         typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
@@ -235,6 +225,19 @@ export async function syncStripeHistory(
       }
     }
 
+    const invoiceLinkedIds = new Set<string>();
+
+    for await (const ip of stripe.invoicePayments.list({ status: "paid" })) {
+      const p = ip.payment;
+      if (p.type === "payment_intent" && p.payment_intent) {
+        const piId = typeof p.payment_intent === "string" ? p.payment_intent : p.payment_intent.id;
+        invoiceLinkedIds.add(`pi:${piId}`);
+      } else if (p.type === "charge" && p.charge) {
+        const chId = typeof p.charge === "string" ? p.charge : p.charge.id;
+        invoiceLinkedIds.add(`ch:${chId}`);
+      }
+    }
+
     for await (const charge of stripe.charges.list({ limit: 100 })) {
       if (charge.status !== "succeeded") continue;
       if (!charge.amount) continue;
@@ -242,7 +245,8 @@ export async function syncStripeHistory(
       const chargePaymentIntentId = typeof charge.payment_intent === "string"
         ? charge.payment_intent
         : charge.payment_intent?.id ?? null;
-      if (chargePaymentIntentId && invoicePaymentIntentIds.has(chargePaymentIntentId)) continue;
+      if (chargePaymentIntentId && invoiceLinkedIds.has(`pi:${chargePaymentIntentId}`)) continue;
+      if (invoiceLinkedIds.has(`ch:${charge.id}`)) continue;
 
       const rawCustomerId =
         typeof charge.customer === "string" ? charge.customer : charge.customer?.id ?? null;
