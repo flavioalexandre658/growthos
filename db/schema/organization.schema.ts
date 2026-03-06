@@ -22,6 +22,10 @@ export interface IPublicPageSettings {
   showArpu: boolean;
   showGrowthChart: boolean;
   showSankey: boolean;
+  showRevenue: boolean;
+  showTicketMedio: boolean;
+  showRepurchaseRate: boolean;
+  showRevenueSplit: boolean;
 }
 
 export const DEFAULT_PUBLIC_PAGE_SETTINGS: IPublicPageSettings = {
@@ -32,6 +36,10 @@ export const DEFAULT_PUBLIC_PAGE_SETTINGS: IPublicPageSettings = {
   showArpu: false,
   showGrowthChart: true,
   showSankey: true,
+  showRevenue: true,
+  showTicketMedio: true,
+  showRepurchaseRate: true,
+  showRevenueSplit: true,
 };
 
 export const organizations = pgTable("organizations", {

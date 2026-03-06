@@ -2,6 +2,8 @@ import type { IPublicPageSettings } from "@/db/schema/organization.schema";
 
 export type { IPublicPageSettings };
 
+export type BusinessMode = "recurring" | "one_time" | "hybrid";
+
 export interface IPublicOrgData {
   name: string;
   slug: string;
@@ -23,11 +25,22 @@ export interface IPublicMetrics {
   churnRate?: number | null;
   arpu?: IPublicMetricValue | null;
   mrrGrowthRate?: number | null;
+  monthlyRevenue?: IPublicMetricValue | null;
+  revenueGrowthRate?: number | null;
+  ticketMedio?: IPublicMetricValue | null;
+  repurchaseRate?: number | null;
+  uniqueCustomers?: IPublicMetricValue | null;
+  revenueSplit?: { recurring: number; oneTime: number } | null;
 }
 
 export interface IPublicMrrEntry {
   date: string;
   mrr: number;
+}
+
+export interface IPublicRevenueEntry {
+  date: string;
+  revenue: number;
 }
 
 export interface IPublicSankey {
@@ -44,8 +57,10 @@ export interface IPublicPageData {
   metrics: IPublicMetrics;
   charts: {
     mrrHistory: IPublicMrrEntry[] | null;
+    revenueHistory: IPublicRevenueEntry[] | null;
     sankey: IPublicSankey | null;
   };
+  businessMode: BusinessMode;
   settings: IPublicPageSettings;
   updatedAt: string;
 }

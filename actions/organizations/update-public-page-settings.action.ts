@@ -15,6 +15,10 @@ const publicPageSettingsSchema = z.object({
   showArpu: z.boolean(),
   showGrowthChart: z.boolean(),
   showSankey: z.boolean(),
+  showRevenue: z.boolean(),
+  showTicketMedio: z.boolean(),
+  showRepurchaseRate: z.boolean(),
+  showRevenueSplit: z.boolean(),
 });
 
 const schema = z.object({

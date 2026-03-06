@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 import { updatePublicPageSettings } from "@/actions/organizations/update-public-page-settings.action";
+import { DEFAULT_PUBLIC_PAGE_SETTINGS } from "@/db/schema/organization.schema";
 import type { IOrganization } from "@/interfaces/organization.interface";
 import type { IPublicPageSettings } from "@/interfaces/public-page.interface";
 
@@ -71,14 +72,9 @@ interface PublicPageSectionProps {
 }
 
 export function PublicPageSection({ org }: PublicPageSectionProps) {
-  const defaultSettings: IPublicPageSettings = org.publicPageSettings ?? {
-    showAbsoluteValues: true,
-    showMrr: true,
-    showSubscribers: true,
-    showChurn: true,
-    showArpu: false,
-    showGrowthChart: true,
-    showSankey: true,
+  const defaultSettings: IPublicPageSettings = {
+    ...DEFAULT_PUBLIC_PAGE_SETTINGS,
+    ...(org.publicPageSettings ?? {}),
   };
 
   const [enabled, setEnabled] = useState(org.publicPageEnabled);
@@ -111,6 +107,7 @@ export function PublicPageSection({ org }: PublicPageSectionProps) {
   };
 
   const publicUrl = `/p/${org.slug}`;
+  const hasRecurring = org.hasRecurringRevenue;
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
@@ -174,41 +171,75 @@ export function PublicPageSection({ org }: PublicPageSectionProps) {
               checked={settings.showAbsoluteValues}
               onChange={(v) => updateSetting("showAbsoluteValues", v)}
             />
+
+            {hasRecurring && (
+              <>
+                <MetricToggle
+                  label="MRR"
+                  description="Receita Recorrente Mensal"
+                  checked={settings.showMrr}
+                  onChange={(v) => updateSetting("showMrr", v)}
+                />
+                <MetricToggle
+                  label="Assinantes"
+                  description="Total de assinantes ativos"
+                  checked={settings.showSubscribers}
+                  onChange={(v) => updateSetting("showSubscribers", v)}
+                />
+                <MetricToggle
+                  label="Churn"
+                  description="Taxa de cancelamento mensal"
+                  checked={settings.showChurn}
+                  onChange={(v) => updateSetting("showChurn", v)}
+                />
+                <MetricToggle
+                  label="ARPU"
+                  description="Receita média por usuário"
+                  checked={settings.showArpu}
+                  onChange={(v) => updateSetting("showArpu", v)}
+                />
+                <MetricToggle
+                  label="Sankey de assinantes"
+                  description="Fluxo visual de novas assinaturas, renovações e cancelamentos"
+                  checked={settings.showSankey}
+                  onChange={(v) => updateSetting("showSankey", v)}
+                />
+              </>
+            )}
+
             <MetricToggle
-              label="MRR"
-              description="Receita Recorrente Mensal"
-              checked={settings.showMrr}
-              onChange={(v) => updateSetting("showMrr", v)}
+              label="Receita mensal"
+              description="Receita total do mês (vendas avulsas e recorrência)"
+              checked={settings.showRevenue}
+              onChange={(v) => updateSetting("showRevenue", v)}
             />
             <MetricToggle
-              label="Assinantes"
-              description="Total de assinantes ativos"
-              checked={settings.showSubscribers}
-              onChange={(v) => updateSetting("showSubscribers", v)}
+              label="Ticket médio"
+              description="Valor médio por pedido"
+              checked={settings.showTicketMedio}
+              onChange={(v) => updateSetting("showTicketMedio", v)}
             />
             <MetricToggle
-              label="Churn"
-              description="Taxa de cancelamento mensal"
-              checked={settings.showChurn}
-              onChange={(v) => updateSetting("showChurn", v)}
+              label="Taxa de recompra"
+              description="Percentual de clientes que voltaram a comprar nos últimos 90 dias"
+              checked={settings.showRepurchaseRate}
+              onChange={(v) => updateSetting("showRepurchaseRate", v)}
             />
-            <MetricToggle
-              label="ARPU"
-              description="Receita média por usuário"
-              checked={settings.showArpu}
-              onChange={(v) => updateSetting("showArpu", v)}
-            />
+
+            {hasRecurring && (
+              <MetricToggle
+                label="Split de receita"
+                description="Barra mostrando proporção recorrente vs avulso"
+                checked={settings.showRevenueSplit}
+                onChange={(v) => updateSetting("showRevenueSplit", v)}
+              />
+            )}
+
             <MetricToggle
               label="Gráfico de evolução"
-              description="Gráfico de linha com histórico do MRR"
+              description="Gráfico de linha com histórico de receita/MRR"
               checked={settings.showGrowthChart}
               onChange={(v) => updateSetting("showGrowthChart", v)}
-            />
-            <MetricToggle
-              label="Sankey de assinantes"
-              description="Fluxo visual de novas assinaturas, renovações e cancelamentos"
-              checked={settings.showSankey}
-              onChange={(v) => updateSetting("showSankey", v)}
             />
           </div>
         </div>

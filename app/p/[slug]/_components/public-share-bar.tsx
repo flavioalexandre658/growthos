@@ -10,17 +10,21 @@ interface PublicShareBarProps {
   month: string;
 }
 
+function fmtCurrency(value: number, locale: string, currency: string): string {
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  }).format(value / 100);
+}
+
 function buildTweetText(org: IPublicOrgData, metrics: IPublicMetrics, month: string): string {
   const lines: string[] = [`${month} — ${org.name}`, ""];
 
   if (metrics.mrr !== null && metrics.mrr !== undefined) {
     const mrrStr =
       typeof metrics.mrr.value === "number"
-        ? new Intl.NumberFormat(org.locale, {
-            style: "currency",
-            currency: org.currency,
-            maximumFractionDigits: 0,
-          }).format(metrics.mrr.value / 100)
+        ? fmtCurrency(metrics.mrr.value, org.locale, org.currency)
         : String(metrics.mrr.value);
 
     const growth =
@@ -31,8 +35,26 @@ function buildTweetText(org: IPublicOrgData, metrics: IPublicMetrics, month: str
     lines.push(`${mrrStr} MRR${growth}`);
   }
 
+  if (metrics.monthlyRevenue !== null && metrics.monthlyRevenue !== undefined) {
+    const revStr =
+      typeof metrics.monthlyRevenue.value === "number"
+        ? fmtCurrency(metrics.monthlyRevenue.value, org.locale, org.currency)
+        : String(metrics.monthlyRevenue.value);
+
+    const growth =
+      metrics.revenueGrowthRate !== null && metrics.revenueGrowthRate !== undefined
+        ? ` (${metrics.revenueGrowthRate > 0 ? "+" : ""}${metrics.revenueGrowthRate.toFixed(1)}%)`
+        : "";
+
+    lines.push(`${revStr} receita${growth}`);
+  }
+
   if (metrics.activeSubscriptions !== null && metrics.activeSubscriptions !== undefined) {
     lines.push(`${metrics.activeSubscriptions.value} assinantes`);
+  }
+
+  if (metrics.uniqueCustomers !== null && metrics.uniqueCustomers !== undefined) {
+    lines.push(`${metrics.uniqueCustomers.value} clientes`);
   }
 
   lines.push("");

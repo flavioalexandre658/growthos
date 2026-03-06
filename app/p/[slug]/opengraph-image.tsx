@@ -28,10 +28,9 @@ function getCurrentMonth(): string {
   return new Date().toLocaleString("pt-BR", { month: "long", year: "numeric" });
 }
 
-function buildSparkline(history: Array<{ mrr: number }>, width: number, height: number): string {
-  if (!history.length) return "";
+function buildSparkline(values: number[], width: number, height: number): string {
+  if (!values.length) return "";
 
-  const values = history.map((d) => d.mrr);
   const max = Math.max(...values);
   const min = Math.min(...values);
   const range = max - min || 1;
@@ -73,20 +72,98 @@ export default async function OGImage({ params }: OGImageProps) {
     );
   }
 
-  const mrrValue =
-    data.metrics.mrr !== null && data.metrics.mrr !== undefined
-      ? typeof data.metrics.mrr.value === "number"
-        ? formatCurrency(data.metrics.mrr.value, data.org.locale, data.org.currency)
-        : String(data.metrics.mrr.value)
-      : null;
+  const mode = data.businessMode;
 
-  const growth = data.metrics.mrrGrowthRate;
-  const sparklinePath = data.charts.mrrHistory
-    ? buildSparkline(data.charts.mrrHistory, 320, 60)
-    : null;
+  let primaryValue: string | null = null;
+  let primaryLabel = "";
+  let growth: number | null = null;
+
+  if (mode === "recurring") {
+    if (data.metrics.mrr !== null && data.metrics.mrr !== undefined) {
+      primaryValue =
+        typeof data.metrics.mrr.value === "number"
+          ? formatCurrency(data.metrics.mrr.value, data.org.locale, data.org.currency)
+          : String(data.metrics.mrr.value);
+      primaryLabel = "MRR";
+      growth = data.metrics.mrrGrowthRate ?? null;
+    }
+  } else {
+    if (data.metrics.monthlyRevenue !== null && data.metrics.monthlyRevenue !== undefined) {
+      let revenueVal =
+        typeof data.metrics.monthlyRevenue.value === "number"
+          ? data.metrics.monthlyRevenue.value
+          : 0;
+
+      if (mode === "hybrid" && data.metrics.mrr && typeof data.metrics.mrr.value === "number") {
+        revenueVal += data.metrics.mrr.value;
+      }
+
+      primaryValue = formatCurrency(revenueVal, data.org.locale, data.org.currency);
+      primaryLabel = mode === "hybrid" ? "Receita Total" : "Receita";
+      growth = data.metrics.revenueGrowthRate ?? null;
+    }
+  }
+
+  let sparklinePath: string | null = null;
+  if (mode === "recurring" && data.charts.mrrHistory) {
+    sparklinePath = buildSparkline(data.charts.mrrHistory.map((d) => d.mrr), 320, 60);
+  } else if (data.charts.revenueHistory) {
+    sparklinePath = buildSparkline(data.charts.revenueHistory.map((d) => d.revenue), 320, 60);
+  }
 
   const month = getCurrentMonth();
   const monthFormatted = month.charAt(0).toUpperCase() + month.slice(1);
+
+  const secondaryMetrics: Array<{ label: string; value: string }> = [];
+
+  if (mode === "recurring" || mode === "hybrid") {
+    if (data.metrics.activeSubscriptions !== null && data.metrics.activeSubscriptions !== undefined) {
+      secondaryMetrics.push({
+        label: "Assinantes",
+        value: String(data.metrics.activeSubscriptions.value),
+      });
+    }
+    if (data.metrics.churnRate !== null && data.metrics.churnRate !== undefined) {
+      secondaryMetrics.push({
+        label: "Churn",
+        value: `${data.metrics.churnRate.toFixed(1)}%`,
+      });
+    }
+  }
+
+  if (mode === "one_time" || mode === "hybrid") {
+    if (data.metrics.uniqueCustomers !== null && data.metrics.uniqueCustomers !== undefined) {
+      secondaryMetrics.push({
+        label: "Clientes",
+        value: String(data.metrics.uniqueCustomers.value),
+      });
+    }
+    if (data.metrics.ticketMedio !== null && data.metrics.ticketMedio !== undefined) {
+      secondaryMetrics.push({
+        label: "Ticket médio",
+        value:
+          typeof data.metrics.ticketMedio.value === "number"
+            ? formatCurrency(data.metrics.ticketMedio.value, data.org.locale, data.org.currency)
+            : String(data.metrics.ticketMedio.value),
+      });
+    }
+    if (data.metrics.repurchaseRate !== null && data.metrics.repurchaseRate !== undefined) {
+      secondaryMetrics.push({
+        label: "Recompra",
+        value: `${data.metrics.repurchaseRate.toFixed(1)}%`,
+      });
+    }
+  }
+
+  if (data.metrics.arpu !== null && data.metrics.arpu !== undefined && mode === "recurring") {
+    secondaryMetrics.push({
+      label: "ARPU",
+      value:
+        typeof data.metrics.arpu.value === "number"
+          ? formatCurrency(data.metrics.arpu.value, data.org.locale, data.org.currency)
+          : String(data.metrics.arpu.value),
+    });
+  }
 
   return new ImageResponse(
     (
@@ -102,7 +179,6 @@ export default async function OGImage({ params }: OGImageProps) {
           position: "relative",
         }}
       >
-        {/* Grid pattern background */}
         <div
           style={{
             position: "absolute",
@@ -113,7 +189,6 @@ export default async function OGImage({ params }: OGImageProps) {
           }}
         />
 
-        {/* Header row */}
         <div
           style={{
             display: "flex",
@@ -170,8 +245,7 @@ export default async function OGImage({ params }: OGImageProps) {
           </div>
         </div>
 
-        {/* MRR main metric */}
-        {mrrValue && (
+        {primaryValue && (
           <div
             style={{
               display: "flex",
@@ -190,14 +264,14 @@ export default async function OGImage({ params }: OGImageProps) {
                 lineHeight: 1,
               }}
             >
-              {mrrValue}
+              {primaryValue}
             </span>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              <span style={{ color: "#71717a", fontSize: 24, fontWeight: 600 }}>MRR</span>
+              <span style={{ color: "#71717a", fontSize: 24, fontWeight: 600 }}>{primaryLabel}</span>
               {growth !== null && growth !== undefined && (
                 <span
                   style={{
-                    color: growth >= 0 ? "#10b981" : "#ef4444",
+                    color: growth >= 0 ? "#10b981" : "#a1a1aa",
                     fontSize: 18,
                     fontWeight: 700,
                   }}
@@ -210,55 +284,22 @@ export default async function OGImage({ params }: OGImageProps) {
           </div>
         )}
 
-        {/* Secondary metrics row */}
         <div style={{ display: "flex", gap: 48, marginBottom: 40, position: "relative" }}>
-          {data.metrics.activeSubscriptions !== null && data.metrics.activeSubscriptions !== undefined && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {secondaryMetrics.slice(0, 3).map((m) => (
+            <div key={m.label} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <span style={{ color: "#52525b", fontSize: 13, fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px" }}>
-                Assinantes
+                {m.label}
               </span>
               <span style={{ color: "#e4e4e7", fontSize: 32, fontWeight: 800, letterSpacing: "-0.5px" }}>
-                {String(data.metrics.activeSubscriptions.value)}
+                {m.value}
               </span>
             </div>
-          )}
-
-          {data.metrics.churnRate !== null && data.metrics.churnRate !== undefined && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ color: "#52525b", fontSize: 13, fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px" }}>
-                Churn
-              </span>
-              <span
-                style={{
-                  color: data.metrics.churnRate === 0 ? "#10b981" : "#e4e4e7",
-                  fontSize: 32,
-                  fontWeight: 800,
-                  letterSpacing: "-0.5px",
-                }}
-              >
-                {data.metrics.churnRate.toFixed(1)}%
-              </span>
-            </div>
-          )}
-
-          {data.metrics.arpu !== null && data.metrics.arpu !== undefined && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ color: "#52525b", fontSize: 13, fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px" }}>
-                ARPU
-              </span>
-              <span style={{ color: "#e4e4e7", fontSize: 32, fontWeight: 800, letterSpacing: "-0.5px" }}>
-                {typeof data.metrics.arpu.value === "number"
-                  ? formatCurrency(data.metrics.arpu.value, data.org.locale, data.org.currency)
-                  : String(data.metrics.arpu.value)}
-              </span>
-            </div>
-          )}
+          ))}
         </div>
 
-        {/* Sparkline */}
         {sparklinePath && (
           <div style={{ display: "flex", position: "relative", marginBottom: 28 }}>
-            <svg width={320} height={60} viewBox={`0 0 320 60`}>
+            <svg width={320} height={60} viewBox="0 0 320 60">
               <defs>
                 <linearGradient id="sparkGrad" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0%" stopColor="#4f46e5" stopOpacity={0.6} />
@@ -277,7 +318,6 @@ export default async function OGImage({ params }: OGImageProps) {
           </div>
         )}
 
-        {/* Footer */}
         <div
           style={{
             marginTop: "auto",
