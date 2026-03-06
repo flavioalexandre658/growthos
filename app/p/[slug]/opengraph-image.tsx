@@ -8,7 +8,7 @@ async function fetchData(slug: string): Promise<IPublicPageData | null> {
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
   const res = await fetch(`${baseUrl}/api/public/${slug}`, {
-    next: { tags: [`public-page-${slug}`] },
+    cache: "no-store",
   });
 
   if (!res.ok) return null;
@@ -28,7 +28,7 @@ function getCurrentMonth(): string {
 }
 
 function buildSparkline(values: number[], width: number, height: number): string {
-  if (!values.length) return "";
+  if (values.length < 2) return "";
 
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -71,96 +71,72 @@ export default async function OGImage({ params }: OGImageProps) {
     );
   }
 
-  const mode = data.businessMode;
-
   let primaryValue: string | null = null;
   let primaryLabel = "";
   let growth: number | null = null;
 
-  if (mode === "recurring") {
-    if (data.metrics.mrr !== null && data.metrics.mrr !== undefined) {
-      primaryValue =
-        typeof data.metrics.mrr.value === "number"
-          ? formatCurrency(data.metrics.mrr.value, data.org.locale, data.org.currency)
-          : String(data.metrics.mrr.value);
-      primaryLabel = "MRR";
-      growth = data.metrics.mrrGrowthRate ?? null;
-    }
-  } else {
-    if (data.metrics.monthlyRevenue !== null && data.metrics.monthlyRevenue !== undefined) {
-      let revenueVal =
-        typeof data.metrics.monthlyRevenue.value === "number"
-          ? data.metrics.monthlyRevenue.value
-          : 0;
+  const mrrVal = data.metrics.mrr;
+  const revenueVal = data.metrics.monthlyRevenue;
 
-      if (mode === "hybrid" && data.metrics.mrr && typeof data.metrics.mrr.value === "number") {
-        revenueVal += data.metrics.mrr.value;
-      }
-
-      primaryValue = formatCurrency(revenueVal, data.org.locale, data.org.currency);
-      primaryLabel = mode === "hybrid" ? "Receita Total" : "Receita";
-      growth = data.metrics.revenueGrowthRate ?? null;
-    }
+  if (mrrVal != null && typeof mrrVal.value === "number") {
+    primaryValue = formatCurrency(mrrVal.value, data.org.locale, data.org.currency);
+    primaryLabel = "MRR";
+    growth = data.metrics.mrrGrowthRate ?? null;
+  } else if (revenueVal != null && typeof revenueVal.value === "number") {
+    primaryValue = formatCurrency(revenueVal.value, data.org.locale, data.org.currency);
+    primaryLabel = "Receita";
+    growth = data.metrics.revenueGrowthRate ?? null;
   }
 
-  let sparklinePath: string | null = null;
-  if (mode === "recurring" && data.charts.mrrHistory) {
-    sparklinePath = buildSparkline(data.charts.mrrHistory.map((d) => d.mrr), 320, 60);
-  } else if (data.charts.revenueHistory) {
-    sparklinePath = buildSparkline(data.charts.revenueHistory.map((d) => d.revenue), 320, 60);
-  }
+  const mrrHistoryValues = data.charts.mrrHistory?.map((d) => d.mrr) ?? [];
+  const revenueHistoryValues = data.charts.revenueHistory?.map((d) => d.revenue) ?? [];
+  const sparklineValues = mrrHistoryValues.length >= 2 ? mrrHistoryValues : revenueHistoryValues;
+  const sparklinePath = buildSparkline(sparklineValues, 320, 60);
 
   const month = getCurrentMonth();
   const monthFormatted = month.charAt(0).toUpperCase() + month.slice(1);
 
   const secondaryMetrics: Array<{ label: string; value: string }> = [];
 
-  if (mode === "recurring" || mode === "hybrid") {
-    if (data.metrics.activeSubscriptions !== null && data.metrics.activeSubscriptions !== undefined) {
-      secondaryMetrics.push({
-        label: "Assinantes",
-        value: String(data.metrics.activeSubscriptions.value),
-      });
-    }
-    if (data.metrics.churnRate !== null && data.metrics.churnRate !== undefined) {
-      secondaryMetrics.push({
-        label: "Churn",
-        value: `${data.metrics.churnRate.toFixed(1)}%`,
-      });
-    }
+  if (data.metrics.activeSubscriptions != null) {
+    secondaryMetrics.push({
+      label: "Assinantes",
+      value: String(data.metrics.activeSubscriptions.value),
+    });
   }
 
-  if (mode === "one_time" || mode === "hybrid") {
-    if (data.metrics.uniqueCustomers !== null && data.metrics.uniqueCustomers !== undefined) {
-      secondaryMetrics.push({
-        label: "Clientes",
-        value: String(data.metrics.uniqueCustomers.value),
-      });
-    }
-    if (data.metrics.ticketMedio !== null && data.metrics.ticketMedio !== undefined) {
-      secondaryMetrics.push({
-        label: "Ticket médio",
-        value:
-          typeof data.metrics.ticketMedio.value === "number"
-            ? formatCurrency(data.metrics.ticketMedio.value, data.org.locale, data.org.currency)
-            : String(data.metrics.ticketMedio.value),
-      });
-    }
-    if (data.metrics.repurchaseRate !== null && data.metrics.repurchaseRate !== undefined) {
-      secondaryMetrics.push({
-        label: "Recompra",
-        value: `${data.metrics.repurchaseRate.toFixed(1)}%`,
-      });
-    }
+  if (data.metrics.churnRate != null) {
+    secondaryMetrics.push({
+      label: "Churn",
+      value: `${data.metrics.churnRate.toFixed(1)}%`,
+    });
   }
 
-  if (data.metrics.arpu !== null && data.metrics.arpu !== undefined && mode === "recurring") {
+  if (data.metrics.arpu != null && typeof data.metrics.arpu.value === "number") {
     secondaryMetrics.push({
       label: "ARPU",
-      value:
-        typeof data.metrics.arpu.value === "number"
-          ? formatCurrency(data.metrics.arpu.value, data.org.locale, data.org.currency)
-          : String(data.metrics.arpu.value),
+      value: formatCurrency(data.metrics.arpu.value, data.org.locale, data.org.currency),
+    });
+  }
+
+  if (data.metrics.uniqueCustomers != null) {
+    secondaryMetrics.push({
+      label: "Clientes",
+      value: String(data.metrics.uniqueCustomers.value),
+    });
+  }
+
+  if (data.metrics.ticketMedio != null && typeof data.metrics.ticketMedio.value === "number") {
+    secondaryMetrics.push({
+      label: "Ticket médio",
+      value: formatCurrency(data.metrics.ticketMedio.value, data.org.locale, data.org.currency),
+    });
+  }
+
+  if (data.metrics.repurchaseRate != null) {
+    secondaryMetrics.push({
+      label: "Recompra",
+      value: `${data.metrics.repurchaseRate.toFixed(1)}%`,
     });
   }
 
@@ -220,6 +196,18 @@ export default async function OGImage({ params }: OGImageProps) {
             >
               {data.org.name}
             </span>
+            {data.org.description && (
+              <span
+                style={{
+                  color: "#71717a",
+                  fontSize: 16,
+                  fontWeight: 400,
+                  marginTop: 2,
+                }}
+              >
+                {data.org.description}
+              </span>
+            )}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
@@ -267,7 +255,7 @@ export default async function OGImage({ params }: OGImageProps) {
             </span>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <span style={{ color: "#71717a", fontSize: 24, fontWeight: 600 }}>{primaryLabel}</span>
-              {growth !== null && growth !== undefined && (
+              {growth != null && (
                 <span
                   style={{
                     color: growth >= 0 ? "#10b981" : "#a1a1aa",
@@ -344,7 +332,7 @@ export default async function OGImage({ params }: OGImageProps) {
               <span style={{ color: "#fff", fontSize: 14, fontWeight: 800 }}>G</span>
             </div>
             <span style={{ color: "#52525b", fontSize: 13, fontWeight: 600 }}>
-              powered by Groware
+              powered by GrowthOS
             </span>
           </div>
         </div>
