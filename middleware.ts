@@ -18,9 +18,14 @@ function isPublicPage(pathname: string): boolean {
 }
 
 export default async function middleware(req: NextRequest) {
-  const intlResponse = intlMiddleware(req);
-
   const pathname = req.nextUrl.pathname;
+
+  const hasLocalePrefix = /^\/[a-z]{2}(\/|$)/.test(pathname);
+  if (!hasLocalePrefix) {
+    return intlMiddleware(req);
+  }
+
+  const intlResponse = intlMiddleware(req);
 
   if (!isPublicPage(pathname)) {
     const token = await getToken({
