@@ -1,7 +1,6 @@
 import { ImageResponse } from "next/og";
 import type { IPublicPageData } from "@/interfaces/public-page.interface";
 
-export const runtime = "edge";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -9,7 +8,7 @@ async function fetchData(slug: string): Promise<IPublicPageData | null> {
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
   const res = await fetch(`${baseUrl}/api/public/${slug}`, {
-    next: { revalidate: 300 },
+    next: { tags: [`public-page-${slug}`] },
   });
 
   if (!res.ok) return null;
