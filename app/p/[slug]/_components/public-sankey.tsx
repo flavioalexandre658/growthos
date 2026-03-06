@@ -10,14 +10,14 @@ interface PublicSankeyProps {
 }
 
 const W = 900;
-const H = 340;
-const FLOW_TOP = 40;
-const FLOW_BOT = H - 40;
+const H = 460;
+const FLOW_TOP = 80;
+const FLOW_BOT = H - 80;
 const FLOW_H = FLOW_BOT - FLOW_TOP;
 const CY = FLOW_TOP + FLOW_H / 2;
 const BAND_GAP = 10;
-const CARD_W = 120;
-const CARD_H = 68;
+const CARD_W = 128;
+const CARD_H = 76;
 
 const BANDS = [
   { scale: 1.0, opacity: 0.06 },
@@ -160,9 +160,9 @@ function MobileView({ data, locale, currency }: { data: IPublicSankey; locale: s
 }
 
 function SankeyInner({ data, locale, currency }: { data: IPublicSankey; locale: string; currency: string }) {
-  const xLeft = 110;
+  const xLeft = 140;
   const xCenter = W / 2;
-  const xRight = W - 110;
+  const xRight = W - 140;
 
   const { links, allNodes } = useMemo(() => {
     const inputs = [
@@ -279,13 +279,13 @@ function SankeyInner({ data, locale, currency }: { data: IPublicSankey; locale: 
           .filter((n) => n.side !== "center")
           .map((node) => {
             const val = fmtInt(node.value);
-            const pillW = Math.max(val.length * 10 + 28, 60);
-            const pillH = 34;
+            const pillW = Math.max(val.length * 12 + 28, 68);
+            const pillH = 32;
 
             const pillX =
               node.side === "left"
-                ? Math.max(0, node.cx - pillW - 14)
-                : Math.min(W - pillW, node.cx + 14);
+                ? Math.max(2, node.cx - pillW - 14)
+                : Math.min(W - pillW - 2, node.cx + 14);
 
             const textX = pillX + pillW / 2;
             const desc = NODE_DESCRIPTIONS[node.key] ?? "";
@@ -294,10 +294,10 @@ function SankeyInner({ data, locale, currency }: { data: IPublicSankey; locale: 
               <g key={`node-${node.key}`}>
                 <text
                   x={textX}
-                  y={node.cy - 26}
+                  y={node.cy - 54}
                   textAnchor="middle"
-                  fill="rgba(161,161,170,0.8)"
-                  fontSize="12"
+                  fill="rgba(212,212,216,0.9)"
+                  fontSize="14"
                   fontFamily="ui-sans-serif, system-ui, sans-serif"
                   fontWeight="600"
                 >
@@ -305,10 +305,10 @@ function SankeyInner({ data, locale, currency }: { data: IPublicSankey; locale: 
                 </text>
                 <text
                   x={textX}
-                  y={node.cy - 26 + 12}
+                  y={node.cy - 36}
                   textAnchor="middle"
-                  fill="rgba(113,113,122,0.6)"
-                  fontSize="8"
+                  fill="rgba(113,113,122,0.75)"
+                  fontSize="11"
                   fontFamily="ui-sans-serif, system-ui, sans-serif"
                   fontWeight="400"
                 >
@@ -316,7 +316,7 @@ function SankeyInner({ data, locale, currency }: { data: IPublicSankey; locale: 
                 </text>
                 <rect
                   x={pillX}
-                  y={node.cy - pillH / 2 + 4}
+                  y={node.cy - 16}
                   width={pillW}
                   height={pillH}
                   rx={pillH / 2}
@@ -326,11 +326,11 @@ function SankeyInner({ data, locale, currency }: { data: IPublicSankey; locale: 
                 />
                 <text
                   x={textX}
-                  y={node.cy + 5}
+                  y={node.cy}
                   textAnchor="middle"
                   dominantBaseline="central"
                   fill="rgba(244,244,245,0.9)"
-                  fontSize="16"
+                  fontSize="18"
                   fontFamily="ui-monospace, monospace"
                   fontWeight="700"
                 >
@@ -344,10 +344,10 @@ function SankeyInner({ data, locale, currency }: { data: IPublicSankey; locale: 
           <g>
             <text
               x={xCenter}
-              y={CY - CARD_H / 2 - 10}
+              y={CY - CARD_H / 2 - 14}
               textAnchor="middle"
               fill="rgba(161,161,170,0.7)"
-              fontSize="11"
+              fontSize="12"
               fontFamily="ui-sans-serif, system-ui, sans-serif"
               fontWeight="600"
               letterSpacing="0.05em"
@@ -356,11 +356,11 @@ function SankeyInner({ data, locale, currency }: { data: IPublicSankey; locale: 
             </text>
             <text
               x={xCenter}
-              y={CY - 6}
+              y={CY}
               textAnchor="middle"
               dominantBaseline="central"
               fill="rgba(244,244,245,0.97)"
-              fontSize="30"
+              fontSize="34"
               fontFamily="ui-monospace, monospace"
               fontWeight="700"
             >
@@ -368,11 +368,11 @@ function SankeyInner({ data, locale, currency }: { data: IPublicSankey; locale: 
             </text>
             <text
               x={xCenter}
-              y={CY + CARD_H / 2 - 10}
+              y={CY + CARD_H / 2 - 8}
               textAnchor="middle"
               dominantBaseline="central"
               fill="rgba(212,212,216,0.8)"
-              fontSize="11"
+              fontSize="12"
               fontFamily="ui-monospace, monospace"
             >
               {fmtExact(data.mrr, locale, currency)} MRR

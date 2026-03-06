@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
+import { LandingPage } from "./_components/landing-page";
 
 export default async function HomePage() {
   const session = await getServerSession(authOptions);
@@ -9,5 +10,5 @@ export default async function HomePage() {
     redirect("/organizations");
   }
 
-  redirect("/login");
+  return <LandingPage />;
 }

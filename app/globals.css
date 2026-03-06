@@ -60,3 +60,71 @@
     display: none;
   }
 }
+
+@keyframes landing-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes landing-blink {
+  50% { opacity: 0; }
+}
+
+@keyframes landing-fade-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.landing-fade-1 { animation: landing-fade-up 0.6s ease both; }
+.landing-fade-2 { animation: landing-fade-up 0.7s ease 0.1s both; }
+.landing-fade-3 { animation: landing-fade-up 0.7s ease 0.2s both; }
+.landing-fade-4 { animation: landing-fade-up 0.7s ease 0.3s both; }
+.landing-fade-5 { animation: landing-fade-up 0.7s ease 0.4s both; }
+.landing-fade-6 { animation: landing-fade-up 0.8s ease 0.5s both; }
+
+.landing-strip-track {
+  animation: landing-scroll 30s linear infinite;
+  display: flex;
+  width: max-content;
+  gap: 64px;
+  align-items: center;
+}
+
+.landing-blink-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: #818cf8;
+  vertical-align: middle;
+  animation: landing-blink 1s step-end infinite;
+}
+
+.landing-grid-bg {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 30%, transparent 100%);
+}
+
+.landing-grad-text {
+  background: linear-gradient(135deg, #fff 30%, #818cf8 70%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.landing-accent-text {
+  background: linear-gradient(135deg, #818cf8, #a5b4fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.landing-purple-grad {
+  background: linear-gradient(135deg, #818cf8, #a5b4fc, #c7d2fe);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
