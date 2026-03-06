@@ -132,7 +132,7 @@
       "headline2": "in 5 minutes.",
       "description": "One script tag for funnel and acquisition. One webhook for payments and subscriptions. No backend changes.",
       "tabLabel": "tracker.js · installation",
-      "codeComment1": "// 1. Add to your <head>",
+      "codeComment1": "// 1. Add to your '<'head'>'",
       "codeComment2": "// 2. Track events",
       "codeComment3": "// 3. Track payments (server-side)",
       "steps": [

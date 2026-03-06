@@ -132,7 +132,7 @@
       "headline2": "em 5 minutos.",
       "description": "Uma tag de script para funil e aquisição. Um webhook para pagamentos e assinaturas. Sem alterações no backend.",
       "tabLabel": "tracker.js · instalação",
-      "codeComment1": "// 1. Adicione ao seu <head>",
+      "codeComment1": "// 1. Adicione ao seu '<'head'>'",
       "codeComment2": "// 2. Rastreie eventos",
       "codeComment3": "// 3. Rastreie pagamentos (server-side)",
       "steps": [
