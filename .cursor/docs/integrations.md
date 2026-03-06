@@ -219,6 +219,27 @@ export async function connectProvider(
 
 ### 3. Job de Sync Histórico
 
+> **`event_time` para importação histórica**
+>
+> Ao importar pagamentos anteriores à instalação do Groware, sempre passe `event_time` com a data real do pagamento em ISO 8601. O servidor aceita datas de até **2 anos** no passado e usa esse valor como `created_at` do evento, mantendo a linha do tempo correta nos dashboards.
+>
+> ```typescript
+> await fetch('/api/track', {
+>   method: 'POST',
+>   body: JSON.stringify({
+>     key: process.env.GROWARE_API_KEY,
+>     event_type: 'purchase',
+>     event_time: payment.paid_at,      // ← data real do pagamento
+>     dedupe_id: 'purchase:' + payment.id,
+>     gross_value: payment.amount,
+>     currency: 'BRL',
+>     customer_id: hashAnonymous(payment.customerId),
+>   }),
+> })
+> ```
+>
+> Se `event_time` for omitido, o servidor usa o horário atual — o que colocaria todos os eventos históricos com a data de hoje, distorcendo os gráficos de receita.
+
 ```typescript
 // jobs/index.ts — dispatcher por provider
 export async function triggerHistorySync(

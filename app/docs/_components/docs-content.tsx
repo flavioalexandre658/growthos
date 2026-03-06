@@ -105,19 +105,19 @@ const HOOK_CODE = `'use client'\n\nimport { useCallback } from 'react'\nimport t
 
 const HOOK_USAGE = `'use client'\n\nimport { useTracker } from '@/hooks/use-tracker'\n\nexport function CheckoutButton({ product, price }) {\n  const { track } = useTracker()\n\n  const handleCheckout = async () => {\n    track('checkout_started', {\n      gross_value: price,\n      currency: 'BRL',\n      product_id: product.id,\n      product_name: product.name,\n    })\n    await openCheckout(product.id)\n  }\n\n  return <button onClick={handleCheckout}>Comprar R$ {price}</button>\n}`;
 
-const PAYMENT_CODE = `window.Groware.track('purchase', {\n  // Deduplicação — OBRIGATÓRIO para eventos financeiros\n  dedupe: invoice.id,       // ID único da transação no gateway\n\n  // Financeiro — obrigatório\n  gross_value: 150.00,\n  currency: 'BRL',          // ISO 4217 — sempre informe\n\n  // Financeiro — opcional\n  discount: 10.00,          // desconto aplicado em reais\n  installments: 1,\n  payment_method: 'pix',    // pix | credit_card | boleto | debit_card\n\n  // Produto — opcional mas recomendado\n  product_id: 'template-casamento-001',\n  product_name: 'Convite Casamento Premium',\n  category: 'casamento',\n\n  // Cliente — opcional mas recomendado\n  customer_type: 'new',     // new | returning\n  customer_id: 'hash_anonimo',\n  customer_segment: 'premium',\n  customer_cohort: '2024-Q1',\n})`;
+const PAYMENT_CODE = `window.Groware.track('purchase', {\n  // Deduplicação — OBRIGATÓRIO para eventos financeiros\n  dedupe: invoice.id,       // ID único da transação no gateway\n\n  // Financeiro — obrigatório\n  gross_value: 150.00,\n  currency: 'BRL',          // ISO 4217 — sempre informe\n\n  // Financeiro — opcional\n  discount: 10.00,          // desconto aplicado em reais\n  installments: 1,\n  payment_method: 'pix',    // pix | credit_card | boleto | debit_card\n\n  // Tempo — opcional\n  event_time: '2026-03-06T14:03:11Z', // ISO 8601. Se omitido, usa o momento do envio.\n\n  // Produto — opcional mas recomendado\n  product_id: 'template-casamento-001',\n  product_name: 'Convite Casamento Premium',\n  category: 'casamento',\n\n  // Cliente — opcional mas recomendado\n  customer_type: 'new',     // new | returning\n  customer_id: 'hash_anonimo',\n  customer_segment: 'premium',\n  customer_cohort: '2024-Q1',\n})`;
 
 const RECURRING_PAYMENT = `// Primeiro pagamento de assinatura\nwindow.Groware.track('purchase', {\n  dedupe: invoice.id,           // ID único da invoice no gateway\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_type: 'recurring',\n  billing_interval: 'monthly',\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  plan_name: 'Pro Mensal',\n  customer_id: 'hash_cliente',\n})\n\n// Cancelamento de assinatura\nwindow.Groware.track('subscription_canceled', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_interval: 'monthly',\n  reason: 'user_canceled', // user_canceled | payment_failed | upgraded | downgraded\n})\n\n// Upgrade de plano\nwindow.Groware.track('subscription_changed', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  previous_plan_id: 'plan_basic',\n  new_plan_id: 'plan_pro',\n  previous_value: 49.00,\n  new_value: 89.00,\n  billing_interval: 'monthly',\n  currency: 'BRL',\n})`;
 
-const SERVER_FETCH = `// Node.js / Next.js — renovação mensal às 3h da manhã\nawait fetch(\`\${process.env.GROWARE_URL}/api/track\`, {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    key: process.env.GROWARE_API_KEY,\n    event_type: 'purchase',\n    gross_value: 89.00,\n    currency: 'BRL',\n    billing_type: 'recurring',\n    billing_interval: 'monthly',\n    subscription_id: subscription.id,\n    plan_id: subscription.planId,\n    customer_id: hashCustomerId(subscription.customerId),\n  }),\n})`;
+const SERVER_FETCH = `// Node.js / Next.js — renovação mensal às 3h da manhã\nawait fetch(\`\${process.env.GROWARE_URL}/api/track\`, {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    key: process.env.GROWARE_API_KEY,\n    event_type: 'purchase',\n    event_time: invoice.created_at, // ISO 8601 — data real do pagamento\n    gross_value: 89.00,\n    currency: 'BRL',\n    billing_type: 'recurring',\n    billing_interval: 'monthly',\n    subscription_id: subscription.id,\n    plan_id: subscription.planId,\n    customer_id: hashCustomerId(subscription.customerId),\n  }),\n})`;
 
-const SERVER_CURL = `curl -X POST https://groware.io/api/track \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "key": "tok_convitede_xxx",\n    "event_type": "purchase",\n    "gross_value": 89.00,\n    "currency": "BRL",\n    "billing_type": "recurring",\n    "subscription_id": "sub_abc123"\n  }'`;
+const SERVER_CURL = `curl -X POST https://groware.io/api/track \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "key": "tok_convitede_xxx",\n    "event_type": "purchase",\n    "event_time": "2025-12-01T10:00:00Z",\n    "gross_value": 89.00,\n    "currency": "BRL",\n    "billing_type": "recurring",\n    "subscription_id": "sub_abc123"\n  }'`;
 
-const SERVER_PYTHON = `import requests\n\nrequests.post('https://groware.io/api/track', json={\n    'key': 'tok_convitede_xxx',\n    'event_type': 'purchase',\n    'gross_value': 89.00,\n    'currency': 'BRL',\n    'billing_type': 'recurring',\n    'subscription_id': 'sub_abc123',\n})`;
+const SERVER_PYTHON = `import requests\n\nrequests.post('https://groware.io/api/track', json={\n    'key': 'tok_convitede_xxx',\n    'event_type': 'purchase',\n    'event_time': '2025-12-01T10:00:00Z',  # ISO 8601 — data real do pagamento\n    'gross_value': 89.00,\n    'currency': 'BRL',\n    'billing_type': 'recurring',\n    'subscription_id': 'sub_abc123',\n})`;
 
 const DATA_ATTRS = `<!-- Botão de compra -->\n<button\n  data-groware="purchase"\n  data-groware-value="89.90"\n  data-groware-currency="BRL"\n  data-groware-product_id="template-001"\n  data-groware-product_name="Convite Casamento"\n  data-groware-payment_method="pix"\n  data-groware-dedupe="invoice-001"\n>\n  Pagar com PIX\n</button>\n\n<!-- Cadastro -->\n<button\n  data-groware="signup"\n  data-groware-customer_type="new"\n  data-groware-dedupe="true"\n>\n  Criar conta grátis\n</button>`;
 
-const TYPES_CODE = `// src/types/groware.d.ts\n\nexport type GrowareEventType =\n  | 'pageview'\n  | 'signup'\n  | 'trial_started'\n  | 'checkout_started'\n  | 'checkout_abandoned'\n  | 'purchase'\n  | 'subscription_canceled'\n  | 'subscription_changed'\n\nexport type GrowareCurrency = 'BRL' | 'USD' | 'EUR' | 'GBP' | 'ARS' | string\nexport type GrowarePaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'boleto' | string\nexport type GrowareBillingInterval = 'monthly' | 'yearly' | 'weekly'\nexport type GrowareBillingType = 'recurring' | 'one_time'\nexport type GrowareCustomerType = 'new' | 'returning'\n\nexport interface GrowareEventData {\n  // Financeiro\n  gross_value?: number\n  discount?: number              // desconto aplicado em reais\n  installments?: number\n  payment_method?: GrowarePaymentMethod\n  currency?: GrowareCurrency      // ISO 4217 — padrão: moeda da org\n\n  // Produto\n  product_id?: string\n  product_name?: string\n  category?: string\n\n  // Cliente\n  customer_type?: GrowareCustomerType\n  customer_id?: string             // hash anônimo — NUNCA email/CPF\n  customer_segment?: string\n  customer_cohort?: string\n\n  // Recorrência\n  billing_type?: GrowareBillingType\n  billing_interval?: GrowareBillingInterval\n  subscription_id?: string\n  plan_id?: string\n  plan_name?: string\n\n  // Subscription events\n  previous_plan_id?: string\n  new_plan_id?: string\n  previous_value?: number\n  new_value?: number\n  reason?: 'user_canceled' | 'payment_failed' | 'upgraded' | 'downgraded' | 'exit' | 'timeout'\n\n  // Livre\n  metadata?: Record<string, unknown>\n}\n\ndeclare global {\n  interface Window {\n    Groware: {\n      track: (eventType: GrowareEventType, data?: GrowareEventData) => void\n    }\n  }\n}`;
+const TYPES_CODE = `// src/types/groware.d.ts\n\nexport type GrowareEventType =\n  | 'pageview'\n  | 'signup'\n  | 'trial_started'\n  | 'checkout_started'\n  | 'checkout_abandoned'\n  | 'purchase'\n  | 'subscription_canceled'\n  | 'subscription_changed'\n\nexport type GrowareCurrency = 'BRL' | 'USD' | 'EUR' | 'GBP' | 'ARS' | string\nexport type GrowarePaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'boleto' | string\nexport type GrowareBillingInterval = 'monthly' | 'yearly' | 'weekly'\nexport type GrowareBillingType = 'recurring' | 'one_time'\nexport type GrowareCustomerType = 'new' | 'returning'\n\nexport interface GrowareEventData {\n  // Financeiro\n  gross_value?: number\n  discount?: number              // desconto aplicado em reais\n  installments?: number\n  payment_method?: GrowarePaymentMethod\n  currency?: GrowareCurrency      // ISO 4217 — padrão: moeda da org\n\n  // Produto\n  product_id?: string\n  product_name?: string\n  category?: string\n\n  // Cliente\n  customer_type?: GrowareCustomerType\n  customer_id?: string             // hash anônimo — NUNCA email/CPF\n  customer_segment?: string\n  customer_cohort?: string\n\n  // Recorrência\n  billing_type?: GrowareBillingType\n  billing_interval?: GrowareBillingInterval\n  subscription_id?: string\n  plan_id?: string\n  plan_name?: string\n\n  // Subscription events\n  previous_plan_id?: string\n  new_plan_id?: string\n  previous_value?: number\n  new_value?: number\n  reason?: 'user_canceled' | 'payment_failed' | 'upgraded' | 'downgraded' | 'exit' | 'timeout'\n\n  // Tempo\n  event_time?: string             // ISO 8601 — quando o evento realmente aconteceu\n\n  // Livre\n  metadata?: Record<string, unknown>\n}\n\ndeclare global {\n  interface Window {\n    Groware: {\n      track: (eventType: GrowareEventType, data?: GrowareEventData) => void\n    }\n  }\n}`;
 
 const DEBUG_CODE = `// 1 — Verificar se o tracker carregou\nconsole.log(window.Groware)\n// → { track: ƒ }\n\n// 2 — Disparar evento de teste\nwindow.Groware.track('pageview')\n// → Network: POST /api/track 204\n\n// 3 — Evento com moeda\nwindow.Groware.track('purchase', {\n  gross_value: 1.00,\n  currency: 'BRL',\n  product_name: 'Teste'\n})\n// Verificar em Dados → Eventos`;
 
@@ -376,6 +376,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 props={[
                   { name: "gross_value", type: "number", required: true, description: "Valor bruto cobrado", example: "150.00" },
                   { name: "currency", type: "string", required: true, description: "ISO 4217 — sempre informe", example: "'BRL'" },
+                  { name: "event_time", type: "string", description: "ISO 8601 — quando o evento aconteceu. Se omitido, usa o momento do envio. Aceita até 2 anos no passado.", example: "'2026-03-06T14:03:11Z'" },
                   { name: "discount", type: "number", description: "Desconto aplicado em reais", example: "10.00" },
                   { name: "installments", type: "number", description: "Número de parcelas", example: "3" },
                   { name: "payment_method", type: "string", description: "pix | credit_card | boleto | debit_card", example: "'pix'" },
@@ -400,6 +401,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 props={[
                   { name: "customer_id", type: "string", required: true, description: "Hash anônimo (nunca PII). Obrigatório — servidor retorna 400 se ausente.", example: "'hash_abc'" },
                   { name: "customer_type", type: "string", description: "new | returning", example: "'new'" },
+                  { name: "event_time", type: "string", description: "ISO 8601 — quando o evento aconteceu. Se omitido, usa o momento do envio.", example: "'2026-03-06T14:03:11Z'" },
                 ]}
               />
 
@@ -412,6 +414,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   { name: "currency", type: "string", required: true, description: "ISO 4217", example: "'BRL'" },
                   { name: "product_id", type: "string", description: "ID do produto", example: "'template-001'" },
                   { name: "customer_id", type: "string", description: "Hash anônimo do cliente. Recomendado se você usa a integração Stripe — permite linkar o pagamento ao histórico de aquisição.", example: "'hash_xyz'" },
+                  { name: "event_time", type: "string", description: "ISO 8601 — quando o evento aconteceu. Se omitido, usa o momento do envio.", example: "'2026-03-06T14:03:11Z'" },
                 ]}
               />
               <Callout type="tip">
@@ -429,6 +432,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   { name: "gross_value", type: "number", description: "Valor que não converteu", example: "89.00" },
                   { name: "currency", type: "string", required: true, description: "ISO 4217", example: "'BRL'" },
                   { name: "reason", type: "string", description: "exit | payment_failed | timeout", example: "'exit'" },
+                  { name: "event_time", type: "string", description: "ISO 8601 — quando o evento aconteceu. Se omitido, usa o momento do envio.", example: "'2026-03-06T14:03:11Z'" },
                 ]}
               />
 
@@ -443,6 +447,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   { name: "currency", type: "string", required: true, description: "ISO 4217", example: "'BRL'" },
                   { name: "billing_interval", type: "string", description: "monthly | yearly | weekly", example: "'monthly'" },
                   { name: "reason", type: "string", description: "user_canceled | payment_failed | upgraded | downgraded", example: "'user_canceled'" },
+                  { name: "event_time", type: "string", description: "ISO 8601 — quando o evento aconteceu. Se omitido, usa o momento do envio.", example: "'2026-03-06T14:03:11Z'" },
                 ]}
               />
 
@@ -458,6 +463,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   { name: "previous_value", type: "number", description: "Valor do plano anterior", example: "49.00" },
                   { name: "new_value", type: "number", description: "Valor do novo plano", example: "89.00" },
                   { name: "currency", type: "string", required: true, description: "ISO 4217", example: "'BRL'" },
+                  { name: "event_time", type: "string", description: "ISO 8601 — quando o evento aconteceu. Se omitido, usa o momento do envio.", example: "'2026-03-06T14:03:11Z'" },
                 ]}
               />
 
@@ -469,6 +475,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   { name: "customer_id", type: "string", description: "Hash anônimo do usuário. Recomendado sempre que o usuário estiver autenticado — conecta o evento ao funil de conversão.", example: "'hash_abc'" },
                   { name: "gross_value", type: "number", description: "Valor monetário associado à ação, se aplicável", example: "29.90" },
                   { name: "currency", type: "string", description: "ISO 4217. Necessário se gross_value for informado.", example: "'BRL'" },
+                  { name: "event_time", type: "string", description: "ISO 8601 — quando o evento aconteceu. Se omitido, usa o momento do envio.", example: "'2026-03-06T14:03:11Z'" },
                   { name: "product_id", type: "string", description: "ID do recurso ou produto envolvido", example: "'template-001'" },
                   { name: "product_name", type: "string", description: "Nome legível do recurso", example: "'Convite Aniversário'" },
                   { name: "category", type: "string", description: "Categoria para agrupamento nos relatórios", example: "'engajamento'" },
@@ -533,6 +540,12 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
 
             <Callout type="warn">
               Eventos server-side <strong>não têm contexto automático</strong> (UTMs, device, referrer). Esses campos serão <Mono>null</Mono> e os relatórios de Canais e Landing Pages não os refletirão. É o comportamento esperado — renovações de assinatura não têm origem de canal.
+            </Callout>
+
+            <Callout type="tip">
+              Para migrar dados históricos (vendas anteriores à instalação), passe{" "}
+              <Mono>event_time</Mono> com a data real do evento em ISO 8601. O servidor aceita datas de até{" "}
+              <strong className="text-zinc-300">2 anos</strong> no passado — ideal para importar histórico completo na primeira integração.
             </Callout>
 
             <SubSection title="Quando usar server-side">
@@ -663,6 +676,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
               <AttrTable rows={[
                 { name: "key", required: "sim", desc: "API key da organização", example: "tok_xxx" },
                 { name: "event_type", required: "sim", desc: "Tipo do evento", example: "purchase" },
+                { name: "event_time", required: "não", desc: "ISO 8601 — quando o evento aconteceu. Padrão: agora. Aceita até 2 anos no passado.", example: "2026-01-15T10:00:00Z" },
                 { name: "gross_value", required: "não", desc: "Valor bruto (decimal)", example: "89.90" },
                 { name: "currency", required: "não", desc: "ISO 4217 — padrão: moeda da org", example: "BRL" },
                 { name: "customer_id", required: "não", desc: "ID do cliente (melhora dedup server-side)", example: "usr_abc123" },

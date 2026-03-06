@@ -199,6 +199,7 @@ await fetch('${baseUrl}/api/track', {
   body: JSON.stringify({
     key: process.env.GROWARE_API_KEY,
     event_type: 'purchase',
+    event_time: invoice.created_at,       // ISO 8601 — data real do pagamento
     dedupe_id: 'purchase:' + invoice.id,  // OBRIGATÓRIO: ID único da invoice
     gross_value: subscription.price,
     currency: '${currency}',
@@ -217,6 +218,7 @@ await fetch('${baseUrl}/api/track', {
   body: JSON.stringify({
     key: process.env.GROWARE_API_KEY,
     event_type: 'subscription_canceled',
+    event_time: subscription.canceled_at, // ISO 8601 — data real do cancelamento
     dedupe_id: 'subscription_canceled:' + subscription.id,
     subscription_id: subscription.id,
     gross_value: subscription.price,
@@ -299,6 +301,9 @@ REGRAS OBRIGATÓRIAS
 4. subscription_id deve ser único por assinatura — nunca reutilizar
 5. Eventos de renovação DEVEM ser server-side (sem usuário no browser)
 6. Instalar o script ANTES de qualquer outro script para capturar UTMs
+7. event_time (opcional, ISO 8601) — se o evento aconteceu no passado, passe event_time
+   com a data real. Útil para migração de dados históricos. Se omitido, usa o horário atual.
+   Aceita até 2 anos no passado. Exemplo: event_time: '2026-01-15T10:00:00Z'
 
 ════════════════════════════════════════════
 VALIDAÇÃO — COMO CONFIRMAR QUE FUNCIONOU

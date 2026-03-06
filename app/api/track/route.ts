@@ -74,14 +74,22 @@ const LIFECYCLE_EVENT_TYPES = new Set([
 ]);
 
 const MAX_PAST_DAYS = 30;
+const MAX_PAST_DAYS_EVENT_TIME = 730;
 
-function resolveCreatedAt(payloadTimestamp: string | null): Date {
-  if (!payloadTimestamp) return new Date();
-  const parsed = new Date(payloadTimestamp);
+function resolveCreatedAt(
+  eventTime: string | null,
+  payloadTimestamp: string | null,
+): Date {
+  const raw = eventTime ?? payloadTimestamp;
+  if (!raw) return new Date();
+  const parsed = new Date(raw);
   if (isNaN(parsed.getTime())) return new Date();
   const now = new Date();
   const diffMs = now.getTime() - parsed.getTime();
-  if (diffMs < 0 || diffMs > MAX_PAST_DAYS * 86_400_000) return now;
+  const maxPastMs = eventTime
+    ? MAX_PAST_DAYS_EVENT_TIME * 86_400_000
+    : MAX_PAST_DAYS * 86_400_000;
+  if (diffMs < 0 || diffMs > maxPastMs) return now;
   return parsed;
 }
 
@@ -425,8 +433,9 @@ export async function POST(req: NextRequest) {
       ? baseGrossValueInCents - Math.round(discountInCents * resolvedRate)
       : baseGrossValueInCents;
 
-  const eventTimestamp = body.timestamp ? new Date(String(body.timestamp)) : new Date();
-  const createdAt = resolveCreatedAt(toString(body.timestamp));
+  const rawTime = body.event_time ?? body.timestamp;
+  const eventTimestamp = rawTime ? new Date(String(rawTime)) : new Date();
+  const createdAt = resolveCreatedAt(toString(body.event_time), toString(body.timestamp));
 
   const isRetry = body._retried === true;
   const retryAttempt = isRetry ? toInt(body._retry_attempt) : null;
