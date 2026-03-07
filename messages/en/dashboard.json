@@ -1,82 +1,84 @@
 {
-  "kpi": {
-    "revenue": "Revenue",
-    "averageTicket": "Avg. Ticket",
-    "averageTicketTooltip": "Average value per payment. Revenue ÷ number of payments in the period.",
-    "abandoned": "Abandoned",
-    "vsPrevious": "vs previous {previousLabel}",
-    "noPreviousData": "No previous data",
-    "infoAbout": "Info about {label}"
-  },
-  "funnel": {
-    "title": "Conversion Funnel",
-    "fallbackSubtitle": "Conversion Funnel",
-    "minStepsWarning": "Set up at least 2 funnel steps"
-  },
-  "daily": {
-    "title": "Daily Evolution",
-    "subtitle": "Funnel progress by day"
-  },
-  "sourceChart": {
-    "title": "Traffic Sources",
-    "subtitle": "Signup origin",
-    "noData": "No data available",
-    "totalLabel": "total"
-  },
-  "recentPurchases": {
-    "title": "Recent Purchases",
-    "subtitle": "Recent transactions",
-    "viewAll": "View all",
-    "noPurchases": "No purchases found"
-  },
-  "topProducts": {
-    "title": "Top Products",
-    "subtitle": "By revenue in the period",
-    "viewAll": "View all",
-    "noPayments": "No payments in the period"
-  },
-  "alerts": {
-    "title": "Alerts & Opportunities",
-    "subtitle": "Automatic insights for the period",
-    "noData": "No data available",
-    "abandonedCarts": "{count} abandoned carts",
-    "abandonedRevenue": "~{amount} in potential revenue lost in the period",
-    "viewAbandoned": "View abandoned",
-    "revenueGrew": "Revenue grew {pct}% vs previous period",
-    "revenueFell": "Revenue dropped {pct}% vs previous period",
-    "revenueChangeUp": "From {from} to {to}",
-    "revenueChangeDown": "From {from} to {to} — check the channels",
-    "bottleneck": "Bottleneck: {from} → {to}",
-    "bottleneckDescription": "Only {pct}% conversion at this step — biggest improvement opportunity",
-    "stepGrew": "{label} grew {pct}% vs previous period",
-    "stepGrewDescription": "From {from} to {to} — best performing step",
-    "allGood": "Everything looks good",
-    "allGoodDescription": "No anomalies detected in the period. Metrics are stable."
-  },
-  "overview": {
-    "title": "Overview",
-    "subtitle": "Consolidated performance for the period",
-    "stepsVisibleTitle": "Visible steps",
-    "stepsButton": "Steps",
-    "stepsPopoverTitle": "Visible steps",
-    "stepsPopoverDescription": "Temporary toggle — not persisted",
-    "showAll": "Show all"
-  },
-  "periodFilter": {
-    "today": "Today",
-    "yesterday": "Yesterday",
-    "3d": "3d",
-    "7d": "7d",
-    "thisMonth": "Month",
-    "30d": "30d",
-    "90d": "90d",
-    "refreshData": "Refresh data",
-    "more": "More",
-    "customActive": "Custom active",
-    "customRange": "Custom range",
-    "clear": "Clear",
-    "customDesktop": "Custom",
-    "dates": "Dates",
-    "clearRange": "Clear range"
+  "dashboard": {
+    "kpi": {
+      "revenue": "Revenue",
+      "averageTicket": "Avg. Ticket",
+      "averageTicketTooltip": "Average value per payment. Revenue ÷ number of payments in the period.",
+      "abandoned": "Abandoned",
+      "vsPrevious": "vs previous {previousLabel}",
+      "noPreviousData": "No previous data",
+      "infoAbout": "Info about {label}"
+    },
+    "funnel": {
+      "title": "Conversion Funnel",
+      "fallbackSubtitle": "Conversion Funnel",
+      "minStepsWarning": "Set up at least 2 funnel steps"
+    },
+    "daily": {
+      "title": "Daily Evolution",
+      "subtitle": "Funnel progress by day"
+    },
+    "sourceChart": {
+      "title": "Traffic Sources",
+      "subtitle": "Signup origin",
+      "noData": "No data available",
+      "totalLabel": "total"
+    },
+    "recentPurchases": {
+      "title": "Recent Purchases",
+      "subtitle": "Recent transactions",
+      "viewAll": "View all",
+      "noPurchases": "No purchases found"
+    },
+    "topProducts": {
+      "title": "Top Products",
+      "subtitle": "By revenue in the period",
+      "viewAll": "View all",
+      "noPayments": "No payments in the period"
+    },
+    "alerts": {
+      "title": "Alerts & Opportunities",
+      "subtitle": "Automatic insights for the period",
+      "noData": "No data available",
+      "abandonedCarts": "{count} abandoned carts",
+      "abandonedRevenue": "~{amount} in potential revenue lost in the period",
+      "viewAbandoned": "View abandoned",
+      "revenueGrew": "Revenue grew {pct}% vs previous period",
+      "revenueFell": "Revenue dropped {pct}% vs previous period",
+      "revenueChangeUp": "From {from} to {to}",
+      "revenueChangeDown": "From {from} to {to} — check the channels",
+      "bottleneck": "Bottleneck: {from} → {to}",
+      "bottleneckDescription": "Only {pct}% conversion at this step — biggest improvement opportunity",
+      "stepGrew": "{label} grew {pct}% vs previous period",
+      "stepGrewDescription": "From {from} to {to} — best performing step",
+      "allGood": "Everything looks good",
+      "allGoodDescription": "No anomalies detected in the period. Metrics are stable."
+    },
+    "overview": {
+      "title": "Overview",
+      "subtitle": "Consolidated performance for the period",
+      "stepsVisibleTitle": "Visible steps",
+      "stepsButton": "Steps",
+      "stepsPopoverTitle": "Visible steps",
+      "stepsPopoverDescription": "Temporary toggle — not persisted",
+      "showAll": "Show all"
+    },
+    "periodFilter": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "3d": "3d",
+      "7d": "7d",
+      "thisMonth": "Month",
+      "30d": "30d",
+      "90d": "90d",
+      "refreshData": "Refresh data",
+      "more": "More",
+      "customActive": "Custom active",
+      "customRange": "Custom range",
+      "clear": "Clear",
+      "customDesktop": "Custom",
+      "dates": "Dates",
+      "clearRange": "Clear range"
+    }
   }
 }

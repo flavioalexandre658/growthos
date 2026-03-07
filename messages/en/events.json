@@ -1,86 +1,88 @@
 {
-  "eventsContent": {
-    "title": "Events",
-    "subtitle": "Real-time log of all received events",
-    "exportCsv": "CSV",
-    "exportTitle": "Export CSV",
-    "periodLabels": {
-      "today": "today",
-      "yesterday": "yesterday",
-      "7d": "last 7 days",
-      "30d": "last 30 days",
-      "90d": "last 90 days",
-      "period": "period"
-    }
-  },
-  "eventsTable": {
-    "columnType": "Type",
-    "columnValue": "Value",
-    "columnChannel": "Channel",
-    "columnProduct": "Product",
-    "columnDevice": "Device",
-    "columnWhen": "When",
-    "selectAll": "Select all",
-    "emptyState": "No events found for the applied filters",
-    "eventDeleted": "Event deleted",
-    "batchDeleted": "{count} event(s) deleted",
-    "deleteEvent": "Delete event",
-    "renewalBadge": "renewal",
-    "recurringBadge": "recurring",
-    "possibleDuplicate": "Possible duplicate",
-    "possibleDuplicateDetail": "Possible duplicate — another identical event was detected within 10 minutes",
-    "duplicateBadge": "duplicate",
-    "dupBadge": "dup",
-    "retryBadge": "retry",
-    "retryBadgeMobile": "retry",
-    "retryTooltip": "Event sent as a retry — originally failed due to network error",
-    "viewSessionTimeline": "View session timeline",
-    "viewCustomerFunnel": "View full customer funnel",
-    "selection": {
-      "selectedOf": "{selected} of {total} selected",
-      "deselect": "Deselect",
-      "deleteConfirm": "Delete {count} event(s)?",
-      "cancel": "Cancel",
-      "confirm": "Confirm",
-      "delete": "Delete"
+  "events": {
+    "eventsContent": {
+      "title": "Events",
+      "subtitle": "Real-time log of all received events",
+      "exportCsv": "CSV",
+      "exportTitle": "Export CSV",
+      "periodLabels": {
+        "today": "today",
+        "yesterday": "yesterday",
+        "7d": "last 7 days",
+        "30d": "last 30 days",
+        "90d": "last 90 days",
+        "period": "period"
+      }
     },
-    "pagination": {
-      "rowsPerPage": "Rows per page",
-      "rangeOf": "{start}–{end} of {total}"
+    "eventsTable": {
+      "columnType": "Type",
+      "columnValue": "Value",
+      "columnChannel": "Channel",
+      "columnProduct": "Product",
+      "columnDevice": "Device",
+      "columnWhen": "When",
+      "selectAll": "Select all",
+      "emptyState": "No events found for the applied filters",
+      "eventDeleted": "Event deleted",
+      "batchDeleted": "{count} event(s) deleted",
+      "deleteEvent": "Delete event",
+      "renewalBadge": "renewal",
+      "recurringBadge": "recurring",
+      "possibleDuplicate": "Possible duplicate",
+      "possibleDuplicateDetail": "Possible duplicate — another identical event was detected within 10 minutes",
+      "duplicateBadge": "duplicate",
+      "dupBadge": "dup",
+      "retryBadge": "retry",
+      "retryBadgeMobile": "retry",
+      "retryTooltip": "Event sent as a retry — originally failed due to network error",
+      "viewSessionTimeline": "View session timeline",
+      "viewCustomerFunnel": "View full customer funnel",
+      "selection": {
+        "selectedOf": "{selected} of {total} selected",
+        "deselect": "Deselect",
+        "deleteConfirm": "Delete {count} event(s)?",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "delete": "Delete"
+      },
+      "pagination": {
+        "rowsPerPage": "Rows per page",
+        "rangeOf": "{start}–{end} of {total}"
+      }
+    },
+    "eventsFilters": {
+      "searchPlaceholder": "Search session_id, customer_id, product_id or product name...",
+      "clear": "Clear",
+      "typeLabel": "Type",
+      "billingLabel": "Billing",
+      "billingAll": "All",
+      "billingSubscription": "Subscription",
+      "billingOneTime": "One-time",
+      "providerLabel": "Provider",
+      "providerAll": "All",
+      "channelLabel": "Channel",
+      "channelAll": "All",
+      "deviceLabel": "Device",
+      "deviceAll": "All",
+      "valueLabel": "Value",
+      "valuePlaceholderMin": "Min",
+      "valuePlaceholderMax": "Max"
+    },
+    "customerTimeline": {
+      "title": "Customer funnel · {eventCount} events · {sessionCount} {sessionLabel}",
+      "sessionLabel": "session",
+      "sessionsLabel": "sessions",
+      "sessionOf": "Session from {date}",
+      "noSession": "No session",
+      "eventsCount": "{count} ev.",
+      "currentBadge": "current",
+      "emptyState": "No events found for this customer."
+    },
+    "sessionTimeline": {
+      "title": "Session · {count} events",
+      "currentBadge": "current",
+      "emptyState": "No events found in this session.",
+      "singleEvent": "Only event in this session."
     }
-  },
-  "eventsFilters": {
-    "searchPlaceholder": "Search session_id, customer_id, product_id or product name...",
-    "clear": "Clear",
-    "typeLabel": "Type",
-    "billingLabel": "Billing",
-    "billingAll": "All",
-    "billingSubscription": "Subscription",
-    "billingOneTime": "One-time",
-    "providerLabel": "Provider",
-    "providerAll": "All",
-    "channelLabel": "Channel",
-    "channelAll": "All",
-    "deviceLabel": "Device",
-    "deviceAll": "All",
-    "valueLabel": "Value",
-    "valuePlaceholderMin": "Min",
-    "valuePlaceholderMax": "Max"
-  },
-  "customerTimeline": {
-    "title": "Customer funnel · {eventCount} events · {sessionCount} {sessionLabel}",
-    "sessionLabel": "session",
-    "sessionsLabel": "sessions",
-    "sessionOf": "Session from {date}",
-    "noSession": "No session",
-    "eventsCount": "{count} ev.",
-    "currentBadge": "current",
-    "emptyState": "No events found for this customer."
-  },
-  "sessionTimeline": {
-    "title": "Session · {count} events",
-    "currentBadge": "current",
-    "emptyState": "No events found in this session.",
-    "singleEvent": "Only event in this session."
   }
 }

@@ -1,253 +1,255 @@
 {
-  "financeContent": {
-    "title": "Financial",
-    "subtitle": "Revenue, costs, results and opportunities for the period",
-    "fixedCostsWarning": "Fixed costs are being prorated for the selected period ({days} day(s) of 30). To view the full monthly P&L, select a 30-day period.",
-    "revenueByPaymentMethod": "Revenue by Payment Method",
-    "revenueByPaymentMethodSubtitle": "Revenue distribution by payment method",
-    "revenueByCategory": "Revenue by Category",
-    "revenueByCategorySubtitle": "Revenue distribution by product category",
-    "howPlWorks": "How the P&L works",
-    "plDescription": "The P&L calculates the actual financial result of the business from collected payment events.",
-    "aboutSegmentedVariableCosts": "About segmented variable costs",
-    "segmentedVariableCostsDescription": "Each variable cost can be configured to apply only to the revenue of a specific payment method or billing type. Configure your costs in",
-    "costsLink": "Costs",
-    "plSteps": {
-      "grossRevenue": {
-        "label": "Gross Revenue",
-        "desc": "Total gross of confirmed payments in the period."
-      },
-      "discounts": {
-        "label": "− Discounts",
-        "desc": "Coupons and discounts sent via the discount field in the payment event."
-      },
-      "variableCosts": {
-        "label": "− Variable Costs",
-        "desc": "Percentages configured on the platform (taxes, commissions, etc.) applied to revenue."
-      },
-      "operatingProfit": {
-        "label": "= Operating Profit",
-        "desc": "Result after discounts and configured variable costs."
-      },
-      "fixedCosts": {
-        "label": "− Fixed Costs",
-        "desc": "Fixed monthly values configured on the platform, prorated proportionally to the period."
-      },
-      "netProfit": {
-        "label": "= Net Profit",
-        "desc": "What actually remained after all costs are deducted."
-      },
-      "netMargin": {
-        "label": "Net Margin",
-        "desc": "Net Profit ÷ Gross Revenue × 100."
+  "finance": {
+    "financeContent": {
+      "title": "Financial",
+      "subtitle": "Revenue, costs, results and opportunities for the period",
+      "fixedCostsWarning": "Fixed costs are being prorated for the selected period ({days} day(s) of 30). To view the full monthly P&L, select a 30-day period.",
+      "revenueByPaymentMethod": "Revenue by Payment Method",
+      "revenueByPaymentMethodSubtitle": "Revenue distribution by payment method",
+      "revenueByCategory": "Revenue by Category",
+      "revenueByCategorySubtitle": "Revenue distribution by product category",
+      "howPlWorks": "How the P&L works",
+      "plDescription": "The P&L calculates the actual financial result of the business from collected payment events.",
+      "aboutSegmentedVariableCosts": "About segmented variable costs",
+      "segmentedVariableCostsDescription": "Each variable cost can be configured to apply only to the revenue of a specific payment method or billing type. Configure your costs in",
+      "costsLink": "Costs",
+      "plSteps": {
+        "grossRevenue": {
+          "label": "Gross Revenue",
+          "desc": "Total gross of confirmed payments in the period."
+        },
+        "discounts": {
+          "label": "− Discounts",
+          "desc": "Coupons and discounts sent via the discount field in the payment event."
+        },
+        "variableCosts": {
+          "label": "− Variable Costs",
+          "desc": "Percentages configured on the platform (taxes, commissions, etc.) applied to revenue."
+        },
+        "operatingProfit": {
+          "label": "= Operating Profit",
+          "desc": "Result after discounts and configured variable costs."
+        },
+        "fixedCosts": {
+          "label": "− Fixed Costs",
+          "desc": "Fixed monthly values configured on the platform, prorated proportionally to the period."
+        },
+        "netProfit": {
+          "label": "= Net Profit",
+          "desc": "What actually remained after all costs are deducted."
+        },
+        "netMargin": {
+          "label": "Net Margin",
+          "desc": "Net Profit ÷ Gross Revenue × 100."
+        }
       }
-    }
-  },
-  "kpiCards": {
-    "blocks": {
-      "revenue": "Revenue",
-      "costs": "Costs",
-      "result": "Result",
-      "opportunity": "Opportunity"
     },
-    "grossRevenue": "Gross Revenue",
-    "recurring": "Recurring",
-    "recurringTooltip": "Revenue from subscriptions and recurring charges in the period.",
-    "oneTime": "One-time",
-    "oneTimeTooltip": "Revenue from single purchases, not linked to subscriptions.",
-    "averageTicket": "Average Ticket",
-    "averageTicketTooltip": "Average value per transaction in the period. Calculated as Gross Revenue ÷ number of payments.",
-    "purchases": "{count} purchases",
-    "percentOfTotal": "{percent}% of total",
-    "discounts": "Discounts",
-    "discountsSubLabel": "coupons in the period",
-    "discountsTooltip": "Total value of coupons and discounts applied to payments in the period. Reduces net revenue.",
-    "variableCosts": "Variable Costs",
-    "variableCostsSubLabel": "% configured on revenue",
-    "variableCostsTooltip": "Costs that grow proportionally to revenue — such as gateway fees, commissions, and taxes. Calculated as a percentage of gross revenue.",
-    "fixedCosts": "Fixed Costs",
-    "fixedCostsSubLabelProrated": "prorated {days}d of 30",
-    "fixedCostsSubLabelMonthly": "monthly value",
-    "fixedCostsTooltip": "Monthly expenses that don't vary with revenue — such as tools, salaries, and rent. Prorated proportionally when the period is less than a month.",
-    "operatingProfit": "Operating Profit",
-    "operatingProfitSubLabel": "revenue − discounts − variable",
-    "operatingProfitTooltip": "Gross Revenue minus discounts and variable costs. Shows operational health before fixed costs.",
-    "netProfit": "Net Profit",
-    "netProfitSubLabel": "after all costs",
-    "netProfitTooltip": "What's left after deducting all costs (variable + fixed + discounts) from gross revenue. This is the actual profit for the period.",
-    "netMargin": "Net Margin",
-    "netMarginSubLabel": "net profit / gross revenue",
-    "netMarginTooltip": "Percentage of gross revenue that converts to net profit. Above 20% is considered healthy for SaaS.",
-    "lostRevenue": "in lost revenue",
-    "abandonedCheckouts": "{count} abandoned checkout(s) in the period",
-    "comparedToPrevious": "compared to {value} in previous period",
-    "vsPreviousPrefix": "vs",
-    "vsPreviousSuffix": "previous",
-    "viewAbandonmentAnalysis": "View abandonment analysis",
-    "infoAbout": "Info about {label}"
-  },
-  "breakdownTable": {
-    "payments": "{count} payments",
-    "noDataForPeriod": "No data for the period",
-    "margin": "margin"
-  },
-  "revenueChart": {
-    "title": "Daily Result Evolution",
-    "subtitle": "Gross revenue, operating profit and net profit for the selected period",
-    "grossRevenue": "Gross Revenue",
-    "operatingProfit": "Operating Profit",
-    "netProfit": "Net Profit"
-  },
-  "profitLossWaterfall": {
-    "title": "Result Composition",
-    "subtitle": "Revenue → Discounts → Variable Costs → Operating Profit → Fixed Costs → Net Profit",
-    "revenue": "Revenue",
-    "discounts": "Discounts",
-    "variableCosts": "Var. Costs",
-    "operatingProfit": "Op. Profit",
-    "fixedCosts": "Fixed Costs",
-    "netProfit": "Net Profit"
-  },
-  "profitLossCards": {
-    "grossRevenue": "Gross Revenue",
-    "grossRevenueTooltip": "Total payments received in the period, before any discounts or costs. It's the top line of the income statement.",
-    "variableCosts": "Variable Costs",
-    "variableCostsTooltip": "Sum of costs that vary with revenue — gateway fees, commissions, sales taxes. Configured as % of gross revenue.",
-    "variableCostsSubLabel": "{count} items",
-    "operatingProfit": "Operating Profit",
-    "operatingProfitTooltip": "Gross Revenue minus variable costs. Represents what's left before paying fixed monthly expenses.",
-    "operatingProfitSubLabel": "Revenue − Variable",
-    "fixedCosts": "Fixed Costs",
-    "fixedCostsTooltip": "Monthly expenses independent of sales volume. When the period is less than 30 days, the value is prorated proportionally.",
-    "fixedCostsSubLabel": "{count} items",
-    "fixedCostsSubLabelProrated": "{count} items · prorated {days}d",
-    "netProfit": "Net Profit",
-    "netProfitTooltip": "What actually remains in the cash flow after deducting all costs. Negative means the business is spending more than it earns.",
-    "netProfitSubLabel": "Revenue − Variable − Fixed",
-    "netMargin": "Net Margin",
-    "netMarginTooltip": "Net Profit divided by Gross Revenue, as a percentage. A margin above 20% is considered healthy for SaaS.",
-    "infoAbout": "Info about {label}"
-  },
-  "costsContent": {
-    "title": "Manage Costs",
-    "subtitle": "Register fixed and variable costs to calculate the P&L in Financial",
-    "fixedCostsTab": "Fixed Costs",
-    "variableCostsTab": "Variable Costs"
-  },
-  "fixedCosts": {
-    "title": "Fixed Costs",
-    "subtitle": "Constant expenses — server, salary, tools",
-    "add": "Add",
-    "emptyTitle": "No fixed costs yet",
-    "emptyDescription": "Fixed costs are constant expenses like servers, salaries, and tools.",
-    "addFirst": "Add first cost",
-    "columnName": "Name",
-    "columnFrequency": "Frequency",
-    "columnValue": "Value",
-    "perMonth": "/month",
-    "ofRevenue": "{percent}% of revenue",
-    "toastCreated": "Fixed cost added!",
-    "toastUpdated": "Fixed cost updated!",
-    "toastDeleted": "Fixed cost removed!",
-    "frequency": {
-      "monthly": "Monthly",
-      "quarterly": "Quarterly",
-      "semiannual": "Semiannual",
-      "annual": "Annual"
-    }
-  },
-  "variableCosts": {
-    "title": "Variable Costs",
-    "subtitle": "Revenue percentages — taxes, commissions and fees",
-    "add": "Add",
-    "emptyTitle": "No variable costs yet",
-    "emptyDescription": "Variable costs are revenue percentages such as taxes, commissions, and gateway fees.",
-    "addFirst": "Add first cost",
-    "columnName": "Name",
-    "columnRate": "Rate",
-    "columnApplyTo": "Apply to",
-    "toastCreated": "Variable cost added!",
-    "toastUpdated": "Variable cost updated!",
-    "toastDeleted": "Variable cost removed!",
-    "allRevenue": "All revenue",
-    "categoryPrefix": "Cat: {value}",
-    "applyToLabels": {
-      "creditCard": "Credit card",
-      "debitCard": "Debit card",
-      "pix": "PIX",
-      "boleto": "Boleto",
-      "oneTime": "One-time",
+    "kpiCards": {
+      "blocks": {
+        "revenue": "Revenue",
+        "costs": "Costs",
+        "result": "Result",
+        "opportunity": "Opportunity"
+      },
+      "grossRevenue": "Gross Revenue",
       "recurring": "Recurring",
-      "other": "Other"
+      "recurringTooltip": "Revenue from subscriptions and recurring charges in the period.",
+      "oneTime": "One-time",
+      "oneTimeTooltip": "Revenue from single purchases, not linked to subscriptions.",
+      "averageTicket": "Average Ticket",
+      "averageTicketTooltip": "Average value per transaction in the period. Calculated as Gross Revenue ÷ number of payments.",
+      "purchases": "{count} purchases",
+      "percentOfTotal": "{percent}% of total",
+      "discounts": "Discounts",
+      "discountsSubLabel": "coupons in the period",
+      "discountsTooltip": "Total value of coupons and discounts applied to payments in the period. Reduces net revenue.",
+      "variableCosts": "Variable Costs",
+      "variableCostsSubLabel": "% configured on revenue",
+      "variableCostsTooltip": "Costs that grow proportionally to revenue — such as gateway fees, commissions, and taxes. Calculated as a percentage of gross revenue.",
+      "fixedCosts": "Fixed Costs",
+      "fixedCostsSubLabelProrated": "prorated {days}d of 30",
+      "fixedCostsSubLabelMonthly": "monthly value",
+      "fixedCostsTooltip": "Monthly expenses that don't vary with revenue — such as tools, salaries, and rent. Prorated proportionally when the period is less than a month.",
+      "operatingProfit": "Operating Profit",
+      "operatingProfitSubLabel": "revenue − discounts − variable",
+      "operatingProfitTooltip": "Gross Revenue minus discounts and variable costs. Shows operational health before fixed costs.",
+      "netProfit": "Net Profit",
+      "netProfitSubLabel": "after all costs",
+      "netProfitTooltip": "What's left after deducting all costs (variable + fixed + discounts) from gross revenue. This is the actual profit for the period.",
+      "netMargin": "Net Margin",
+      "netMarginSubLabel": "net profit / gross revenue",
+      "netMarginTooltip": "Percentage of gross revenue that converts to net profit. Above 20% is considered healthy for SaaS.",
+      "lostRevenue": "in lost revenue",
+      "abandonedCheckouts": "{count} abandoned checkout(s) in the period",
+      "comparedToPrevious": "compared to {value} in previous period",
+      "vsPreviousPrefix": "vs",
+      "vsPreviousSuffix": "previous",
+      "viewAbandonmentAnalysis": "View abandonment analysis",
+      "infoAbout": "Info about {label}"
+    },
+    "breakdownTable": {
+      "payments": "{count} payments",
+      "noDataForPeriod": "No data for the period",
+      "margin": "margin"
+    },
+    "revenueChart": {
+      "title": "Daily Result Evolution",
+      "subtitle": "Gross revenue, operating profit and net profit for the selected period",
+      "grossRevenue": "Gross Revenue",
+      "operatingProfit": "Operating Profit",
+      "netProfit": "Net Profit"
+    },
+    "profitLossWaterfall": {
+      "title": "Result Composition",
+      "subtitle": "Revenue → Discounts → Variable Costs → Operating Profit → Fixed Costs → Net Profit",
+      "revenue": "Revenue",
+      "discounts": "Discounts",
+      "variableCosts": "Var. Costs",
+      "operatingProfit": "Op. Profit",
+      "fixedCosts": "Fixed Costs",
+      "netProfit": "Net Profit"
+    },
+    "profitLossCards": {
+      "grossRevenue": "Gross Revenue",
+      "grossRevenueTooltip": "Total payments received in the period, before any discounts or costs. It's the top line of the income statement.",
+      "variableCosts": "Variable Costs",
+      "variableCostsTooltip": "Sum of costs that vary with revenue — gateway fees, commissions, sales taxes. Configured as % of gross revenue.",
+      "variableCostsSubLabel": "{count} items",
+      "operatingProfit": "Operating Profit",
+      "operatingProfitTooltip": "Gross Revenue minus variable costs. Represents what's left before paying fixed monthly expenses.",
+      "operatingProfitSubLabel": "Revenue − Variable",
+      "fixedCosts": "Fixed Costs",
+      "fixedCostsTooltip": "Monthly expenses independent of sales volume. When the period is less than 30 days, the value is prorated proportionally.",
+      "fixedCostsSubLabel": "{count} items",
+      "fixedCostsSubLabelProrated": "{count} items · prorated {days}d",
+      "netProfit": "Net Profit",
+      "netProfitTooltip": "What actually remains in the cash flow after deducting all costs. Negative means the business is spending more than it earns.",
+      "netProfitSubLabel": "Revenue − Variable − Fixed",
+      "netMargin": "Net Margin",
+      "netMarginTooltip": "Net Profit divided by Gross Revenue, as a percentage. A margin above 20% is considered healthy for SaaS.",
+      "infoAbout": "Info about {label}"
+    },
+    "costsContent": {
+      "title": "Manage Costs",
+      "subtitle": "Register fixed and variable costs to calculate the P&L in Financial",
+      "fixedCostsTab": "Fixed Costs",
+      "variableCostsTab": "Variable Costs"
+    },
+    "fixedCosts": {
+      "title": "Fixed Costs",
+      "subtitle": "Constant expenses — server, salary, tools",
+      "add": "Add",
+      "emptyTitle": "No fixed costs yet",
+      "emptyDescription": "Fixed costs are constant expenses like servers, salaries, and tools.",
+      "addFirst": "Add first cost",
+      "columnName": "Name",
+      "columnFrequency": "Frequency",
+      "columnValue": "Value",
+      "perMonth": "/month",
+      "ofRevenue": "{percent}% of revenue",
+      "toastCreated": "Fixed cost added!",
+      "toastUpdated": "Fixed cost updated!",
+      "toastDeleted": "Fixed cost removed!",
+      "frequency": {
+        "monthly": "Monthly",
+        "quarterly": "Quarterly",
+        "semiannual": "Semiannual",
+        "annual": "Annual"
+      }
+    },
+    "variableCosts": {
+      "title": "Variable Costs",
+      "subtitle": "Revenue percentages — taxes, commissions and fees",
+      "add": "Add",
+      "emptyTitle": "No variable costs yet",
+      "emptyDescription": "Variable costs are revenue percentages such as taxes, commissions, and gateway fees.",
+      "addFirst": "Add first cost",
+      "columnName": "Name",
+      "columnRate": "Rate",
+      "columnApplyTo": "Apply to",
+      "toastCreated": "Variable cost added!",
+      "toastUpdated": "Variable cost updated!",
+      "toastDeleted": "Variable cost removed!",
+      "allRevenue": "All revenue",
+      "categoryPrefix": "Cat: {value}",
+      "applyToLabels": {
+        "creditCard": "Credit card",
+        "debitCard": "Debit card",
+        "pix": "PIX",
+        "boleto": "Boleto",
+        "oneTime": "One-time",
+        "recurring": "Recurring",
+        "other": "Other"
+      }
+    },
+    "costForm": {
+      "editFixed": "Edit Fixed Cost",
+      "addFixed": "Add Fixed Cost",
+      "editVariable": "Edit Variable Cost",
+      "addVariable": "Add Variable Cost",
+      "variableDescription": "Percentage applied to the period's revenue. Use for taxes, commissions, and gateway fees.",
+      "fixedDescription": "Fixed value automatically prorated according to the selected period.",
+      "nameLabel": "Name",
+      "namePlaceholderVariable": "E.g.: Sales Tax, Gateway Fee...",
+      "namePlaceholderFixed": "E.g.: Server, Salary, Rent...",
+      "percentageLabel": "Percentage",
+      "valueLabel": "Value",
+      "percentagePlaceholder": "E.g.: 10.00%",
+      "valuePlaceholder": "$0.00",
+      "frequencyLabel": "Frequency",
+      "frequencyOptions": {
+        "monthly": "Monthly",
+        "monthlySub": "paid every month",
+        "quarterly": "Quarterly",
+        "quarterlySub": "prorated over 3 months",
+        "semiannual": "Semiannual",
+        "semiannualSub": "prorated over 6 months",
+        "annual": "Annual",
+        "annualSub": "prorated over 12 months"
+      },
+      "applyToLabel": "Apply to",
+      "applyToAllRevenue": "All revenue",
+      "applyToPaymentMethod": "Payment method",
+      "applyToBillingType": "Billing type",
+      "applyToCategory": "By category",
+      "paymentMethodLabel": "Payment method",
+      "paymentMethodPlaceholder": "Select method...",
+      "billingTypeLabel": "Billing type",
+      "billingTypePlaceholder": "Select type...",
+      "categoryNameLabel": "Category name",
+      "categoryPlaceholder": "E.g.: Wedding, Birthday...",
+      "categoryHint": "Must match exactly the category field sent in payment events.",
+      "descriptionLabel": "Description (optional)",
+      "descriptionPlaceholder": "Notes...",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "save": "Save",
+      "addButton": "Add",
+      "paymentMethods": {
+        "creditCard": "Credit card",
+        "debitCard": "Debit card",
+        "pix": "PIX",
+        "boleto": "Boleto",
+        "other": "Other"
+      },
+      "billingTypes": {
+        "oneTime": "One-time (one_time)",
+        "recurring": "Recurring (recurring)"
+      },
+      "validation": {
+        "nameRequired": "Name is required",
+        "valueRequired": "Value is required",
+        "valueMustBePositive": "Value must be positive"
+      }
+    },
+    "costComposition": {
+      "title": "Cost Composition",
+      "subtitle": "Visual proportion of costs over the current month's revenue",
+      "subtitleWithValue": "Visual proportion of costs over the current month's revenue ({value})",
+      "noDataForPeriod": "No data for the period",
+      "variableCosts": "Variable Costs",
+      "fixedCosts": "Fixed Costs",
+      "remainingMargin": "Remaining / Margin"
     }
-  },
-  "costForm": {
-    "editFixed": "Edit Fixed Cost",
-    "addFixed": "Add Fixed Cost",
-    "editVariable": "Edit Variable Cost",
-    "addVariable": "Add Variable Cost",
-    "variableDescription": "Percentage applied to the period's revenue. Use for taxes, commissions, and gateway fees.",
-    "fixedDescription": "Fixed value automatically prorated according to the selected period.",
-    "nameLabel": "Name",
-    "namePlaceholderVariable": "E.g.: Sales Tax, Gateway Fee...",
-    "namePlaceholderFixed": "E.g.: Server, Salary, Rent...",
-    "percentageLabel": "Percentage",
-    "valueLabel": "Value",
-    "percentagePlaceholder": "E.g.: 10.00%",
-    "valuePlaceholder": "$0.00",
-    "frequencyLabel": "Frequency",
-    "frequencyOptions": {
-      "monthly": "Monthly",
-      "monthlySub": "paid every month",
-      "quarterly": "Quarterly",
-      "quarterlySub": "prorated over 3 months",
-      "semiannual": "Semiannual",
-      "semiannualSub": "prorated over 6 months",
-      "annual": "Annual",
-      "annualSub": "prorated over 12 months"
-    },
-    "applyToLabel": "Apply to",
-    "applyToAllRevenue": "All revenue",
-    "applyToPaymentMethod": "Payment method",
-    "applyToBillingType": "Billing type",
-    "applyToCategory": "By category",
-    "paymentMethodLabel": "Payment method",
-    "paymentMethodPlaceholder": "Select method...",
-    "billingTypeLabel": "Billing type",
-    "billingTypePlaceholder": "Select type...",
-    "categoryNameLabel": "Category name",
-    "categoryPlaceholder": "E.g.: Wedding, Birthday...",
-    "categoryHint": "Must match exactly the category field sent in payment events.",
-    "descriptionLabel": "Description (optional)",
-    "descriptionPlaceholder": "Notes...",
-    "cancel": "Cancel",
-    "saving": "Saving...",
-    "save": "Save",
-    "addButton": "Add",
-    "paymentMethods": {
-      "creditCard": "Credit card",
-      "debitCard": "Debit card",
-      "pix": "PIX",
-      "boleto": "Boleto",
-      "other": "Other"
-    },
-    "billingTypes": {
-      "oneTime": "One-time (one_time)",
-      "recurring": "Recurring (recurring)"
-    },
-    "validation": {
-      "nameRequired": "Name is required",
-      "valueRequired": "Value is required",
-      "valueMustBePositive": "Value must be positive"
-    }
-  },
-  "costComposition": {
-    "title": "Cost Composition",
-    "subtitle": "Visual proportion of costs over the current month's revenue",
-    "subtitleWithValue": "Visual proportion of costs over the current month's revenue ({value})",
-    "noDataForPeriod": "No data for the period",
-    "variableCosts": "Variable Costs",
-    "fixedCosts": "Fixed Costs",
-    "remainingMargin": "Remaining / Margin"
   }
 }

@@ -1,103 +1,105 @@
 {
-  "nav": {
-    "installation": "Instalação",
-    "funnel": "Funil",
-    "organization": "Organização",
-    "integrations": "Integrações",
-    "billing": "Plano & Uso",
-    "team": "Equipe",
-    "aiProfile": "Perfil IA",
-    "regional": "Regional",
-    "notifications": "Notificações",
-    "publicPage": "Pág. Pública"
-  },
-  "layout": {
-    "title": "Configurações",
-    "subtitle": "Gerencie a organização, integrações e preferências"
-  },
-  "wrapper": {
-    "notFound": "Organização não encontrada."
-  },
-  "regional": {
-    "title": "Configurações Regionais",
-    "description": "Define moeda base, timezone, locale e idioma da IA para toda a organização",
-    "localeLabel": "Localização",
-    "localeHint": "Altera moeda, país e idioma automaticamente",
-    "currencyLabel": "Moeda base",
-    "currencyHint": "Todos os valores no dashboard são convertidos para esta moeda",
-    "aiLanguageLabel": "Idioma da IA",
-    "timezoneLabel": "Fuso horário",
-    "timezoneHint": "Define como \"hoje\" e filtros de data são interpretados nos relatórios",
-    "saving": "Salvando...",
-    "save": "Salvar",
-    "successToast": "Configurações regionais atualizadas!",
-    "errorToast": "Erro ao salvar configurações regionais."
-  },
-  "team": {
-    "title": "Equipe",
-    "description": "Gerencie quem tem acesso a esta organização",
-    "invite": "Convidar",
-    "cancel": "Cancelar",
-    "inviteNewMember": "Convidar novo membro",
-    "emailLabel": "Email",
-    "emailPlaceholder": "colega@empresa.com",
-    "roleLabel": "Papel",
-    "roleOwner": "Proprietário",
-    "roleAdmin": "Admin",
-    "roleViewer": "Visualizador",
-    "sendInvite": "Enviar convite",
-    "membersTitle": "Membros",
-    "you": "você",
-    "removeMember": "Remover membro",
-    "pendingInvites": "Convites pendentes",
-    "expired": "Expirado",
-    "expiresIn": "Expira {time}",
-    "noMembersOrInvites": "Nenhum membro ou convite encontrado.",
-    "emailRequiredToast": "Informe o email do convidado.",
-    "inviteSentToast": "Convite enviado para {email}!",
-    "memberRemovedToast": "{name} removido da organização.",
-    "defaultMemberName": "Membro"
-  },
-  "aiPrompt": {
-    "title": "Prompt para IA",
-    "description": "Cole no Cursor, Claude ou ChatGPT — a IA lê seu projeto e implementa a integração automaticamente.",
-    "copied": "Copiado!",
-    "copyPrompt": "Copiar prompt",
-    "copiedToast": "Prompt copiado! Cole no Cursor, Claude ou ChatGPT."
-  },
-  "billing": {
-    "currentPlan": {
-      "label": "Plano atual",
-      "freeForeverBrl": "Gratuito para sempre",
-      "freeForeverUsd": "Free forever",
-      "openingPortal": "Abrindo...",
-      "manageSubscription": "Gerenciar assinatura",
-      "upgrade": "Fazer upgrade →",
-      "revenueThisMonth": "Receita este mês",
-      "organizations": "Organizações",
-      "limit": "Limite",
-      "orgLimitReached": "Limite atingido. Faça upgrade para criar mais organizações.",
-      "members": "Membros",
-      "planIncludes": "Seu plano {planName} inclui Stripe e MRR/Recorrência — conecte seu gateway para ver de onde vem cada real da sua receita."
+  "settings": {
+    "nav": {
+      "installation": "Instalação",
+      "funnel": "Funil",
+      "organization": "Organização",
+      "integrations": "Integrações",
+      "billing": "Plano & Uso",
+      "team": "Equipe",
+      "aiProfile": "Perfil IA",
+      "regional": "Regional",
+      "notifications": "Notificações",
+      "publicPage": "Pág. Pública"
     },
-    "plansGrid": {
-      "popular": "Popular",
-      "current": "Atual",
-      "perMonthAnnual": "mês (anual)",
-      "perMonth": "mês",
-      "forever": "Para sempre",
-      "upToRevenue": "Até {limit} receita/mês",
-      "currentPlan": "Plano atual",
-      "downgrade": "Downgrade",
-      "choosePlan": "Escolher plano"
+    "layout": {
+      "title": "Configurações",
+      "subtitle": "Gerencie a organização, integrações e preferências"
+    },
+    "wrapper": {
+      "notFound": "Organização não encontrada."
+    },
+    "regional": {
+      "title": "Configurações Regionais",
+      "description": "Define moeda base, timezone, locale e idioma da IA para toda a organização",
+      "localeLabel": "Localização",
+      "localeHint": "Altera moeda, país e idioma automaticamente",
+      "currencyLabel": "Moeda base",
+      "currencyHint": "Todos os valores no dashboard são convertidos para esta moeda",
+      "aiLanguageLabel": "Idioma da IA",
+      "timezoneLabel": "Fuso horário",
+      "timezoneHint": "Define como \"hoje\" e filtros de data são interpretados nos relatórios",
+      "saving": "Salvando...",
+      "save": "Salvar",
+      "successToast": "Configurações regionais atualizadas!",
+      "errorToast": "Erro ao salvar configurações regionais."
+    },
+    "team": {
+      "title": "Equipe",
+      "description": "Gerencie quem tem acesso a esta organização",
+      "invite": "Convidar",
+      "cancel": "Cancelar",
+      "inviteNewMember": "Convidar novo membro",
+      "emailLabel": "Email",
+      "emailPlaceholder": "colega@empresa.com",
+      "roleLabel": "Papel",
+      "roleOwner": "Proprietário",
+      "roleAdmin": "Admin",
+      "roleViewer": "Visualizador",
+      "sendInvite": "Enviar convite",
+      "membersTitle": "Membros",
+      "you": "você",
+      "removeMember": "Remover membro",
+      "pendingInvites": "Convites pendentes",
+      "expired": "Expirado",
+      "expiresIn": "Expira {time}",
+      "noMembersOrInvites": "Nenhum membro ou convite encontrado.",
+      "emailRequiredToast": "Informe o email do convidado.",
+      "inviteSentToast": "Convite enviado para {email}!",
+      "memberRemovedToast": "{name} removido da organização.",
+      "defaultMemberName": "Membro"
+    },
+    "aiPrompt": {
+      "title": "Prompt para IA",
+      "description": "Cole no Cursor, Claude ou ChatGPT — a IA lê seu projeto e implementa a integração automaticamente.",
+      "copied": "Copiado!",
+      "copyPrompt": "Copiar prompt",
+      "copiedToast": "Prompt copiado! Cole no Cursor, Claude ou ChatGPT."
+    },
+    "billing": {
+      "currentPlan": {
+        "label": "Plano atual",
+        "freeForeverBrl": "Gratuito para sempre",
+        "freeForeverUsd": "Free forever",
+        "openingPortal": "Abrindo...",
+        "manageSubscription": "Gerenciar assinatura",
+        "upgrade": "Fazer upgrade →",
+        "revenueThisMonth": "Receita este mês",
+        "organizations": "Organizações",
+        "limit": "Limite",
+        "orgLimitReached": "Limite atingido. Faça upgrade para criar mais organizações.",
+        "members": "Membros",
+        "planIncludes": "Seu plano {planName} inclui Stripe e MRR/Recorrência — conecte seu gateway para ver de onde vem cada real da sua receita."
+      },
+      "plansGrid": {
+        "popular": "Popular",
+        "current": "Atual",
+        "perMonthAnnual": "mês (anual)",
+        "perMonth": "mês",
+        "forever": "Para sempre",
+        "upToRevenue": "Até {limit} receita/mês",
+        "currentPlan": "Plano atual",
+        "downgrade": "Downgrade",
+        "choosePlan": "Escolher plano"
+      }
+    },
+    "integrations": {
+      "comingSoon": "Em breve",
+      "availableFromStarter": "Disponível a partir do Starter",
+      "starterPlus": "Starter+",
+      "asaasDescription": "Pagamentos e cobranças no Brasil",
+      "kiwifyDescription": "Infoprodutos e cursos online",
+      "hotmartDescription": "Plataforma de produtos digitais"
     }
-  },
-  "integrations": {
-    "comingSoon": "Em breve",
-    "availableFromStarter": "Disponível a partir do Starter",
-    "starterPlus": "Starter+",
-    "asaasDescription": "Pagamentos e cobranças no Brasil",
-    "kiwifyDescription": "Infoprodutos e cursos online",
-    "hotmartDescription": "Plataforma de produtos digitais"
   }
 }

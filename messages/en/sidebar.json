@@ -1,38 +1,40 @@
 {
-  "sections": {
-    "overview": "Overview",
-    "revenue": "Revenue",
-    "acquisition": "Acquisition",
-    "intelligence": "Intelligence",
-    "data": "Data"
-  },
-  "nav": {
-    "dashboard": "Dashboard",
-    "finance": "Finance",
-    "costs": "Costs",
-    "recurrence": "Recurrence",
-    "channels": "Channels",
-    "pages": "Pages",
-    "aiAnalysis": "AI Analysis",
-    "comparative": "Comparative",
-    "events": "Events",
-    "subscriptions": "Subscriptions",
-    "debug": "Debug",
-    "docs": "Documentation",
-    "settings": "Settings"
-  },
-  "lockBadge": {
-    "starter": "Starter",
-    "availableOnPlan": "Available on {plan} plan"
-  },
-  "orgSwitcher": {
-    "searchPlaceholder": "Search organization...",
-    "noResults": "No organization found.",
-    "manageOrgs": "Manage organizations",
-    "newOrg": "New organization",
-    "switchOrg": "Switch organization",
-    "selectOrg": "Select org"
-  },
-  "logout": "Log out",
-  "mobileMenuTitle": "Navigation menu"
+  "sidebar": {
+    "sections": {
+      "overview": "Overview",
+      "revenue": "Revenue",
+      "acquisition": "Acquisition",
+      "intelligence": "Intelligence",
+      "data": "Data"
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "finance": "Finance",
+      "costs": "Costs",
+      "recurrence": "Recurrence",
+      "channels": "Channels",
+      "pages": "Pages",
+      "aiAnalysis": "AI Analysis",
+      "comparative": "Comparative",
+      "events": "Events",
+      "subscriptions": "Subscriptions",
+      "debug": "Debug",
+      "docs": "Documentation",
+      "settings": "Settings"
+    },
+    "lockBadge": {
+      "starter": "Starter",
+      "availableOnPlan": "Available on {plan} plan"
+    },
+    "orgSwitcher": {
+      "searchPlaceholder": "Search organization...",
+      "noResults": "No organization found.",
+      "manageOrgs": "Manage organizations",
+      "newOrg": "New organization",
+      "switchOrg": "Switch organization",
+      "selectOrg": "Select org"
+    },
+    "logout": "Log out",
+    "mobileMenuTitle": "Navigation menu"
+  }
 }

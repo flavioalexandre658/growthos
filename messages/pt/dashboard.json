@@ -1,82 +1,84 @@
 {
-  "kpi": {
-    "revenue": "Receita",
-    "averageTicket": "Ticket Médio",
-    "averageTicketTooltip": "Valor médio por pagamento. Receita ÷ número de pagamentos no período.",
-    "abandoned": "Abandonos",
-    "vsPrevious": "vs {previousLabel} anterior",
-    "noPreviousData": "Sem dados anteriores",
-    "infoAbout": "Informação sobre {label}"
-  },
-  "funnel": {
-    "title": "Funil de Conversão",
-    "fallbackSubtitle": "Funil de Conversão",
-    "minStepsWarning": "Configure ao menos 2 etapas no funil"
-  },
-  "daily": {
-    "title": "Evolução Diária",
-    "subtitle": "Progresso do funil por dia"
-  },
-  "sourceChart": {
-    "title": "Canais de Entrada",
-    "subtitle": "Origem dos cadastros",
-    "noData": "Nenhum dado disponível",
-    "totalLabel": "total"
-  },
-  "recentPurchases": {
-    "title": "Últimas Compras",
-    "subtitle": "Transações recentes",
-    "viewAll": "Ver todos",
-    "noPurchases": "Nenhuma compra encontrada"
-  },
-  "topProducts": {
-    "title": "Top Produtos",
-    "subtitle": "Por receita no período",
-    "viewAll": "Ver todos",
-    "noPayments": "Nenhum pagamento no período"
-  },
-  "alerts": {
-    "title": "Alertas & Oportunidades",
-    "subtitle": "Insights automáticos do período",
-    "noData": "Sem dados disponíveis",
-    "abandonedCarts": "{count} carrinhos abandonados",
-    "abandonedRevenue": "~{amount} em receita potencial perdida no período",
-    "viewAbandoned": "Ver abandonos",
-    "revenueGrew": "Receita cresceu {pct}% vs período anterior",
-    "revenueFell": "Receita caiu {pct}% vs período anterior",
-    "revenueChangeUp": "De {from} para {to}",
-    "revenueChangeDown": "De {from} para {to} — verifique os canais",
-    "bottleneck": "Gargalo: {from} → {to}",
-    "bottleneckDescription": "Apenas {pct}% de conversão nessa etapa — maior oportunidade de melhora",
-    "stepGrew": "{label} cresceu {pct}% vs período anterior",
-    "stepGrewDescription": "De {from} para {to} — etapa com melhor desempenho",
-    "allGood": "Tudo dentro do esperado",
-    "allGoodDescription": "Nenhuma anomalia detectada no período. Métricas estáveis."
-  },
-  "overview": {
-    "title": "Visão Geral",
-    "subtitle": "Performance consolidada do período",
-    "stepsVisibleTitle": "Etapas visíveis",
-    "stepsButton": "Etapas",
-    "stepsPopoverTitle": "Etapas visíveis",
-    "stepsPopoverDescription": "Alternância temporária — não persiste",
-    "showAll": "Mostrar todas"
-  },
-  "periodFilter": {
-    "today": "Hoje",
-    "yesterday": "Ontem",
-    "3d": "3d",
-    "7d": "7d",
-    "thisMonth": "Mês",
-    "30d": "30d",
-    "90d": "90d",
-    "refreshData": "Atualizar dados",
-    "more": "Mais",
-    "customActive": "Custom ativo",
-    "customRange": "Intervalo personalizado",
-    "clear": "Limpar",
-    "customDesktop": "Custom",
-    "dates": "Datas",
-    "clearRange": "Limpar intervalo"
+  "dashboard": {
+    "kpi": {
+      "revenue": "Receita",
+      "averageTicket": "Ticket Médio",
+      "averageTicketTooltip": "Valor médio por pagamento. Receita ÷ número de pagamentos no período.",
+      "abandoned": "Abandonos",
+      "vsPrevious": "vs {previousLabel} anterior",
+      "noPreviousData": "Sem dados anteriores",
+      "infoAbout": "Informação sobre {label}"
+    },
+    "funnel": {
+      "title": "Funil de Conversão",
+      "fallbackSubtitle": "Funil de Conversão",
+      "minStepsWarning": "Configure ao menos 2 etapas no funil"
+    },
+    "daily": {
+      "title": "Evolução Diária",
+      "subtitle": "Progresso do funil por dia"
+    },
+    "sourceChart": {
+      "title": "Canais de Entrada",
+      "subtitle": "Origem dos cadastros",
+      "noData": "Nenhum dado disponível",
+      "totalLabel": "total"
+    },
+    "recentPurchases": {
+      "title": "Últimas Compras",
+      "subtitle": "Transações recentes",
+      "viewAll": "Ver todos",
+      "noPurchases": "Nenhuma compra encontrada"
+    },
+    "topProducts": {
+      "title": "Top Produtos",
+      "subtitle": "Por receita no período",
+      "viewAll": "Ver todos",
+      "noPayments": "Nenhum pagamento no período"
+    },
+    "alerts": {
+      "title": "Alertas & Oportunidades",
+      "subtitle": "Insights automáticos do período",
+      "noData": "Sem dados disponíveis",
+      "abandonedCarts": "{count} carrinhos abandonados",
+      "abandonedRevenue": "~{amount} em receita potencial perdida no período",
+      "viewAbandoned": "Ver abandonos",
+      "revenueGrew": "Receita cresceu {pct}% vs período anterior",
+      "revenueFell": "Receita caiu {pct}% vs período anterior",
+      "revenueChangeUp": "De {from} para {to}",
+      "revenueChangeDown": "De {from} para {to} — verifique os canais",
+      "bottleneck": "Gargalo: {from} → {to}",
+      "bottleneckDescription": "Apenas {pct}% de conversão nessa etapa — maior oportunidade de melhora",
+      "stepGrew": "{label} cresceu {pct}% vs período anterior",
+      "stepGrewDescription": "De {from} para {to} — etapa com melhor desempenho",
+      "allGood": "Tudo dentro do esperado",
+      "allGoodDescription": "Nenhuma anomalia detectada no período. Métricas estáveis."
+    },
+    "overview": {
+      "title": "Visão Geral",
+      "subtitle": "Performance consolidada do período",
+      "stepsVisibleTitle": "Etapas visíveis",
+      "stepsButton": "Etapas",
+      "stepsPopoverTitle": "Etapas visíveis",
+      "stepsPopoverDescription": "Alternância temporária — não persiste",
+      "showAll": "Mostrar todas"
+    },
+    "periodFilter": {
+      "today": "Hoje",
+      "yesterday": "Ontem",
+      "3d": "3d",
+      "7d": "7d",
+      "thisMonth": "Mês",
+      "30d": "30d",
+      "90d": "90d",
+      "refreshData": "Atualizar dados",
+      "more": "Mais",
+      "customActive": "Custom ativo",
+      "customRange": "Intervalo personalizado",
+      "clear": "Limpar",
+      "customDesktop": "Custom",
+      "dates": "Datas",
+      "clearRange": "Limpar intervalo"
+    }
   }
 }

@@ -1,16 +1,18 @@
 {
-  "metricFilters": {
-    "title": "Metric filters",
-    "clear": "Clear",
-    "minPlaceholder": "Min",
-    "maxPlaceholder": "Max",
-    "clearAll": "Clear all",
-    "cancel": "Cancel",
-    "apply": "Apply"
-  },
-  "responsiveTable": {
-    "rowsPerPage": "Rows per page",
-    "of": "of",
-    "noDataFound": "No data found"
+  "commonUi": {
+    "metricFilters": {
+      "title": "Metric filters",
+      "clear": "Clear",
+      "minPlaceholder": "Min",
+      "maxPlaceholder": "Max",
+      "clearAll": "Clear all",
+      "cancel": "Cancel",
+      "apply": "Apply"
+    },
+    "responsiveTable": {
+      "rowsPerPage": "Rows per page",
+      "of": "of",
+      "noDataFound": "No data found"
+    }
   }
 }

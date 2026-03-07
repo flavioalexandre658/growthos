@@ -1,86 +1,88 @@
 {
-  "eventsContent": {
-    "title": "Eventos",
-    "subtitle": "Log em tempo real de todos os eventos recebidos",
-    "exportCsv": "CSV",
-    "exportTitle": "Exportar CSV",
-    "periodLabels": {
-      "today": "hoje",
-      "yesterday": "ontem",
-      "7d": "últimos 7 dias",
-      "30d": "últimos 30 dias",
-      "90d": "últimos 90 dias",
-      "period": "período"
-    }
-  },
-  "eventsTable": {
-    "columnType": "Tipo",
-    "columnValue": "Valor",
-    "columnChannel": "Canal",
-    "columnProduct": "Produto",
-    "columnDevice": "Device",
-    "columnWhen": "Quando",
-    "selectAll": "Selecionar todos",
-    "emptyState": "Nenhum evento encontrado para os filtros aplicados",
-    "eventDeleted": "Evento excluído",
-    "batchDeleted": "{count} evento(s) excluído(s)",
-    "deleteEvent": "Excluir evento",
-    "renewalBadge": "renovação",
-    "recurringBadge": "recorrente",
-    "possibleDuplicate": "Possível duplicata",
-    "possibleDuplicateDetail": "Possível duplicata — outro evento idêntico foi detectado em até 10 minutos",
-    "duplicateBadge": "duplicata",
-    "dupBadge": "dup",
-    "retryBadge": "retentativa",
-    "retryBadgeMobile": "retry",
-    "retryTooltip": "Evento enviado por retentativa — falhou originalmente por erro de rede",
-    "viewSessionTimeline": "Ver timeline da sessão",
-    "viewCustomerFunnel": "Ver funil completo do cliente",
-    "selection": {
-      "selectedOf": "{selected} de {total} selecionado(s)",
-      "deselect": "Desmarcar",
-      "deleteConfirm": "Excluir {count} evento(s)?",
-      "cancel": "Cancelar",
-      "confirm": "Confirmar",
-      "delete": "Excluir"
+  "events": {
+    "eventsContent": {
+      "title": "Eventos",
+      "subtitle": "Log em tempo real de todos os eventos recebidos",
+      "exportCsv": "CSV",
+      "exportTitle": "Exportar CSV",
+      "periodLabels": {
+        "today": "hoje",
+        "yesterday": "ontem",
+        "7d": "últimos 7 dias",
+        "30d": "últimos 30 dias",
+        "90d": "últimos 90 dias",
+        "period": "período"
+      }
     },
-    "pagination": {
-      "rowsPerPage": "Linhas por página",
-      "rangeOf": "{start}–{end} de {total}"
+    "eventsTable": {
+      "columnType": "Tipo",
+      "columnValue": "Valor",
+      "columnChannel": "Canal",
+      "columnProduct": "Produto",
+      "columnDevice": "Device",
+      "columnWhen": "Quando",
+      "selectAll": "Selecionar todos",
+      "emptyState": "Nenhum evento encontrado para os filtros aplicados",
+      "eventDeleted": "Evento excluído",
+      "batchDeleted": "{count} evento(s) excluído(s)",
+      "deleteEvent": "Excluir evento",
+      "renewalBadge": "renovação",
+      "recurringBadge": "recorrente",
+      "possibleDuplicate": "Possível duplicata",
+      "possibleDuplicateDetail": "Possível duplicata — outro evento idêntico foi detectado em até 10 minutos",
+      "duplicateBadge": "duplicata",
+      "dupBadge": "dup",
+      "retryBadge": "retentativa",
+      "retryBadgeMobile": "retry",
+      "retryTooltip": "Evento enviado por retentativa — falhou originalmente por erro de rede",
+      "viewSessionTimeline": "Ver timeline da sessão",
+      "viewCustomerFunnel": "Ver funil completo do cliente",
+      "selection": {
+        "selectedOf": "{selected} de {total} selecionado(s)",
+        "deselect": "Desmarcar",
+        "deleteConfirm": "Excluir {count} evento(s)?",
+        "cancel": "Cancelar",
+        "confirm": "Confirmar",
+        "delete": "Excluir"
+      },
+      "pagination": {
+        "rowsPerPage": "Linhas por página",
+        "rangeOf": "{start}–{end} de {total}"
+      }
+    },
+    "eventsFilters": {
+      "searchPlaceholder": "Buscar session_id, customer_id, product_id ou nome do produto...",
+      "clear": "Limpar",
+      "typeLabel": "Tipo",
+      "billingLabel": "Cobrança",
+      "billingAll": "Todos",
+      "billingSubscription": "Assinatura",
+      "billingOneTime": "Avulso",
+      "providerLabel": "Provider",
+      "providerAll": "Todos",
+      "channelLabel": "Canal",
+      "channelAll": "Todos",
+      "deviceLabel": "Device",
+      "deviceAll": "Todos",
+      "valueLabel": "Valor",
+      "valuePlaceholderMin": "Min",
+      "valuePlaceholderMax": "Max"
+    },
+    "customerTimeline": {
+      "title": "Funil do cliente · {eventCount} eventos · {sessionCount} {sessionLabel}",
+      "sessionLabel": "sessão",
+      "sessionsLabel": "sessões",
+      "sessionOf": "Sessão de {date}",
+      "noSession": "Sem sessão",
+      "eventsCount": "{count} ev.",
+      "currentBadge": "atual",
+      "emptyState": "Nenhum evento encontrado para este cliente."
+    },
+    "sessionTimeline": {
+      "title": "Sessão · {count} eventos",
+      "currentBadge": "atual",
+      "emptyState": "Nenhum evento encontrado nesta sessão.",
+      "singleEvent": "Único evento nesta sessão."
     }
-  },
-  "eventsFilters": {
-    "searchPlaceholder": "Buscar session_id, customer_id, product_id ou nome do produto...",
-    "clear": "Limpar",
-    "typeLabel": "Tipo",
-    "billingLabel": "Cobrança",
-    "billingAll": "Todos",
-    "billingSubscription": "Assinatura",
-    "billingOneTime": "Avulso",
-    "providerLabel": "Provider",
-    "providerAll": "Todos",
-    "channelLabel": "Canal",
-    "channelAll": "Todos",
-    "deviceLabel": "Device",
-    "deviceAll": "Todos",
-    "valueLabel": "Valor",
-    "valuePlaceholderMin": "Min",
-    "valuePlaceholderMax": "Max"
-  },
-  "customerTimeline": {
-    "title": "Funil do cliente · {eventCount} eventos · {sessionCount} {sessionLabel}",
-    "sessionLabel": "sessão",
-    "sessionsLabel": "sessões",
-    "sessionOf": "Sessão de {date}",
-    "noSession": "Sem sessão",
-    "eventsCount": "{count} ev.",
-    "currentBadge": "atual",
-    "emptyState": "Nenhum evento encontrado para este cliente."
-  },
-  "sessionTimeline": {
-    "title": "Sessão · {count} eventos",
-    "currentBadge": "atual",
-    "emptyState": "Nenhum evento encontrado nesta sessão.",
-    "singleEvent": "Único evento nesta sessão."
   }
 }
