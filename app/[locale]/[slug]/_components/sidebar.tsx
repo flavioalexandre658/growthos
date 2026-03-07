@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname as usePathnameWithLocale, useSearchParams, useRouter } from "next/navigation";
-import { usePathname } from "@/i18n/routing";
+import { usePathname as usePathnameWithLocale, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "@/i18n/routing";
 import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { signOut } from "next-auth/react";
 import {
@@ -248,10 +248,9 @@ function OrgSwitcher({ slug, collapsed }: { slug: string; collapsed?: boolean })
   const handleSwitch = (newSlug: string) => {
     try { localStorage.setItem(STORAGE_KEY, newSlug); } catch {}
     const segments = pathname.split("/");
-    const locale = segments[1];
     const slugIdx = segments.indexOf(slug);
     const afterSlug = slugIdx !== -1 ? segments.slice(slugIdx + 1).join("/") : "";
-    router.push(`/${locale}/${newSlug}${afterSlug ? `/${afterSlug}` : ""}`);
+    router.push(`/${newSlug}${afterSlug ? `/${afterSlug}` : ""}`);
     setOpen(false);
   };
 

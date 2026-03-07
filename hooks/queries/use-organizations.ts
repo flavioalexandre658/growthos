@@ -3,10 +3,11 @@ import { getOrganizations } from "@/actions/organizations/get-organizations.acti
 
 export const getOrganizationsQueryKey = () => ["organizations"];
 
-export function useOrganizations() {
+export function useOrganizations(enabled = true) {
   return useQuery({
     queryKey: getOrganizationsQueryKey(),
     queryFn: () => getOrganizations(),
-    staleTime: 5 * 60 * 1000,
+    enabled,
+    retry: 3,
   });
 }

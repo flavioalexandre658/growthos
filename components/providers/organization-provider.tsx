@@ -6,7 +6,9 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
+import { useSession } from "next-auth/react";
 import { useOrganizations } from "@/hooks/queries/use-organizations";
 import type { IOrganization } from "@/interfaces/organization.interface";
 
@@ -27,7 +29,9 @@ const OrganizationContext = createContext<OrganizationContextValue>({
 });
 
 export function OrganizationProvider({ children }: { children: ReactNode }) {
-  const { data: orgs, isLoading } = useOrganizations();
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
+  const { data: orgs, isLoading } = useOrganizations(isAuthenticated);
   const params = useParams<{ slug?: string }>();
   const router = useRouter();
 
@@ -55,7 +59,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         organization,
         organizations: orgs ?? [],
         switchOrganization,
-        isLoading,
+        isLoading: isLoading || status === "loading",
       }}
     >
       {children}

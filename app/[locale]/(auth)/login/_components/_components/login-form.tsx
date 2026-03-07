@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { IconLoader2, IconLock, IconMail, IconArrowRight } from "@tabler/icons-react";
