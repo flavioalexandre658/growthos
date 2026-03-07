@@ -1,6 +1,9 @@
 "use client";
 
-import { IconClock } from "@tabler/icons-react";
+import { IconClock, IconLock } from "@tabler/icons-react";
+import { useBilling } from "@/hooks/queries/use-billing";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 
 interface Provider {
   name: string;
@@ -33,16 +36,33 @@ const PROVIDERS: Provider[] = [
 ];
 
 export function ComingSoonProviders() {
+  const { data: billing } = useBilling();
+  const params = useParams<{ slug: string }>();
+  const hasAccess = billing?.plan.hasAdvancedIntegrations ?? false;
+
   return (
     <div className="space-y-2">
-      <p className="text-[10px] text-zinc-600 uppercase tracking-widest font-semibold">
-        Em breve
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] text-zinc-600 uppercase tracking-widest font-semibold">
+          Em breve
+        </p>
+        {!hasAccess && (
+          <Link
+            href={`/${params.slug}/settings/billing`}
+            className="flex items-center gap-1 text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            <IconLock size={10} />
+            Disponível a partir do Starter
+          </Link>
+        )}
+      </div>
       <div className="grid gap-3 sm:grid-cols-3">
         {PROVIDERS.map((provider) => (
           <div
             key={provider.name}
-            className="flex items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-4 py-3 opacity-60"
+            className={`flex items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-4 py-3 ${
+              hasAccess ? "opacity-60" : "opacity-40"
+            }`}
           >
             <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
               {provider.logo}
@@ -52,8 +72,8 @@ export function ComingSoonProviders() {
               <p className="text-[11px] text-zinc-600 truncate">{provider.description}</p>
             </div>
             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-500 border border-zinc-700 shrink-0">
-              <IconClock size={10} />
-              Em breve
+              {!hasAccess ? <IconLock size={10} /> : <IconClock size={10} />}
+              {!hasAccess ? "Starter+" : "Em breve"}
             </span>
           </div>
         ))}

@@ -28,6 +28,7 @@ import {
   IconList,
   IconBug,
   IconReceipt2,
+  IconLock,
 } from "@tabler/icons-react";
 import { GrowareIcon } from "@/components/groware-icon";
 import { GrowareLogo } from "@/components/groware-logo";
@@ -50,6 +51,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useOrgHasData } from "@/hooks/queries/use-org-has-data";
+import { useBilling } from "@/hooks/queries/use-billing";
 
 const STORAGE_KEY = "groware_active_org";
 
@@ -60,6 +62,8 @@ interface NavItemDef {
   exact: boolean;
   highlight?: boolean;
   activePrefix?: string;
+  locked?: boolean;
+  lockBadge?: string;
 }
 
 interface NavSection {
@@ -67,7 +71,7 @@ interface NavSection {
   items: NavItemDef[];
 }
 
-function buildNavSections(slug: string, hasData: boolean): NavSection[] {
+function buildNavSections(slug: string, hasData: boolean, hasAi: boolean): NavSection[] {
   const sections: NavSection[] = [
     {
       title: "Visão Geral",
@@ -93,8 +97,8 @@ function buildNavSections(slug: string, hasData: boolean): NavSection[] {
     {
       title: "Inteligência",
       items: [
-        { href: `/${slug}/ai`, label: "Análise com IA", icon: IconSparkles, exact: true, highlight: true },
-        { href: `/${slug}/ai/comparativo`, label: "Comparativo", icon: IconTrendingUp, exact: false, highlight: false },
+        { href: `/${slug}/ai`, label: "Análise com IA", icon: IconSparkles, exact: true, highlight: true, locked: !hasAi, lockBadge: "Starter" },
+        { href: `/${slug}/ai/comparativo`, label: "Comparativo", icon: IconTrendingUp, exact: false, highlight: false, locked: !hasAi, lockBadge: "Starter" },
       ],
     },
   ];
@@ -136,6 +140,8 @@ function NavItem({
   collapsed,
   highlight,
   activePrefix,
+  locked,
+  lockBadge,
   onClick,
 }: {
   href: string;
@@ -145,6 +151,8 @@ function NavItem({
   collapsed?: boolean;
   highlight?: boolean;
   activePrefix?: string;
+  locked?: boolean;
+  lockBadge?: string;
   onClick?: () => void;
 }) {
   const pathname = usePathname();
@@ -162,6 +170,26 @@ function NavItem({
   }
   const qs = forwarded.toString();
   const resolvedHref = qs ? `${href}?${qs}` : href;
+
+  if (locked) {
+    return (
+      <div
+        className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium border border-transparent text-zinc-600 cursor-not-allowed opacity-50"
+        title={`Disponível no plano ${lockBadge}`}
+      >
+        <Icon size={18} className="shrink-0 text-zinc-700" />
+        {!collapsed && (
+          <>
+            <span className="flex-1">{label}</span>
+            <span className="flex items-center gap-0.5 text-[9px] font-bold text-zinc-600 bg-zinc-800 px-1.5 py-0.5 rounded">
+              <IconLock size={8} />
+              {lockBadge}
+            </span>
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <Link
@@ -339,7 +367,9 @@ function SidebarContent({
 }) {
   const { organization } = useOrganization();
   const { data: hasData } = useOrgHasData(organization?.id);
-  const sections = buildNavSections(slug, hasData ?? true);
+  const { data: billing } = useBilling();
+  const hasAi = billing?.plan.hasAiAnalysis ?? false;
+  const sections = buildNavSections(slug, hasData ?? true, hasAi);
   const footerNav = buildFooterNav(slug);
 
   const navRef = useRef<HTMLElement>(null);

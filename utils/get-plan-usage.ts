@@ -1,42 +1,61 @@
 import { db } from "@/db";
-import { usageMonthly, orgMembers } from "@/db/schema";
-import { eq, and, sql } from "drizzle-orm";
+import { orgMembers, payments, organizations } from "@/db/schema";
+import { eq, and, sql, gte, inArray } from "drizzle-orm";
+import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import dayjs from "@/utils/dayjs";
 
-export interface IOrgUsage {
+export interface IOrgRevenueUsage {
   organizationId: string;
-  eventsCount: number;
+  organizationName: string;
+  revenueInCents: number;
 }
 
 export interface IPlanUsage {
-  total: number;
-  byOrg: IOrgUsage[];
+  totalRevenueInCents: number;
+  byOrg: IOrgRevenueUsage[];
   yearMonth: string;
 }
 
 export async function getPlanUsage(userId: string): Promise<IPlanUsage> {
   const yearMonth = dayjs().format("YYYY-MM");
+  const monthStart = dayjs().startOf("month").toDate();
 
-  const rows = await db
+  const memberOrgs = await db
+    .select({ organizationId: orgMembers.organizationId })
+    .from(orgMembers)
+    .where(eq(orgMembers.userId, userId));
+
+  const orgIds = memberOrgs.map((m) => m.organizationId);
+
+  if (orgIds.length === 0) {
+    return { totalRevenueInCents: 0, byOrg: [], yearMonth };
+  }
+
+  const revenueRows = await db
     .select({
-      organizationId: usageMonthly.organizationId,
-      eventsCount: usageMonthly.eventsCount,
+      organizationId: payments.organizationId,
+      revenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
     })
-    .from(usageMonthly)
-    .where(
-      and(
-        eq(usageMonthly.userId, userId),
-        eq(usageMonthly.yearMonth, yearMonth),
-      ),
-    );
+    .from(payments)
+    .where(and(inArray(payments.organizationId, orgIds), inArray(payments.eventType, [...REVENUE_EVENT_TYPES]), gte(payments.createdAt, monthStart)))
+    .groupBy(payments.organizationId);
 
-  const total = rows.reduce((sum, r) => sum + r.eventsCount, 0);
+  const orgNameRows = await db
+    .select({ id: organizations.id, name: organizations.name })
+    .from(organizations)
+    .where(inArray(organizations.id, orgIds));
+
+  const nameMap: Record<string, string> = {};
+  for (const o of orgNameRows) nameMap[o.id] = o.name;
+
+  const total = revenueRows.reduce((sum, r) => sum + Number(r.revenue), 0);
 
   return {
-    total,
-    byOrg: rows.map((r) => ({
+    totalRevenueInCents: Math.max(0, total),
+    byOrg: revenueRows.map((r) => ({
       organizationId: r.organizationId,
-      eventsCount: r.eventsCount,
+      organizationName: nameMap[r.organizationId] ?? r.organizationId,
+      revenueInCents: Number(r.revenue),
     })),
     yearMonth,
   };

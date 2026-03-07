@@ -3,12 +3,13 @@
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { randomBytes } from "crypto";
-import { eq } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
-import { orgInvites, organizations } from "@/db/schema";
+import { orgInvites, orgMembers, organizations, users } from "@/db/schema";
 import { sendEmail } from "@/lib/email";
 import { teamInviteEmail } from "@/lib/email-templates/team-invite";
+import { getPlan } from "@/utils/plans";
 
 const schema = z.object({
   organizationId: z.string().uuid(),
@@ -21,6 +22,47 @@ export async function inviteOrgMember(input: z.infer<typeof schema>) {
   if (!session?.user) throw new Error("Unauthorized");
 
   const data = schema.parse(input);
+
+  const [ownerMembership] = await db
+    .select({ role: orgMembers.role })
+    .from(orgMembers)
+    .where(
+      and(
+        eq(orgMembers.organizationId, data.organizationId),
+        eq(orgMembers.userId, session.user.id),
+      ),
+    )
+    .limit(1);
+
+  if (!ownerMembership) throw new Error("Você não é membro desta organização.");
+
+  const [userRow] = await db
+    .select({ planSlug: users.planSlug })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1);
+
+  const plan = getPlan(userRow?.planSlug ?? "free");
+
+  if (plan.maxMembers !== Infinity) {
+    const [countRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(orgMembers)
+      .where(eq(orgMembers.organizationId, data.organizationId));
+
+    const [inviteCountRow] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(orgInvites)
+      .where(eq(orgInvites.organizationId, data.organizationId));
+
+    const totalMembers = Number(countRow?.count ?? 0) + Number(inviteCountRow?.count ?? 0);
+
+    if (totalMembers >= plan.maxMembers) {
+      throw new Error(
+        `Seu plano ${plan.name} permite no máximo ${plan.maxMembers} membro(s) por organização. Faça upgrade para convidar mais.`,
+      );
+    }
+  }
 
   const [org] = await db
     .select({ name: organizations.name })

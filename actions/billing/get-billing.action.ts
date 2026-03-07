@@ -1,32 +1,34 @@
 "use server";
 
 import { getServerSession } from "next-auth";
-import { eq, and, sql, inArray } from "drizzle-orm";
+import { eq, and, sql, inArray, gte } from "drizzle-orm";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
-import { users, usageMonthly, organizations, orgMembers } from "@/db/schema";
+import { users, organizations, orgMembers, payments } from "@/db/schema";
 import { getPlan } from "@/utils/plans";
+import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import dayjs from "@/utils/dayjs";
 import type { IPlanTier } from "@/utils/plans";
 
-export interface IOrgBillingUsage {
+export interface IOrgRevenueUsage {
   organizationId: string;
   organizationName: string;
-  eventsCount: number;
+  revenueInCents: number;
 }
 
 export interface IBillingData {
   plan: IPlanTier;
   subscriptionStatus: string | null;
   currentPeriodEnd: Date | null;
-  usage: {
-    total: number;
-    limit: number;
+  revenue: {
+    totalInCents: number;
+    limitInCents: number;
     percentage: number;
-    byOrg: IOrgBillingUsage[];
+    byOrg: IOrgRevenueUsage[];
     yearMonth: string;
   };
   ownedOrgsCount: number;
+  totalMembersInOrg: number;
 }
 
 export async function getBilling(): Promise<IBillingData | null> {
@@ -34,6 +36,7 @@ export async function getBilling(): Promise<IBillingData | null> {
   if (!session?.user) return null;
 
   const yearMonth = dayjs().format("YYYY-MM");
+  const monthStart = dayjs().startOf("month").toDate();
 
   const [userRow] = await db
     .select({
@@ -49,56 +52,72 @@ export async function getBilling(): Promise<IBillingData | null> {
 
   const plan = getPlan(userRow.planSlug);
 
-  const usageRows = await db
-    .select({
-      organizationId: usageMonthly.organizationId,
-      eventsCount: usageMonthly.eventsCount,
-    })
-    .from(usageMonthly)
-    .where(
-      and(
-        eq(usageMonthly.userId, session.user.id),
-        eq(usageMonthly.yearMonth, yearMonth),
-      ),
-    );
+  const memberOrgs = await db
+    .select({ organizationId: orgMembers.organizationId, role: orgMembers.role })
+    .from(orgMembers)
+    .where(eq(orgMembers.userId, session.user.id));
 
-  const orgIds = usageRows.map((r) => r.organizationId);
+  const ownedOrgIds = memberOrgs.filter((m) => m.role === "owner").map((m) => m.organizationId);
+  const ownedOrgsCount = ownedOrgIds.length;
+
+  const allOrgIds = memberOrgs.map((m) => m.organizationId);
+
+  let revenueByOrg: { organizationId: string; revenue: number }[] = [];
+  if (allOrgIds.length > 0) {
+    revenueByOrg = await db
+      .select({
+        organizationId: payments.organizationId,
+        revenue: sql<number>`COALESCE(SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents})), 0)`,
+      })
+      .from(payments)
+      .where(
+        and(
+          inArray(payments.organizationId, allOrgIds),
+          inArray(payments.eventType, [...REVENUE_EVENT_TYPES]),
+          gte(payments.createdAt, monthStart),
+        ),
+      )
+      .groupBy(payments.organizationId);
+  }
 
   const orgNames: Record<string, string> = {};
-  if (orgIds.length > 0) {
+  if (allOrgIds.length > 0) {
     const orgRows = await db
       .select({ id: organizations.id, name: organizations.name })
       .from(organizations)
-      .where(inArray(organizations.id, orgIds));
-
-    for (const o of orgRows) {
-      orgNames[o.id] = o.name;
-    }
+      .where(inArray(organizations.id, allOrgIds));
+    for (const o of orgRows) orgNames[o.id] = o.name;
   }
 
-  const [ownedCountRow] = await db
-    .select({ count: sql<number>`COUNT(*)` })
-    .from(orgMembers)
-    .where(and(eq(orgMembers.userId, session.user.id), eq(orgMembers.role, "owner")));
+  const totalRevenueInCents = revenueByOrg.reduce((sum, r) => sum + Number(r.revenue), 0);
+  const limitInCents = plan.maxRevenuePerMonthBrl;
+  const percentage = limitInCents === Infinity
+    ? 0
+    : Math.min(100, Math.round((totalRevenueInCents / limitInCents) * 100));
 
-  const ownedOrgsCount = Number(ownedCountRow?.count ?? 0);
-  const totalUsage = usageRows.reduce((sum, r) => sum + r.eventsCount, 0);
+  const [memberCountRow] = ownedOrgIds.length > 0
+    ? await db
+        .select({ count: sql<number>`COUNT(DISTINCT ${orgMembers.userId})` })
+        .from(orgMembers)
+        .where(inArray(orgMembers.organizationId, ownedOrgIds))
+    : [{ count: 1 }];
 
   return {
     plan,
     subscriptionStatus: userRow.subscriptionStatus,
     currentPeriodEnd: userRow.currentPeriodEnd,
-    usage: {
-      total: totalUsage,
-      limit: plan.maxEventsPerMonth,
-      percentage: Math.min(100, Math.round((totalUsage / plan.maxEventsPerMonth) * 100)),
-      byOrg: usageRows.map((r) => ({
+    revenue: {
+      totalInCents: Math.max(0, totalRevenueInCents),
+      limitInCents,
+      percentage,
+      byOrg: revenueByOrg.map((r) => ({
         organizationId: r.organizationId,
         organizationName: orgNames[r.organizationId] ?? r.organizationId,
-        eventsCount: r.eventsCount,
+        revenueInCents: Number(r.revenue),
       })),
       yearMonth,
     },
     ownedOrgsCount,
+    totalMembersInOrg: Number(memberCountRow?.count ?? 1),
   };
 }

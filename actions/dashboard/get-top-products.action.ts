@@ -7,6 +7,7 @@ import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
 import { payments, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { getUserPlan } from "@/utils/get-user-plan";
 import type { IDateFilter, ITopProduct } from "@/interfaces/dashboard.interface";
 
 export async function getTopProducts(
@@ -25,7 +26,8 @@ export async function getTopProducts(
   if (!org) return [];
 
   const tz = org.timezone ?? "America/Sao_Paulo";
-  const { startDate, endDate } = resolveDateRange(filter, tz);
+  const plan = await getUserPlan();
+  const { startDate, endDate } = resolveDateRange(filter, tz, plan.maxHistoryDays);
 
   const rows = await db
     .select({

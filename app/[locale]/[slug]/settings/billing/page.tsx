@@ -4,16 +4,19 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBilling } from "@/hooks/queries/use-billing";
-import { BillingPlanCard } from "./_components/billing-plan-card";
-import { BillingUsageMeter } from "./_components/billing-usage-meter";
+import { BillingCurrentPlan } from "./_components/billing-current-plan";
 import { BillingPlansGrid } from "./_components/billing-plans-grid";
 import type { PlanSlug } from "@/utils/plans";
+
+type Currency = "brl" | "usd";
+type BillingInterval = "monthly" | "annual";
 
 export default function BillingPage() {
   const { data: billing, isLoading } = useBilling();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
-  const [showPlans, setShowPlans] = useState(false);
+  const [currency, setCurrency] = useState<Currency>("brl");
+  const [billingInterval, setBillingInterval] = useState<BillingInterval>("monthly");
 
   async function handleManagePortal() {
     setIsLoadingPortal(true);
@@ -32,7 +35,7 @@ export default function BillingPage() {
     }
   }
 
-  async function handleSelectPlan(slug: PlanSlug, currency: "brl" | "usd") {
+  async function handleSelectPlan(slug: PlanSlug) {
     setIsLoadingCheckout(true);
     try {
       const res = await fetch("/api/billing/checkout", {
@@ -55,9 +58,9 @@ export default function BillingPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-44 w-full rounded-xl bg-zinc-800" />
-        <Skeleton className="h-36 w-full rounded-xl bg-zinc-800" />
+      <div className="space-y-5 max-w-[1100px]">
+        <Skeleton className="h-56 w-full rounded-xl bg-zinc-800/50" />
+        <Skeleton className="h-80 w-full rounded-xl bg-zinc-800/50" />
       </div>
     );
   }
@@ -71,30 +74,70 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="space-y-5">
-      <div>
-        <p className="text-[10px] text-zinc-600 uppercase tracking-widest font-semibold mb-3">
-          Plano & Uso
-        </p>
-        <div className="space-y-3">
-          <BillingPlanCard
-            billing={billing}
-            onUpgrade={() => setShowPlans(true)}
-            onManage={handleManagePortal}
-            isLoadingPortal={isLoadingPortal}
-          />
+    <div className="max-w-[1100px] space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <p className="text-[11px] text-zinc-500 uppercase tracking-[0.12em] mb-1">Configurações</p>
+          <h1 className="text-[22px] font-semibold text-zinc-100">Plano & Uso</h1>
+        </div>
 
-          <BillingUsageMeter billing={billing} />
+        <div className="flex items-center gap-2.5">
+          <div className="flex bg-[#111118] border border-[#1e1e2e] rounded-lg p-[3px] gap-0.5">
+            <button
+              onClick={() => setBillingInterval("monthly")}
+              className={`px-3 py-[5px] rounded-md text-xs font-medium transition-all relative ${
+                billingInterval === "monthly" ? "bg-[#1e1e30] text-zinc-200" : "text-zinc-500 hover:text-zinc-400"
+              }`}
+            >
+              Mensal
+            </button>
+            <button
+              onClick={() => setBillingInterval("annual")}
+              className={`px-3 py-[5px] rounded-md text-xs font-medium transition-all relative ${
+                billingInterval === "annual" ? "bg-[#1e1e30] text-zinc-200" : "text-zinc-500 hover:text-zinc-400"
+              }`}
+            >
+              Anual
+              <span className="absolute -top-2 -right-0.5 bg-emerald-600 text-white text-[9px] font-bold px-1 py-px rounded">
+                -20%
+              </span>
+            </button>
+          </div>
 
-          {showPlans && (
-            <BillingPlansGrid
-              currentPlanSlug={billing.plan.slug}
-              onSelectPlan={handleSelectPlan}
-              isLoading={isLoadingCheckout}
-            />
-          )}
+          <div className="flex bg-[#111118] border border-[#1e1e2e] rounded-lg p-[3px] gap-0.5">
+            {(["brl", "usd"] as const).map((c) => (
+              <button
+                key={c}
+                onClick={() => setCurrency(c)}
+                className={`px-3 py-[5px] rounded-md text-xs font-semibold transition-all ${
+                  currency === c ? "bg-[#1e1e30] text-zinc-200" : "text-zinc-500 hover:text-zinc-400"
+                }`}
+              >
+                {c.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+
+      <BillingCurrentPlan
+        billing={billing}
+        currency={currency}
+        onManage={handleManagePortal}
+        isLoadingPortal={isLoadingPortal}
+      />
+
+      <BillingPlansGrid
+        currentPlanSlug={billing.plan.slug}
+        currency={currency}
+        billingInterval={billingInterval}
+        onSelectPlan={handleSelectPlan}
+        isLoading={isLoadingCheckout}
+      />
+
+      <p className="text-xs text-zinc-700 text-center">
+        Todos os planos incluem Stripe e MRR/Recorrência · Cancele quando quiser · Sem fidelidade
+      </p>
     </div>
   );
 }

@@ -146,6 +146,16 @@ IMPORTANTE: Responda em ${languageLabel}. Não inclua nenhum texto fora do JSON.
 }
 
 export async function POST(req: NextRequest) {
+  const { getUserPlan } = await import("@/utils/get-user-plan");
+  const plan = await getUserPlan();
+
+  if (!plan.hasAiAnalysis) {
+    return new Response(
+      JSON.stringify({ error: "AI analysis is not available on the Free plan. Upgrade to Starter or above." }),
+      { status: 403, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
   const body = await req.json();
   const {
     type,

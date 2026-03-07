@@ -7,6 +7,7 @@ import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
 import { events, organizations, payments } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { getUserPlan } from "@/utils/get-user-plan";
 import { getPageviewTotalSessions } from "@/utils/get-pageview-counts";
 import {
   buildFunnelSteps,
@@ -31,7 +32,8 @@ export async function getFunnel(
   if (!org) return null;
 
   const tz = org.timezone ?? "America/Sao_Paulo";
-  const { startDate, endDate } = resolveDateRange(filter, tz);
+  const plan = await getUserPlan();
+  const { startDate, endDate } = resolveDateRange(filter, tz, plan.maxHistoryDays);
 
   const periodMs = endDate.getTime() - startDate.getTime();
   const previousEndDate = new Date(startDate.getTime() - 1);

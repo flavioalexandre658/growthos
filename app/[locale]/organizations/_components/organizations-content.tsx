@@ -4,38 +4,59 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
-import dayjs from "dayjs";
-import "dayjs/locale/pt-br";
-import relativeTime from "dayjs/plugin/relativeTime";
 import {
   IconPlus,
   IconBuilding,
   IconLogout,
-  IconArrowRight,
   IconChevronRight,
-  IconGitBranch,
-  IconCalendar,
   IconCreditCard,
   IconAlertTriangle,
+  IconArrowRight,
+  IconEye,
+  IconReceipt2,
+  IconCode,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { GrowareLogo } from "@/components/groware-logo";
 import { useBilling } from "@/hooks/queries/use-billing";
-import { formatEventsLimit } from "@/utils/plans";
-import type { IOrganization } from "@/interfaces/organization.interface";
-
-dayjs.extend(relativeTime);
-dayjs.locale("pt-br");
+import { formatRevenueLimit } from "@/utils/plans";
+import type { IOrgStats } from "@/actions/organizations/get-organizations-with-stats.action";
+import type { IBillingData } from "@/actions/billing/get-billing.action";
 
 const STORAGE_KEY = "groware_active_org";
 
+const ORG_COLORS = ["#818cf8", "#3b82f6", "#34d399", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6", "#14b8a6"];
+
+function formatCompact(cents: number): string {
+  const val = cents / 100;
+  if (val >= 1_000_000) return `R$ ${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1_000) return `R$ ${(val / 1_000).toFixed(1)}k`;
+  if (val > 0) return `R$ ${val.toFixed(0)}`;
+  return "R$ 0";
+}
+
+function formatCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+  return String(n);
+}
+
 interface OrganizationsContentProps {
-  initialOrgs: IOrganization[];
+  initialOrgs: IOrgStats[];
+  initialBilling: IBillingData | null;
   userName: string | null | undefined;
   firstOrgSlug?: string | null;
 }
 
-function OrgCard({ org, onSelect }: { org: IOrganization; onSelect: () => void }) {
+function OrgCard({
+  org,
+  color,
+  onSelect,
+}: {
+  org: IOrgStats;
+  color: string;
+  onSelect: () => void;
+}) {
   const initials = org.name
     .split(" ")
     .map((w) => w[0])
@@ -46,41 +67,60 @@ function OrgCard({ org, onSelect }: { org: IOrganization; onSelect: () => void }
   return (
     <button
       onClick={onSelect}
-      className="group relative flex flex-col items-start gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 text-left transition-all duration-200 hover:border-indigo-500/50 hover:bg-zinc-900 hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/5 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+      className="group relative flex flex-col rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 text-left transition-all duration-200 hover:border-zinc-600 hover:bg-zinc-900 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+      style={{ ["--org-color" as string]: color }}
     >
-      <div className="flex w-full items-center justify-between">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600/20 text-sm font-bold text-indigo-400 ring-1 ring-indigo-600/30">
-          {initials}
+      <div className="flex w-full items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold text-white ring-1 ring-white/10"
+            style={{ background: `${color}30`, color }}
+          >
+            {initials}
+          </div>
+          <h3 className="text-sm font-semibold text-zinc-100 group-hover:text-white truncate">
+            {org.name}
+          </h3>
         </div>
         <IconChevronRight
-          size={16}
-          className="text-zinc-600 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-indigo-400"
+          size={14}
+          className="text-zinc-700 transition-all duration-200 group-hover:translate-x-0.5 group-hover:text-zinc-400"
         />
       </div>
 
-      <div className="flex-1 min-w-0">
-        <h3 className="truncate text-sm font-semibold text-zinc-100 group-hover:text-white">
-          {org.name}
-        </h3>
-        <div className="mt-1 flex items-center gap-1.5">
-          <span className="rounded-md bg-zinc-800 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400">
-            {org.slug}
+      {org.hasData ? (
+        <div className="flex-1 space-y-3">
+          <div>
+            <span className="text-xl font-bold text-zinc-100 tracking-tight">
+              {formatCompact(org.revenueThisMonthInCents)}
+            </span>
+            <span className="text-[11px] text-zinc-500 ml-1.5">receita/mês</span>
+          </div>
+          <div className="flex items-center gap-4 text-xs text-zinc-500">
+            <div className="flex items-center gap-1.5">
+              <IconEye size={12} className="text-zinc-600" />
+              <span>{formatCount(org.pageviewsThisMonth)} visitas</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <IconReceipt2 size={12} className="text-zinc-600" />
+              <span>{org.purchasesThisMonth} pagamentos</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col justify-center items-start gap-2">
+          <span className="text-sm text-zinc-500">Sem dados ainda</span>
+          <span className="flex items-center gap-1 text-xs text-indigo-400 group-hover:text-indigo-300 transition-colors">
+            <IconCode size={12} />
+            instalar tracker →
           </span>
         </div>
-      </div>
+      )}
 
-      <div className="flex w-full items-center gap-4 border-t border-zinc-800 pt-3 group-hover:border-zinc-700/80">
-        <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-          <IconGitBranch size={12} />
-          <span>{org.funnelSteps?.length ?? 0} etapas no funil</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-zinc-500">
-          <IconCalendar size={12} />
-          <span>{dayjs(org.createdAt).fromNow()}</span>
-        </div>
-      </div>
-
-      <div className="absolute inset-x-0 bottom-0 h-px rounded-b-xl bg-gradient-to-r from-transparent via-indigo-500/0 to-transparent transition-all duration-300 group-hover:via-indigo-500/30" />
+      <div
+        className="absolute inset-x-0 bottom-0 h-px rounded-b-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{ background: `linear-gradient(90deg, transparent, ${color}60, transparent)` }}
+      />
     </button>
   );
 }
@@ -110,13 +150,14 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
 
 export function OrganizationsContent({
   initialOrgs,
+  initialBilling,
   userName,
   firstOrgSlug,
 }: OrganizationsContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [orgs] = useState<IOrganization[]>(initialOrgs);
-  const { data: billing } = useBilling();
+  const [orgs] = useState<IOrgStats[]>(initialOrgs);
+  const { data: billing } = useBilling({ initialData: initialBilling });
 
   useEffect(() => {
     if (searchParams.get("new") === "1") {
@@ -140,6 +181,10 @@ export function OrganizationsContent({
 
   const settingsSlug = firstOrgSlug ?? orgs[0]?.slug;
 
+  const totalRevenue = billing?.revenue?.totalInCents ?? 0;
+  const revLimit = billing?.plan.maxRevenuePerMonthBrl ?? Infinity;
+  const isOverRevLimit = revLimit !== Infinity && totalRevenue > revLimit;
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-800/60 bg-zinc-950/80 px-6 py-4 backdrop-blur-sm">
@@ -147,9 +192,7 @@ export function OrganizationsContent({
 
         <div className="flex items-center gap-3">
           {userName && (
-            <span className="hidden text-xs text-zinc-500 sm:block">
-              {userName}
-            </span>
+            <span className="hidden text-xs text-zinc-500 sm:block">{userName}</span>
           )}
           {settingsSlug && (
             <Link
@@ -171,57 +214,6 @@ export function OrganizationsContent({
       </header>
 
       <div className="mx-auto w-full max-w-4xl flex-1 px-6 py-10">
-        {billing && (
-          <div className="mb-6 flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/60 px-4 py-3">
-            <div className="flex items-center gap-3">
-              <IconCreditCard size={15} className="text-indigo-400 shrink-0" />
-              <div>
-                <span className="text-xs font-medium text-zinc-300">
-                  Plano {billing.plan.name}
-                </span>
-                <span className="ml-2 text-xs text-zinc-500">
-                  {billing.ownedOrgsCount} / {billing.plan.maxOrgs === Infinity ? "∞" : billing.plan.maxOrgs} org
-                  {billing.plan.maxOrgs !== 1 ? "s" : ""}
-                </span>
-                <span className="ml-3 text-xs text-zinc-500">
-                  {billing.usage.total.toLocaleString("pt-BR")} / {formatEventsLimit(billing.usage.limit)} eventos este mês
-                </span>
-              </div>
-            </div>
-            {settingsSlug && (
-              <Link
-                href={`/${settingsSlug}/settings/billing`}
-                className="text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors"
-              >
-                Ver detalhes →
-              </Link>
-            )}
-          </div>
-        )}
-
-        {atOrgLimit && (
-          <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-            <IconAlertTriangle size={15} className="text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-xs text-amber-300 font-medium">
-                Limite de organizações atingido
-              </p>
-              <p className="text-xs text-amber-400/70 mt-0.5">
-                Seu plano {billing?.plan.name} permite no máximo{" "}
-                {billing?.plan.maxOrgs} organização(ões).{" "}
-                {settingsSlug && (
-                  <Link
-                    href={`/${settingsSlug}/settings/billing`}
-                    className="underline hover:text-amber-300"
-                  >
-                    Faça upgrade para criar mais.
-                  </Link>
-                )}
-              </p>
-            </div>
-          </div>
-        )}
-
         <div className="mb-8 flex items-end justify-between">
           <div>
             <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-indigo-500">
@@ -241,6 +233,7 @@ export function OrganizationsContent({
               variant="outline"
               size="sm"
               disabled={!!atOrgLimit}
+              title={atOrgLimit ? `Seu plano permite no máximo ${billing?.plan.maxOrgs} org(s)` : undefined}
               className="gap-2 border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-indigo-500/50 hover:bg-zinc-800 hover:text-zinc-100 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <IconPlus size={14} />
@@ -253,10 +246,11 @@ export function OrganizationsContent({
           <EmptyState onCreateClick={handleCreateNew} />
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {orgs.map((org) => (
+            {orgs.map((org, i) => (
               <OrgCard
                 key={org.id}
                 org={org}
+                color={ORG_COLORS[i % ORG_COLORS.length]}
                 onSelect={() => handleSelect(org.slug)}
               />
             ))}
@@ -264,28 +258,56 @@ export function OrganizationsContent({
             {!atOrgLimit && (
               <button
                 onClick={handleCreateNew}
-                className="flex min-h-[160px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-700 bg-transparent p-5 text-center transition-all duration-200 hover:border-indigo-500/50 hover:bg-zinc-900/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                className="flex min-h-[140px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-zinc-700 bg-transparent p-5 text-center transition-all duration-200 hover:border-indigo-500/50 hover:bg-zinc-900/30 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-zinc-700 text-zinc-600">
-                  <IconPlus size={18} />
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-dashed border-zinc-700 text-zinc-600">
+                  <IconPlus size={16} />
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-zinc-500">
-                    Nova organização
-                  </p>
-                  <p className="mt-0.5 text-xs text-zinc-600">
-                    Adicionar workspace
-                  </p>
-                </div>
+                <p className="text-xs font-medium text-zinc-500">Nova organização</p>
               </button>
             )}
           </div>
         )}
 
-        {orgs.length > 0 && (
-          <div className="mt-10 flex items-center justify-center gap-2 text-xs text-zinc-600">
-            <IconArrowRight size={12} />
-            <span>Clique em uma organização para acessar o dashboard</span>
+        {billing && orgs.length > 0 && (
+          <div
+            className={`mt-8 flex items-center justify-between rounded-xl border px-4 py-3 ${
+              atOrgLimit || isOverRevLimit
+                ? "border-amber-500/20 bg-amber-500/5"
+                : "border-zinc-800 bg-zinc-900/60"
+            }`}
+          >
+            <div className="flex items-center gap-3 flex-wrap">
+              {(atOrgLimit || isOverRevLimit) ? (
+                <IconAlertTriangle size={14} className="text-amber-400 shrink-0" />
+              ) : (
+                <IconCreditCard size={14} className="text-indigo-400 shrink-0" />
+              )}
+              <span className="text-xs text-zinc-400">
+                Plano <span className="font-medium text-zinc-200">{billing.plan.name}</span>
+              </span>
+              <span className="text-[10px] text-zinc-600">·</span>
+              <span className="text-xs text-zinc-500">
+                {formatCompact(totalRevenue)} / {formatRevenueLimit(revLimit)} receita
+              </span>
+              <span className="text-[10px] text-zinc-600">·</span>
+              <span className="text-xs text-zinc-500">
+                {billing.ownedOrgsCount}/{billing.plan.maxOrgs === Infinity ? "∞" : billing.plan.maxOrgs} orgs
+              </span>
+            </div>
+            {settingsSlug && (
+              <Link
+                href={`/${settingsSlug}/settings/billing`}
+                className={`text-[11px] transition-colors flex items-center gap-1 shrink-0 ${
+                  atOrgLimit || isOverRevLimit
+                    ? "text-amber-400 hover:text-amber-300"
+                    : "text-indigo-400 hover:text-indigo-300"
+                }`}
+              >
+                {atOrgLimit || isOverRevLimit ? "upgrade" : "detalhes"}
+                <IconArrowRight size={10} />
+              </Link>
+            )}
           </div>
         )}
       </div>

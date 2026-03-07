@@ -6,6 +6,7 @@ import { eq, and, gte, lte, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { events, organizations, subscriptions, payments } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { getUserPlan } from "@/utils/get-user-plan";
 import { normalizeToMonthly } from "@/utils/billing";
 import dayjs from "@/utils/dayjs";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
@@ -32,7 +33,8 @@ export async function getMrrMovement(
     .limit(1);
 
   const tz = org?.timezone ?? "America/Sao_Paulo";
-  const { startDate, endDate } = resolveDateRange(filter, tz);
+  const plan = await getUserPlan();
+  const { startDate, endDate } = resolveDateRange(filter, tz, plan.maxHistoryDays);
   const totalDays = dayjs(endDate).diff(dayjs(startDate), "day") + 1;
 
   const relevantEvents = await db

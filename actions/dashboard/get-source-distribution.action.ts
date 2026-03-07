@@ -7,6 +7,7 @@ import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
 import { events, organizations, payments } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { getUserPlan } from "@/utils/get-user-plan";
 import { buildFunnelSteps } from "@/utils/build-funnel-steps";
 import type { IDateFilter, ISourceDistribution } from "@/interfaces/dashboard.interface";
 
@@ -26,7 +27,8 @@ export async function getSourceDistribution(
   if (!org) return null;
 
   const tz = org.timezone ?? "America/Sao_Paulo";
-  const { startDate, endDate } = resolveDateRange(filter, tz);
+  const plan = await getUserPlan();
+  const { startDate, endDate } = resolveDateRange(filter, tz, plan.maxHistoryDays);
 
   const funnelSteps = buildFunnelSteps(org.funnelSteps ?? []);
   const firstNonPageview = funnelSteps.find((s) => s.eventType !== "pageview");

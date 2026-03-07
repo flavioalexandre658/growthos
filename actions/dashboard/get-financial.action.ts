@@ -8,6 +8,7 @@ import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
 import { events, payments, fixedCosts, variableCosts, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { getUserPlan } from "@/utils/get-user-plan";
 import { resolvePeriodDays } from "@/utils/resolve-period-days";
 import { buildProfitAndLoss } from "@/utils/build-pl";
 import type { IDateFilter, IFinancialData } from "@/interfaces/dashboard.interface";
@@ -27,7 +28,8 @@ export async function getFinancial(
     .limit(1);
 
   const tz = org?.timezone ?? "America/Sao_Paulo";
-  const { startDate, endDate } = resolveDateRange(filter, tz);
+  const plan = await getUserPlan();
+  const { startDate, endDate } = resolveDateRange(filter, tz, plan.maxHistoryDays);
   const periodDays = resolvePeriodDays(filter, tz);
 
   const periodMs = endDate.getTime() - startDate.getTime();

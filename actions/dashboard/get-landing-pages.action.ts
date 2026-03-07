@@ -6,6 +6,7 @@ import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { events, organizations, payments } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { getUserPlan } from "@/utils/get-user-plan";
 import { getPageviewSessionsByEntryPage } from "@/utils/get-pageview-counts";
 import {
   buildFunnelSteps,
@@ -49,7 +50,8 @@ export async function getLandingPages(
     .limit(1);
 
   const tz = org?.timezone ?? "America/Sao_Paulo";
-  const { startDate, endDate } = resolveDateRange(params, tz);
+  const plan = await getUserPlan();
+  const { startDate, endDate } = resolveDateRange(params, tz, plan.maxHistoryDays);
   const page = params.page ?? 1;
   const limit = params.limit ?? 30;
   const orderBy = params.order_by ?? "revenue";

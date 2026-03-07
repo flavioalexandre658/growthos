@@ -3,19 +3,20 @@ import { baseEmailLayout, ctaButton, divider } from "./base-layout";
 export interface IQuotaUsageEmailParams {
   userName: string;
   planName: string;
-  usageTotal: number;
-  usageLimit: number;
+  revenueTotal: number;
+  revenueLimit: number;
   percentage: number;
-  orgBreakdown: { name: string; eventsCount: number }[];
+  orgBreakdown: { name: string; revenueInCents: number }[];
   upgradeUrl: string;
   dashboardUrl: string;
   isExceeded: boolean;
 }
 
-function formatCount(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${Math.round(n / 1_000)}k`;
-  return String(n);
+function formatRevenue(cents: number): string {
+  const val = cents / 100;
+  if (val >= 1_000_000) return `R$ ${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1_000) return `R$ ${(val / 1_000).toFixed(1)}k`;
+  return `R$ ${val.toFixed(0)}`;
 }
 
 function usageBar(percentage: number, isExceeded: boolean): string {
@@ -43,8 +44,8 @@ export function quotaUsageEmail(params: IQuotaUsageEmailParams): string {
   const {
     userName,
     planName,
-    usageTotal,
-    usageLimit,
+    revenueTotal,
+    revenueLimit,
     percentage,
     orgBreakdown,
     upgradeUrl,
@@ -54,17 +55,17 @@ export function quotaUsageEmail(params: IQuotaUsageEmailParams): string {
   const badgeColor = isExceeded ? "#1a0000" : "#2d1f00";
   const badgeBorder = isExceeded ? "#450a0a" : "#451a03";
   const badgeText = isExceeded ? "#fca5a5" : "#fcd34d";
-  const badgeLabel = isExceeded ? "QUOTA ATINGIDA" : "AVISO DE USO";
+  const badgeLabel = isExceeded ? "LIMITE ATINGIDO" : "AVISO DE RECEITA";
   const accentColor = isExceeded ? "#ef4444" : "#f59e0b";
   const title = isExceeded
-    ? "Rastreamento pausado — limite atingido"
-    : "Você está em 80% do limite mensal";
+    ? "Limite de receita atingido"
+    : "Você está perto do limite de receita";
   const description = isExceeded
-    ? `Sua conta atingiu <strong style="color:#fca5a5;">100%</strong> do limite de eventos do plano <strong style="color:#d4d4d8;">${planName}</strong>. O rastreamento de novos eventos foi pausado até o início do próximo ciclo ou você fazer upgrade.`
-    : `Sua conta atingiu <strong style="color:#fcd34d;">${percentage}%</strong> do limite de eventos do plano <strong style="color:#d4d4d8;">${planName}</strong>. Considere fazer upgrade antes de atingir o limite.`;
+    ? `Sua conta atingiu <strong style="color:#fca5a5;">100%</strong> do limite de receita do plano <strong style="color:#d4d4d8;">${planName}</strong>. Faça upgrade para continuar acompanhando seus dados sem restrições.`
+    : `Sua conta atingiu <strong style="color:#fcd34d;">${percentage}%</strong> do limite de receita do plano <strong style="color:#d4d4d8;">${planName}</strong>. Considere fazer upgrade antes de atingir o limite.`;
 
   const orgRows = orgBreakdown
-    .sort((a, b) => b.eventsCount - a.eventsCount)
+    .sort((a, b) => b.revenueInCents - a.revenueInCents)
     .map((org, i) => {
       const isLast = i === orgBreakdown.length - 1;
       const prefix = isLast ? "└" : "├";
@@ -74,7 +75,7 @@ export function quotaUsageEmail(params: IQuotaUsageEmailParams): string {
             <tr>
               <td style="color:#52525b; font-size:12px; width:16px;">${prefix}</td>
               <td style="color:#a1a1aa; font-size:13px;">${org.name}</td>
-              <td style="text-align:right; color:#d4d4d8; font-size:13px; font-weight:600;">${formatCount(org.eventsCount)}</td>
+              <td style="text-align:right; color:#d4d4d8; font-size:13px; font-weight:600;">${formatRevenue(org.revenueInCents)}</td>
             </tr>
           </table>
         </td>
@@ -115,7 +116,7 @@ export function quotaUsageEmail(params: IQuotaUsageEmailParams): string {
           padding:20px;
         ">
           <p style="color:#52525b; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:16px;">
-            USO ESTE MÊS
+            RECEITA ESTE MÊS
           </p>
 
           <table width="100%" cellpadding="0" cellspacing="0">
@@ -124,8 +125,8 @@ export function quotaUsageEmail(params: IQuotaUsageEmailParams): string {
                 <table width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="color:#a1a1aa; font-size:13px;">
-                      <strong style="color:#fafafa; font-size:20px; font-weight:700;">${formatCount(usageTotal)}</strong>
-                      <span style="color:#52525b; font-size:13px;"> / ${formatCount(usageLimit)} eventos</span>
+                      <strong style="color:#fafafa; font-size:20px; font-weight:700;">${formatRevenue(revenueTotal)}</strong>
+                      <span style="color:#52525b; font-size:13px;"> / ${formatRevenue(revenueLimit)}</span>
                     </td>
                     <td style="text-align:right; color:${accentColor}; font-size:16px; font-weight:700;">${percentage}%</td>
                   </tr>
@@ -155,8 +156,8 @@ export function quotaUsageEmail(params: IQuotaUsageEmailParams): string {
   `;
 
   const previewText = isExceeded
-    ? `Rastreamento pausado: ${formatCount(usageTotal)} / ${formatCount(usageLimit)} eventos usados este mês`
-    : `Aviso: você usou ${percentage}% do limite mensal de eventos`;
+    ? `Limite de receita atingido: ${formatRevenue(revenueTotal)} / ${formatRevenue(revenueLimit)} este mês`
+    : `Aviso: você usou ${percentage}% do limite mensal de receita`;
 
   return baseEmailLayout(content, previewText);
 }

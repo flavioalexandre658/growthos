@@ -1,118 +1,127 @@
 "use client";
 
-import { useState } from "react";
-import { IconCheck, IconSparkles } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { PLANS_LIST, formatEventsLimit } from "@/utils/plans";
+import { PLANS_LIST, formatRevenueLimit } from "@/utils/plans";
 import type { PlanSlug } from "@/utils/plans";
+import { cn } from "@/lib/utils";
+import { IconCheck, IconX, IconSparkles } from "@tabler/icons-react";
 
 interface BillingPlansGridProps {
   currentPlanSlug: PlanSlug;
-  onSelectPlan: (slug: PlanSlug, currency: "brl" | "usd") => void;
+  currency: "brl" | "usd";
+  billingInterval: "monthly" | "annual";
+  onSelectPlan: (slug: PlanSlug) => void;
   isLoading: boolean;
 }
 
-export function BillingPlansGrid({ currentPlanSlug, onSelectPlan, isLoading }: BillingPlansGridProps) {
-  const [currency, setCurrency] = useState<"brl" | "usd">("brl");
-
-  const paidPlans = PLANS_LIST.filter((p) => p.slug !== "free");
+export function BillingPlansGrid({
+  currentPlanSlug,
+  currency,
+  billingInterval,
+  onSelectPlan,
+  isLoading,
+}: BillingPlansGridProps) {
+  const isBrl = currency === "brl";
+  const isAnnual = billingInterval === "annual";
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-[10px] text-zinc-500 uppercase tracking-wider">Planos disponíveis</p>
-        <div className="flex items-center rounded-lg border border-zinc-800 overflow-hidden">
-          <button
-            onClick={() => setCurrency("brl")}
+    <div id="plans-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {PLANS_LIST.map((plan) => {
+        const isCurrent = plan.slug === currentPlanSlug;
+        const isFree = plan.slug === "free";
+        const basePrice = isBrl ? plan.priceBrlCents : plan.priceUsdCents;
+        const price = isAnnual ? Math.round(basePrice * 0.8) : basePrice;
+        const priceFormatted = isFree
+          ? isBrl ? "R$ 0" : "$0"
+          : isBrl
+            ? `R$ ${(price / 100).toFixed(0)}`
+            : `$${(price / 100).toFixed(0)}`;
+        const revLimit = isBrl
+          ? formatRevenueLimit(plan.maxRevenuePerMonthBrl)
+          : formatRevenueLimit(plan.maxRevenuePerMonthUsd, "USD");
+        const features = isBrl ? plan.featuresBrl : plan.featuresUsd;
+
+        return (
+          <div
+            key={plan.slug}
             className={cn(
-              "px-3 py-1 text-xs font-medium transition-colors",
-              currency === "brl" ? "bg-zinc-800 text-zinc-100" : "text-zinc-500 hover:text-zinc-300",
+              "relative flex flex-col rounded-xl border p-5 transition-all",
+              plan.popular
+                ? "border-indigo-500/40 bg-indigo-600/5 ring-1 ring-indigo-500/20"
+                : "border-zinc-800 bg-zinc-900/30",
             )}
           >
-            BRL
-          </button>
-          <button
-            onClick={() => setCurrency("usd")}
-            className={cn(
-              "px-3 py-1 text-xs font-medium transition-colors",
-              currency === "usd" ? "bg-zinc-800 text-zinc-100" : "text-zinc-500 hover:text-zinc-300",
+            {plan.popular && (
+              <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full">
+                <IconSparkles size={10} />
+                Popular
+              </div>
             )}
-          >
-            USD
-          </button>
-        </div>
-      </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        {paidPlans.map((plan) => {
-          const isCurrent = plan.slug === currentPlanSlug;
-          const price = currency === "brl" ? plan.priceBrlCents : plan.priceUsdCents;
-          const symbol = currency === "brl" ? "R$" : "$";
-          const isPopular = plan.slug === "pro";
+            {isCurrent && (
+              <div className="absolute -top-2.5 right-4 bg-zinc-700 text-zinc-200 text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full">
+                Atual
+              </div>
+            )}
 
-          return (
-            <div
-              key={plan.slug}
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-1">
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: plan.color, boxShadow: `0 0 6px ${plan.color}40` }}
+                />
+                <h3 className="text-sm font-semibold text-zinc-100">{plan.name}</h3>
+              </div>
+              <p className="text-[11px] text-zinc-500 mt-0.5">
+                {isBrl ? plan.descriptionBrl : plan.descriptionUsd}
+              </p>
+            </div>
+
+            <div className="mb-1">
+              <span className="text-3xl font-bold text-zinc-100 tracking-tight">{priceFormatted}</span>
+              {!isFree && (
+                <span className="text-xs text-zinc-500 ml-1">/{isAnnual ? "mês (anual)" : "mês"}</span>
+              )}
+            </div>
+
+            <p className="text-[11px] text-zinc-600 mb-5">
+              {isFree ? "Para sempre" : `Até ${revLimit} receita/mês`}
+            </p>
+
+            <div className="flex-1 space-y-2 mb-5">
+              {features.map((f) => (
+                <div key={f.label} className="flex items-center gap-2.5">
+                  {f.included ? (
+                    <div className={cn("w-4 h-4 rounded-full flex items-center justify-center shrink-0", f.highlight ? "bg-indigo-600/20" : "bg-zinc-800")}>
+                      <IconCheck size={10} className={f.highlight ? "text-indigo-400" : "text-zinc-500"} />
+                    </div>
+                  ) : (
+                    <div className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 bg-zinc-900">
+                      <IconX size={10} className="text-zinc-700" />
+                    </div>
+                  )}
+                  <span className={cn("text-xs", f.included ? "text-zinc-300" : "text-zinc-600 line-through")}>{f.label}</span>
+                </div>
+              ))}
+            </div>
+
+            <button
+              disabled={isCurrent || (isFree && isCurrent) || isLoading}
+              onClick={() => onSelectPlan(plan.slug)}
               className={cn(
-                "relative rounded-xl border p-4 space-y-3 transition-all",
+                "w-full py-2.5 rounded-lg text-xs font-semibold transition-all",
                 isCurrent
-                  ? "border-indigo-500/40 bg-indigo-500/5"
-                  : isPopular
-                    ? "border-zinc-700 bg-zinc-800/60"
-                    : "border-zinc-800 bg-zinc-800/30",
+                  ? "bg-zinc-800 text-zinc-500 cursor-default"
+                  : plan.popular
+                    ? "bg-indigo-600 text-white hover:bg-indigo-500 cursor-pointer"
+                    : "bg-zinc-800 text-zinc-200 hover:bg-zinc-700 cursor-pointer",
+                isLoading && "opacity-50 cursor-wait",
               )}
             >
-              {isPopular && !isCurrent && (
-                <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-                  <span className="flex items-center gap-1 bg-indigo-500 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
-                    <IconSparkles size={9} /> Popular
-                  </span>
-                </div>
-              )}
-
-              <div>
-                <p className="text-sm font-semibold text-zinc-100">{plan.name}</p>
-                <p className="text-xl font-bold text-zinc-100 mt-1">
-                  {symbol} {(price / 100).toFixed(2).replace(".", ",")}
-                  <span className="text-xs font-normal text-zinc-500">/mês</span>
-                </p>
-              </div>
-
-              <ul className="space-y-1.5">
-                <li className="flex items-center gap-1.5 text-xs text-zinc-400">
-                  <IconCheck size={11} className="text-indigo-400 shrink-0" />
-                  {plan.maxOrgs === Infinity ? "Orgs ilimitadas" : `${plan.maxOrgs} org${plan.maxOrgs > 1 ? "s" : ""}`}
-                </li>
-                <li className="flex items-center gap-1.5 text-xs text-zinc-400">
-                  <IconCheck size={11} className="text-indigo-400 shrink-0" />
-                  {formatEventsLimit(plan.maxEventsPerMonth)} eventos/mês
-                </li>
-                {plan.features.slice(2, 4).map((f) => (
-                  <li key={f} className="flex items-center gap-1.5 text-xs text-zinc-400">
-                    <IconCheck size={11} className="text-indigo-400 shrink-0" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-
-              <Button
-                size="sm"
-                className={cn(
-                  "w-full text-xs",
-                  isCurrent
-                    ? "bg-zinc-700 text-zinc-400 cursor-default"
-                    : "bg-indigo-600 hover:bg-indigo-500 text-white",
-                )}
-                disabled={isCurrent || isLoading}
-                onClick={() => !isCurrent && onSelectPlan(plan.slug as PlanSlug, currency)}
-              >
-                {isCurrent ? "Plano atual" : "Selecionar"}
-              </Button>
-            </div>
-          );
-        })}
-      </div>
+              {isCurrent ? "Plano atual" : isFree ? "Downgrade" : "Escolher plano"}
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

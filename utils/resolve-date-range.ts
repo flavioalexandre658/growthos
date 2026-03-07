@@ -8,55 +8,66 @@ export interface IDateRange {
 
 export function resolveDateRange(
   filter: IDateFilter = {},
-  tz = "America/Sao_Paulo"
+  tz = "America/Sao_Paulo",
+  maxHistoryDays?: number
 ): IDateRange {
   const now = dayjs().tz(tz);
+  const earliest = maxHistoryDays
+    ? now.subtract(maxHistoryDays, "day").startOf("day")
+    : null;
+
+  function clampStart(date: Date): Date {
+    if (!earliest) return date;
+    const d = dayjs(date);
+    return d.isBefore(earliest) ? earliest.toDate() : date;
+  }
 
   if (filter.start_date && filter.end_date) {
     return {
-      startDate: dayjs.tz(filter.start_date, tz).startOf("day").toDate(),
+      startDate: clampStart(dayjs.tz(filter.start_date, tz).startOf("day").toDate()),
       endDate: dayjs.tz(filter.end_date, tz).endOf("day").toDate(),
     };
   }
 
   const period = filter.period ?? "30d";
 
+  let startDate: Date;
+  let endDate: Date;
+
   switch (period) {
     case "today":
-      return {
-        startDate: now.startOf("day").toDate(),
-        endDate: now.endOf("day").toDate(),
-      };
+      startDate = now.startOf("day").toDate();
+      endDate = now.endOf("day").toDate();
+      break;
     case "yesterday":
-      return {
-        startDate: now.subtract(1, "day").startOf("day").toDate(),
-        endDate: now.subtract(1, "day").endOf("day").toDate(),
-      };
+      startDate = now.subtract(1, "day").startOf("day").toDate();
+      endDate = now.subtract(1, "day").endOf("day").toDate();
+      break;
     case "3d":
-      return {
-        startDate: now.subtract(2, "day").startOf("day").toDate(),
-        endDate: now.endOf("day").toDate(),
-      };
+      startDate = now.subtract(2, "day").startOf("day").toDate();
+      endDate = now.endOf("day").toDate();
+      break;
     case "7d":
-      return {
-        startDate: now.subtract(6, "day").startOf("day").toDate(),
-        endDate: now.endOf("day").toDate(),
-      };
+      startDate = now.subtract(6, "day").startOf("day").toDate();
+      endDate = now.endOf("day").toDate();
+      break;
     case "this_month":
-      return {
-        startDate: now.startOf("month").toDate(),
-        endDate: now.endOf("month").toDate(),
-      };
+      startDate = now.startOf("month").toDate();
+      endDate = now.endOf("month").toDate();
+      break;
     case "90d":
-      return {
-        startDate: now.subtract(89, "day").startOf("day").toDate(),
-        endDate: now.endOf("day").toDate(),
-      };
+      startDate = now.subtract(89, "day").startOf("day").toDate();
+      endDate = now.endOf("day").toDate();
+      break;
     case "30d":
     default:
-      return {
-        startDate: now.subtract(29, "day").startOf("day").toDate(),
-        endDate: now.endOf("day").toDate(),
-      };
+      startDate = now.subtract(29, "day").startOf("day").toDate();
+      endDate = now.endOf("day").toDate();
+      break;
   }
+
+  return {
+    startDate: clampStart(startDate),
+    endDate,
+  };
 }

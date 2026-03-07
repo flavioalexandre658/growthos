@@ -6,6 +6,7 @@ import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { events, organizations, payments } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
+import { getUserPlan } from "@/utils/get-user-plan";
 import { getPageviewSessionsByDate } from "@/utils/get-pageview-counts";
 import {
   buildFunnelSteps,
@@ -30,7 +31,8 @@ export async function getDaily(
     .limit(1);
 
   const tz = org?.timezone ?? "America/Sao_Paulo";
-  const { startDate, endDate } = resolveDateRange(filter, tz);
+  const plan = await getUserPlan();
+  const { startDate, endDate } = resolveDateRange(filter, tz, plan.maxHistoryDays);
 
   const baseFunnelSteps: IFunnelStepConfig[] = buildFunnelSteps(org?.funnelSteps ?? []);
   const allEventTypes = getAllQueryEventTypes(baseFunnelSteps).filter(
