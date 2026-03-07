@@ -15,7 +15,7 @@ export const integrations = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" }),
 
     provider: text("provider", {
-      enum: ["stripe"],
+      enum: ["stripe", "asaas"],
     }).notNull(),
 
     accessToken: text("access_token").notNull(),

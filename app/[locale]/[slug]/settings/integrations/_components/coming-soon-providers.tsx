@@ -10,19 +10,14 @@ interface Provider {
   name: string;
   descriptionKey: string;
   logo: React.ReactNode;
+  accentColor: string;
 }
 
 const PROVIDERS: Provider[] = [
   {
-    name: "Asaas",
-    descriptionKey: "asaasDescription",
-    logo: (
-      <span className="text-[15px] font-bold text-[#00BFA5] leading-none tracking-tight">A</span>
-    ),
-  },
-  {
     name: "Kiwify",
     descriptionKey: "kiwifyDescription",
+    accentColor: "#7C3AED",
     logo: (
       <span className="text-[15px] font-bold text-[#7C3AED] leading-none tracking-tight">K</span>
     ),
@@ -30,6 +25,7 @@ const PROVIDERS: Provider[] = [
   {
     name: "Hotmart",
     descriptionKey: "hotmartDescription",
+    accentColor: "#F04E23",
     logo: (
       <span className="text-[15px] font-bold text-[#F04E23] leading-none tracking-tight">H</span>
     ),
@@ -58,15 +54,19 @@ export function ComingSoonProviders() {
           </Link>
         )}
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         {PROVIDERS.map((provider) => (
           <div
             key={provider.name}
-            className={`flex items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-4 py-3 ${
-              hasAccess ? "opacity-60" : "opacity-40"
-            }`}
+            className="flex items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-4 py-3 opacity-60"
           >
-            <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+            <div
+              className="w-8 h-8 rounded-lg border flex items-center justify-center shrink-0"
+              style={{
+                backgroundColor: `${provider.accentColor}15`,
+                borderColor: `${provider.accentColor}25`,
+              }}
+            >
               {provider.logo}
             </div>
             <div className="flex-1 min-w-0">

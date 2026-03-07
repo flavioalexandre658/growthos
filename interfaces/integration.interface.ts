@@ -1,4 +1,4 @@
-export type IntegrationProvider = "stripe";
+export type IntegrationProvider = "stripe" | "asaas";
 
 export type IntegrationStatus = "active" | "error" | "disconnected";
 
@@ -19,6 +19,11 @@ export interface IIntegration {
 export interface IConnectStripeInput {
   organizationId: string;
   rawKey: string;
+}
+
+export interface IConnectAsaasInput {
+  organizationId: string;
+  apiKey: string;
 }
 
 export interface ISaveWebhookSecretInput {

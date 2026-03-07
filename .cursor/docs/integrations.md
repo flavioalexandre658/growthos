@@ -1,7 +1,18 @@
 # Groware — Arquitetura de Integrações com Gateways
 
-> Este documento descreve o padrão de integração implementado com o Stripe.
-> Deve ser usado como referência para integrar novos providers: Asaas, Kiwify, Hotmart, Mercado Pago, etc.
+> Este documento descreve o padrão de integração implementado com Stripe e Asaas.
+> Deve ser usado como referência para integrar novos providers: Kiwify, Hotmart, Mercado Pago, etc.
+
+---
+
+## Status por Provider
+
+| Provider | Status | Connect Action | Sync Histórico | Webhook | UI |
+| -------- | ------ | -------------- | -------------- | ------- | -- |
+| **Stripe** | ✅ Implementado | `connect-stripe.action.ts` | `sync-stripe-history.action.ts` | `/api/webhooks/stripe/[id]` | `stripe-connect-card.tsx` |
+| **Asaas** | ✅ Implementado | `connect-asaas.action.ts` | `sync-asaas-history.action.ts` | `/api/webhooks/asaas/[id]` | `asaas-connect-card.tsx` |
+| Kiwify | 🔜 Em breve | — | — | — | coming-soon |
+| Hotmart | 🔜 Em breve | — | — | — | coming-soon |
 
 ---
 
@@ -445,89 +456,95 @@ O cliente pode resolver instalando o tracker.js agora — novos clientes terão 
 
 ```
 app/api/webhooks/
-├── stripe/route.ts          ✅ implementado
-├── asaas/route.ts           ← futuramente
-├── kiwify/route.ts          ← futuramente
-└── hotmart/route.ts         ← futuramente
+├── stripe/[integrationId]/route.ts  ✅ implementado
+├── asaas/[integrationId]/route.ts   ✅ implementado
+├── kiwify/route.ts                  ← futuramente
+└── hotmart/route.ts                 ← futuramente
 
 actions/integrations/
-├── connect-stripe.action.ts ✅ implementado
-├── connect-asaas.action.ts  ← futuramente
-├── disconnect.action.ts     ← genérico, funciona para todos
-└── get-integrations.action.ts
+├── connect-stripe.action.ts         ✅ implementado
+├── connect-asaas.action.ts          ✅ implementado
+├── sync-stripe-history.action.ts    ✅ implementado
+├── sync-asaas-history.action.ts     ✅ implementado
+├── disconnect-integration.action.ts ✅ genérico, funciona para todos
+├── save-webhook-secret.action.ts    ✅ genérico, funciona para todos
+└── get-integrations.action.ts       ✅ retorna todos os providers
 
-jobs/
-├── index.ts                 ← dispatcher por provider
-├── stripe-history-sync.ts   ✅ implementado
-├── asaas-history-sync.ts    ← futuramente
-└── kiwify-history-sync.ts   ← futuramente
+utils/
+├── stripe-helpers.ts                ✅ stripeEventHash, mapBillingInterval
+├── asaas-helpers.ts                 ✅ asaasEventHash, status mappers
+├── acquisition-lookup.ts            ✅ lookup reverso na events table
+├── insert-payment.ts                ✅ upsert payment com dedup
+├── crypto.ts → lib/crypto.ts        ✅ encrypt/decrypt AES-256-GCM
+└── hash.ts → lib/hash.ts            ✅ hashAnonymous(id)
 
-lib/integrations/
-├── context-lookup.ts        ← lookup reverso na events table
-├── classify-payment.ts      ← classifica billing_type e event_type
-└── status-mappers.ts        ← mapeia status de cada provider
+hooks/mutations/
+├── use-connect-stripe.ts            ✅
+├── use-connect-asaas.ts             ✅
+├── use-sync-stripe-history.ts       ✅
+├── use-sync-asaas-history.ts        ✅
+└── use-disconnect-integration.ts    ✅
 
-lib/
-├── crypto.ts                ← encrypt/decrypt AES-256-GCM
-└── hash.ts                  ← hashAnonymous(id)
+UI (settings/integrations/)
+├── stripe-connect-card.tsx          ✅
+├── asaas-connect-card.tsx           ✅
+├── webhook-instructions.tsx         ✅ (Stripe)
+├── asaas-webhook-instructions.tsx   ✅ (Asaas)
+├── coming-soon-providers.tsx        ✅ (Kiwify, Hotmart)
+└── integration-status-badge.tsx     ✅
 
 db/schema/
-└── integration.schema.ts    ← tabela integrations
+└── integration.schema.ts            ✅ provider enum: ["stripe", "asaas"]
 ```
 
 ---
 
 ## Checklist para Novo Provider
 
-Ao implementar um novo gateway (ex: Asaas), seguir esta ordem:
+Ao implementar um novo gateway (ex: Kiwify), seguir esta ordem:
 
 ```
 Schema
-[ ] Adicionar provider ao enum na tabela integrations
+[x] Adicionar provider ao enum na tabela integrations   ← Asaas ✅
 
 Credenciais
-[ ] Entender o modelo de autenticação do provider
+[x] Entender o modelo de autenticação do provider
     Stripe   → Restricted Key (read-only)
-    Asaas    → API Key + webhook token
+    Asaas    → API Key ($aact_...) + webhook access token  ← ✅
     Kiwify   → API Key
     Hotmart  → Bearer token
-[ ] Implementar a criptografia das credenciais
+[x] Implementar a criptografia das credenciais          ← Asaas ✅
 
 Action de conexão
-[ ] actions/integrations/connect-[provider].action.ts
-[ ] Validar credenciais antes de salvar
-[ ] Verificar permissões mínimas necessárias
-[ ] Disparar sync histórico ao conectar
+[x] actions/integrations/connect-asaas.action.ts        ← ✅
+[x] Validar credenciais via GET /v3/myAccount           ← ✅
+[x] Disparar sync histórico ao conectar                 ← ✅
 
 Sync histórico
-[ ] jobs/[provider]-history-sync.ts
-[ ] Mapear assinaturas para tabela subscriptions
-[ ] Mapear pagamentos para tabela events
-[ ] Implementar cursor-based pagination para contas grandes
-[ ] Adicionar ao dispatcher em jobs/index.ts
+[x] actions/integrations/sync-asaas-history.action.ts  ← ✅
+[x] Mapear assinaturas para tabela subscriptions        ← ✅
+[x] Mapear pagamentos para tabela events                ← ✅
+[x] Paginação offset-based                              ← ✅
 
 Webhook handler
-[ ] app/api/webhooks/[provider]/route.ts
-[ ] Validar assinatura do webhook
-[ ] Mapear eventos do provider para eventos Groware
-[ ] Implementar deduplicação com providerEventId
-[ ] Implementar lookup reverso de contexto de aquisição
+[x] app/api/webhooks/asaas/[integrationId]/route.ts    ← ✅
+[x] Validar asaas-access-token header                   ← ✅
+[x] Mapear 6 eventos Asaas para eventos Groware         ← ✅
+[x] Deduplicação via asaasEventHash                     ← ✅
+[x] Lookup reverso de contexto de aquisição             ← ✅
 
 Status mapper
-[ ] lib/integrations/status-mappers.ts
-[ ] Mapear todos os status do provider para o padrão Groware
+[x] utils/asaas-helpers.ts                              ← ✅
+[x] mapAsaasPaymentStatus, mapAsaasSubscriptionStatus   ← ✅
 
 UI
-[ ] Card do provider na tela de Configurações → Integrações
-[ ] Estado de loading durante sync histórico
-[ ] Estado de erro com mensagem clara
-[ ] Instruções de configuração do webhook
+[x] asaas-connect-card.tsx                              ← ✅
+[x] asaas-webhook-instructions.tsx                      ← ✅
+[x] Removido do coming-soon-providers                   ← ✅
 
-Documentação
-[ ] Adicionar seção do provider em /docs → Integrações
-[ ] Quais permissões são necessárias
-[ ] Como configurar o webhook
-[ ] Campos de metadata obrigatórios no checkout
+i18n
+[x] messages/pt/settings.json — asaas + asaasWebhook   ← ✅
+[x] messages/en/settings.json — asaas + asaasWebhook   ← ✅
 ```
 
 ---
@@ -615,5 +632,105 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx  # gerado pelo stripe listen
 
 ---
 
-_Documento atualizado em março/2026 — versão 1.0_
-_Próximos providers: Asaas (prioritário), Kiwify, Hotmart, Mercado Pago_
+## Asaas — Especificidades
+
+### 1. Autenticação
+
+A API Key do Asaas começa com `$aact_` e dá acesso total à conta (sem Restricted Key com permissões granulares como no Stripe).
+
+**Validação:** `GET https://api.asaas.com/v3/myAccount` com header `access_token: <apiKey>`
+
+### 2. Webhook — Validação por Access Token
+
+Diferente do Stripe (HMAC signature), o Asaas usa comparação de string simples. O cliente define um Access Token no painel do Asaas e o Asaas envia esse mesmo token no header `asaas-access-token` em cada requisição.
+
+```typescript
+const token = req.headers.get("asaas-access-token");
+const expectedToken = decrypt(integration.providerMeta.webhookSecret);
+if (token !== expectedToken) return new NextResponse("Invalid access token", { status: 401 });
+```
+
+### 3. Valores em Reais (não centavos)
+
+O Asaas envia `value` e `netValue` em reais decimais (ex: `79.90`). Converter sempre antes de salvar:
+
+```typescript
+const grossValueInCents = Math.round(payment.value * 100);   // 79.90 → 7990
+const netValueInCents   = Math.round(payment.netValue * 100); // 76.30 → 7630
+```
+
+O `netValue` é um bônus nativo do Asaas — o Stripe não fornece isso diretamente. Salvo em `baseNetValueInCents`.
+
+### 4. Recorrência — via `payment.subscription`
+
+O Asaas não tem `billing_reason` como o Stripe. Para determinar se um pagamento é recorrente:
+
+```typescript
+const isRecurring = !!payment.subscription; // null → avulso, "sub_xxx" → recorrente
+```
+
+Para diferenciar primeira cobrança de renovação: qualquer pagamento com `payment.subscription` é tratado como `renewal` (simplificação adequada — a primeira cobrança via webhook já foi coberta pelo `SUBSCRIPTION_CREATED`).
+
+### 5. Paginação Offset-based
+
+Diferente do cursor-based do Stripe (`starting_after`), o Asaas usa `offset + limit`:
+
+```typescript
+GET /v3/payments?offset=0&limit=100
+// Response: { totalCount: 350, hasMore: true, data: [...] }
+GET /v3/payments?offset=100&limit=100
+GET /v3/payments?offset=200&limit=100
+// ...até hasMore === false
+```
+
+### 6. Mapeamento de Eventos
+
+| Evento Asaas | Handler | Equivalente Stripe |
+|---|---|---|
+| `PAYMENT_RECEIVED` / `PAYMENT_CONFIRMED` | `handlePaymentReceived` | `invoice.payment_succeeded` + `payment_intent.succeeded` |
+| `PAYMENT_REFUNDED` | `handlePaymentRefunded` | `charge.refunded` |
+| `PAYMENT_OVERDUE` | `handlePaymentOverdue` | `invoice.payment_failed` |
+| `SUBSCRIPTION_CREATED` | `handleSubscriptionCreated` | `customer.subscription.created` |
+| `SUBSCRIPTION_UPDATED` | `handleSubscriptionUpdated` | `customer.subscription.updated` |
+| `SUBSCRIPTION_DELETED` / `SUBSCRIPTION_INACTIVATED` | `handleSubscriptionCanceled` | `customer.subscription.deleted` |
+
+### 7. Status Mappers
+
+```typescript
+// utils/asaas-helpers.ts
+function mapAsaasPaymentStatus(status: string): string {
+  CONFIRMED | RECEIVED | DUNNING_RECEIVED  → "paid"
+  PENDING                                   → "pending"
+  OVERDUE | CHARGEBACK_* | DUNNING_REQUESTED| AWAITING_... → "past_due"
+  REFUNDED | REFUND_REQUESTED               → "refunded"
+}
+
+function mapAsaasSubscriptionStatus(status: string): SubscriptionStatus {
+  ACTIVE   → "active"
+  INACTIVE | EXPIRED → "canceled"
+}
+
+function mapAsaasBillingInterval(cycle: string): BillingInterval {
+  WEEKLY → "weekly", MONTHLY → "monthly", QUARTERLY → "quarterly"
+  SEMIANNUALLY → "semiannual", YEARLY → "yearly"
+}
+```
+
+### 8. externalReference — customer_id
+
+No Asaas, o campo `externalReference` é onde o cliente passa o `groware_customer_id` (equivalente ao `metadata.groware_customer_id` do Stripe):
+
+```typescript
+// Cliente cria pagamento/assinatura no Asaas
+asaas.payments.create({
+  externalReference: hashAnonymous(user.id), // ← mesmo hash do tracker.js
+});
+```
+
+O webhook handler extrai: `payment.externalReference ?? payment.customer`
+
+---
+
+_Documento atualizado em março/2026 — versão 2.0_
+_Providers implementados: Stripe, Asaas_
+_Próximos providers: Kiwify, Hotmart, Mercado Pago_
