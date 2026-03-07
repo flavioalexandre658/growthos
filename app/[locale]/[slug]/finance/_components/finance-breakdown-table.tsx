@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtInt, fmtBRLDecimal } from "@/utils/format";
+import { fmtBRLDecimal } from "@/utils/format";
 
 interface BreakdownRow {
   name: string;

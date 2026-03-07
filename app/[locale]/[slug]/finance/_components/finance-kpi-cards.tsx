@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { fmtBRLDecimal, fmtInt } from "@/utils/format";
+import { fmtBRLDecimal } from "@/utils/format";
 import {
   IconCurrencyDollar,
   IconWallet,
