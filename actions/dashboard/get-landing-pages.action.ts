@@ -42,6 +42,7 @@ export async function getLandingPages(
       scatterData: [],
     };
   }
+  const locale = session.user.locale ?? "pt";
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
@@ -57,7 +58,7 @@ export async function getLandingPages(
   const orderBy = params.order_by ?? "revenue";
   const search = params.search?.trim() ?? "";
 
-  const baseFunnelSteps: IFunnelStepConfig[] = buildFunnelSteps(org?.funnelSteps ?? []);
+  const baseFunnelSteps: IFunnelStepConfig[] = buildFunnelSteps(org?.funnelSteps ?? [], locale);
   const allEventTypes = getAllQueryEventTypes(baseFunnelSteps).filter(
     (t) => t !== "pageview"
   );
@@ -124,8 +125,8 @@ export async function getLandingPages(
   const totalPv = Array.from(pvByEntryPage.values()).reduce((sum, n) => sum + n, 0);
   globalCountMap.set("pageview", { total: totalPv, uniqueTotal: totalPv });
 
-  const funnelSteps = injectCheckoutSteps(baseFunnelSteps, globalCountMap);
-  const stepMeta = buildExtendedStepMeta(funnelSteps, globalCountMap);
+  const funnelSteps = injectCheckoutSteps(baseFunnelSteps, globalCountMap, locale);
+  const stepMeta = buildExtendedStepMeta(funnelSteps, globalCountMap, locale);
   const stepConfigMap = new Map(funnelSteps.map((s) => [s.eventType, s]));
   const trackedInMeta = new Set(stepMeta.map((m) => m.key));
 

@@ -22,6 +22,7 @@ export async function getFunnel(
 ): Promise<IGenericFunnelData | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
+  const locale = session.user.locale ?? "pt";
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
@@ -39,7 +40,7 @@ export async function getFunnel(
   const previousEndDate = new Date(startDate.getTime() - 1);
   const previousStartDate = new Date(startDate.getTime() - periodMs);
 
-  const baseFunnelSteps = buildFunnelSteps(org.funnelSteps);
+  const baseFunnelSteps = buildFunnelSteps(org.funnelSteps, locale);
   const allEventTypes = getAllQueryEventTypes(baseFunnelSteps).filter(
     (t) => t !== "pageview"
   );
@@ -76,7 +77,7 @@ export async function getFunnel(
   );
   countMap.set("pageview", { total: pvSessions, uniqueTotal: pvSessions });
 
-  const funnelSteps = injectCheckoutSteps(baseFunnelSteps, countMap);
+  const funnelSteps = injectCheckoutSteps(baseFunnelSteps, countMap, locale);
 
   const revenueResult = await db
     .select({

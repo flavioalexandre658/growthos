@@ -14,7 +14,7 @@ import {
   IconCrown,
   IconX,
 } from "@tabler/icons-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,9 +28,9 @@ import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/pt-br";
+import "dayjs/locale/en";
 
 dayjs.extend(relativeTime);
-dayjs.locale("pt-br");
 
 const ROLE_LABEL_KEYS: Record<OrgMemberRole, string> = {
   owner: "roleOwner",
@@ -144,6 +144,8 @@ interface TeamSectionProps {
 
 export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
   const t = useTranslations("settings.team");
+  const locale = useLocale();
+  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
   const [showInviteForm, setShowInviteForm] = useState(false);
   const { data, isLoading } = useOrgMembers(orgId);
   const removeMutation = useRemoveOrgMember(orgId);
@@ -312,7 +314,7 @@ export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
                             <IconClock size={10} />
                             {isExpired
                               ? t("expired")
-                              : t("expiresIn", { time: dayjs(invite.expiresAt).fromNow() })}
+                              : t("expiresIn", { time: dayjs(invite.expiresAt).locale(dayjsLocale).fromNow() })}
                           </span>
                         </div>
                       </div>

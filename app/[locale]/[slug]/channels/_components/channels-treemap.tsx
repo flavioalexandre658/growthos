@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtBRLDecimal, fmtInt } from "@/utils/format";
 import { getChannelColor, getChannelName } from "@/utils/channel-colors";
@@ -181,6 +182,8 @@ interface TooltipData {
 }
 
 function ChannelsTreemapMobile({ data, isLoading }: ChannelsTreemapProps) {
+  const t = useTranslations("channels.treemap");
+  const locale = useLocale();
   const sorted = useMemo(
     () => (data ?? []).filter((c) => c.revenue > 0).sort((a, b) => b.revenue - a.revenue),
     [data]
@@ -194,12 +197,12 @@ function ChannelsTreemapMobile({ data, isLoading }: ChannelsTreemapProps) {
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
       <div className="flex items-baseline justify-between mb-3">
         <div>
-          <h3 className="text-sm font-bold text-zinc-100">Receita por Canal</h3>
-          <p className="mt-0.5 text-[10px] text-zinc-500">Proporção por receita</p>
+          <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
+          <p className="mt-0.5 text-[10px] text-zinc-500">{t("mobileSubtitle")}</p>
         </div>
         {sorted.length > 0 && (
           <span className="text-[10px] text-zinc-600 font-mono">
-            {sorted.length} canal{sorted.length !== 1 ? "is" : ""}
+            {t("channelCount", { count: sorted.length })}
           </span>
         )}
       </div>
@@ -212,13 +215,13 @@ function ChannelsTreemapMobile({ data, isLoading }: ChannelsTreemapProps) {
         </div>
       ) : sorted.length === 0 ? (
         <div className="flex items-center justify-center h-24 text-zinc-600 text-sm">
-          Sem dados de receita no período
+          {t("noData")}
         </div>
       ) : (
         <div className="space-y-2">
           {sorted.map((channel, idx) => {
             const color = getChannelColor(channel.channel, idx);
-            const name = getChannelName(channel.channel);
+            const name = getChannelName(channel.channel, locale);
             const pct = totalRevenue > 0 ? Math.round((channel.revenue / totalRevenue) * 100) : 0;
             const purchases = channel.steps["purchase"] ?? 0;
 
@@ -246,7 +249,7 @@ function ChannelsTreemapMobile({ data, isLoading }: ChannelsTreemapProps) {
                       {fmtBRLDecimal(channel.revenue / 100)}
                     </span>
                     <span className="text-[10px] text-zinc-500 font-mono shrink-0">
-                      {fmtInt(purchases)} comp. · conv. {channel.conversion_rate}
+                      {t("purchasesConv", { count: fmtInt(purchases), rate: channel.conversion_rate })}
                     </span>
                   </div>
                   <div className="mt-1.5 h-0.5 rounded-full bg-zinc-800">
@@ -266,6 +269,8 @@ function ChannelsTreemapMobile({ data, isLoading }: ChannelsTreemapProps) {
 }
 
 export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
+  const t = useTranslations("channels.treemap");
+  const locale = useLocale();
   const [hoveredChannel, setHoveredChannel] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
@@ -306,14 +311,14 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
       <div className="hidden md:block rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <div className="flex items-baseline justify-between mb-3">
         <div>
-          <h3 className="text-sm font-bold text-zinc-100">Receita por Canal</h3>
+          <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
           <p className="mt-0.5 text-[10px] text-zinc-500">
-            Área proporcional à receita
+            {t("desktopSubtitle")}
           </p>
         </div>
         {withRevenue.length > 0 && (
           <span className="text-[10px] text-zinc-600 font-mono">
-            {withRevenue.length} canal{withRevenue.length !== 1 ? "is" : ""}
+            {t("channelCount", { count: withRevenue.length })}
           </span>
         )}
       </div>
@@ -322,7 +327,7 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
         <Skeleton className="h-48 w-full rounded-lg bg-zinc-800" />
       ) : rects.length === 0 ? (
         <div className="flex items-center justify-center h-32 text-zinc-600 text-sm">
-          Sem dados de receita no período
+          {t("noData")}
         </div>
       ) : (
         <div className="relative w-full">
@@ -367,7 +372,7 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
             {rects.map((rect) => {
               const isHov = hoveredChannel === rect.channel;
               const isDim = hoveredChannel !== null && !isHov;
-              const name = getChannelName(rect.channel);
+              const name = getChannelName(rect.channel, locale);
               const tier = getTier(rect.w, rect.h);
 
               const maxChars = Math.floor((rect.w - PAD * 2) / 6.5);
@@ -460,7 +465,7 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
                         fontWeight="500"
                         opacity={0.9}
                       >
-                        {rect.percentage}% da receita
+                        {t("percentRevenue", { pct: rect.percentage })}
                       </text>
                       {rect.h >= 100 && (
                         <text
@@ -470,8 +475,7 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
                           fontSize="10"
                           fontFamily="ui-sans-serif, system-ui, sans-serif"
                         >
-                          {fmtInt(rect.purchases)} comp. · conv.{" "}
-                          {rect.conversion_rate}
+                          {t("purchasesConv", { count: fmtInt(rect.purchases), rate: rect.conversion_rate })}
                         </text>
                       )}
                     </>
@@ -548,7 +552,7 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
                   if (ttY + ttH > H) ttY = H - ttH - 4;
 
                   const r = tooltip.rect;
-                  const tName = getChannelName(r.channel);
+                  const tName = getChannelName(r.channel, locale);
 
                   return (
                     <>
@@ -591,7 +595,7 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
                         fontFamily="ui-monospace, monospace"
                         opacity={0.85}
                       >
-                        {r.percentage}% da receita
+                        {t("percentRevenue", { pct: r.percentage })}
                       </text>
                       <text
                         x={ttX + pad}
@@ -600,7 +604,7 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
                         fontSize="9"
                         fontFamily="ui-sans-serif, system-ui, sans-serif"
                       >
-                        {fmtInt(r.purchases)} comp. · conv. {r.conversion_rate}
+                        {t("purchasesConv", { count: fmtInt(r.purchases), rate: r.conversion_rate })}
                       </text>
                     </>
                   );

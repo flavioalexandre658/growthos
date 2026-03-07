@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getChannelName, getChannelColor } from "@/utils/channel-colors";
 import { fmtBRLDecimal } from "@/utils/format";
@@ -41,6 +41,7 @@ function KpiItem({ label, value, sub, rightBorder, bottomBorder }: KpiItemProps)
 
 export function ChannelsKpiStrip({ data, isLoading }: ChannelsKpiStripProps) {
   const t = useTranslations("channels.kpiStrip");
+  const locale = useLocale();
 
   if (isLoading) {
     return (
@@ -65,7 +66,7 @@ export function ChannelsKpiStrip({ data, isLoading }: ChannelsKpiStripProps) {
   const totalRevenue = data?.totalRevenue ?? 0;
 
   const topChannelColor = topChannel ? getChannelColor(topChannel, 0) : "#6366f1";
-  const topChannelName = topChannel ? getChannelName(topChannel) : "—";
+  const topChannelName = topChannel ? getChannelName(topChannel, locale) : "—";
 
   return (
     <>

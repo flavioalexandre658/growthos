@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtBRLDecimal, fmtInt } from "@/utils/format";
 import type { IPageScatterPoint } from "@/interfaces/dashboard.interface";
@@ -39,10 +40,10 @@ function bubbleRadius(revenue: number, maxRevenue: number): number {
 }
 
 const Q_META = {
-  escalar: { label: "Escalar", color: "#818cf8", bg: "rgba(99,102,241,0.04)" },
-  manter: { label: "Manter", color: "#34d399", bg: "rgba(52,211,153,0.04)" },
-  ignorar: { label: "Ignorar", color: "#71717a", bg: "transparent" },
-  otimizar: { label: "Otimizar", color: "#fbbf24", bg: "rgba(251,191,36,0.05)" },
+  escalar: { color: "#818cf8", bg: "rgba(99,102,241,0.04)" },
+  manter: { color: "#34d399", bg: "rgba(52,211,153,0.04)" },
+  ignorar: { color: "#71717a", bg: "transparent" },
+  otimizar: { color: "#fbbf24", bg: "rgba(251,191,36,0.05)" },
 } as const;
 
 type Quadrant = keyof typeof Q_META;
@@ -59,7 +60,15 @@ function classifyQuadrant(visits: number, conversionRate: number, medianX: numbe
 }
 
 function PagesScatterMobile({ data, isLoading }: PagesScatterPlotProps) {
+  const t = useTranslations("pages.scatter");
   const points = useMemo(() => data ?? [], [data]);
+
+  const quadrantLabels: Record<Quadrant, string> = useMemo(() => ({
+    escalar: t("quadrantEscalar"),
+    manter: t("quadrantManter"),
+    ignorar: t("quadrantIgnorar"),
+    otimizar: t("quadrantOtimizar"),
+  }), [t]);
 
   const { medianX, medianY } = useMemo(() => {
     if (points.length === 0) return { medianX: 1, medianY: 50 };
@@ -89,8 +98,8 @@ function PagesScatterMobile({ data, isLoading }: PagesScatterPlotProps) {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
       <div className="mb-3">
-        <h3 className="text-sm font-bold text-zinc-100">Oportunidades</h3>
-        <p className="mt-0.5 text-[10px] text-zinc-500">Volume vs conversão por quadrante</p>
+        <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
+        <p className="mt-0.5 text-[10px] text-zinc-500">{t("mobileSubtitle")}</p>
       </div>
 
       {isLoading ? (
@@ -101,7 +110,7 @@ function PagesScatterMobile({ data, isLoading }: PagesScatterPlotProps) {
         </div>
       ) : points.length === 0 ? (
         <div className="flex items-center justify-center h-24 text-zinc-600 text-sm">
-          Sem dados suficientes no período
+          {t("noData")}
         </div>
       ) : (
         <div className="space-y-3">
@@ -122,10 +131,10 @@ function PagesScatterMobile({ data, isLoading }: PagesScatterPlotProps) {
                     className="text-[10px] font-semibold uppercase tracking-wider"
                     style={{ color: meta.color }}
                   >
-                    {meta.label}
+                    {quadrantLabels[q]}
                   </span>
                   <span className="text-[10px] text-zinc-600 font-mono">
-                    {group.length} página{group.length !== 1 ? "s" : ""}
+                    {t("pageCount", { count: group.length })}
                   </span>
                 </div>
                 <div className="space-y-1.5">
@@ -152,7 +161,7 @@ function PagesScatterMobile({ data, isLoading }: PagesScatterPlotProps) {
                   ))}
                   {group.length > 5 && (
                     <p className="text-[10px] text-zinc-600 text-center py-0.5">
-                      +{group.length - 5} página{group.length - 5 !== 1 ? "s" : ""}
+                      {t("morePages", { count: group.length - 5 })}
                     </p>
                   )}
                 </div>
@@ -166,8 +175,16 @@ function PagesScatterMobile({ data, isLoading }: PagesScatterPlotProps) {
 }
 
 export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
+  const t = useTranslations("pages.scatter");
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+
+  const quadrantLabels: Record<Quadrant, string> = useMemo(() => ({
+    escalar: t("quadrantEscalar"),
+    manter: t("quadrantManter"),
+    ignorar: t("quadrantIgnorar"),
+    otimizar: t("quadrantOtimizar"),
+  }), [t]);
 
   const points = useMemo(() => data ?? [], [data]);
 
@@ -261,9 +278,9 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
       <div className="hidden md:block rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <div className="flex items-baseline justify-between mb-3">
         <div>
-          <h3 className="text-sm font-bold text-zinc-100">Oportunidades</h3>
+          <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
           <p className="mt-0.5 text-[10px] text-zinc-500">
-            Volume vs conversão — tamanho = receita
+            {t("desktopSubtitle")}
           </p>
         </div>
         <div className="hidden sm:flex items-center gap-2.5 shrink-0">
@@ -273,7 +290,7 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
                 className="inline-block h-1.5 w-1.5 rounded-full"
                 style={{ background: Q_META[q].color }}
               />
-              <span className="text-[9px] text-zinc-500 font-medium">{Q_META[q].label}</span>
+              <span className="text-[9px] text-zinc-500 font-medium">{quadrantLabels[q]}</span>
             </span>
           ))}
         </div>
@@ -283,7 +300,7 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
         <Skeleton className="h-44 w-full rounded-lg bg-zinc-800" />
       ) : points.length === 0 ? (
         <div className="flex items-center justify-center h-32 text-zinc-600 text-sm">
-          Sem dados suficientes no período
+          {t("noData")}
         </div>
       ) : (
         <div className="relative w-full">
@@ -335,10 +352,10 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
               fill={Q_META.otimizar.bg}
             />
 
-            {yTicks.map((t) => {
-              const y = toSy(t);
+            {yTicks.map((tick) => {
+              const y = toSy(tick);
               return (
-                <g key={`yt-${t}`}>
+                <g key={`yt-${tick}`}>
                   <line
                     x1={PAD_L}
                     y1={y}
@@ -355,16 +372,16 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
                     fontSize="8"
                     fontFamily="ui-monospace, monospace"
                   >
-                    {t}%
+                    {tick}%
                   </text>
                 </g>
               );
             })}
 
-            {xTicks.map((t) => {
-              const x = toSx(t);
+            {xTicks.map((tick) => {
+              const x = toSx(tick);
               return (
-                <g key={`xt-${t}`}>
+                <g key={`xt-${tick}`}>
                   <line
                     x1={x}
                     y1={PAD_T}
@@ -381,7 +398,7 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
                     fontSize="8"
                     fontFamily="ui-monospace, monospace"
                   >
-                    {t >= 1000 ? `${t / 1000}k` : String(t)}
+                    {tick >= 1000 ? `${tick / 1000}k` : String(tick)}
                   </text>
                 </g>
               );
@@ -414,7 +431,7 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
                   fontWeight="600"
                   letterSpacing="0.02em"
                 >
-                  {Q_META[q].label.toUpperCase()}
+                  {quadrantLabels[q].toUpperCase()}
                 </text>
               );
             })}
@@ -427,7 +444,7 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
               fontSize="7"
               fontFamily="ui-sans-serif, system-ui, sans-serif"
             >
-              Visitas (log)
+              {t("xAxisLabel")}
             </text>
 
             <g clipPath="url(#sc-clip)">
@@ -518,14 +535,14 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
                     fill="rgba(161,161,170,0.55)" fontSize="9"
                     fontFamily="ui-sans-serif, system-ui, sans-serif"
                   >
-                    {fmtInt(p.visits)} visitas
+                    {t("visitsLabel", { count: fmtInt(p.visits) })}
                   </text>
                   <text
                     x={ttX + ttW - pad} y={ttY + 46} textAnchor="end"
                     fill="rgba(161,161,170,0.45)" fontSize="8"
                     fontFamily="ui-sans-serif, system-ui, sans-serif"
                   >
-                    {Q_META[q].label}
+                    {quadrantLabels[q]}
                   </text>
                   <line
                     x1={ttX + pad + 4} y1={ttY + 54}
@@ -537,7 +554,7 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
                     fill="rgba(113,113,122,0.5)" fontSize="8"
                     fontFamily="ui-sans-serif, system-ui, sans-serif"
                   >
-                    Ticket: {p.visits > 0
+                    {t("ticketLabel")}{p.visits > 0
                       ? fmtBRLDecimal(p.revenue / 100 / Math.max(p.visits * (p.conversionRate / 100), 1))
                       : "—"}
                   </text>

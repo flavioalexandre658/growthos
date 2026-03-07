@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/pt-br";
+import "dayjs/locale/en";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { formatDate } from "@/utils/format-date";
 import {
@@ -44,7 +45,6 @@ import type { IEvent } from "@/interfaces/event.interface";
 import type { IPaginationMeta } from "@/interfaces/dashboard.interface";
 
 dayjs.extend(relativeTime);
-dayjs.locale("pt-br");
 
 function EventDetailGrid({
   event,
@@ -53,7 +53,9 @@ function EventDetailGrid({
   event: IEvent;
   organizationId: string;
 }) {
-  const t = useTranslations("eventsTable");
+  const t = useTranslations("events.eventsTable");
+  const locale = useLocale();
+  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
   const [sessionOpen, setSessionOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const fields: DetailFieldProps[] = [];
@@ -193,7 +195,9 @@ function EventCard({
   isSelected: boolean;
   onToggle: (id: string) => void;
 }) {
-  const t = useTranslations("eventsTable");
+  const t = useTranslations("events.eventsTable");
+  const locale = useLocale();
+  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
   const [expanded, setExpanded] = useState(false);
   const deleteMutation = useDeleteEvent();
   const details = hasEventDetails(event);
@@ -262,7 +266,7 @@ function EventCard({
                 {formatDate(event.createdAt, timezone)}
               </span>
               <span className="text-[9px] text-zinc-600">
-                {dayjs(event.createdAt).fromNow()}
+                {dayjs(event.createdAt).locale(dayjsLocale).fromNow()}
               </span>
             </div>
           </div>
@@ -326,7 +330,9 @@ function EventRow({
   isSelected: boolean;
   onToggle: (id: string) => void;
 }) {
-  const t = useTranslations("eventsTable");
+  const t = useTranslations("events.eventsTable");
+  const locale = useLocale();
+  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
   const [expanded, setExpanded] = useState(false);
   const deleteMutation = useDeleteEvent();
   const details = hasEventDetails(event);
@@ -442,7 +448,7 @@ function EventRow({
               {formatDate(event.createdAt, timezone)}
             </span>
             <span className="text-[10px] text-zinc-600">
-              {dayjs(event.createdAt).fromNow()}
+              {dayjs(event.createdAt).locale(dayjsLocale).fromNow()}
             </span>
           </div>
         </td>
@@ -492,7 +498,7 @@ export function EventsTable({
   onPageChange,
   onPageSizeChange,
 }: EventsTableProps) {
-  const t = useTranslations("eventsTable");
+  const t = useTranslations("events.eventsTable");
   const { organization } = useOrganization();
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());

@@ -1,0 +1,60 @@
+{
+  "subscriptions": {
+    "content": {
+      "title": "Subscriptions",
+      "subtitle": "Complete record of all subscriptions",
+      "exportCsv": "Export CSV",
+      "periodLabels": {
+        "today": "today",
+        "yesterday": "yesterday",
+        "7d": "last 7 days",
+        "30d": "last 30 days",
+        "90d": "last 90 days",
+        "period": "period"
+      }
+    },
+    "table": {
+      "colClient": "Client",
+      "colPlan": "Plan",
+      "colValue": "Value",
+      "colInterval": "Interval",
+      "colStatus": "Status",
+      "colStartedAt": "Started",
+      "colCanceledAt": "Cancelled",
+      "empty": "No subscriptions found for the applied filters",
+      "since": "Since {date}",
+      "copy": "Copy",
+      "rowsPerPage": "Rows per page",
+      "paginationRange": "{start}–{end} of {total}",
+      "billingIntervals": {
+        "monthly": "Monthly",
+        "quarterly": "Quarterly",
+        "semiannual": "Semi-annual",
+        "yearly": "Annual",
+        "weekly": "Weekly"
+      },
+      "statusLabels": {
+        "active": "Active",
+        "trialing": "Trial",
+        "past_due": "Past due",
+        "canceled": "Cancelled"
+      }
+    },
+    "filters": {
+      "searchPlaceholder": "Search by customer, subscription ID or plan...",
+      "statusLabel": "Status",
+      "planPlaceholder": "Plan",
+      "allPlans": "All plans",
+      "intervalPlaceholder": "Interval",
+      "allIntervals": "All",
+      "clear": "Clear",
+      "statusFilters": {
+        "all": "All",
+        "active": "Active",
+        "trialing": "Trial",
+        "past_due": "Past due",
+        "canceled": "Cancelled"
+      }
+    }
+  }
+}

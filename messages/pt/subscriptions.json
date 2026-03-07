@@ -1,0 +1,60 @@
+{
+  "subscriptions": {
+    "content": {
+      "title": "Assinaturas",
+      "subtitle": "Registro completo de todas as assinaturas",
+      "exportCsv": "Exportar CSV",
+      "periodLabels": {
+        "today": "hoje",
+        "yesterday": "ontem",
+        "7d": "últimos 7 dias",
+        "30d": "últimos 30 dias",
+        "90d": "últimos 90 dias",
+        "period": "período"
+      }
+    },
+    "table": {
+      "colClient": "Cliente",
+      "colPlan": "Plano",
+      "colValue": "Valor",
+      "colInterval": "Intervalo",
+      "colStatus": "Status",
+      "colStartedAt": "Iniciou em",
+      "colCanceledAt": "Cancelou em",
+      "empty": "Nenhuma assinatura encontrada para os filtros aplicados",
+      "since": "Desde {date}",
+      "copy": "Copiar",
+      "rowsPerPage": "Linhas por página",
+      "paginationRange": "{start}–{end} de {total}",
+      "billingIntervals": {
+        "monthly": "Mensal",
+        "quarterly": "Trimestral",
+        "semiannual": "Semestral",
+        "yearly": "Anual",
+        "weekly": "Semanal"
+      },
+      "statusLabels": {
+        "active": "Ativa",
+        "trialing": "Trial",
+        "past_due": "Em atraso",
+        "canceled": "Cancelada"
+      }
+    },
+    "filters": {
+      "searchPlaceholder": "Buscar por customer, subscription ID ou plano...",
+      "statusLabel": "Status",
+      "planPlaceholder": "Plano",
+      "allPlans": "Todos os planos",
+      "intervalPlaceholder": "Intervalo",
+      "allIntervals": "Todos",
+      "clear": "Limpar",
+      "statusFilters": {
+        "all": "Todas",
+        "active": "Ativas",
+        "trialing": "Trial",
+        "past_due": "Em atraso",
+        "canceled": "Canceladas"
+      }
+    }
+  }
+}

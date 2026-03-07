@@ -250,6 +250,35 @@
       "variableCosts": "Variable Costs",
       "fixedCosts": "Fixed Costs",
       "remainingMargin": "Remaining / Margin"
+    },
+    "costsImpact": {
+      "fixedLabel": "Fixed Costs / month",
+      "fixedSub": "fixed monthly expenses",
+      "fixedTooltip": "Sum of monthly expenses that do not vary with revenue — tools, salaries, rent, services. Paid regardless of sales volume.",
+      "variableLabel": "Variable Costs",
+      "variableSub": "on {value} in revenue",
+      "variableTooltip": "Costs calculated as a percentage of revenue — gateway fees, marketplace commissions, taxes. Grow proportionally to sales.",
+      "totalLabel": "Total Cost",
+      "totalSub": "fixed + variable",
+      "totalTooltip": "Sum of all costs in the period (fixed + variable). This is the total that must be covered by revenue for the business to be profitable.",
+      "marginImpactLabel": "Margin Impact",
+      "marginImpactSub": "net margin: {value}%",
+      "marginImpactTooltip": "Percentage of gross revenue consumed by total costs. Above 50% is concerning — it means more than half of what comes in already goes to expenses.",
+      "grossLabel": "Gross Revenue (month)",
+      "grossSub": "cost calculation base",
+      "grossTooltip": "Total gross received in the reference month, used as the base to calculate the percentage impact of costs.",
+      "infoAriaLabel": "Information about {label}"
+    },
+    "aiAnalysis": {
+      "title": "AI Analysis",
+      "subtitle": "Gemini analyzes your costs and identifies improvement opportunities",
+      "comparePeriods": "Compare Periods",
+      "analyzing": "Analyzing...",
+      "analyzeBtn": "Analyze with AI",
+      "showLess": "Show less",
+      "showMore": "View full analysis",
+      "connectionError": "Error connecting to AI",
+      "apiKeyError": "Error getting analysis. Check your GEMINI_API_KEY configuration."
     }
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import {
   IChannelData,
   IStepMeta,
@@ -74,6 +75,8 @@ export function ChannelsTable({
   onPageChange,
   onPageSizeChange,
 }: ChannelsTableProps) {
+  const t = useTranslations("channels.table");
+  const locale = useLocale();
   const [showNoRevenue, setShowNoRevenue] = useState(false);
 
   const withRevenue = data.filter((c) => c.revenue > 0);
@@ -111,9 +114,9 @@ export function ChannelsTable({
   };
 
   const fixedSortOptions: { key: string; label: string }[] = [
-    { key: "revenue", label: "Receita" },
-    { key: "conversion_rate", label: "Conversão" },
-    { key: "ticket_medio", label: "Ticket" },
+    { key: "revenue", label: t("sortRevenue") },
+    { key: "conversion_rate", label: t("sortConversion") },
+    { key: "ticket_medio", label: t("sortTicket") },
   ];
 
   const stepSortOptions: { key: string; label: string }[] = stepMeta.map((s) => ({
@@ -143,7 +146,7 @@ export function ChannelsTable({
   const columns: TableColumn<ChannelRow>[] = [
     {
       key: "channel",
-      header: "Canal",
+      header: t("colChannel"),
       mobilePrimary: true,
       render: (c) => (
         <div className="flex items-center gap-2.5">
@@ -153,10 +156,10 @@ export function ChannelsTable({
           />
           <div className="flex flex-col">
             <span className="font-semibold text-sm text-zinc-200">
-              {getChannelName(c.channel)}
+              {getChannelName(c.channel, locale)}
             </span>
             {!c.revenue && (
-              <span className="text-[10px] text-zinc-600">sem receita</span>
+              <span className="text-[10px] text-zinc-600">{t("noRevenue")}</span>
             )}
           </div>
         </div>
@@ -165,7 +168,7 @@ export function ChannelsTable({
     ...stepColumns,
     {
       key: "conversion_rate",
-      header: "Conversão",
+      header: t("colConversion"),
       align: "right",
       render: (c) => (
         <span className={cn("font-mono text-sm font-semibold", conversionColor(String(c.conversion_rate)))}>
@@ -175,7 +178,7 @@ export function ChannelsTable({
     },
     {
       key: "revenue",
-      header: "Receita",
+      header: t("colRevenue"),
       align: "right",
       render: (c) => (
         <div className="flex flex-col items-end gap-0.5">
@@ -191,7 +194,7 @@ export function ChannelsTable({
     },
     {
       key: "ticket_medio",
-      header: "Ticket Médio",
+      header: t("colAvgTicket"),
       align: "right",
       render: (c) => (
         <span className="font-mono text-sm text-zinc-300">
@@ -204,10 +207,9 @@ export function ChannelsTable({
   const tableHeader = (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h3 className="text-sm font-bold text-zinc-100">Detalhamento por Canal</h3>
+        <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
         <p className="mt-0.5 text-xs text-zinc-500">
-          {withRevenue.length} canal{withRevenue.length !== 1 ? "is" : ""} com receita
-          {noRevenue.length > 0 && ` · ${noRevenue.length} sem receita`}
+          {t("subtitle", { withRevenue: withRevenue.length, noRevenue: noRevenue.length })}
         </p>
       </div>
       <div className="flex flex-wrap gap-1.5 shrink-0 items-center">
@@ -222,7 +224,7 @@ export function ChannelsTable({
             )}
           >
             {showNoRevenue ? <IconEyeOff size={10} /> : <IconEye size={10} />}
-            {showNoRevenue ? "Ocultar" : `+${noRevenue.length} sem receita`}
+            {showNoRevenue ? t("hide") : t("showNoRevenue", { count: noRevenue.length })}
           </button>
         )}
         {allSortOptions.map((s) => {
@@ -259,7 +261,7 @@ export function ChannelsTable({
       getRowKey={(c) => c.channel}
       isLoading={isLoading}
       serverPagination={serverPagination}
-      emptyMessage="Sem dados de attribution no período"
+      emptyMessage={t("emptyState")}
       header={tableHeader}
     />
   );

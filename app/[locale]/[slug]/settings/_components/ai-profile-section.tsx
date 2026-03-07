@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { IconBrain, IconCheck, IconInfoCircle } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { updateAiProfile } from "@/actions/organizations/update-ai-profile.action";
@@ -9,22 +10,6 @@ import { getOrganizationsQueryKey } from "@/hooks/queries/use-organizations";
 import toast from "react-hot-toast";
 import type { IAiProfile } from "@/interfaces/ai.interface";
 
-const TAX_REGIMES = [
-  { value: "", label: "Não informado" },
-  { value: "mei", label: "MEI" },
-  { value: "simples_nacional", label: "Simples Nacional" },
-  { value: "lucro_presumido", label: "Lucro Presumido" },
-  { value: "lucro_real", label: "Lucro Real" },
-];
-
-const TAX_REGIME_DESCRIPTIONS: Record<string, string> = {
-  "": "IA não considera impostos nas análises de rentabilidade",
-  mei: "IA considera alíquota fixa de ~5% (DAS) nas recomendações de margem",
-  simples_nacional: "IA considera alíquota de ~6% nas recomendações de margem",
-  lucro_presumido: "IA considera alíquota de ~13,33% nas recomendações de margem",
-  lucro_real: "IA considera alíquota variável — informe o contexto no segmento para mais precisão",
-};
-
 export function AiProfileSection({
   orgId,
   initialProfile,
@@ -32,6 +17,7 @@ export function AiProfileSection({
   orgId: string;
   initialProfile?: IAiProfile;
 }) {
+  const t = useTranslations("settings.aiProfile");
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [segment, setSegment] = useState(initialProfile?.segment ?? "");
@@ -40,6 +26,22 @@ export function AiProfileSection({
   const [monthlyGoal, setMonthlyGoal] = useState(
     initialProfile?.monthlyGoal ? String(initialProfile.monthlyGoal) : "",
   );
+
+  const TAX_REGIMES = [
+    { value: "", label: t("taxRegimeNone") },
+    { value: "mei", label: t("taxRegimeMei") },
+    { value: "simples_nacional", label: t("taxRegimeSimplesNacional") },
+    { value: "lucro_presumido", label: t("taxRegimeLucroPresumido") },
+    { value: "lucro_real", label: t("taxRegimeLucroReal") },
+  ];
+
+  const TAX_REGIME_DESCRIPTIONS: Record<string, string> = {
+    "": t("taxDescNone"),
+    mei: t("taxDescMei"),
+    simples_nacional: t("taxDescSimplesNacional"),
+    lucro_presumido: t("taxDescLucroPresumido"),
+    lucro_real: t("taxDescLucroReal"),
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -52,7 +54,7 @@ export function AiProfileSection({
         monthlyGoal: monthlyGoal ? Number(monthlyGoal) : undefined,
       });
       await queryClient.invalidateQueries({ queryKey: getOrganizationsQueryKey() });
-      toast.success("Perfil para IA atualizado!");
+      toast.success(t("successToast"));
     } finally {
       setSaving(false);
     }
@@ -65,9 +67,9 @@ export function AiProfileSection({
           <IconBrain size={14} className="text-indigo-400" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-zinc-100">Perfil para IA</h3>
+          <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Contexto enviado para a IA para análises mais precisas e acionáveis
+            {t("description")}
           </p>
         </div>
       </div>
@@ -76,31 +78,31 @@ export function AiProfileSection({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <label className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">
-              Segmento
+              {t("segmentLabel")}
             </label>
             <input
               value={segment}
               onChange={(e) => setSegment(e.target.value)}
-              placeholder="ex: convites digitais, e-commerce, SaaS"
+              placeholder={t("segmentPlaceholder")}
               className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">
-              Modelo de Negócio
+              {t("modelLabel")}
             </label>
             <input
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              placeholder="ex: marketplace de templates, assinatura, infoproduto"
+              placeholder={t("modelPlaceholder")}
               className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">
-              Regime Tributário
+              {t("taxRegimeLabel")}
             </label>
             <select
               value={taxRegime}
@@ -125,13 +127,13 @@ export function AiProfileSection({
 
           <div className="space-y-1.5">
             <label className="text-[11px] text-zinc-500 uppercase tracking-wider font-medium">
-              Meta Mensal de Receita (R$)
+              {t("monthlyGoalLabel")}
             </label>
             <input
               type="number"
               value={monthlyGoal}
               onChange={(e) => setMonthlyGoal(e.target.value)}
-              placeholder="ex: 5000"
+              placeholder={t("monthlyGoalPlaceholder")}
               min="0"
               step="100"
               className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
@@ -140,8 +142,7 @@ export function AiProfileSection({
         </div>
 
         <p className="text-[11px] text-zinc-600 leading-relaxed">
-          Essas informações são enviadas junto com os dados financeiros para contextualizar a análise da IA. 
-          Quanto mais preciso o contexto, mais relevantes serão as recomendações.
+          {t("footerHint")}
         </p>
 
         <div className="flex justify-end">
@@ -152,11 +153,11 @@ export function AiProfileSection({
             className="bg-indigo-600 hover:bg-indigo-500 text-white h-8 gap-1.5 text-xs"
           >
             {saving ? (
-              "Salvando..."
+              t("saving")
             ) : (
               <>
                 <IconCheck size={13} />
-                Salvar Perfil
+                {t("saveProfile")}
               </>
             )}
           </Button>

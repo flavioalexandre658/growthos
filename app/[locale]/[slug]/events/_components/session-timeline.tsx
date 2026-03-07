@@ -57,7 +57,7 @@ export function SessionTimeline({
   sessionId,
   currentEventId,
 }: SessionTimelineProps) {
-  const t = useTranslations("sessionTimeline");
+  const t = useTranslations("events.sessionTimeline");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { organization } = useOrganization();
   const tz = organization?.timezone ?? "America/Sao_Paulo";

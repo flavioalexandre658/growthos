@@ -72,6 +72,7 @@ export async function getChannels(
 
   const session = await getServerSession(authOptions);
   if (!session?.user) return EMPTY;
+  const locale = session.user.locale ?? "pt";
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
@@ -90,7 +91,7 @@ export async function getChannels(
   const previousEndDate = new Date(startDate.getTime() - 1);
   const previousStartDate = new Date(startDate.getTime() - periodMs);
 
-  const baseFunnelSteps: IFunnelStepConfig[] = buildFunnelSteps(org?.funnelSteps ?? []);
+  const baseFunnelSteps: IFunnelStepConfig[] = buildFunnelSteps(org?.funnelSteps ?? [], locale);
   const allEventTypes = getAllQueryEventTypes(baseFunnelSteps).filter(
     (t) => t !== "pageview"
   );
@@ -189,8 +190,8 @@ export async function getChannels(
   const totalPv = Array.from(pvBySource.values()).reduce((sum, n) => sum + n, 0);
   globalCountMap.set("pageview", { total: totalPv, uniqueTotal: totalPv });
 
-  const funnelSteps = injectCheckoutSteps(baseFunnelSteps, globalCountMap);
-  const stepMeta = buildExtendedStepMeta(funnelSteps, globalCountMap);
+  const funnelSteps = injectCheckoutSteps(baseFunnelSteps, globalCountMap, locale);
+  const stepMeta = buildExtendedStepMeta(funnelSteps, globalCountMap, locale);
   const stepConfigMap = new Map(funnelSteps.map((s) => [s.eventType, s]));
   const trackedInMeta = new Set(stepMeta.map((m) => m.key));
 
@@ -259,8 +260,13 @@ export async function getChannels(
   const searchTerm = params.search?.toLowerCase().trim();
   const filtered = searchTerm
     ? allChannels.filter((c) => {
-        const name = getChannelName(c.channel).toLowerCase();
-        return c.channel.toLowerCase().includes(searchTerm) || name.includes(searchTerm);
+        const namePt = getChannelName(c.channel, "pt").toLowerCase();
+        const nameEn = getChannelName(c.channel, "en").toLowerCase();
+        return (
+          c.channel.toLowerCase().includes(searchTerm) ||
+          namePt.includes(searchTerm) ||
+          nameEn.includes(searchTerm)
+        );
       })
     : allChannels;
 

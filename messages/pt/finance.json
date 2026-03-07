@@ -250,6 +250,35 @@
       "variableCosts": "Custos Variáveis",
       "fixedCosts": "Custos Fixos",
       "remainingMargin": "Sobra / Margem"
+    },
+    "costsImpact": {
+      "fixedLabel": "Custos Fixos / mês",
+      "fixedSub": "despesas mensais fixas",
+      "fixedTooltip": "Soma das despesas mensais que não variam com a receita — ferramentas, salários, aluguel, serviços. Pagas independente do volume de vendas.",
+      "variableLabel": "Custos Variáveis",
+      "variableSub": "sobre {value} em receita",
+      "variableTooltip": "Custos calculados como percentual da receita — taxas de gateway, comissões de marketplace, impostos. Crescem proporcionalmente às vendas.",
+      "totalLabel": "Custo Total",
+      "totalSub": "fixos + variáveis",
+      "totalTooltip": "Soma de todos os custos do período (fixos + variáveis). É o total que precisa ser coberto pela receita para o negócio ser lucrativo.",
+      "marginImpactLabel": "Impacto na Margem",
+      "marginImpactSub": "margem líquida: {value}%",
+      "marginImpactTooltip": "Percentual da receita bruta consumido pelos custos totais. Acima de 50% é preocupante — significa que mais da metade do que entra já vai para despesas.",
+      "grossLabel": "Receita Bruta (mês)",
+      "grossSub": "base de cálculo dos custos",
+      "grossTooltip": "Total bruto recebido no mês de referência, usado como base para calcular o impacto percentual dos custos.",
+      "infoAriaLabel": "Informação sobre {label}"
+    },
+    "aiAnalysis": {
+      "title": "Análise com IA",
+      "subtitle": "Gemini analisa seus custos e identifica oportunidades de melhoria",
+      "comparePeriods": "Comparar Períodos",
+      "analyzing": "Analisando...",
+      "analyzeBtn": "Analisar com IA",
+      "showLess": "Mostrar menos",
+      "showMore": "Ver análise completa",
+      "connectionError": "Erro ao conectar com IA",
+      "apiKeyError": "Erro ao obter análise. Verifique a configuração do GEMINI_API_KEY."
     }
   }
 }

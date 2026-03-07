@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { IconCopy, IconCheck } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
+  const t = useTranslations("events.detail");
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -19,7 +21,7 @@ export function CopyButton({ value }: { value: string }) {
       type="button"
       onClick={handleCopy}
       className="ml-1.5 shrink-0 p-0.5 rounded text-zinc-700 hover:text-zinc-300 transition-colors"
-      title="Copiar"
+      title={t("copy")}
     >
       {copied ? (
         <IconCheck size={11} className="text-emerald-400" />

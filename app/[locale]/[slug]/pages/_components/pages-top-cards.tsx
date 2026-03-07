@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtBRLDecimal, fmtInt } from "@/utils/format";
 import type { ILandingPageData, IStepMeta } from "@/interfaces/dashboard.interface";
@@ -26,6 +27,7 @@ function shortPath(p: string, max = 30): string {
 }
 
 export function PagesTopCards({ data, stepMeta, isLoading }: PagesTopCardsProps) {
+  const t = useTranslations("pages.topCards");
   const topPages = data.filter((p) => p.revenue > 0).slice(0, 5);
 
   const firstStepKey = stepMeta[0]?.key ?? "pageview";
@@ -100,7 +102,7 @@ export function PagesTopCards({ data, stepMeta, isLoading }: PagesTopCardsProps)
 
             {visits > 0 && (
               <div className="mt-1 text-[10px] text-zinc-600 font-mono">
-                {fmtInt(visits)} vis.
+                {t("visitsShort", { count: fmtInt(visits) })}
               </div>
             )}
           </div>

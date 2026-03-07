@@ -60,6 +60,38 @@ export const CHANNEL_NAMES: Record<string, string> = {
   copilot_organic: "Copilot",
 };
 
+export const CHANNEL_NAMES_EN: Record<string, string> = {
+  direct: "Direct",
+  google_organic: "Google Organic",
+  google_paid: "Google Ads",
+  facebook_organic: "Facebook",
+  facebook_paid: "Facebook Ads",
+  instagram_organic: "Instagram",
+  instagram_paid: "Instagram Ads",
+  tiktok_organic: "TikTok",
+  tiktok_paid: "TikTok Ads",
+  twitter_organic: "Twitter/X",
+  twitter_paid: "Twitter/X Ads",
+  linkedin_organic: "LinkedIn",
+  linkedin_paid: "LinkedIn Ads",
+  youtube_organic: "YouTube",
+  youtube_paid: "YouTube Ads",
+  bing_organic: "Bing Organic",
+  bing_paid: "Bing Ads",
+  pinterest_organic: "Pinterest",
+  pinterest_paid: "Pinterest Ads",
+  whatsapp_organic: "WhatsApp",
+  email_organic: "Email",
+  telegram_organic: "Telegram",
+  yahoo_organic: "Yahoo",
+  duckduckgo_organic: "DuckDuckGo",
+  chatgpt_organic: "ChatGPT",
+  perplexity_organic: "Perplexity",
+  gemini_organic: "Gemini",
+  claude_organic: "Claude",
+  copilot_organic: "Copilot",
+};
+
 const COLOR_FALLBACKS = [
   "#6366f1",
   "#8b5cf6",
@@ -82,6 +114,7 @@ export function getChannelColor(channel: string, index: number): string {
   return CHANNEL_COLORS[channel] ?? COLOR_FALLBACKS[index % COLOR_FALLBACKS.length];
 }
 
-export function getChannelName(channel: string): string {
-  return CHANNEL_NAMES[channel] ?? formatChannelKey(channel);
+export function getChannelName(channel: string, locale?: string): string {
+  const map = locale === "en" ? CHANNEL_NAMES_EN : CHANNEL_NAMES;
+  return map[channel] ?? formatChannelKey(channel);
 }

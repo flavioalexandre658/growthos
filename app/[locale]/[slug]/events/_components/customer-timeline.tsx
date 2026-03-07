@@ -89,7 +89,7 @@ export function CustomerTimeline({
   customerId,
   currentEventId,
 }: CustomerTimelineProps) {
-  const t = useTranslations("customerTimeline");
+  const t = useTranslations("events.customerTimeline");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { organization } = useOrganization();
   const tz = organization?.timezone ?? "America/Sao_Paulo";

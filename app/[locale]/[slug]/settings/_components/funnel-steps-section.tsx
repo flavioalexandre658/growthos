@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import {
   IconFilter,
@@ -23,59 +24,60 @@ import { cn } from "@/lib/utils";
 import { useUpdateFunnelSteps } from "@/hooks/mutations/use-update-funnel-steps";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
-const PRESETS: { label: string; description: string; steps: IFunnelStepConfig[] }[] = [
-  {
-    label: "E-commerce",
-    description: "pageview → signup → payment",
-    steps: [
-      { eventType: "pageview", label: "Visitas", countUnique: true },
-      { eventType: "signup", label: "Cadastros" },
-      { eventType: "purchase", label: "Compras" },
-    ],
-  },
-  {
-    label: "SaaS / Trial",
-    description: "signup → trial → payment",
-    steps: [
-      { eventType: "signup", label: "Cadastros" },
-      { eventType: "trial_started", label: "Trials" },
-      { eventType: "purchase", label: "Compras" },
-    ],
-  },
-  {
-    label: "SaaS Recorrente",
-    description: "signup → trial → payment → churn",
-    steps: [
-      { eventType: "signup", label: "Cadastros" },
-      { eventType: "trial_started", label: "Trials" },
-      { eventType: "purchase", label: "Compras" },
-      { eventType: "subscription_canceled", label: "Churn" },
-    ],
-  },
-  {
-    label: "Simples",
-    description: "signup → payment",
-    steps: [
-      { eventType: "signup", label: "Cadastros" },
-      { eventType: "purchase", label: "Compras" },
-    ],
-  },
-  {
-    label: "Custom",
-    description: "Configure do zero",
-    steps: [],
-  },
-];
-
 interface FunnelStepsSectionProps {
   orgId: string;
   initialSteps: IFunnelStepConfig[];
 }
 
 export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionProps) {
+  const t = useTranslations("settings.funnel");
   const [steps, setSteps] = useState<IFunnelStepConfig[]>(initialSteps);
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const mutation = useUpdateFunnelSteps();
+
+  const PRESETS: { label: string; description: string; steps: IFunnelStepConfig[] }[] = [
+    {
+      label: t("presetEcommerce"),
+      description: t("presetEcommerceDesc"),
+      steps: [
+        { eventType: "pageview", label: t("stepVisitas"), countUnique: true },
+        { eventType: "signup", label: t("stepCadastros") },
+        { eventType: "purchase", label: t("stepCompras") },
+      ],
+    },
+    {
+      label: t("presetSaasTrial"),
+      description: t("presetSaasTrialDesc"),
+      steps: [
+        { eventType: "signup", label: t("stepCadastros") },
+        { eventType: "trial_started", label: t("stepTrials") },
+        { eventType: "purchase", label: t("stepCompras") },
+      ],
+    },
+    {
+      label: t("presetSaasRecurring"),
+      description: t("presetSaasRecurringDesc"),
+      steps: [
+        { eventType: "signup", label: t("stepCadastros") },
+        { eventType: "trial_started", label: t("stepTrials") },
+        { eventType: "purchase", label: t("stepCompras") },
+        { eventType: "subscription_canceled", label: t("stepChurn") },
+      ],
+    },
+    {
+      label: t("presetSimple"),
+      description: t("presetSimpleDesc"),
+      steps: [
+        { eventType: "signup", label: t("stepCadastros") },
+        { eventType: "purchase", label: t("stepCompras") },
+      ],
+    },
+    {
+      label: t("presetCustom"),
+      description: t("presetCustomDesc"),
+      steps: [],
+    },
+  ];
 
   const isDirty = useMemo(
     () => JSON.stringify(steps) !== JSON.stringify(initialSteps),
@@ -91,12 +93,12 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
 
   const addStep = () => {
     setSteps((prev) => [...prev, { eventType: "", label: "", countUnique: false }]);
-    setActivePreset("Custom");
+    setActivePreset(t("presetCustom"));
   };
 
   const removeStep = (index: number) => {
     setSteps((prev) => prev.filter((_, i) => i !== index));
-    setActivePreset("Custom");
+    setActivePreset(t("presetCustom"));
   };
 
   const moveStep = (index: number, direction: "up" | "down") => {
@@ -107,12 +109,12 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
       [next[index], next[target]] = [next[target], next[index]];
       return next;
     });
-    setActivePreset("Custom");
+    setActivePreset(t("presetCustom"));
   };
 
   const updateStep = (index: number, field: keyof IFunnelStepConfig, value: string | boolean) => {
     setSteps((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
-    setActivePreset("Custom");
+    setActivePreset(t("presetCustom"));
   };
 
   const handleDiscard = () => {
@@ -123,11 +125,11 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
   const handleSave = async () => {
     const valid = steps.every((s) => s.eventType.trim() && s.label.trim());
     if (!valid) {
-      toast.error("Preencha todos os campos das etapas");
+      toast.error(t("errorFillAllFields"));
       return;
     }
     if (steps.length < 1) {
-      toast.error("Adicione pelo menos 1 etapa ao funil");
+      toast.error(t("errorMinOneStep"));
       return;
     }
 
@@ -137,7 +139,7 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
     });
 
     if (result) {
-      toast.success("Funil atualizado com sucesso!");
+      toast.success(t("successToast"));
     }
   };
 
@@ -149,9 +151,9 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
             <IconFilter size={16} className="text-violet-400" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-zinc-100">Etapas do Funil</h3>
+            <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Defina as etapas que você quer rastrear no seu funil de conversão
+              {t("description")}
             </p>
           </div>
         </div>
@@ -165,7 +167,7 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
               className="h-8 gap-1.5 text-xs text-zinc-500 hover:text-zinc-200"
             >
               <IconX size={13} />
-              Descartar
+              {t("discard")}
             </Button>
           )}
           <Button
@@ -175,7 +177,7 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
             className="h-8 gap-1.5 text-xs bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40"
           >
             <IconDeviceFloppy size={13} />
-            {mutation.isPending ? "Salvando..." : "Salvar"}
+            {mutation.isPending ? t("saving") : t("save")}
           </Button>
         </div>
       </div>
@@ -185,7 +187,7 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
           <div className="flex items-center gap-1.5">
             <IconSparkles size={12} className="text-zinc-500" />
             <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">
-              Presets
+              {t("presetsLabel")}
             </p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -220,7 +222,7 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
             <div className="flex items-center gap-1.5">
               <IconGripVertical size={12} className="text-zinc-500" />
               <p className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">
-                Etapas ({steps.length})
+                {t("stepsLabel", { count: steps.length })}
               </p>
             </div>
             <div className="hidden sm:flex items-center gap-4 text-[10px] text-zinc-700 font-mono pr-1">
@@ -278,7 +280,7 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
                 <Input
                   value={step.label}
                   onChange={(e) => updateStep(index, "label", e.target.value)}
-                  placeholder="Label exibida"
+                  placeholder={t("labelPlaceholder")}
                   className={cn(
                     "h-8 text-xs bg-zinc-900 border-zinc-700/80 placeholder:text-zinc-700 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-600/50 flex-1 min-w-0",
                     step.hidden ? "text-zinc-600 line-through" : "text-zinc-200"
@@ -300,7 +302,7 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
                 <button
                   type="button"
                   onClick={() => updateStep(index, "hidden", !step.hidden)}
-                  title={step.hidden ? "Mostrar no dashboard" : "Ocultar do dashboard"}
+                  title={step.hidden ? t("showOnDashboard") : t("hideFromDashboard")}
                   className={cn(
                     "p-1.5 transition-colors shrink-0",
                     step.hidden
@@ -329,17 +331,17 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
             className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-indigo-400 transition-colors mt-2 pl-1"
           >
             <IconPlus size={13} />
-            Adicionar etapa
+            {t("addStep")}
           </button>
         </div>
 
         <div className="rounded-lg border border-zinc-800/60 bg-zinc-950/40 p-3.5">
           <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold mb-2.5">
-            Preview do pipeline
+            {t("previewLabel")}
           </p>
           <div className="flex items-center gap-1.5 flex-wrap">
             {steps.length === 0 ? (
-              <span className="text-xs text-zinc-700 italic">Nenhuma etapa configurada</span>
+              <span className="text-xs text-zinc-700 italic">{t("noStepsConfigured")}</span>
             ) : (
               steps.map((step, i) => (
                 <div key={i} className="flex items-center gap-1.5">
@@ -372,7 +374,7 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
           </div>
           {steps.some((s) => s.countUnique) && (
             <p className="text-[10px] text-zinc-700 mt-2">
-              <span className="font-mono text-violet-400/70">U</span> = conta sessões únicas
+              <span className="font-mono text-violet-400/70">U</span> = {t("uniqueHint")}
             </p>
           )}
         </div>
@@ -383,15 +385,11 @@ export function FunnelStepsSection({ orgId, initialSteps }: FunnelStepsSectionPr
               <IconInfoCircle size={13} className="text-indigo-500 mt-px shrink-0" />
               <div className="space-y-0.5">
                 <p className="text-[11px] font-medium text-zinc-400">
-                  Evento opcional:{" "}
+                  {t("checkoutTipTitle")}{" "}
                   <span className="font-mono text-indigo-400">checkout_started</span>
                 </p>
                 <p className="text-[10px] text-zinc-600 leading-relaxed">
-                  Se o projeto tiver checkout (modal ou página separada), adicione{" "}
-                  <span className="font-mono text-zinc-500">checkout_started</span> como etapa antes de{" "}
-                  <span className="font-mono text-zinc-500">payment</span>. Isso habilita a análise de
-                  abandono no dashboard. O tracker detecta o abandono automaticamente via{" "}
-                  <span className="font-mono text-zinc-500">beforeunload</span>.
+                  {t("checkoutTipBody")}
                 </p>
               </div>
             </div>

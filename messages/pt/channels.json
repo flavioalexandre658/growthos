@@ -14,6 +14,30 @@
       "highestRevenue": "maior receita",
       "concentration": "Concentração",
       "top2Channels": "top 2 canais"
+    },
+    "treemap": {
+      "title": "Receita por Canal",
+      "mobileSubtitle": "Proporção por receita",
+      "desktopSubtitle": "Área proporcional à receita",
+      "channelCount": "{count, plural, one {# canal} other {# canais}}",
+      "noData": "Sem dados de receita no período",
+      "percentRevenue": "{pct}% da receita",
+      "purchasesConv": "{count} comp. · conv. {rate}"
+    },
+    "table": {
+      "title": "Detalhamento por Canal",
+      "subtitle": "{withRevenue, plural, one {# canal com receita} other {# canais com receita}}{noRevenue, plural, =0 {} other { · # sem receita}}",
+      "sortRevenue": "Receita",
+      "sortConversion": "Conversão",
+      "sortTicket": "Ticket",
+      "colChannel": "Canal",
+      "colConversion": "Conversão",
+      "colRevenue": "Receita",
+      "colAvgTicket": "Ticket Médio",
+      "noRevenue": "sem receita",
+      "hide": "Ocultar",
+      "showNoRevenue": "+{count} sem receita",
+      "emptyState": "Sem dados de attribution no período"
     }
   }
 }

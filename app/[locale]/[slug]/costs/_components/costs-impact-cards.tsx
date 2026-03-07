@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -26,9 +27,10 @@ interface ImpactCardProps {
   color: string;
   bgColor: string;
   tooltip: string;
+  ariaLabel: string;
 }
 
-function ImpactCard({ label, value, sub, icon: Icon, color, bgColor, tooltip }: ImpactCardProps) {
+function ImpactCard({ label, value, sub, icon: Icon, color, bgColor, tooltip, ariaLabel }: ImpactCardProps) {
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-2">
       <div className="flex items-center justify-between">
@@ -42,7 +44,7 @@ function ImpactCard({ label, value, sub, icon: Icon, color, bgColor, tooltip }: 
                 <button
                   type="button"
                   className="shrink-0 text-zinc-700 hover:text-zinc-400 transition-colors focus:outline-none"
-                  aria-label={`Informação sobre ${label}`}
+                  aria-label={ariaLabel}
                 >
                   <IconInfoCircle size={11} />
                 </button>
@@ -85,6 +87,8 @@ interface CostsImpactCardsProps {
 }
 
 export function CostsImpactCards({ data, isLoading }: CostsImpactCardsProps) {
+  const t = useTranslations("finance.costsImpact");
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -104,49 +108,54 @@ export function CostsImpactCards({ data, isLoading }: CostsImpactCardsProps) {
 
   const cards: ImpactCardProps[] = [
     {
-      label: "Custos Fixos / mês",
+      label: t("fixedLabel"),
       value: fixedTotal,
-      sub: "despesas mensais fixas",
+      sub: t("fixedSub"),
       icon: IconReceipt,
       color: "text-red-400",
       bgColor: "bg-red-600/20",
-      tooltip: "Soma das despesas mensais que não variam com a receita — ferramentas, salários, aluguel, serviços. Pagas independente do volume de vendas.",
+      tooltip: t("fixedTooltip"),
+      ariaLabel: t("infoAriaLabel", { label: t("fixedLabel") }),
     },
     {
-      label: "Custos Variáveis",
+      label: t("variableLabel"),
       value: varTotal,
-      sub: `sobre ${grossRev} em receita`,
+      sub: t("variableSub", { value: grossRev }),
       icon: IconTrendingDown,
       color: "text-orange-400",
       bgColor: "bg-orange-600/20",
-      tooltip: "Custos calculados como percentual da receita — taxas de gateway, comissões de marketplace, impostos. Crescem proporcionalmente às vendas.",
+      tooltip: t("variableTooltip"),
+      ariaLabel: t("infoAriaLabel", { label: t("variableLabel") }),
     },
     {
-      label: "Custo Total",
+      label: t("totalLabel"),
       value: costTotal,
-      sub: "fixos + variáveis",
+      sub: t("totalSub"),
       icon: IconWallet,
       color: "text-amber-400",
       bgColor: "bg-amber-600/20",
-      tooltip: "Soma de todos os custos do período (fixos + variáveis). É o total que precisa ser coberto pela receita para o negócio ser lucrativo.",
+      tooltip: t("totalTooltip"),
+      ariaLabel: t("infoAriaLabel", { label: t("totalLabel") }),
     },
     {
-      label: "Impacto na Margem",
+      label: t("marginImpactLabel"),
       value: `${impact.toFixed(1).replace(".", ",")}%`,
-      sub: `margem líquida: ${margin.toFixed(1).replace(".", ",")}%`,
+      sub: t("marginImpactSub", { value: margin.toFixed(1).replace(".", ",") }),
       icon: IconPercentage,
       color: impact > 50 ? "text-red-400" : impact > 25 ? "text-orange-400" : "text-emerald-400",
       bgColor: impact > 50 ? "bg-red-600/20" : impact > 25 ? "bg-orange-600/20" : "bg-emerald-600/20",
-      tooltip: "Percentual da receita bruta consumido pelos custos totais. Acima de 50% é preocupante — significa que mais da metade do que entra já vai para despesas.",
+      tooltip: t("marginImpactTooltip"),
+      ariaLabel: t("infoAriaLabel", { label: t("marginImpactLabel") }),
     },
     {
-      label: "Receita Bruta (mês)",
+      label: t("grossLabel"),
       value: grossRev,
-      sub: "base de cálculo dos custos",
+      sub: t("grossSub"),
       icon: IconCurrencyDollar,
       color: "text-emerald-400",
       bgColor: "bg-emerald-600/20",
-      tooltip: "Total bruto recebido no mês de referência, usado como base para calcular o impacto percentual dos custos.",
+      tooltip: t("grossTooltip"),
+      ariaLabel: t("infoAriaLabel", { label: t("grossLabel") }),
     },
   ];
 

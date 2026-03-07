@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   IconCurrencyDollar,
   IconPlus,
@@ -25,9 +26,9 @@ import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/pt-br";
+import "dayjs/locale/en";
 
 dayjs.extend(relativeTime);
-dayjs.locale("pt-br");
 
 interface ExchangeRatesSectionProps {
   orgId: string;
@@ -43,6 +44,7 @@ function RateForm({
   baseCurrency: string;
   onSuccess: () => void;
 }) {
+  const t = useTranslations("settings.exchangeRates");
   const [fromCurrency, setFromCurrency] = useState("USD");
   const [rate, setRate] = useState("");
   const [effectiveFrom, setEffectiveFrom] = useState(
@@ -58,7 +60,7 @@ function RateForm({
     e.preventDefault();
     const rateNum = parseFloat(rate.replace(",", "."));
     if (!fromCurrency || isNaN(rateNum) || rateNum <= 0) {
-      toast.error("Preencha todos os campos corretamente.");
+      toast.error(t("errorFillFields"));
       return;
     }
     await upsert.mutateAsync({
@@ -68,7 +70,7 @@ function RateForm({
       rate: rateNum,
       effectiveFrom,
     });
-    toast.success(`Taxa ${fromCurrency} → ${baseCurrency} salva!`);
+    toast.success(t("rateSavedToast", { from: fromCurrency, to: baseCurrency }));
     setRate("");
     onSuccess();
   };
@@ -81,7 +83,7 @@ function RateForm({
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1.5 min-w-[120px]">
           <Label className="text-[11px] text-zinc-500 uppercase tracking-wider">
-            De
+            {t("fromLabel")}
           </Label>
           <select
             value={fromCurrency}
@@ -98,7 +100,7 @@ function RateForm({
 
         <div className="space-y-1.5 flex-1 min-w-[120px]">
           <Label className="text-[11px] text-zinc-500 uppercase tracking-wider">
-            Taxa ({fromCurrency} → {baseCurrency})
+            {t("rateLabel", { from: fromCurrency, to: baseCurrency })}
           </Label>
           <Input
             type="text"
@@ -112,7 +114,7 @@ function RateForm({
 
         <div className="space-y-1.5 min-w-[140px]">
           <Label className="text-[11px] text-zinc-500 uppercase tracking-wider">
-            Válido a partir de
+            {t("validFromLabel")}
           </Label>
           <Input
             type="date"
@@ -133,7 +135,7 @@ function RateForm({
           ) : (
             <IconCheck size={13} />
           )}
-          Salvar taxa
+          {t("saveRate")}
         </Button>
       </div>
     </form>
@@ -161,6 +163,7 @@ function RateRow({
   isDeleting: boolean;
   isHistory?: boolean;
 }) {
+  const t = useTranslations("settings.exchangeRates");
   return (
     <div
       className={cn(
@@ -214,8 +217,7 @@ function RateRow({
               {rate.toCurrency}
             </span>
             <span className="text-[10px] text-zinc-600 font-mono">
-              · válido a partir de{" "}
-              {dayjs(rate.effectiveFrom).format("DD/MM/YYYY")}
+              {t("validFrom", { date: dayjs(rate.effectiveFrom).format("DD/MM/YYYY") })}
             </span>
           </div>
         </div>
@@ -224,7 +226,7 @@ function RateRow({
       <div className="flex items-center gap-2 shrink-0">
         {rate.isCurrent && (
           <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-900/20 border border-emerald-800/30 px-1.5 py-0.5 rounded-md">
-            vigente
+            {t("currentBadge")}
           </span>
         )}
         <Button
@@ -233,7 +235,7 @@ function RateRow({
           onClick={() => onDelete(rate.id, rate.fromCurrency)}
           disabled={isDeleting}
           className="h-7 w-7 text-zinc-600 hover:text-red-400"
-          title="Remover taxa"
+          title={t("removeRate")}
         >
           <IconTrash size={14} />
         </Button>
@@ -246,6 +248,7 @@ export function ExchangeRatesSection({
   orgId,
   baseCurrency,
 }: ExchangeRatesSectionProps) {
+  const t = useTranslations("settings.exchangeRates");
   const { data: rates, isLoading } = useExchangeRates(orgId);
   const deleteMutation = useDeleteExchangeRate(orgId);
   const [showForm, setShowForm] = useState(false);
@@ -253,7 +256,7 @@ export function ExchangeRatesSection({
 
   const handleDelete = async (id: string, from: string) => {
     await deleteMutation.mutateAsync({ id });
-    toast.success(`Taxa ${from} removida.`);
+    toast.success(t("rateRemovedToast", { from }));
   };
 
   const togglePairHistory = (pairKey: string) => {
@@ -285,10 +288,10 @@ export function ExchangeRatesSection({
           <IconCurrencyDollar size={15} className="text-indigo-400" />
           <div>
             <h3 className="text-sm font-bold text-zinc-100">
-              Taxas de Câmbio
+              {t("title")}
             </h3>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Moeda base:{" "}
+              {t("baseCurrencyLabel")}{" "}
               <span className="text-zinc-300 font-semibold font-mono">
                 {baseCurrency}
               </span>
@@ -306,7 +309,7 @@ export function ExchangeRatesSection({
           )}
         >
           <IconPlus size={13} />
-          Adicionar taxa
+          {t("addRate")}
         </Button>
       </div>
 
@@ -317,17 +320,14 @@ export function ExchangeRatesSection({
             className="text-amber-500 mt-0.5 shrink-0"
           />
           <p className="text-xs text-amber-400/80 leading-relaxed">
-            Atualize as taxas regularmente para manter o P&L preciso. Eventos
-            recebidos com moeda diferente de{" "}
-            <span className="font-semibold font-mono">{baseCurrency}</span>{" "}
-            serão rejeitados se a taxa não estiver configurada.
+            {t("warningText", { currency: baseCurrency })}
           </p>
         </div>
 
         {showForm && (
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
             <p className="text-xs font-semibold text-zinc-400 mb-3">
-              Nova taxa de câmbio
+              {t("newRateTitle")}
             </p>
             <RateForm
               orgId={orgId}
@@ -348,10 +348,9 @@ export function ExchangeRatesSection({
           </div>
         ) : !groupedRates || Object.keys(groupedRates).length === 0 ? (
           <div className="py-6 text-center">
-            <p className="text-sm text-zinc-600">Nenhuma taxa configurada.</p>
+            <p className="text-sm text-zinc-600">{t("noRates")}</p>
             <p className="text-xs text-zinc-700 mt-1">
-              Se sua organização só vende em {baseCurrency}, não é necessário
-              configurar.
+              {t("noRatesHint", { currency: baseCurrency })}
             </p>
           </div>
         ) : (
@@ -391,8 +390,11 @@ export function ExchangeRatesSection({
                           <IconChevronDown size={11} />
                         )}
                         {isExpanded
-                          ? "Ocultar histórico"
-                          : `Ver histórico (${history.length} ${history.length === 1 ? "entrada" : "entradas"})`}
+                          ? t("hideHistory")
+                          : t("showHistory", {
+                              count: history.length,
+                              entriesLabel: history.length === 1 ? t("historyEntryOne") : t("historyEntryMany"),
+                            })}
                       </button>
 
                       {isExpanded && (

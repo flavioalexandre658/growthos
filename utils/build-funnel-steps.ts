@@ -1,23 +1,30 @@
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 import type { IStepMeta } from "@/interfaces/dashboard.interface";
 
-const PAGEVIEW_STEP: IFunnelStepConfig = {
-  eventType: "pageview",
-  label: "Visitas",
-  countUnique: true,
+const STEP_LABELS: Record<string, Record<string, string>> = {
+  pageview: { pt: "Visitas", en: "Visits" },
+  checkout_started: { pt: "Checkout Iniciado", en: "Checkout Started" },
+  checkout_abandoned: { pt: "Abandonos", en: "Abandoned" },
 };
 
-export const CHECKOUT_STARTED_STEP: IFunnelStepConfig = {
-  eventType: "checkout_started",
-  label: "Checkout Iniciado",
-  countUnique: false,
-};
+function getStepLabel(eventType: string, locale: string): string {
+  return STEP_LABELS[eventType]?.[locale] ?? STEP_LABELS[eventType]?.["pt"] ?? eventType;
+}
+
+function makePageviewStep(locale: string): IFunnelStepConfig {
+  return { eventType: "pageview", label: getStepLabel("pageview", locale), countUnique: true };
+}
+
+function makeCheckoutStartedStep(locale: string): IFunnelStepConfig {
+  return { eventType: "checkout_started", label: getStepLabel("checkout_started", locale), countUnique: false };
+}
 
 export function buildFunnelSteps(
-  funnelSteps: IFunnelStepConfig[]
+  funnelSteps: IFunnelStepConfig[],
+  locale: string = "pt"
 ): IFunnelStepConfig[] {
   const hasPageview = funnelSteps.some((s) => s.eventType === "pageview");
-  return hasPageview ? funnelSteps : [PAGEVIEW_STEP, ...funnelSteps];
+  return hasPageview ? funnelSteps : [makePageviewStep(locale), ...funnelSteps];
 }
 
 export function getAllQueryEventTypes(funnelSteps: IFunnelStepConfig[]): string[] {
@@ -27,7 +34,8 @@ export function getAllQueryEventTypes(funnelSteps: IFunnelStepConfig[]): string[
 
 export function injectCheckoutSteps(
   funnelSteps: IFunnelStepConfig[],
-  countMap: Map<string, { total: number; uniqueTotal: number }>
+  countMap: Map<string, { total: number; uniqueTotal: number }>,
+  locale: string = "pt"
 ): IFunnelStepConfig[] {
   const result = [...funnelSteps];
   const hasCheckoutStarted = result.some((s) => s.eventType === "checkout_started");
@@ -35,7 +43,7 @@ export function injectCheckoutSteps(
   if (!hasCheckoutStarted && (countMap.get("checkout_started")?.total ?? 0) > 0) {
     const paymentIdx = result.findIndex((s) => s.eventType === "purchase");
     const insertAt = paymentIdx >= 0 ? paymentIdx : result.length;
-    result.splice(insertAt, 0, CHECKOUT_STARTED_STEP);
+    result.splice(insertAt, 0, makeCheckoutStartedStep(locale));
   }
 
   return result;
@@ -43,12 +51,13 @@ export function injectCheckoutSteps(
 
 export function buildExtendedStepMeta(
   funnelSteps: IFunnelStepConfig[],
-  countMap: Map<string, { total: number; uniqueTotal: number }>
+  countMap: Map<string, { total: number; uniqueTotal: number }>,
+  locale: string = "pt"
 ): IStepMeta[] {
   const meta = funnelSteps.map((s) => ({ key: s.eventType, label: s.label }));
   const hasAbandoned = funnelSteps.some((s) => s.eventType === "checkout_abandoned");
   if (!hasAbandoned && (countMap.get("checkout_abandoned")?.total ?? 0) > 0) {
-    meta.push({ key: "checkout_abandoned", label: "Abandonos" });
+    meta.push({ key: "checkout_abandoned", label: getStepLabel("checkout_abandoned", locale) });
   }
   return meta;
 }

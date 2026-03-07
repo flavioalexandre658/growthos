@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useSubscriptions } from "@/hooks/queries/use-subscriptions";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -12,8 +13,8 @@ import { SubscriptionsTable } from "./subscriptions-table";
 import { IconRepeat, IconDownload, IconLoader2 } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
-
-dayjs.locale("pt-br");
+import "dayjs/locale/en";
+import { useLocale } from "next-intl";
 
 const EMPTY_PAGINATION = { page: 1, limit: 25, total: 0, total_pages: 0 };
 
@@ -21,26 +22,10 @@ interface SubscriptionsContentProps {
   filter: IDateFilter;
 }
 
-function getFilterLabel(filter: IDateFilter): string {
-  if (filter.period) {
-    const labels: Record<string, string> = {
-      today: "hoje",
-      yesterday: "ontem",
-      "7d": "últimos 7 dias",
-      "30d": "últimos 30 dias",
-      "90d": "últimos 90 dias",
-    };
-    return labels[filter.period] ?? filter.period;
-  }
-  if (filter.start_date && filter.end_date) {
-    const from = dayjs(filter.start_date).format("D MMM");
-    const to = dayjs(filter.end_date).format("D MMM");
-    return `${from} – ${to}`;
-  }
-  return "período";
-}
-
 export function SubscriptionsContent({ filter }: SubscriptionsContentProps) {
+  const t = useTranslations("subscriptions.content");
+  const locale = useLocale();
+  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
@@ -107,6 +92,27 @@ export function SubscriptionsContent({ filter }: SubscriptionsContentProps) {
     }
   };
 
+  const getFilterLabel = (f: IDateFilter): string => {
+    if (f.period) {
+      const periodKeys: Record<string, string> = {
+        today: "today",
+        yesterday: "yesterday",
+        "7d": "7d",
+        "30d": "30d",
+        "90d": "90d",
+      };
+      const key = periodKeys[f.period];
+      if (key) return t(`periodLabels.${key}`);
+      return f.period;
+    }
+    if (f.start_date && f.end_date) {
+      const from = dayjs(f.start_date).locale(dayjsLocale).format("D MMM");
+      const to = dayjs(f.end_date).locale(dayjsLocale).format("D MMM");
+      return `${from} – ${to}`;
+    }
+    return t("periodLabels.period");
+  };
+
   const periodLabel = getFilterLabel(filter);
 
   return (
@@ -117,9 +123,9 @@ export function SubscriptionsContent({ filter }: SubscriptionsContentProps) {
             <IconRepeat size={16} className="text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-zinc-100">Assinaturas</h1>
+            <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>
             <p className="text-xs text-zinc-500">
-              Registro completo de todas as assinaturas
+              {t("subtitle")}
             </p>
           </div>
         </div>
@@ -137,7 +143,7 @@ export function SubscriptionsContent({ filter }: SubscriptionsContentProps) {
             type="button"
             onClick={handleExport}
             disabled={isExporting || pagination.total === 0}
-            title="Exportar CSV"
+            title={t("exportCsv")}
             className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-zinc-800 bg-zinc-900 text-xs text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isExporting ? (

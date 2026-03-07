@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBilling } from "@/hooks/queries/use-billing";
@@ -12,6 +13,7 @@ type Currency = "brl" | "usd";
 type BillingInterval = "monthly" | "annual";
 
 export default function BillingPage() {
+  const t = useTranslations("settings.billing.page");
   const { data: billing, isLoading } = useBilling();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
@@ -26,10 +28,10 @@ export default function BillingPage() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        toast.error(data.error ?? "Erro ao abrir portal de faturamento");
+        toast.error(data.error ?? t("errorOpenPortal"));
       }
     } catch {
-      toast.error("Erro ao abrir portal de faturamento");
+      toast.error(t("errorOpenPortal"));
     } finally {
       setIsLoadingPortal(false);
     }
@@ -47,10 +49,10 @@ export default function BillingPage() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        toast.error(data.error ?? "Erro ao criar sessão de checkout");
+        toast.error(data.error ?? t("errorCheckout"));
       }
     } catch {
-      toast.error("Erro ao processar checkout");
+      toast.error(t("errorProcessCheckout"));
     } finally {
       setIsLoadingCheckout(false);
     }
@@ -68,7 +70,7 @@ export default function BillingPage() {
   if (!billing) {
     return (
       <p className="text-center py-8 text-zinc-600 text-sm">
-        Não foi possível carregar as informações do plano.
+        {t("noDataMessage")}
       </p>
     );
   }
@@ -77,8 +79,8 @@ export default function BillingPage() {
     <div className="max-w-[1100px] space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <p className="text-[11px] text-zinc-500 uppercase tracking-[0.12em] mb-1">Configurações</p>
-          <h1 className="text-[22px] font-semibold text-zinc-100">Plano & Uso</h1>
+          <p className="text-[11px] text-zinc-500 uppercase tracking-[0.12em] mb-1">{t("settingsLabel")}</p>
+          <h1 className="text-[22px] font-semibold text-zinc-100">{t("pageTitle")}</h1>
         </div>
 
         <div className="flex items-center gap-2.5">
@@ -89,7 +91,7 @@ export default function BillingPage() {
                 billingInterval === "monthly" ? "bg-[#1e1e30] text-zinc-200" : "text-zinc-500 hover:text-zinc-400"
               }`}
             >
-              Mensal
+              {t("monthly")}
             </button>
             <button
               onClick={() => setBillingInterval("annual")}
@@ -97,9 +99,9 @@ export default function BillingPage() {
                 billingInterval === "annual" ? "bg-[#1e1e30] text-zinc-200" : "text-zinc-500 hover:text-zinc-400"
               }`}
             >
-              Anual
+              {t("annual")}
               <span className="absolute -top-2 -right-0.5 bg-emerald-600 text-white text-[9px] font-bold px-1 py-px rounded">
-                -20%
+                {t("annualDiscount")}
               </span>
             </button>
           </div>
@@ -136,7 +138,7 @@ export default function BillingPage() {
       />
 
       <p className="text-xs text-zinc-700 text-center">
-        Todos os planos incluem Stripe e MRR/Recorrência · Cancele quando quiser · Sem fidelidade
+        {t("footerText")}
       </p>
     </div>
   );

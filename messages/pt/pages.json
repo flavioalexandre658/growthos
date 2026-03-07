@@ -41,6 +41,24 @@
       "biggestOpportunityShort": "Maior Oport.",
       "visitsShort": "{count} vis.",
       "visitsLowConversion": "{count} visitas, conv. < 1%"
+    },
+    "scatter": {
+      "title": "Oportunidades",
+      "mobileSubtitle": "Volume vs conversão por quadrante",
+      "desktopSubtitle": "Volume vs conversão — tamanho = receita",
+      "noData": "Sem dados suficientes no período",
+      "pageCount": "{count, plural, one {# página} other {# páginas}}",
+      "morePages": "+{count, plural, one {# página} other {# páginas}}",
+      "xAxisLabel": "Visitas (log)",
+      "visitsLabel": "{count} visitas",
+      "ticketLabel": "Ticket: ",
+      "quadrantEscalar": "Escalar",
+      "quadrantManter": "Manter",
+      "quadrantIgnorar": "Ignorar",
+      "quadrantOtimizar": "Otimizar"
+    },
+    "topCards": {
+      "visitsShort": "{count} vis."
     }
   }
 }

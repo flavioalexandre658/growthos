@@ -13,6 +13,8 @@ import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/pt-br";
+import "dayjs/locale/en";
+import { useTranslations, useLocale } from "next-intl";
 import {
   IconBug,
   IconCircleCheck,
@@ -39,7 +41,6 @@ import {
 import type { IDebugResult } from "@/interfaces/event.interface";
 
 dayjs.extend(relativeTime);
-dayjs.locale("pt-br");
 
 type CheckStatus = "ok" | "error" | "warning" | "pending" | "idle";
 
@@ -64,6 +65,7 @@ function getStorageKey(key: string, orgId: string) {
 
 function CheckRow({ item }: { item: CheckItem }) {
   const Icon = item.icon;
+  const t = useTranslations("events.debug");
   return (
     <div className="flex items-start gap-3 py-2.5 border-b border-zinc-800/60 last:border-0">
       <div
@@ -120,17 +122,17 @@ function CheckRow({ item }: { item: CheckItem }) {
       <div className="shrink-0">
         {item.status === "ok" && (
           <span className="text-[10px] font-semibold text-emerald-500 bg-emerald-950/40 border border-emerald-800/30 rounded px-1.5 py-0.5">
-            OK
+            {t("statusOk")}
           </span>
         )}
         {item.status === "error" && (
           <span className="text-[10px] font-semibold text-red-500 bg-red-950/40 border border-red-800/30 rounded px-1.5 py-0.5">
-            ERRO
+            {t("statusError")}
           </span>
         )}
         {item.status === "warning" && (
           <span className="text-[10px] font-semibold text-amber-500 bg-amber-950/40 border border-amber-800/30 rounded px-1.5 py-0.5">
-            AVISO
+            {t("statusWarning")}
           </span>
         )}
         {item.status === "pending" && (
@@ -145,13 +147,14 @@ function CheckRow({ item }: { item: CheckItem }) {
 
 function InstallSnippet({ apiKey, baseUrl }: { apiKey: string; baseUrl: string }) {
   const [copied, setCopied] = useState(false);
+  const t = useTranslations("events.debug");
   const snippet = `<script async src="${baseUrl}/tracker.js" data-key="${apiKey}"></script>`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(snippet);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast.success("Snippet copiado!");
+    toast.success(t("snippetCopied"));
   };
 
   return (
@@ -172,7 +175,7 @@ function InstallSnippet({ apiKey, baseUrl }: { apiKey: string; baseUrl: string }
           ) : (
             <IconCopy size={12} />
           )}
-          {copied ? "Copiado!" : "Copiar"}
+          {copied ? t("snippetCopiedState") : t("snippetCopy")}
         </Button>
       </div>
       <pre className="px-4 py-3 text-xs text-emerald-400 font-mono overflow-x-auto whitespace-pre-wrap break-all">
@@ -201,6 +204,9 @@ function LiveMonitor({ organizationId, onLatestEvent }: LiveMonitorProps) {
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [newCount, setNewCount] = useState(0);
   const seenIds = useRef<Set<string>>(new Set());
+  const t = useTranslations("events.debug");
+  const locale = useLocale();
+  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
 
   useEffect(() => {
     if (!isPolling) return;
@@ -238,21 +244,21 @@ function LiveMonitor({ organizationId, onLatestEvent }: LiveMonitorProps) {
             <IconActivity size={14} className="text-emerald-400" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-zinc-100">Monitor ao vivo</h3>
+            <h3 className="text-sm font-bold text-zinc-100">{t("liveMonitorTitle")}</h3>
             <p className="text-xs text-zinc-500">
-              Polling a cada 5s — eventos dos últimos 5 minutos
+              {t("liveMonitorSubtitle")}
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {lastChecked && (
             <span className="text-[10px] text-zinc-600 font-mono">
-              Atualizado {dayjs(lastChecked).fromNow()}
+              {t("liveMonitorUpdated", { timeAgo: dayjs(lastChecked).locale(dayjsLocale).fromNow() })}
             </span>
           )}
           {newCount > 0 && (
             <span className="text-[10px] font-bold text-emerald-300 bg-emerald-900/30 border border-emerald-800/30 rounded px-2 py-0.5">
-              +{newCount} novo(s)
+              {t("liveMonitorNewEvents", { count: newCount })}
             </span>
           )}
           <button
@@ -268,12 +274,12 @@ function LiveMonitor({ organizationId, onLatestEvent }: LiveMonitorProps) {
             {isPolling ? (
               <>
                 <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-                Ao vivo
+                {t("liveMonitorLive")}
               </>
             ) : (
               <>
                 <IconRefresh size={12} />
-                Pausado
+                {t("liveMonitorPaused")}
               </>
             )}
           </button>
@@ -284,10 +290,10 @@ function LiveMonitor({ organizationId, onLatestEvent }: LiveMonitorProps) {
         {events.length === 0 ? (
           <div className="px-4 py-6 text-center">
             <p className="text-sm text-zinc-600">
-              Aguardando eventos nos últimos 5 minutos...
+              {t("liveMonitorWaiting")}
             </p>
             <p className="text-xs text-zinc-700 mt-1">
-              Dispare um evento no seu site ou use o botão de evento de teste
+              {t("liveMonitorFireHint")}
             </p>
           </div>
         ) : (
@@ -303,7 +309,7 @@ function LiveMonitor({ organizationId, onLatestEvent }: LiveMonitorProps) {
                 <span className="text-xs text-zinc-600 font-mono">{event.device}</span>
               )}
               <span className="ml-auto text-xs text-zinc-700 tabular-nums">
-                {dayjs(event.createdAt).fromNow()}
+                {dayjs(event.createdAt).locale(dayjsLocale).fromNow()}
               </span>
             </div>
           ))
@@ -313,17 +319,17 @@ function LiveMonitor({ organizationId, onLatestEvent }: LiveMonitorProps) {
   );
 }
 
-function buildChecklist(result: IDebugResult, orgName: string): CheckItem[] {
+function buildChecklist(result: IDebugResult, orgName: string, t: ReturnType<typeof useTranslations<"events.debug">>): CheckItem[] {
   return [
     {
       icon: IconWorld,
-      label: "Página acessível",
+      label: t("checkPageAccessible"),
       detail: result.httpStatus ? `HTTP ${result.httpStatus}` : undefined,
       status: result.pageAccessible ? "ok" : "error",
     },
     {
       icon: IconCode,
-      label: "tracker.js encontrado no HTML",
+      label: t("checkTrackerFound"),
       detail: result.scriptSrc ?? undefined,
       status: result.trackerFound
         ? "ok"
@@ -333,7 +339,7 @@ function buildChecklist(result: IDebugResult, orgName: string): CheckItem[] {
     },
     {
       icon: IconKey,
-      label: "Atributo data-key presente",
+      label: t("checkApiKeyPresent"),
       detail: result.apiKeyValue
         ? `${result.apiKeyValue.slice(0, 8)}...${result.apiKeyValue.slice(-4)}`
         : undefined,
@@ -345,12 +351,12 @@ function buildChecklist(result: IDebugResult, orgName: string): CheckItem[] {
     },
     {
       icon: IconShieldCheck,
-      label: "API key válida no sistema",
+      label: t("checkApiKeyValid"),
       status: result.keyValid ? "ok" : result.apiKeyFound ? "error" : "idle",
     },
     {
       icon: IconBuilding,
-      label: `API key pertence a "${orgName}"`,
+      label: t("checkApiKeyBelongs", { orgName }),
       status: result.keyBelongsToOrg
         ? "ok"
         : result.keyValid
@@ -359,7 +365,7 @@ function buildChecklist(result: IDebugResult, orgName: string): CheckItem[] {
     },
     {
       icon: IconClock,
-      label: "API key ativa e não expirada",
+      label: t("checkApiKeyActive"),
       status: result.keyExpired
         ? "error"
         : result.keyValid
@@ -369,24 +375,25 @@ function buildChecklist(result: IDebugResult, orgName: string): CheckItem[] {
   ];
 }
 
-const PREVIEW_CHECKS = [
-  { icon: IconWorld, label: "Página acessível" },
-  { icon: IconCode, label: "Script tracker.js no HTML" },
-  { icon: IconKey, label: "Atributo data-key presente" },
-  { icon: IconShieldCheck, label: "API key válida no sistema" },
-  { icon: IconBuilding, label: "Pertence a esta organização" },
-  { icon: IconClock, label: "API key ativa e não expirada" },
-];
-
 function EmptyState() {
+  const t = useTranslations("events.debug");
+  const PREVIEW_CHECKS = [
+    { icon: IconWorld, label: t("previewCheckPageAccessible") },
+    { icon: IconCode, label: t("previewCheckScript") },
+    { icon: IconKey, label: t("previewCheckDataKey") },
+    { icon: IconShieldCheck, label: t("previewCheckApiKeyValid") },
+    { icon: IconBuilding, label: t("previewCheckBelongs") },
+    { icon: IconClock, label: t("previewCheckActive") },
+  ];
+
   return (
     <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 p-6 space-y-5">
       <div className="text-center space-y-1">
         <p className="text-sm font-semibold text-zinc-400">
-          Cole a URL do seu site acima e clique em Diagnosticar
+          {t("emptyStatePaste")}
         </p>
         <p className="text-xs text-zinc-600">
-          Verificaremos automaticamente se o tracker.js está instalado corretamente
+          {t("emptyStateHint")}
         </p>
       </div>
       <div className="space-y-1">
@@ -413,6 +420,9 @@ function DiagnosticHistory({
 }) {
   const [entries, setEntries] = useState<DiagnosticHistoryEntry[]>([]);
   const [open, setOpen] = useState(false);
+  const t = useTranslations("events.debug");
+  const locale = useLocale();
+  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
 
   useEffect(() => {
     try {
@@ -435,7 +445,7 @@ function DiagnosticHistory({
         <div className="flex items-center gap-2">
           <IconHistory size={14} className="text-zinc-500" />
           <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-            Histórico de diagnósticos
+            {t("historyTitle")}
           </span>
           <span className="text-[10px] font-medium text-zinc-600 bg-zinc-800 rounded px-1.5 py-0.5">
             {entries.length}
@@ -466,12 +476,12 @@ function DiagnosticHistory({
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-zinc-400 font-mono truncate">{entry.url}</p>
                 <p className="text-[10px] text-zinc-600 mt-0.5">
-                  {dayjs(entry.timestamp).fromNow()}
+                  {dayjs(entry.timestamp).locale(dayjsLocale).fromNow()}
                   {entry.errorCount > 0 && (
-                    <span className="ml-1.5 text-red-500">· {entry.errorCount} erro(s)</span>
+                    <span className="ml-1.5 text-red-500">{t("historyErrors", { count: entry.errorCount })}</span>
                   )}
                   {entry.warningCount > 0 && (
-                    <span className="ml-1.5 text-amber-500">· {entry.warningCount} aviso(s)</span>
+                    <span className="ml-1.5 text-amber-500">{t("historyWarnings", { count: entry.warningCount })}</span>
                   )}
                 </p>
               </div>
@@ -481,7 +491,7 @@ function DiagnosticHistory({
                 className="shrink-0 flex items-center gap-1 text-[10px] text-zinc-600 hover:text-indigo-400 transition-colors"
               >
                 <IconRefresh size={11} />
-                Retestar
+                {t("historyRerun")}
               </button>
             </div>
           ))}
@@ -504,6 +514,9 @@ export function DebugContent() {
   const [isSendingTest, setIsSendingTest] = useState(false);
   const [latestLiveEvent, setLatestLiveEvent] = useState<{ createdAt: Date } | null>(null);
   const [historyKey, setHistoryKey] = useState(0);
+  const t = useTranslations("events.debug");
+  const locale = useLocale();
+  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
 
   useEffect(() => {
     if (!organization?.id) return;
@@ -591,9 +604,9 @@ export function DebugContent() {
     try {
       await sendTestEvent({ organizationId: organization.id });
       const elapsed = ((Date.now() - start) / 1000).toFixed(1);
-      toast.success(`Evento de teste recebido em ${elapsed}s`);
+      toast.success(t("testEventSuccess", { elapsed }));
     } catch {
-      toast.error("Erro ao enviar evento de teste");
+      toast.error(t("testEventError"));
     }
     setIsSendingTest(false);
   };
@@ -610,9 +623,9 @@ export function DebugContent() {
           <IconBug size={16} className="text-violet-400" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-zinc-100">Debug do Tracker</h1>
+          <h1 className="text-lg font-bold text-zinc-100">{t("pageTitle")}</h1>
           <p className="text-xs text-zinc-500">
-            Verifique se o tracker.js está instalado corretamente no seu site
+            {t("pageSubtitle")}
           </p>
         </div>
       </div>
@@ -620,10 +633,10 @@ export function DebugContent() {
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
         <div>
           <label className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-            URL do seu site
+            {t("urlLabel")}
           </label>
           <p className="text-xs text-zinc-600 mt-0.5">
-            Cole a URL de qualquer página onde o tracker.js deve estar instalado
+            {t("urlHint")}
           </p>
         </div>
 
@@ -639,7 +652,7 @@ export function DebugContent() {
               onKeyDown={(e) => {
                 if (e.key === "Enter" && isValid && !isLoading) handleDiagnose();
               }}
-              placeholder="https://meusite.com.br"
+              placeholder={t("urlPlaceholder")}
               className="pl-9 h-10 bg-zinc-950 border-zinc-700 text-zinc-200 placeholder:text-zinc-600 font-mono text-sm focus-visible:ring-indigo-500/50 focus-visible:border-indigo-600/50"
             />
           </div>
@@ -651,12 +664,12 @@ export function DebugContent() {
             {isLoading ? (
               <>
                 <IconLoader2 size={15} className="animate-spin" />
-                <span className="hidden sm:inline">Analisando...</span>
+                <span className="hidden sm:inline">{t("analyzing")}</span>
               </>
             ) : (
               <>
                 <IconBug size={15} />
-                <span className="hidden sm:inline">Diagnosticar</span>
+                <span className="hidden sm:inline">{t("analyzeButton")}</span>
               </>
             )}
           </Button>
@@ -664,7 +677,7 @@ export function DebugContent() {
 
         {url && !isValid && (
           <p className="text-xs text-amber-500">
-            URL inválida — inclua o protocolo (https://)
+            {t("invalidUrl")}
           </p>
         )}
       </div>
@@ -685,13 +698,13 @@ export function DebugContent() {
                     <div className="absolute inset-0 rounded-full border border-emerald-500/20 animate-ping" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-emerald-300">Tracker instalado corretamente!</p>
+                    <p className="text-sm font-bold text-emerald-300">{t("trackerInstalledOk")}</p>
                     <p className="text-xs text-emerald-700 font-mono truncate">
-                      pertence a: {organization?.name}
+                      {t("trackerBelongsTo", { orgName: organization?.name ?? "" })}
                     </p>
                     {latestLiveEvent && (
                       <p className="text-[10px] text-emerald-800 mt-0.5">
-                        último evento {dayjs(latestLiveEvent.createdAt).fromNow()}
+                        {t("lastEvent", { timeAgo: dayjs(latestLiveEvent.createdAt).locale(dayjsLocale).fromNow() })}
                       </p>
                     )}
                   </div>
@@ -707,7 +720,7 @@ export function DebugContent() {
                   ) : (
                     <IconFlask size={12} />
                   )}
-                  Enviar evento de teste
+                  {t("sendTestEvent")}
                 </Button>
               </div>
             </div>
@@ -723,8 +736,8 @@ export function DebugContent() {
                 <div className="flex-1">
                   <p className={cn("text-sm font-bold", hasErrors ? "text-red-300" : "text-amber-300")}>
                     {hasErrors
-                      ? `${errorCount} problema${errorCount !== 1 ? "s" : ""} encontrado${errorCount !== 1 ? "s" : ""}`
-                      : "Instalação com avisos"}
+                      ? t("problemsFound", { count: errorCount })
+                      : t("installWithWarnings")}
                   </p>
                   <p className={cn("text-xs font-mono break-all mt-0.5", hasErrors ? "text-red-700" : "text-amber-700")}>
                     {url}
@@ -753,10 +766,10 @@ export function DebugContent() {
               )}>
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
                   <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/80">
-                    <h3 className="text-sm font-bold text-zinc-100">Checklist de instalação</h3>
+                    <h3 className="text-sm font-bold text-zinc-100">{t("checklistTitle")}</h3>
                   </div>
                   <div className="px-4">
-                    {buildChecklist(result, organization?.name ?? "esta organização").map(
+                    {buildChecklist(result, organization?.name ?? "esta organização", t).map(
                       (item, i) => (
                         <CheckRow key={i} item={item} />
                       )
@@ -766,7 +779,7 @@ export function DebugContent() {
 
                 {(hasErrors || hasWarnings) && (
                   <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 space-y-3">
-                    <h3 className="text-sm font-bold text-zinc-100">Detalhes e soluções</h3>
+                    <h3 className="text-sm font-bold text-zinc-100">{t("detailsTitle")}</h3>
                     {result.errors.map((e, i) => (
                       <div key={i} className="rounded-lg border border-red-900/30 bg-red-950/20 p-3 space-y-2">
                         <div className="flex items-start gap-2">
@@ -806,20 +819,19 @@ export function DebugContent() {
 
               {!result.trackerFound && result.pageAccessible && (
                 <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-3">
-                  <h3 className="text-sm font-bold text-zinc-100">Como instalar o tracker.js</h3>
+                  <h3 className="text-sm font-bold text-zinc-100">{t("installTrackerTitle")}</h3>
                   <p className="text-xs text-zinc-500">
-                    Cole este script no <code className="text-zinc-400">&lt;head&gt;</code> de todas as
-                    páginas do seu site, substituindo sua API key abaixo.
+                    {t("installTrackerHint")}
                   </p>
                   <div>
                     <label className="text-[11px] text-zinc-600 uppercase tracking-wider">
-                      URL base do Groware
+                      {t("growareBaseUrl")}
                     </label>
                     <input
                       value={baseUrl}
                       onChange={(e) => setBaseUrl(e.target.value)}
                       className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none"
-                      placeholder="https://seu-dominio.com"
+                      placeholder={t("growareBaseUrlPlaceholder")}
                     />
                   </div>
                   <InstallSnippet
@@ -848,7 +860,7 @@ export function DebugContent() {
                     ) : (
                       <IconFlask size={13} />
                     )}
-                    Enviar evento de teste
+                    {t("sendTestEvent")}
                   </Button>
                 )}
               </div>

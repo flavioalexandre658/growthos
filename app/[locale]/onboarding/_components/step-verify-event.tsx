@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
@@ -17,9 +17,9 @@ import { cn } from "@/lib/utils";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/pt-br";
+import "dayjs/locale/en";
 
 dayjs.extend(relativeTime);
-dayjs.locale("pt-br");
 
 interface StepVerifyEventProps {
   organizationId: string;
@@ -33,6 +33,8 @@ export function StepVerifyEvent({
   onComplete,
 }: StepVerifyEventProps) {
   const t = useTranslations("onboarding.stepVerifyEvent");
+  const locale = useLocale();
+  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
   const [hasFired, setHasFired] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
 
@@ -128,7 +130,7 @@ export function StepVerifyEvent({
                 { label: t("eventLabels.device"), value: latest.device ?? "," },
                 {
                   label: t("eventLabels.received"),
-                  value: dayjs(latest.createdAt).fromNow(),
+                  value: dayjs(latest.createdAt).locale(dayjsLocale).fromNow(),
                 },
               ].map((item) => (
                 <div

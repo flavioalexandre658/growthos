@@ -76,7 +76,7 @@ export function EventsFilters({
   onClear,
   hasActiveFilters,
 }: EventsFiltersProps) {
-  const t = useTranslations("eventsFilters");
+  const t = useTranslations("events.eventsFilters");
 
   return (
     <div className="space-y-3">

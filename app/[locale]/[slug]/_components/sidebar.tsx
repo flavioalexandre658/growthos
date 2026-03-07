@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { usePathname as usePathnameWithLocale, useSearchParams, useRouter } from "next/navigation";
+import { usePathname } from "@/i18n/routing";
 import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { signOut } from "next-auth/react";
 import {
@@ -233,7 +234,7 @@ function SectionLabel({ title, collapsed }: { title: string; collapsed?: boolean
 
 function OrgSwitcher({ slug, collapsed }: { slug: string; collapsed?: boolean }) {
   const { organization, organizations, isLoading } = useOrganization();
-  const pathname = usePathname();
+  const pathname = usePathnameWithLocale();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const t = useTranslations("sidebar");

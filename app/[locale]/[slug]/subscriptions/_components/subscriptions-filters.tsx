@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import { useTranslations } from "next-intl";
 import { IconSearch, IconX, IconFilter } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,21 +16,6 @@ import { PeriodFilter } from "@/app/[locale]/[slug]/_components/period-filter";
 import { cn } from "@/lib/utils";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 
-export const BILLING_INTERVAL_LABELS: Record<string, string> = {
-  monthly: "Mensal",
-  quarterly: "Trimestral",
-  semiannual: "Semestral",
-  yearly: "Anual",
-  weekly: "Semanal",
-};
-
-export const STATUS_LABELS: Record<string, string> = {
-  active: "Ativa",
-  trialing: "Trial",
-  past_due: "Em atraso",
-  canceled: "Cancelada",
-};
-
 const STATUS_BADGE_CLASSES: Record<string, string> = {
   active: "bg-emerald-600/20 text-emerald-300 border-emerald-600/30",
   trialing: "bg-violet-600/20 text-violet-300 border-violet-600/30",
@@ -40,14 +26,6 @@ const STATUS_BADGE_CLASSES: Record<string, string> = {
 export function getStatusBadgeClass(status: string) {
   return STATUS_BADGE_CLASSES[status] ?? "bg-zinc-700/40 text-zinc-300 border-zinc-600/30";
 }
-
-const STATUS_FILTERS = [
-  { value: "all", label: "Todas" },
-  { value: "active", label: "Ativas" },
-  { value: "trialing", label: "Trial" },
-  { value: "past_due", label: "Em atraso" },
-  { value: "canceled", label: "Canceladas" },
-];
 
 interface SubscriptionsFiltersProps {
   filter: IDateFilter;
@@ -80,6 +58,25 @@ export function SubscriptionsFilters({
   onClear,
   hasActiveFilters,
 }: SubscriptionsFiltersProps) {
+  const t = useTranslations("subscriptions.filters");
+  const tTable = useTranslations("subscriptions.table");
+
+  const STATUS_FILTERS = [
+    { value: "all", label: t("statusFilters.all") },
+    { value: "active", label: t("statusFilters.active") },
+    { value: "trialing", label: t("statusFilters.trialing") },
+    { value: "past_due", label: t("statusFilters.past_due") },
+    { value: "canceled", label: t("statusFilters.canceled") },
+  ];
+
+  const BILLING_INTERVAL_LABELS: Record<string, string> = {
+    monthly: tTable("billingIntervals.monthly"),
+    quarterly: tTable("billingIntervals.quarterly"),
+    semiannual: tTable("billingIntervals.semiannual"),
+    yearly: tTable("billingIntervals.yearly"),
+    weekly: tTable("billingIntervals.weekly"),
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -95,7 +92,7 @@ export function SubscriptionsFilters({
           <Input
             value={search}
             onChange={(e) => onSearch(e.target.value)}
-            placeholder="Buscar por customer, subscription ID ou plano..."
+            placeholder={t("searchPlaceholder")}
             className="pl-8 h-8 bg-zinc-900 border-zinc-800 text-zinc-200 text-xs placeholder:text-zinc-600 focus:border-indigo-500/50"
           />
           {search && (
@@ -114,7 +111,7 @@ export function SubscriptionsFilters({
         <div className="flex items-center gap-1">
           <IconFilter size={11} className="text-zinc-600 shrink-0" />
           <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold">
-            Status
+            {t("statusLabel")}
           </span>
         </div>
         <div className="flex flex-wrap gap-1">
@@ -138,11 +135,11 @@ export function SubscriptionsFilters({
         {distinctPlans.length > 0 && (
           <Select value={selectedPlanId || "all"} onValueChange={(v) => onPlan(v === "all" ? "" : v)}>
             <SelectTrigger className="h-7 w-auto min-w-[120px] max-w-[180px] bg-zinc-900 border-zinc-800 text-zinc-300 text-xs">
-              <SelectValue placeholder="Plano" />
+              <SelectValue placeholder={t("planPlaceholder")} />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-700">
               <SelectItem value="all" className="text-zinc-300 focus:bg-zinc-800 text-xs">
-                Todos os planos
+                {t("allPlans")}
               </SelectItem>
               {distinctPlans.map((p) => (
                 <SelectItem
@@ -163,11 +160,11 @@ export function SubscriptionsFilters({
             onValueChange={(v) => onInterval(v === "all" ? "" : v)}
           >
             <SelectTrigger className="h-7 w-auto min-w-[110px] bg-zinc-900 border-zinc-800 text-zinc-300 text-xs">
-              <SelectValue placeholder="Intervalo" />
+              <SelectValue placeholder={t("intervalPlaceholder")} />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-700">
               <SelectItem value="all" className="text-zinc-300 focus:bg-zinc-800 text-xs">
-                Todos
+                {t("allIntervals")}
               </SelectItem>
               {distinctIntervals.map((interval) => (
                 <SelectItem
@@ -190,7 +187,7 @@ export function SubscriptionsFilters({
             className="h-7 gap-1.5 text-xs text-zinc-500 hover:text-zinc-100 px-2"
           >
             <IconX size={11} />
-            Limpar
+            {t("clear")}
           </Button>
         )}
       </div>

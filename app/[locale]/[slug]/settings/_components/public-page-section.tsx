@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   IconWorld,
   IconLoader2,
@@ -83,6 +84,8 @@ interface MetricBlockProps {
   totalCount: number;
   allOff: boolean;
   onBulkToggle: () => void;
+  showAllLabel: string;
+  hideAllLabel: string;
   children: React.ReactNode;
 }
 
@@ -94,6 +97,8 @@ function MetricBlock({
   totalCount,
   allOff,
   onBulkToggle,
+  showAllLabel,
+  hideAllLabel,
   children,
 }: MetricBlockProps) {
   return (
@@ -116,12 +121,12 @@ function MetricBlock({
           {allOff ? (
             <>
               <IconEye size={12} />
-              Exibir todas
+              {showAllLabel}
             </>
           ) : (
             <>
               <IconEyeOff size={12} />
-              Ocultar todas
+              {hideAllLabel}
             </>
           )}
         </button>
@@ -136,6 +141,7 @@ interface PublicPageSectionProps {
 }
 
 export function PublicPageSection({ org }: PublicPageSectionProps) {
+  const t = useTranslations("settings.publicPage");
   const defaultSettings: IPublicPageSettings = {
     ...DEFAULT_PUBLIC_PAGE_SETTINGS,
     ...(org.publicPageSettings ?? {}),
@@ -184,7 +190,7 @@ export function PublicPageSection({ org }: PublicPageSectionProps) {
       publicDescription: description.trim() || null,
       publicPageSettings: settings,
     }).catch((err: Error) => {
-      toast.error(err.message ?? "Erro ao salvar configurações.");
+      toast.error(err.message ?? t("errorToast"));
       setIsSaving(false);
       return null;
     });
@@ -192,7 +198,7 @@ export function PublicPageSection({ org }: PublicPageSectionProps) {
     setSaved(true);
     setIsSaving(false);
     setTimeout(() => setSaved(false), 2000);
-    toast.success("Configurações da página pública salvas!");
+    toast.success(t("successToast"));
   };
 
   const publicUrl = `/p/${org.slug}`;
@@ -205,9 +211,9 @@ export function PublicPageSection({ org }: PublicPageSectionProps) {
             <IconWorld size={14} className="text-indigo-400" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-zinc-100">Página Pública</h3>
+            <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Compartilhe suas métricas publicamente — building in public
+              {t("description")}
             </p>
           </div>
         </div>
@@ -227,41 +233,41 @@ export function PublicPageSection({ org }: PublicPageSectionProps) {
               className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-semibold shrink-0 transition-colors"
             >
               <IconExternalLink size={12} />
-              Ver
+              {t("viewLink")}
             </Link>
           </div>
         )}
 
         <div className="space-y-1.5">
           <Label className="text-[11px] text-zinc-500 uppercase tracking-wider">
-            Descrição pública
+            {t("descriptionLabel")}
           </Label>
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="ex: Plataforma SaaS de convites digitais"
+            placeholder={t("descriptionPlaceholder")}
             maxLength={200}
             className="h-9 bg-zinc-900 border-zinc-700 text-zinc-200 text-xs placeholder:text-zinc-600 focus-visible:ring-indigo-500 focus-visible:border-indigo-500"
           />
-          <p className="text-[10px] text-zinc-600">{description.length}/200 caracteres</p>
+          <p className="text-[10px] text-zinc-600">{t("descriptionChars", { count: description.length })}</p>
         </div>
 
         <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 overflow-hidden">
           <div className="px-4 py-3 border-b border-zinc-800">
             <p className="text-[11px] text-zinc-500 uppercase tracking-wider font-semibold">
-              Configurações gerais
+              {t("generalSettingsTitle")}
             </p>
           </div>
           <div className="px-4">
             <MetricToggle
-              label="Valores absolutos"
-              description="Quando desativado, exibe faixas (ex: R$ 4k–5k) em vez dos valores reais"
+              label={t("absoluteValuesLabel")}
+              description={t("absoluteValuesDesc")}
               checked={settings.showAbsoluteValues}
               onChange={(v) => updateSetting("showAbsoluteValues", v)}
             />
             <MetricToggle
-              label="Gráfico de evolução"
-              description="Gráfico de linha com histórico de receita/MRR"
+              label={t("growthChartLabel")}
+              description={t("growthChartDesc")}
               checked={settings.showGrowthChart}
               onChange={(v) => updateSetting("showGrowthChart", v)}
             />
@@ -269,76 +275,80 @@ export function PublicPageSection({ org }: PublicPageSectionProps) {
         </div>
 
         <MetricBlock
-          title="Recorrente"
+          title={t("recurringTitle")}
           icon={<IconRepeat size={13} />}
           accentClass="text-indigo-400"
           activeCount={recurringActiveCount}
           totalCount={RECURRING_KEYS.length}
           allOff={recurringAllOff}
           onBulkToggle={() => bulkSetRecurring(recurringAllOff)}
+          showAllLabel={t("showAllMetrics")}
+          hideAllLabel={t("hideAllMetrics")}
         >
           <MetricToggle
-            label="MRR"
-            description="Receita Recorrente Mensal"
+            label={t("mrrLabel")}
+            description={t("mrrDesc")}
             checked={settings.showMrr}
             onChange={(v) => updateSetting("showMrr", v)}
           />
           <MetricToggle
-            label="Assinantes ativos"
-            description="Total de assinantes ativos"
+            label={t("subscribersLabel")}
+            description={t("subscribersDesc")}
             checked={settings.showSubscribers}
             onChange={(v) => updateSetting("showSubscribers", v)}
           />
           <MetricToggle
-            label="Churn"
-            description="Taxa de cancelamento mensal de assinantes"
+            label={t("churnLabel")}
+            description={t("churnDesc")}
             checked={settings.showChurn}
             onChange={(v) => updateSetting("showChurn", v)}
           />
           <MetricToggle
-            label="ARPU"
-            description="Receita média por assinante"
+            label={t("arpuLabel")}
+            description={t("arpuDesc")}
             checked={settings.showArpu}
             onChange={(v) => updateSetting("showArpu", v)}
           />
           <MetricToggle
-            label="Sankey de assinantes"
-            description="Fluxo visual de novas assinaturas, renovações e cancelamentos"
+            label={t("sankeyLabel")}
+            description={t("sankeyDesc")}
             checked={settings.showSankey}
             onChange={(v) => updateSetting("showSankey", v)}
           />
         </MetricBlock>
 
         <MetricBlock
-          title="Avulso"
+          title={t("oneTimeTitle")}
           icon={<IconRefresh size={13} />}
           accentClass="text-amber-400"
           activeCount={oneTimeActiveCount}
           totalCount={ONE_TIME_KEYS.length}
           allOff={oneTimeAllOff}
           onBulkToggle={() => bulkSetOneTime(oneTimeAllOff)}
+          showAllLabel={t("showAllMetrics")}
+          hideAllLabel={t("hideAllMetrics")}
         >
           <MetricToggle
-            label="Receita mensal"
-            description="Receita total do mês (vendas avulsas e recorrência)"
+            label={t("revenueLabel")}
+            description={t("revenueDesc")}
             checked={settings.showRevenue}
             onChange={(v) => updateSetting("showRevenue", v)}
           />
           <MetricToggle
-            label="Ticket médio"
-            description="Valor médio por pedido ou venda"
+            label={t("ticketMedioLabel")}
+            description={t("ticketMedioDesc")}
             checked={settings.showTicketMedio}
             onChange={(v) => updateSetting("showTicketMedio", v)}
           />
           <MetricToggle
-            label="Taxa de recompra"
-            description="Percentual de clientes que voltaram a comprar nos últimos 90 dias"
+            label={t("repurchaseRateLabel")}
+            description={t("repurchaseRateDesc")}
             checked={settings.showRepurchaseRate}
             onChange={(v) => updateSetting("showRepurchaseRate", v)}
           />
           <MetricToggle
-            label="Split de receita"
-            description="Barra mostrando proporção recorrente vs avulso"
+            label={t("revenueSplitLabel")}
+            description={t("revenueSplitDesc")}
             checked={settings.showRevenueSplit}
             onChange={(v) => updateSetting("showRevenueSplit", v)}
           />
@@ -358,7 +368,7 @@ export function PublicPageSection({ org }: PublicPageSectionProps) {
             ) : (
               <IconCheck size={13} />
             )}
-            {saved ? "Salvo!" : "Salvar configurações"}
+            {saved ? t("saved") : t("saveButton")}
           </Button>
         </div>
       </div>

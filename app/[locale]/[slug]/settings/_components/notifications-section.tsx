@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   IconBell,
   IconClock,
@@ -29,39 +30,6 @@ interface AlertCardConfig {
   defaultThreshold: number;
 }
 
-const ALERT_CARD_CONFIGS: AlertCardConfig[] = [
-  {
-    type: "no_events",
-    label: "Sem eventos",
-    description: "Alerta quando nenhum evento for recebido por um determinado período",
-    thresholdLabel: "Alertar após",
-    thresholdPlaceholder: "6",
-    thresholdSuffix: "horas",
-    icon: <IconClock size={16} />,
-    defaultThreshold: 6,
-  },
-  {
-    type: "churn_rate",
-    label: "Churn rate alto",
-    description: "Alerta quando a taxa de cancelamentos ultrapassar o limite configurado",
-    thresholdLabel: "Alertar acima de",
-    thresholdPlaceholder: "10",
-    thresholdSuffix: "%",
-    icon: <IconTrendingDown size={16} />,
-    defaultThreshold: 10,
-  },
-  {
-    type: "revenue_drop",
-    label: "Queda de receita",
-    description: "Alerta quando a receita cair abaixo do percentual configurado em relação ao período anterior",
-    thresholdLabel: "Alertar com queda acima de",
-    thresholdPlaceholder: "20",
-    thresholdSuffix: "%",
-    icon: <IconTrendingDown size={16} />,
-    defaultThreshold: 20,
-  },
-];
-
 interface AlertCardProps {
   config: AlertCardConfig;
   orgId: string;
@@ -74,6 +42,7 @@ interface AlertCardProps {
 }
 
 function AlertCard({ config, orgId, existing }: AlertCardProps) {
+  const t = useTranslations("settings.notifications");
   const [isActive, setIsActive] = useState(existing?.isActive ?? false);
   const [threshold, setThreshold] = useState(
     String(existing?.threshold ?? config.defaultThreshold),
@@ -92,7 +61,7 @@ function AlertCard({ config, orgId, existing }: AlertCardProps) {
   const handleSave = async () => {
     const thresholdNum = parseFloat(threshold);
     if (isNaN(thresholdNum) || thresholdNum <= 0) {
-      toast.error("Informe um valor válido para o limite.");
+      toast.error(t("errorInvalidThreshold"));
       return;
     }
     await upsert.mutateAsync({
@@ -104,7 +73,7 @@ function AlertCard({ config, orgId, existing }: AlertCardProps) {
     });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
-    toast.success(`Alerta "${config.label}" salvo!`);
+    toast.success(t("alertSavedToast", { label: config.label }));
   };
 
   return (
@@ -182,7 +151,7 @@ function AlertCard({ config, orgId, existing }: AlertCardProps) {
             htmlFor={`email-${config.type}`}
             className="text-xs text-zinc-400 cursor-pointer select-none"
           >
-            Notificar por email
+            {t("notifyByEmail")}
           </label>
         </div>
 
@@ -201,7 +170,7 @@ function AlertCard({ config, orgId, existing }: AlertCardProps) {
               ) : (
                 <IconCheck size={12} />
               )}
-              {saved ? "Salvo!" : "Salvar"}
+              {saved ? t("saved") : t("save")}
             </Button>
           </div>
         )}
@@ -215,7 +184,41 @@ interface NotificationsSectionProps {
 }
 
 export function NotificationsSection({ orgId }: NotificationsSectionProps) {
+  const t = useTranslations("settings.notifications");
   const { data: configs, isLoading } = useAlertConfigs(orgId);
+
+  const ALERT_CARD_CONFIGS: AlertCardConfig[] = [
+    {
+      type: "no_events",
+      label: t("noEventsLabel"),
+      description: t("noEventsDescription"),
+      thresholdLabel: t("noEventsThresholdLabel"),
+      thresholdPlaceholder: "6",
+      thresholdSuffix: t("noEventsSuffix"),
+      icon: <IconClock size={16} />,
+      defaultThreshold: 6,
+    },
+    {
+      type: "churn_rate",
+      label: t("churnRateLabel"),
+      description: t("churnRateDescription"),
+      thresholdLabel: t("churnRateThresholdLabel"),
+      thresholdPlaceholder: "10",
+      thresholdSuffix: t("churnRateSuffix"),
+      icon: <IconTrendingDown size={16} />,
+      defaultThreshold: 10,
+    },
+    {
+      type: "revenue_drop",
+      label: t("revenueDropLabel"),
+      description: t("revenueDropDescription"),
+      thresholdLabel: t("revenueDropThresholdLabel"),
+      thresholdPlaceholder: "20",
+      thresholdSuffix: t("revenueDropSuffix"),
+      icon: <IconTrendingDown size={16} />,
+      defaultThreshold: 20,
+    },
+  ];
 
   const existingByType = configs?.reduce(
     (acc, c) => {
@@ -240,9 +243,9 @@ export function NotificationsSection({ orgId }: NotificationsSectionProps) {
           <IconBell size={14} className="text-indigo-400" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-zinc-100">Notificações</h3>
+          <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Configure alertas automáticos para anomalias no seu crescimento
+            {t("description")}
           </p>
         </div>
       </div>
@@ -251,9 +254,7 @@ export function NotificationsSection({ orgId }: NotificationsSectionProps) {
         <div className="flex items-start gap-2 rounded-lg border border-zinc-800/60 bg-zinc-900/40 px-3 py-2.5">
           <IconInfoCircle size={13} className="text-zinc-600 mt-0.5 shrink-0" />
           <p className="text-[11px] text-zinc-600 leading-relaxed">
-            Os alertas serão disparados com base nos dados coletados pelo
-            tracker. Configure os limites de acordo com o comportamento normal
-            do seu negócio.
+            {t("infoText")}
           </p>
         </div>
 

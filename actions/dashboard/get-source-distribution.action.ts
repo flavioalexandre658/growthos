@@ -17,6 +17,7 @@ export async function getSourceDistribution(
 ): Promise<ISourceDistribution | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
+  const locale = session.user.locale ?? "pt";
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
@@ -30,7 +31,7 @@ export async function getSourceDistribution(
   const plan = await getUserPlan();
   const { startDate, endDate } = resolveDateRange(filter, tz, plan.maxHistoryDays);
 
-  const funnelSteps = buildFunnelSteps(org.funnelSteps ?? []);
+  const funnelSteps = buildFunnelSteps(org.funnelSteps ?? [], locale);
   const firstNonPageview = funnelSteps.find((s) => s.eventType !== "pageview");
   const targetEventType = firstNonPageview?.eventType ?? "purchase";
 

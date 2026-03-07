@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -36,30 +37,31 @@ import { updateOrganization } from "@/actions/organizations/update-organization.
 import { deleteOrganization } from "@/actions/organizations/delete-organization.action";
 import type { IOrganization } from "@/interfaces/organization.interface";
 
-const formSchema = z.object({
-  name: z.string().min(2, "Nome deve ter ao menos 2 caracteres"),
-  slug: z
-    .string()
-    .min(2, "Slug deve ter ao menos 2 caracteres")
-    .max(60)
-    .regex(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Use apenas letras minúsculas, números e hífens",
-    ),
-});
-
-type FormData = z.infer<typeof formSchema>;
-
 interface OrganizationSectionProps {
   organization: IOrganization;
 }
 
 export function OrganizationSection({ organization }: OrganizationSectionProps) {
+  const t = useTranslations("settings.organization");
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const formSchema = z.object({
+    name: z.string().min(2, t("nameValidation")),
+    slug: z
+      .string()
+      .min(2, t("slugValidation"))
+      .max(60)
+      .regex(
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+        t("slugRegexValidation"),
+      ),
+  });
+
+  type FormData = z.infer<typeof formSchema>;
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -82,7 +84,7 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
         slug: data.slug,
       });
 
-      toast.success("Organização atualizada!");
+      toast.success(t("successUpdated"));
 
       if (updated.slug !== organization.slug) {
         router.push(`/${updated.slug}/settings/organization`);
@@ -90,7 +92,7 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
         form.reset({ name: updated.name, slug: updated.slug });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar.");
+      toast.error(err instanceof Error ? err.message : t("errorSave"));
     } finally {
       setIsSaving(false);
     }
@@ -104,10 +106,10 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
         organizationId: organization.id,
         confirmationName: deleteConfirmation,
       });
-      toast.success("Organização excluída.");
+      toast.success(t("successDeleted"));
       router.push("/organizations");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao excluir.");
+      toast.error(err instanceof Error ? err.message : t("errorDelete"));
       setIsDeleting(false);
     }
   };
@@ -123,10 +125,10 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
           </div>
           <div>
             <p className="text-sm font-semibold text-zinc-200">
-              Informações da organização
+              {t("infoTitle")}
             </p>
             <p className="text-xs text-zinc-600">
-              Nome e URL usados em todo o sistema
+              {t("infoDescription")}
             </p>
           </div>
         </div>
@@ -139,12 +141,12 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                    Nome da organização
+                    {t("nameLabel")}
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="Minha empresa"
+                      placeholder={t("namePlaceholder")}
                       className="bg-zinc-950 border-zinc-700 text-zinc-100 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-600/50"
                     />
                   </FormControl>
@@ -159,12 +161,12 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-                    Slug da URL
+                    {t("slugLabel")}
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="minha-empresa"
+                      placeholder={t("slugPlaceholder")}
                       className="bg-zinc-950 border-zinc-700 text-zinc-100 font-mono focus-visible:ring-indigo-500/50 focus-visible:border-indigo-600/50"
                       onChange={(e) =>
                         field.onChange(
@@ -195,7 +197,7 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
                 ) : (
                   <IconDeviceFloppy size={14} />
                 )}
-                {isSaving ? "Salvando..." : "Salvar alterações"}
+                {isSaving ? t("saving") : t("saveChanges")}
               </Button>
             </div>
           </form>
@@ -209,9 +211,9 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
             className="text-red-400 mt-0.5 shrink-0"
           />
           <div>
-            <p className="text-sm font-semibold text-red-300">Zona de perigo</p>
+            <p className="text-sm font-semibold text-red-300">{t("dangerZoneTitle")}</p>
             <p className="text-xs text-zinc-500 mt-0.5 leading-relaxed">
-              Ações irreversíveis. Prossiga com cuidado.
+              {t("dangerZoneDescription")}
             </p>
           </div>
         </div>
@@ -219,11 +221,10 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-red-900/30 bg-red-950/20 px-4 py-3">
           <div>
             <p className="text-sm font-medium text-zinc-200">
-              Excluir organização
+              {t("deleteTitle")}
             </p>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Remove permanentemente todos os eventos, pagamentos, canais e
-              configurações.
+              {t("deleteDescription")}
             </p>
           </div>
           <Button
@@ -233,7 +234,7 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
             className="gap-2 text-red-400 hover:text-red-300 hover:bg-red-950/50 border border-red-900/40 shrink-0"
           >
             <IconTrash size={14} />
-            Excluir
+            {t("deleteButton")}
           </Button>
         </div>
       </div>
@@ -243,29 +244,43 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <IconAlertTriangle size={18} className="text-red-400" />
-              Excluir organização?
+              {t("deleteDialogTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3 pt-1 text-sm text-zinc-400">
                 <p>
-                  Esta ação é{" "}
-                  <span className="font-semibold text-red-400">
-                    permanente e irreversível
-                  </span>
-                  . Todos os dados serão perdidos:
+                  {t("deleteDialogBody", { permanent: t("deleteDialogPermanent") })
+                    .split(t("deleteDialogPermanent"))
+                    .map((part, i, arr) =>
+                      i < arr.length - 1 ? (
+                        <span key={i}>
+                          {part}
+                          <span className="font-semibold text-red-400">{t("deleteDialogPermanent")}</span>
+                        </span>
+                      ) : (
+                        <span key={i}>{part}</span>
+                      )
+                    )}
                 </p>
                 <ul className="space-y-1 text-zinc-500 text-xs pl-4 list-disc">
-                  <li>Todos os eventos registrados</li>
-                  <li>Histórico de pagamentos e receita</li>
-                  <li>Configurações, funil e perfil de IA</li>
-                  <li>API keys e membros da equipe</li>
+                  <li>{t("deleteDialogItem1")}</li>
+                  <li>{t("deleteDialogItem2")}</li>
+                  <li>{t("deleteDialogItem3")}</li>
+                  <li>{t("deleteDialogItem4")}</li>
                 </ul>
                 <p className="pt-1">
-                  Para confirmar, digite{" "}
-                  <span className="font-mono font-semibold text-zinc-200">
-                    {organization.name}
-                  </span>{" "}
-                  abaixo:
+                  {t("deleteDialogConfirmPrompt", { name: organization.name })
+                    .split(organization.name)
+                    .map((part, i, arr) =>
+                      i < arr.length - 1 ? (
+                        <span key={i}>
+                          {part}
+                          <span className="font-mono font-semibold text-zinc-200">{organization.name}</span>
+                        </span>
+                      ) : (
+                        <span key={i}>{part}</span>
+                      )
+                    )}
                 </p>
               </div>
             </AlertDialogDescription>
@@ -280,7 +295,7 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
 
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteConfirmation("")}>
-              Cancelar
+              {t("cancel")}
             </AlertDialogCancel>
             <Button
               type="button"
@@ -293,7 +308,7 @@ export function OrganizationSection({ organization }: OrganizationSectionProps) 
               ) : (
                 <IconTrash size={14} />
               )}
-              {isDeleting ? "Excluindo..." : "Excluir definitivamente"}
+              {isDeleting ? t("deletingButton") : t("deleteConfirmButton")}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

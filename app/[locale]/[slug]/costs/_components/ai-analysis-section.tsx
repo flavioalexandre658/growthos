@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { IconSparkles, IconTrendingUp, IconChevronDown, IconChevronUp } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { useOrganization } from "@/components/providers/organization-provider";
@@ -26,6 +27,7 @@ export function AiAnalysisSection({
   const params = useParams<{ slug: string }>();
   const slug = params.slug ?? "";
   const { organization } = useOrganization();
+  const t = useTranslations("finance.aiAnalysis");
 
   const [analysis, setAnalysis] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
@@ -86,7 +88,7 @@ export function AiAnalysisSection({
         signal: abortRef.current.signal,
       });
 
-      if (!res.ok || !res.body) throw new Error("Erro ao conectar com IA");
+      if (!res.ok || !res.body) throw new Error(t("connectionError"));
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
@@ -98,7 +100,7 @@ export function AiAnalysisSection({
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== "AbortError") {
-        setAnalysis("Erro ao obter análise. Verifique a configuração do GEMINI_API_KEY.");
+        setAnalysis(t("apiKeyError"));
       }
     } finally {
       setIsStreaming(false);
@@ -111,10 +113,10 @@ export function AiAnalysisSection({
         <div>
           <h3 className="text-sm font-bold text-zinc-100 flex items-center gap-2">
             <IconSparkles size={16} className="text-indigo-400" />
-            Análise com IA
+            {t("title")}
           </h3>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Gemini analisa seus custos e identifica oportunidades de melhoria
+            {t("subtitle")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -126,7 +128,7 @@ export function AiAnalysisSection({
           >
             <Link href={`/${slug}/ai/comparativo`}>
               <IconTrendingUp size={13} />
-              Comparar Períodos
+              {t("comparePeriods")}
             </Link>
           </Button>
           <Button
@@ -136,7 +138,7 @@ export function AiAnalysisSection({
             className="bg-indigo-600 hover:bg-indigo-500 text-white h-8 gap-1.5 text-xs"
           >
             <IconSparkles size={13} />
-            {isStreaming ? "Analisando..." : "Analisar com IA"}
+            {isStreaming ? t("analyzing") : t("analyzeBtn")}
           </Button>
         </div>
       </div>
@@ -163,7 +165,7 @@ export function AiAnalysisSection({
               onClick={() => setIsExpanded((v) => !v)}
               className="mt-3 flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
             >
-              {isExpanded ? <><IconChevronUp size={13} /> Mostrar menos</> : <><IconChevronDown size={13} /> Ver análise completa</>}
+              {isExpanded ? <><IconChevronUp size={13} /> {t("showLess")}</> : <><IconChevronDown size={13} /> {t("showMore")}</>}
             </button>
           )}
           {isStreaming && (

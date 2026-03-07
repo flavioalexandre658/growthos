@@ -14,6 +14,30 @@
       "highestRevenue": "highest revenue",
       "concentration": "Concentration",
       "top2Channels": "top 2 channels"
+    },
+    "treemap": {
+      "title": "Revenue by Channel",
+      "mobileSubtitle": "Proportion by revenue",
+      "desktopSubtitle": "Area proportional to revenue",
+      "channelCount": "{count, plural, one {# channel} other {# channels}}",
+      "noData": "No revenue data in the period",
+      "percentRevenue": "{pct}% of revenue",
+      "purchasesConv": "{count} purchases · conv. {rate}"
+    },
+    "table": {
+      "title": "Channel Breakdown",
+      "subtitle": "{withRevenue, plural, one {# channel with revenue} other {# channels with revenue}}{noRevenue, plural, =0 {} other { · # without revenue}}",
+      "sortRevenue": "Revenue",
+      "sortConversion": "Conversion",
+      "sortTicket": "Ticket",
+      "colChannel": "Channel",
+      "colConversion": "Conversion",
+      "colRevenue": "Revenue",
+      "colAvgTicket": "Avg. Ticket",
+      "noRevenue": "no revenue",
+      "hide": "Hide",
+      "showNoRevenue": "+{count} without revenue",
+      "emptyState": "No attribution data in the period"
     }
   }
 }

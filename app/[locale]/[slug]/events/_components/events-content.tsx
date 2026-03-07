@@ -14,8 +14,8 @@ import { EventsTable } from "./events-table";
 import { IconList, IconDownload, IconLoader2 } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
-
-dayjs.locale("pt-br");
+import "dayjs/locale/en";
+import { useLocale } from "next-intl";
 
 const EMPTY_PAGINATION = { page: 1, limit: 25, total: 0, total_pages: 0 };
 
@@ -27,21 +27,24 @@ interface EventsContentProps {
 function getFilterLabel(
   filter: IDateFilter,
   labels: Record<string, string>,
-  fallback: string
+  fallback: string,
+  dayjsLocale: string
 ): string {
   if (filter.period) {
     return labels[filter.period] ?? filter.period;
   }
   if (filter.start_date && filter.end_date) {
-    const from = dayjs(filter.start_date).format("D MMM");
-    const to = dayjs(filter.end_date).format("D MMM");
+    const from = dayjs(filter.start_date).locale(dayjsLocale).format("D MMM");
+    const to = dayjs(filter.end_date).locale(dayjsLocale).format("D MMM");
     return `${from} – ${to}`;
   }
   return fallback;
 }
 
 export function EventsContent({ filter, initialEventTypes = [] }: EventsContentProps) {
-  const t = useTranslations("eventsContent");
+  const t = useTranslations("events.eventsContent");
+  const locale = useLocale();
+  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
@@ -141,7 +144,7 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
     "30d": t("periodLabels.30d"),
     "90d": t("periodLabels.90d"),
   };
-  const periodLabel = getFilterLabel(filter, periodLabels, t("periodLabels.period"));
+  const periodLabel = getFilterLabel(filter, periodLabels, t("periodLabels.period"), dayjsLocale);
 
   return (
     <div className="space-y-4">

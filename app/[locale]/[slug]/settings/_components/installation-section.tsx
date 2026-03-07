@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import {
   IconPlus,
   IconTrash,
@@ -23,16 +24,9 @@ import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/pt-br";
+import "dayjs/locale/en";
 
 dayjs.extend(relativeTime);
-dayjs.locale("pt-br");
-
-const EXPIRY_OPTIONS: { label: string; days: number | undefined }[] = [
-  { label: "Nunca", days: undefined },
-  { label: "30 dias", days: 30 },
-  { label: "90 dias", days: 90 },
-  { label: "1 ano", days: 365 },
-];
 
 function ApiKeyRow({
   id,
@@ -53,6 +47,9 @@ function ApiKeyRow({
   onDelete: (id: string) => void;
   isDeleting: boolean;
 }) {
+  const t = useTranslations("settings.installation");
+  const locale = useLocale();
+  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -64,13 +61,13 @@ function ApiKeyRow({
   const isExpired = expiresAt && new Date() > expiresAt;
   const expiresLabel = expiresAt
     ? isExpired
-      ? "Expirada"
-      : `Expira ${dayjs(expiresAt).fromNow()}`
+      ? t("keyExpired")
+      : t("keyExpires", { time: dayjs(expiresAt).locale(dayjsLocale).fromNow() })
     : null;
 
   const lastUsedLabel = lastUsedAt
-    ? `Último uso ${dayjs(lastUsedAt).fromNow()}`
-    : "Nunca usada";
+    ? t("keyLastUsed", { time: dayjs(lastUsedAt).locale(dayjsLocale).fromNow() })
+    : t("keyNeverUsed");
 
   return (
     <div
@@ -93,7 +90,7 @@ function ApiKeyRow({
           {isExpired && (
             <span className="flex items-center gap-1 text-[10px] font-semibold text-red-400 bg-red-900/30 px-1.5 py-0.5 rounded-md border border-red-800/40">
               <IconAlertTriangle size={10} />
-              Expirada
+              {t("keyExpired")}
             </span>
           )}
         </div>
@@ -117,7 +114,7 @@ function ApiKeyRow({
             </p>
           )}
           <p className="text-[10px] text-zinc-700">
-            Criada {dayjs(createdAt).format("DD/MM/YYYY")}
+            {t("keyCreated", { date: dayjs(createdAt).format("DD/MM/YYYY") })}
           </p>
         </div>
       </div>
@@ -127,7 +124,7 @@ function ApiKeyRow({
           size="icon"
           onClick={handleCopy}
           className="h-7 w-7 text-zinc-500 hover:text-zinc-100"
-          title="Copiar chave"
+          title={t("copyKey")}
         >
           {copied ? (
             <IconCheck size={14} className="text-emerald-400" />
@@ -141,7 +138,7 @@ function ApiKeyRow({
           onClick={() => onDelete(id)}
           disabled={isDeleting}
           className="h-7 w-7 text-zinc-600 hover:text-red-400"
-          title="Revogar chave"
+          title={t("revokeKey")}
         >
           <IconTrash size={14} />
         </Button>
@@ -157,6 +154,7 @@ function InstallSnippet({
   apiKey: string;
   baseUrl: string;
 }) {
+  const t = useTranslations("settings.installation");
   const [copied, setCopied] = useState(false);
   const snippet = `<script async src="${baseUrl}/tracker.js" data-key="${apiKey}"></script>`;
 
@@ -164,7 +162,7 @@ function InstallSnippet({
     navigator.clipboard.writeText(snippet);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast.success("Snippet copiado!");
+    toast.success(t("snippetCopiedToast"));
   };
 
   return (
@@ -185,7 +183,7 @@ function InstallSnippet({
           ) : (
             <IconCopy size={12} />
           )}
-          {copied ? "Copiado!" : "Copiar"}
+          {copied ? t("snippetCopied") : t("snippetCopy")}
         </Button>
       </div>
       <pre className="px-4 py-3 text-xs text-emerald-400 font-mono overflow-x-auto whitespace-pre-wrap break-all">
@@ -212,7 +210,15 @@ function CreateKeyForm({
   }) => void;
   isCreating: boolean;
 }) {
+  const t = useTranslations("settings.installation");
   const [expiresDays, setExpiresDays] = useState<number | undefined>(undefined);
+
+  const EXPIRY_OPTIONS: { label: string; days: number | undefined }[] = [
+    { label: t("expiryNever"), days: undefined },
+    { label: t("expiry30Days"), days: 30 },
+    { label: t("expiry90Days"), days: 90 },
+    { label: t("expiry1Year"), days: 365 },
+  ];
 
   const handleCreate = () => {
     onCreate({
@@ -246,7 +252,7 @@ function CreateKeyForm({
         className="bg-indigo-600 hover:bg-indigo-500 text-white h-8 gap-1.5 text-xs"
       >
         <IconPlus size={13} />
-        Nova Key
+        {t("newKey")}
       </Button>
     </div>
   );
@@ -267,6 +273,7 @@ export function InstallationSection({
   funnelSteps,
   hasRecurringRevenue,
 }: InstallationSectionProps) {
+  const t = useTranslations("settings.installation");
   const { data: keys, isLoading } = useApiKeys(orgId);
   const createMutation = useCreateApiKey(orgId);
   const deleteMutation = useDeleteApiKey(orgId);
@@ -282,44 +289,36 @@ export function InstallationSection({
   }) => {
     const result = await createMutation.mutateAsync(input);
     if (result?.[0]) {
-      toast.success("Nova API key criada!");
+      toast.success(t("keyCreatedToast"));
     }
   };
 
   const handleDelete = async (id: string) => {
     await deleteMutation.mutateAsync(id);
-    toast.success("API key revogada.");
+    toast.success(t("keyRevokedToast"));
   };
 
   const firstActiveKey = keys?.find(
     (k) => k.isActive && (!k.expiresAt || new Date() < k.expiresAt),
   );
 
+  const steps = [
+    { label: t("step1Label"), desc: t("step1Desc") },
+    { label: t("step2Label"), desc: t("step2Desc") },
+    { label: t("step3Label"), desc: t("step3Desc") },
+  ];
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
         <h3 className="text-sm font-bold text-zinc-100 mb-1">
-          Como instalar o tracker
+          {t("howToTitle")}
         </h3>
         <p className="text-xs text-zinc-500 mb-4">
-          O tracker.js coleta dados automaticamente, sem npm, sem SDK, sem
-          endpoints exclusivos no seu sistema.
+          {t("howToDescription")}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[
-            {
-              label: "1. Gere uma API key",
-              desc: "Cada organização tem sua própria key para autenticar os eventos",
-            },
-            {
-              label: "2. Cole o script no <head>",
-              desc: "Um único script captura pageviews, UTMs, device e referrer automaticamente",
-            },
-            {
-              label: "3. Dispare eventos manuais",
-              desc: "Use Groware.track('purchase', {...}) para enviar dados financeiros",
-            },
-          ].map((step) => (
+          {steps.map((step) => (
             <div
               key={step.label}
               className="rounded-lg border border-zinc-800 p-3"
@@ -336,7 +335,7 @@ export function InstallationSection({
           <div>
             <h3 className="text-sm font-bold text-zinc-100">{orgName}</h3>
             <p className="text-xs text-zinc-500 mt-0.5">
-              API keys para autenticar o tracker.js
+              {t("apiKeysDescription")}
             </p>
           </div>
           {!isLoading && (
@@ -357,7 +356,7 @@ export function InstallationSection({
             ))
           ) : keys?.length === 0 ? (
             <p className="text-center py-6 text-zinc-600 text-sm">
-              Nenhuma API key criada ainda.
+              {t("noKeysYet")}
             </p>
           ) : (
             keys?.map((k) => (
@@ -379,27 +378,22 @@ export function InstallationSection({
             <div className="mt-4 space-y-4">
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
-                  Snippet de Instalação
+                  {t("snippetTitle")}
                 </p>
                 <div>
                   <label className="text-[11px] text-zinc-600 uppercase tracking-wider">
-                    URL base do Groware
+                    {t("snippetBaseUrlLabel")}
                   </label>
                   <input
                     value={baseUrl}
                     onChange={(e) => setBaseUrl(e.target.value)}
                     className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none"
-                    placeholder="https://seu-dominio.com"
+                    placeholder={t("snippetBaseUrlPlaceholder")}
                   />
                 </div>
                 <InstallSnippet apiKey={firstActiveKey.key} baseUrl={baseUrl} />
                 <p className="text-[11px] text-zinc-600 leading-relaxed">
-                  Cole este script no{" "}
-                  <code className="text-zinc-400">&lt;head&gt;</code> de qualquer
-                  página do seu site. O tracker.js captura automaticamente
-                  pageviews, UTMs, device e referrer. Use{" "}
-                  <code className="text-zinc-400">window.Groware.track()</code>{" "}
-                  para eventos manuais.
+                  {t("snippetHint")}
                 </p>
               </div>
 

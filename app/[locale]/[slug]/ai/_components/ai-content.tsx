@@ -2,7 +2,7 @@
 
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   IconSparkles,
   IconRefresh,
@@ -33,6 +33,7 @@ import { cn } from "@/lib/utils";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/pt-br";
+import "dayjs/locale/en";
 import type { IFixedCost, IVariableCost } from "@/interfaces/cost.interface";
 import type {
   IAnalysisResult,
@@ -43,7 +44,6 @@ import type {
 } from "@/interfaces/ai.interface";
 
 dayjs.extend(relativeTime);
-dayjs.locale("pt-br");
 
 const DEFAULT_FILTER = { period: "30d" as const };
 
@@ -317,6 +317,8 @@ function HistoryItem({
   onRestore: (result: IAnalysisResult) => void;
 }) {
   const t = useTranslations("ai");
+  const locale = useLocale();
+  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
 
   const scoreColor =
     entry.score >= 70 ? "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" :
@@ -332,7 +334,7 @@ function HistoryItem({
           </span>
           <span className="text-[10px] text-zinc-600 flex items-center gap-1">
             <IconClock size={10} />
-            {dayjs(entry.timestamp).fromNow()}
+            {dayjs(entry.timestamp).locale(dayjsLocale).fromNow()}
           </span>
         </div>
         <p className="text-[11px] text-zinc-400 truncate">{entry.summary}</p>

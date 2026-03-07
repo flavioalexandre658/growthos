@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/pt-br";
+import "dayjs/locale/en";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { formatDate } from "@/utils/format-date";
 import {
@@ -25,18 +27,13 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { fmtBRLDecimal } from "@/utils/format";
-import {
-  getStatusBadgeClass,
-  BILLING_INTERVAL_LABELS,
-  STATUS_LABELS,
-} from "./subscriptions-filters";
+import { getStatusBadgeClass } from "./subscriptions-filters";
 import type { ISubscriptionListItem } from "@/interfaces/subscription.interface";
 import type { IPaginationMeta } from "@/interfaces/dashboard.interface";
 
 dayjs.extend(relativeTime);
-dayjs.locale("pt-br");
 
-function CopyButton({ value }: { value: string }) {
+function CopyButton({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -51,7 +48,7 @@ function CopyButton({ value }: { value: string }) {
       type="button"
       onClick={handleCopy}
       className="ml-1.5 shrink-0 p-0.5 rounded text-zinc-700 hover:text-zinc-300 transition-colors"
-      title="Copiar"
+      title={label}
     >
       {copied ? (
         <IconCheck size={11} className="text-emerald-400" />
@@ -67,11 +64,13 @@ function DetailField({
   value,
   mono = false,
   copyable = false,
+  copyLabel,
 }: {
   label: string;
   value: string;
   mono?: boolean;
   copyable?: boolean;
+  copyLabel?: string;
 }) {
   return (
     <div className="flex items-center justify-between gap-3 px-3 py-2">
@@ -88,13 +87,13 @@ function DetailField({
         >
           {value}
         </span>
-        {copyable && <CopyButton value={value} />}
+        {copyable && <CopyButton value={value} label={copyLabel ?? ""} />}
       </div>
     </div>
   );
 }
 
-function SubscriptionDetailGrid({ item, timezone }: { item: ISubscriptionListItem; timezone: string }) {
+function SubscriptionDetailGrid({ item, timezone, copyLabel }: { item: ISubscriptionListItem; timezone: string; copyLabel: string }) {
   return (
     <div className="rounded-lg border border-zinc-800/60 bg-zinc-950/50 divide-y divide-zinc-800/40 overflow-hidden">
       <DetailField
@@ -102,9 +101,10 @@ function SubscriptionDetailGrid({ item, timezone }: { item: ISubscriptionListIte
         value={item.subscriptionId}
         mono
         copyable
+        copyLabel={copyLabel}
       />
-      <DetailField label="customer_id" value={item.customerId} mono copyable />
-      <DetailField label="plan_id" value={item.planId} mono copyable />
+      <DetailField label="customer_id" value={item.customerId} mono copyable copyLabel={copyLabel} />
+      <DetailField label="plan_id" value={item.planId} mono copyable copyLabel={copyLabel} />
       <DetailField label="currency" value={item.currency} />
       {item.canceledAt && (
         <DetailField
@@ -116,8 +116,23 @@ function SubscriptionDetailGrid({ item, timezone }: { item: ISubscriptionListIte
   );
 }
 
-function SubscriptionCard({ item, timezone }: { item: ISubscriptionListItem; timezone: string }) {
+function SubscriptionCard({ item, timezone, t }: { item: ISubscriptionListItem; timezone: string; t: ReturnType<typeof useTranslations> }) {
   const [expanded, setExpanded] = useState(false);
+
+  const billingIntervals: Record<string, string> = {
+    monthly: t("billingIntervals.monthly"),
+    quarterly: t("billingIntervals.quarterly"),
+    semiannual: t("billingIntervals.semiannual"),
+    yearly: t("billingIntervals.yearly"),
+    weekly: t("billingIntervals.weekly"),
+  };
+
+  const statusLabels: Record<string, string> = {
+    active: t("statusLabels.active"),
+    trialing: t("statusLabels.trialing"),
+    past_due: t("statusLabels.past_due"),
+    canceled: t("statusLabels.canceled"),
+  };
 
   return (
     <div className="border-b border-zinc-800/60 px-3 py-3 transition-colors">
@@ -131,7 +146,7 @@ function SubscriptionCard({ item, timezone }: { item: ISubscriptionListItem; tim
                   getStatusBadgeClass(item.status),
                 )}
               >
-                {STATUS_LABELS[item.status] ?? item.status}
+                {statusLabels[item.status] ?? item.status}
               </span>
               <span className="text-xs text-zinc-300 truncate font-medium">
                 {item.planName}
@@ -147,11 +162,10 @@ function SubscriptionCard({ item, timezone }: { item: ISubscriptionListItem; tim
               {item.customerId}
             </span>
             <span className="text-zinc-600">
-              {BILLING_INTERVAL_LABELS[item.billingInterval] ??
-                item.billingInterval}
+              {billingIntervals[item.billingInterval] ?? item.billingInterval}
             </span>
             <span className="text-zinc-600">
-              Desde {formatDate(item.startedAt, timezone, "DD/MM/YYYY")}
+              {t("since", { date: formatDate(item.startedAt, timezone, "DD/MM/YYYY") })}
             </span>
           </div>
         </div>
@@ -167,15 +181,30 @@ function SubscriptionCard({ item, timezone }: { item: ISubscriptionListItem; tim
 
       {expanded && (
         <div className="mt-2.5 pt-2.5 border-t border-zinc-800/40">
-          <SubscriptionDetailGrid item={item} timezone={timezone} />
+          <SubscriptionDetailGrid item={item} timezone={timezone} copyLabel={t("copy")} />
         </div>
       )}
     </div>
   );
 }
 
-function SubscriptionRow({ item, timezone }: { item: ISubscriptionListItem; timezone: string }) {
+function SubscriptionRow({ item, timezone, t, dayjsLocale }: { item: ISubscriptionListItem; timezone: string; t: ReturnType<typeof useTranslations>; dayjsLocale: string }) {
   const [expanded, setExpanded] = useState(false);
+
+  const billingIntervals: Record<string, string> = {
+    monthly: t("billingIntervals.monthly"),
+    quarterly: t("billingIntervals.quarterly"),
+    semiannual: t("billingIntervals.semiannual"),
+    yearly: t("billingIntervals.yearly"),
+    weekly: t("billingIntervals.weekly"),
+  };
+
+  const statusLabels: Record<string, string> = {
+    active: t("statusLabels.active"),
+    trialing: t("statusLabels.trialing"),
+    past_due: t("statusLabels.past_due"),
+    canceled: t("statusLabels.canceled"),
+  };
 
   return (
     <>
@@ -210,8 +239,7 @@ function SubscriptionRow({ item, timezone }: { item: ISubscriptionListItem; time
         </td>
         <td className="px-3 py-2.5">
           <span className="text-xs text-zinc-400">
-            {BILLING_INTERVAL_LABELS[item.billingInterval] ??
-              item.billingInterval}
+            {billingIntervals[item.billingInterval] ?? item.billingInterval}
           </span>
         </td>
         <td className="px-3 py-2.5">
@@ -221,7 +249,7 @@ function SubscriptionRow({ item, timezone }: { item: ISubscriptionListItem; time
               getStatusBadgeClass(item.status),
             )}
           >
-            {STATUS_LABELS[item.status] ?? item.status}
+            {statusLabels[item.status] ?? item.status}
           </span>
         </td>
         <td className="px-3 py-2.5 whitespace-nowrap">
@@ -230,7 +258,7 @@ function SubscriptionRow({ item, timezone }: { item: ISubscriptionListItem; time
               {formatDate(item.startedAt, timezone, "DD/MM/YYYY")}
             </span>
             <span className="text-[10px] text-zinc-600">
-              {dayjs(item.startedAt).fromNow()}
+              {dayjs(item.startedAt).locale(dayjsLocale).fromNow()}
             </span>
           </div>
         </td>
@@ -248,7 +276,7 @@ function SubscriptionRow({ item, timezone }: { item: ISubscriptionListItem; time
         <tr className="border-b border-zinc-800/60 bg-zinc-950/60">
           <td colSpan={7} className="px-4 py-3">
             <div className="pl-5">
-              <SubscriptionDetailGrid item={item} timezone={timezone} />
+              <SubscriptionDetailGrid item={item} timezone={timezone} copyLabel={t("copy")} />
             </div>
           </td>
         </tr>
@@ -272,6 +300,9 @@ export function SubscriptionsTable({
   onPageChange,
   onPageSizeChange,
 }: SubscriptionsTableProps) {
+  const t = useTranslations("subscriptions.table");
+  const locale = useLocale();
+  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
   const { organization } = useOrganization();
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
   const paginationStart =
@@ -285,7 +316,7 @@ export function SubscriptionsTable({
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 px-4 py-3">
       <div className="flex items-center gap-2">
         <span className="text-xs text-zinc-500 hidden sm:inline">
-          Linhas por página
+          {t("rowsPerPage")}
         </span>
         <Select
           value={String(pagination.limit)}
@@ -312,7 +343,7 @@ export function SubscriptionsTable({
       </div>
       <div className="flex items-center gap-3">
         <span className="text-xs text-zinc-500 tabular-nums">
-          {paginationStart}–{paginationEnd} de {pagination.total}
+          {t("paginationRange", { start: paginationStart, end: paginationEnd, total: pagination.total })}
         </span>
         <div className="flex gap-1">
           <Button
@@ -345,25 +376,25 @@ export function SubscriptionsTable({
           <thead>
             <tr className="border-b border-zinc-800 bg-zinc-900/80">
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Cliente
+                {t("colClient")}
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Plano
+                {t("colPlan")}
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500 text-right">
-                Valor
+                {t("colValue")}
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Intervalo
+                {t("colInterval")}
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Status
+                {t("colStatus")}
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Iniciou em
+                {t("colStartedAt")}
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Cancelou em
+                {t("colCanceledAt")}
               </th>
             </tr>
           </thead>
@@ -384,11 +415,11 @@ export function SubscriptionsTable({
                   colSpan={7}
                   className="px-4 py-12 text-center text-sm text-zinc-600"
                 >
-                  Nenhuma assinatura encontrada para os filtros aplicados
+                  {t("empty")}
                 </td>
               </tr>
             ) : (
-              data.map((item) => <SubscriptionRow key={item.id} item={item} timezone={timezone} />)
+              data.map((item) => <SubscriptionRow key={item.id} item={item} timezone={timezone} t={t} dayjsLocale={dayjsLocale} />)
             )}
           </tbody>
         </table>
@@ -412,10 +443,10 @@ export function SubscriptionsTable({
           </div>
         ) : data.length === 0 ? (
           <div className="px-4 py-12 text-center text-sm text-zinc-600">
-            Nenhuma assinatura encontrada para os filtros aplicados
+            {t("empty")}
           </div>
         ) : (
-          data.map((item) => <SubscriptionCard key={item.id} item={item} timezone={timezone} />)
+          data.map((item) => <SubscriptionCard key={item.id} item={item} timezone={timezone} t={t} />)
         )}
       </div>
 

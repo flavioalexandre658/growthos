@@ -23,6 +23,7 @@ export async function getDaily(
 ): Promise<IDailyResult> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { rows: [], stepMeta: [] };
+  const locale = session.user.locale ?? "pt";
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
@@ -34,7 +35,7 @@ export async function getDaily(
   const plan = await getUserPlan();
   const { startDate, endDate } = resolveDateRange(filter, tz, plan.maxHistoryDays);
 
-  const baseFunnelSteps: IFunnelStepConfig[] = buildFunnelSteps(org?.funnelSteps ?? []);
+  const baseFunnelSteps: IFunnelStepConfig[] = buildFunnelSteps(org?.funnelSteps ?? [], locale);
   const allEventTypes = getAllQueryEventTypes(baseFunnelSteps).filter(
     (t) => t !== "pageview"
   );
@@ -104,8 +105,8 @@ export async function getDaily(
   const totalPv = Array.from(pvByDate.values()).reduce((sum, n) => sum + n, 0);
   globalCountMap.set("pageview", { total: totalPv, uniqueTotal: totalPv });
 
-  const funnelSteps = injectCheckoutSteps(baseFunnelSteps, globalCountMap);
-  const stepMeta = buildExtendedStepMeta(funnelSteps, globalCountMap);
+  const funnelSteps = injectCheckoutSteps(baseFunnelSteps, globalCountMap, locale);
+  const stepMeta = buildExtendedStepMeta(funnelSteps, globalCountMap, locale);
   const stepConfigMap = new Map(funnelSteps.map((s) => [s.eventType, s]));
   const trackedInMeta = new Set(stepMeta.map((m) => m.key));
 

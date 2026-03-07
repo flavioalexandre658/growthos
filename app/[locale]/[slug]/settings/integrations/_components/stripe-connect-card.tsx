@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   IconBrandStripe,
   IconRefresh,
@@ -61,9 +62,8 @@ export function StripeConnectCard({ organizationId }: StripeConnectCardProps) {
   return <ConnectedCard organizationId={organizationId} integration={integration} />;
 }
 
-// ─── Connect Form ─────────────────────────────────────────────────────────────
-
 function ConnectForm({ organizationId }: { organizationId: string }) {
+  const t = useTranslations("settings.integrations.stripe");
   const [rawKey, setRawKey] = useState("");
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const { mutateAsync, isPending } = useConnectStripe(organizationId);
@@ -73,10 +73,10 @@ function ConnectForm({ organizationId }: { organizationId: string }) {
     if (!key) return;
     try {
       await mutateAsync(key);
-      toast.success("Stripe conectado! Inicie a importação do histórico.");
+      toast.success(t("connectedToast"));
       setRawKey("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao conectar o Stripe.");
+      toast.error(err instanceof Error ? err.message : t("connectErrorToast"));
     }
   };
 
@@ -88,13 +88,13 @@ function ConnectForm({ organizationId }: { organizationId: string }) {
         </div>
         <div>
           <p className="text-sm font-medium text-zinc-200">Stripe</p>
-          <p className="text-xs text-zinc-500">Conecte via Restricted Key (somente leitura)</p>
+          <p className="text-xs text-zinc-500">{t("connectVia")}</p>
         </div>
         <IntegrationStatusBadge status="disconnected" />
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs text-zinc-400">Restricted Key</label>
+        <label className="text-xs text-zinc-400">{t("restrictedKeyLabel")}</label>
         <div className="flex gap-2">
           <Input
             value={rawKey}
@@ -108,7 +108,7 @@ function ConnectForm({ organizationId }: { organizationId: string }) {
             disabled={!rawKey.trim() || isPending}
             className="shrink-0 h-9 bg-indigo-600 hover:bg-indigo-500 text-white"
           >
-            {isPending ? "Validando..." : "Conectar"}
+            {isPending ? t("validating") : t("connect")}
           </Button>
         </div>
       </div>
@@ -118,8 +118,6 @@ function ConnectForm({ organizationId }: { organizationId: string }) {
   );
 }
 
-// ─── Tutorial colapsável ──────────────────────────────────────────────────────
-
 function RestrictedKeyTutorial({
   open,
   onToggle,
@@ -127,6 +125,7 @@ function RestrictedKeyTutorial({
   open: boolean;
   onToggle: () => void;
 }) {
+  const t = useTranslations("settings.integrations.stripe");
   return (
     <div className="rounded-lg border border-zinc-800 bg-zinc-950/60 overflow-hidden">
       <button
@@ -134,7 +133,7 @@ function RestrictedKeyTutorial({
         onClick={onToggle}
         className="w-full flex items-center justify-between px-3 py-2.5 text-xs font-medium text-zinc-400 hover:text-zinc-300 hover:bg-zinc-900/50 transition-colors"
       >
-        <span>Como criar sua Restricted Key</span>
+        <span>{t("howToCreateKey")}</span>
         {open ? <IconChevronUp size={13} /> : <IconChevronDown size={13} />}
       </button>
 
@@ -142,23 +141,11 @@ function RestrictedKeyTutorial({
         <div className="px-3 pb-4 pt-1 space-y-3 border-t border-zinc-800">
           <ol className="space-y-2.5">
             {[
+              t("tutorialStep1"),
+              t("tutorialStep2"),
+              t("tutorialStep3"),
               <>
-                Acesse{" "}
-                <span className="font-medium text-zinc-300">dashboard.stripe.com</span>
-              </>,
-              <>
-                Navegue até{" "}
-                <span className="font-medium text-zinc-300">
-                  Developers → API Keys → Restricted Keys
-                </span>
-              </>,
-              <>
-                Clique em{" "}
-                <span className="font-medium text-zinc-300">Create restricted key</span>
-              </>,
-              <>
-                Na lista de permissões, marque{" "}
-                <span className="font-medium text-zinc-300">Read</span> em:
+                {t("tutorialStep4")}
                 <ul className="mt-1.5 space-y-1 pl-1">
                   {PERMISSIONS.map((p) => (
                     <li key={p} className="flex items-center gap-2 text-zinc-500">
@@ -168,12 +155,7 @@ function RestrictedKeyTutorial({
                   ))}
                 </ul>
               </>,
-              <>
-                Clique em{" "}
-                <span className="font-medium text-zinc-300">Create key</span>
-                {", "}
-                copie e cole no campo acima
-              </>,
+              t("tutorialStep5"),
             ].map((step, i) => (
               <li key={i} className="flex gap-3 text-xs text-zinc-400">
                 <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-zinc-800 text-zinc-500 border border-zinc-700">
@@ -191,15 +173,13 @@ function RestrictedKeyTutorial({
             className="inline-flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors mt-1"
           >
             <IconExternalLink size={12} />
-            Abrir Stripe Dashboard
+            {t("openStripeDashboard")}
           </a>
         </div>
       )}
     </div>
   );
 }
-
-// ─── Connected Card ───────────────────────────────────────────────────────────
 
 function ConnectedCard({
   organizationId,
@@ -208,6 +188,7 @@ function ConnectedCard({
   organizationId: string;
   integration: IIntegration;
 }) {
+  const t = useTranslations("settings.integrations.stripe");
   const queryClient = useQueryClient();
   const { mutate: syncHistory, isPending: isSyncing } = useSyncStripeHistory(organizationId);
   const { mutateAsync: disconnect, isPending: isDisconnecting } =
@@ -216,17 +197,21 @@ function ConnectedCard({
   const isSyncPending = integration.status === "active" && !integration.historySyncedAt;
 
   const handleSync = () => {
-    toast.loading("Importando histórico em segundo plano...", { id: "stripe-sync" });
+    toast.loading(t("importingToast"), { id: "stripe-sync" });
     syncHistory(integration.id, {
       onSuccess: (result) => {
         toast.success(
-          `Histórico importado: ${result.subscriptionsSynced} assinaturas, ${result.invoicesSynced} recorrentes, ${result.oneTimePurchasesSynced} avulsos.`,
+          t("importSuccessToast", {
+            subscriptions: result.subscriptionsSynced,
+            invoices: result.invoicesSynced,
+            oneTime: result.oneTimePurchasesSynced,
+          }),
           { id: "stripe-sync" },
         );
       },
       onError: (err) => {
         toast.error(
-          err instanceof Error ? err.message : "Erro ao importar histórico.",
+          err instanceof Error ? err.message : t("importErrorToast"),
           { id: "stripe-sync" },
         );
       },
@@ -234,12 +219,12 @@ function ConnectedCard({
   };
 
   const handleDisconnect = async () => {
-    if (!confirm("Desconectar o Stripe? Os dados já importados serão mantidos.")) return;
+    if (!confirm(t("disconnectConfirm"))) return;
     try {
       await disconnect(integration.id);
-      toast.success("Stripe desconectado.");
+      toast.success(t("disconnectedToast"));
     } catch {
-      toast.error("Erro ao desconectar.");
+      toast.error(t("disconnectErrorToast"));
     }
   };
 
@@ -274,12 +259,12 @@ function ConnectedCard({
 
         <div className="grid grid-cols-2 gap-3">
           <SyncStat
-            label="Último sync"
-            value={integration.lastSyncedAt ? dayjs(integration.lastSyncedAt).fromNow() : "Nunca"}
+            label={t("lastSync")}
+            value={integration.lastSyncedAt ? dayjs(integration.lastSyncedAt).fromNow() : t("historyNever")}
           />
           <SyncStat
-            label="Histórico"
-            value={integration.historySyncedAt ? "Importado" : "Pendente"}
+            label={t("history")}
+            value={integration.historySyncedAt ? t("historyImported") : t("historyPending")}
             highlight={!!integration.historySyncedAt}
           />
         </div>
@@ -288,19 +273,19 @@ function ConnectedCard({
           {isSyncing && (
             <div className="flex items-center gap-1.5 text-xs text-indigo-400">
               <IconLoader2 size={13} className="animate-spin shrink-0" />
-              <span>Importando em segundo plano...</span>
+              <span>{t("importing")}</span>
             </div>
           )}
           {!isSyncing && isSyncPending && (
             <div className="flex items-center gap-1.5 text-xs text-amber-400">
               <IconClockHour4 size={13} />
-              <span>Histórico não importado ainda</span>
+              <span>{t("historyNotImported")}</span>
             </div>
           )}
           {!isSyncing && integration.historySyncedAt && (
             <div className="flex items-center gap-1.5 text-xs text-emerald-400">
               <IconCircleCheckFilled size={13} />
-              <span>Histórico importado</span>
+              <span>{t("historyImportedStatus")}</span>
             </div>
           )}
 
@@ -313,7 +298,7 @@ function ConnectedCard({
               className="h-8 text-xs border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 disabled:opacity-50"
             >
               <IconRefresh size={12} className={cn(isSyncing && "animate-spin")} />
-              {integration.historySyncedAt ? "Re-importar" : "Importar histórico"}
+              {integration.historySyncedAt ? t("reimport") : t("importHistory")}
             </Button>
             <Button
               variant="outline"
@@ -323,7 +308,7 @@ function ConnectedCard({
               className="h-8 text-xs border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-red-400 hover:text-red-300 disabled:opacity-50"
             >
               <IconUnlink size={12} />
-              Desconectar
+              {t("disconnect")}
             </Button>
           </div>
         </div>
@@ -341,36 +326,34 @@ function ConnectedCard({
   );
 }
 
-// ─── Connected Notice ─────────────────────────────────────────────────────────
-
 function StripeConnectedNotice() {
+  const t = useTranslations("settings.integrations.stripe");
+  const trackerItems = [
+    t("noticeTrackerItem1"),
+    t("noticeTrackerItem2"),
+    t("noticeTrackerItem3"),
+    t("noticeTrackerItem4"),
+  ];
   return (
     <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 space-y-3">
       <div className="flex items-start gap-2.5">
         <IconInfoCircle size={15} className="text-indigo-400 shrink-0 mt-0.5" />
         <div className="space-y-2">
           <p className="text-xs font-medium text-indigo-300">
-            Pagamentos e assinaturas chegam automaticamente via webhook.
+            {t("noticeParagraph")}
           </p>
           <div className="rounded-lg bg-amber-500/8 border border-amber-500/20 px-3 py-2">
             <p className="text-xs text-amber-300/90 leading-relaxed">
-              <span className="font-medium">Atenção:</span> Se você usa o tracker.js, não dispare
-              mais eventos de{" "}
-              <code className="font-mono text-amber-200 bg-amber-500/10 px-1 rounded">purchase</code>{" "}
-              do Stripe manualmente — isso duplicaria os dados no dashboard.
+              <span className="font-medium">{t("noticeAttention")}</span>{" "}
+              {t("noticeAttentionBody")}
             </p>
           </div>
           <div className="space-y-1">
             <p className="text-[11px] text-zinc-500 font-medium uppercase tracking-wide">
-              O tracker.js continua necessário para:
+              {t("noticeTrackerTitle")}
             </p>
             <ul className="space-y-1">
-              {[
-                "Pageviews e navegação do site",
-                "Cadastros e eventos do funil",
-                "Pagamentos de outros gateways (Asaas, Kiwify...)",
-                "Contexto de aquisição (UTMs, landing pages)",
-              ].map((item) => (
+              {trackerItems.map((item) => (
                 <li key={item} className="flex items-center gap-2 text-xs text-zinc-400">
                   <span className="w-1 h-1 rounded-full bg-zinc-600 shrink-0" />
                   {item}
@@ -383,8 +366,6 @@ function StripeConnectedNotice() {
     </div>
   );
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function SyncStat({
   label,
