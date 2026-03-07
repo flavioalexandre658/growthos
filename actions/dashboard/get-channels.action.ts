@@ -58,7 +58,8 @@ function normalizeChannel(channel: string): string {
 
 export async function getChannels(
   organizationId: string,
-  params: IChannelParams = {}
+  params: IChannelParams = {},
+  urlLocale?: string
 ): Promise<IChannelsResult> {
   const EMPTY: IChannelsResult = {
     data: [],
@@ -72,7 +73,7 @@ export async function getChannels(
 
   const session = await getServerSession(authOptions);
   if (!session?.user) return EMPTY;
-  const locale = session.user.locale ?? "pt";
+  const locale = urlLocale ?? session.user.locale ?? "pt";
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })

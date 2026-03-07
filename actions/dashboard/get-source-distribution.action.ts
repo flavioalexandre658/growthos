@@ -13,11 +13,12 @@ import type { IDateFilter, ISourceDistribution } from "@/interfaces/dashboard.in
 
 export async function getSourceDistribution(
   organizationId: string,
-  filter: IDateFilter = {}
+  filter: IDateFilter = {},
+  urlLocale?: string
 ): Promise<ISourceDistribution | null> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
-  const locale = session.user.locale ?? "pt";
+  const locale = urlLocale ?? session.user.locale ?? "pt";
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })

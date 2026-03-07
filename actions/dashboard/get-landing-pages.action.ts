@@ -24,7 +24,8 @@ import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
 export async function getLandingPages(
   organizationId: string,
-  params: ILandingPageParams = {}
+  params: ILandingPageParams = {},
+  urlLocale?: string
 ): Promise<ILandingPagesResult> {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
@@ -42,7 +43,7 @@ export async function getLandingPages(
       scatterData: [],
     };
   }
-  const locale = session.user.locale ?? "pt";
+  const locale = urlLocale ?? session.user.locale ?? "pt";
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })

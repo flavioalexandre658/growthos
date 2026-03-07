@@ -24,7 +24,10 @@ export function buildFunnelSteps(
   locale: string = "pt"
 ): IFunnelStepConfig[] {
   const hasPageview = funnelSteps.some((s) => s.eventType === "pageview");
-  return hasPageview ? funnelSteps : [makePageviewStep(locale), ...funnelSteps];
+  const steps = hasPageview ? funnelSteps : [makePageviewStep(locale), ...funnelSteps];
+  return steps.map((s) =>
+    STEP_LABELS[s.eventType] ? { ...s, label: getStepLabel(s.eventType, locale) } : s
+  );
 }
 
 export function getAllQueryEventTypes(funnelSteps: IFunnelStepConfig[]): string[] {
@@ -54,7 +57,10 @@ export function buildExtendedStepMeta(
   countMap: Map<string, { total: number; uniqueTotal: number }>,
   locale: string = "pt"
 ): IStepMeta[] {
-  const meta = funnelSteps.map((s) => ({ key: s.eventType, label: s.label }));
+  const meta = funnelSteps.map((s) => ({
+    key: s.eventType,
+    label: STEP_LABELS[s.eventType] ? getStepLabel(s.eventType, locale) : s.label,
+  }));
   const hasAbandoned = funnelSteps.some((s) => s.eventType === "checkout_abandoned");
   if (!hasAbandoned && (countMap.get("checkout_abandoned")?.total ?? 0) > 0) {
     meta.push({ key: "checkout_abandoned", label: getStepLabel("checkout_abandoned", locale) });

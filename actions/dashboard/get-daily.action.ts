@@ -19,11 +19,12 @@ import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
 export async function getDaily(
   organizationId: string,
-  filter: IDateFilter = {}
+  filter: IDateFilter = {},
+  urlLocale?: string
 ): Promise<IDailyResult> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { rows: [], stepMeta: [] };
-  const locale = session.user.locale ?? "pt";
+  const locale = urlLocale ?? session.user.locale ?? "pt";
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
