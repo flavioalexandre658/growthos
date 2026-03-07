@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         {
           url: isPt
             ? "/assets/images/social-preview-br.png"
-            : "/assets/images/social-preview.png",
+            : "/assets/images/social-preview-en.png",
           width: 1200,
           height: 630,
           alt: t("ogTitle"),
@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [
         isPt
           ? "/assets/images/social-preview-br.png"
-          : "/assets/images/social-preview.png",
+          : "/assets/images/social-preview-en.png",
       ],
     },
     robots: {

@@ -73,9 +73,10 @@ interface KpiCardProps {
   previous?: number;
   hero?: boolean;
   tooltip?: string;
+  highlighted?: boolean;
 }
 
-function KpiCard({ label, value, previousLabel, subLabel, icon: Icon, color, bgColor, current, previous, hero, tooltip }: KpiCardProps) {
+function KpiCard({ label, value, previousLabel, subLabel, icon: Icon, color, bgColor, current, previous, hero, tooltip, highlighted }: KpiCardProps) {
   const t = useTranslations("finance.kpiCards");
   const hasPrev = previous !== undefined && previous > 0 && current !== undefined;
 
@@ -83,8 +84,15 @@ function KpiCard({ label, value, previousLabel, subLabel, icon: Icon, color, bgC
     <VariationBadge current={current} previous={previous} />
   ) : null;
 
+  const isPositive = (current ?? 0) >= 0;
+  const highlightClasses = highlighted
+    ? isPositive
+      ? "border-emerald-500/30 bg-emerald-950/10 ring-1 ring-emerald-500/10"
+      : "border-red-500/30 bg-red-950/10 ring-1 ring-red-500/10"
+    : "border-zinc-800 bg-zinc-900/50";
+
   return (
-    <div className={`rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 sm:p-4 flex flex-col gap-1 ${hero ? "sm:col-span-2" : ""}`}>
+    <div className={`rounded-xl border p-3 sm:p-4 flex flex-col gap-1 ${highlightClasses} ${hero ? "sm:col-span-2" : ""}`}>
       <div className="flex items-center justify-between gap-1 min-w-0">
         <div className="flex items-center gap-1 min-w-0">
           <span className="text-[10px] font-semibold uppercase tracking-tight sm:tracking-widest text-zinc-500 truncate min-w-0">
@@ -313,6 +321,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
           current={pl?.netProfitInCents}
           previous={prevNetProfit}
           tooltip={t("netProfitTooltip")}
+          highlighted
         />
         <KpiCard
           label={t("netMargin")}
