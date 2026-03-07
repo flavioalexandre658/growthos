@@ -107,6 +107,7 @@ function DisconnectedCard({
   config: IntegrationCardConfig;
 }) {
   const tc = useTranslations("settings.integrations.common");
+  const queryClient = useQueryClient();
   const [credential, setCredential] = useState("");
   const [tutorialOpen, setTutorialOpen] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -117,6 +118,9 @@ function DisconnectedCard({
     setIsConnecting(true);
     try {
       await config.onConnect(organizationId, key);
+      await queryClient.invalidateQueries({
+        queryKey: getIntegrationsQueryKey(organizationId),
+      });
       toast.success(config.connectedToast);
       setCredential("");
     } catch (err) {
@@ -305,6 +309,16 @@ function ConnectedCard({
             {isSyncing && (
               <IconLoader2 size={14} className="animate-spin text-zinc-500" />
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSync}
+              disabled={isSyncing || isDisconnecting}
+              className="h-7 px-2.5 text-xs border-zinc-700 bg-zinc-800/60 hover:bg-zinc-700 text-zinc-300 gap-1.5"
+            >
+              <IconRefresh size={12} className={cn(isSyncing && "animate-spin")} />
+              {integration.historySyncedAt ? tc("reimport") : tc("importHistory")}
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -316,14 +330,6 @@ function ConnectedCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem
-                  onClick={handleSync}
-                  disabled={isSyncing || isDisconnecting}
-                  className="gap-2 cursor-pointer"
-                >
-                  <IconRefresh size={14} className={cn(isSyncing && "animate-spin")} />
-                  {integration.historySyncedAt ? tc("reimport") : tc("importHistory")}
-                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setWebhookOpen((o) => !o)}
                   className="gap-2 cursor-pointer"

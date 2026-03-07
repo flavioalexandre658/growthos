@@ -12,7 +12,7 @@ const ASAAS_BASE_URL = "https://api.asaas.com/v3";
 async function validateAsaasApiKey(
   apiKey: string,
 ): Promise<{ id: string; name: string }> {
-  const res = await fetch(`${ASAAS_BASE_URL}/myAccount`, {
+  const res = await fetch(`${ASAAS_BASE_URL}/myAccount/commercialInfo/`, {
     headers: { access_token: apiKey },
   }).catch(() => {
     throw new Error("Não foi possível conectar ao Asaas. Verifique e tente novamente.");
@@ -26,13 +26,19 @@ async function validateAsaasApiKey(
     throw new Error("Não foi possível validar a API Key. Verifique e tente novamente.");
   }
 
-  const data = (await res.json()) as { id?: string; name?: string };
+  const data = (await res.json()) as {
+    cpfCnpj?: string;
+    name?: string;
+    email?: string;
+  };
 
-  if (!data.id) {
+  const accountId = data.cpfCnpj ?? data.email;
+
+  if (!accountId) {
     throw new Error("Resposta inválida do Asaas. Verifique a API Key.");
   }
 
-  return { id: data.id, name: data.name ?? data.id };
+  return { id: accountId, name: data.name ?? accountId };
 }
 
 export async function connectAsaas(
