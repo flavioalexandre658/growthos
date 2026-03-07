@@ -54,8 +54,6 @@ function EventDetailGrid({
   organizationId: string;
 }) {
   const t = useTranslations("events.eventsTable");
-  const locale = useLocale();
-  const dayjsLocale = locale === "pt" ? "pt-br" : locale;
   const [sessionOpen, setSessionOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const fields: DetailFieldProps[] = [];
