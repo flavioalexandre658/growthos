@@ -1,0 +1,48 @@
+{
+  "orgCard": {
+    "revenuePerMonth": "revenue/mo",
+    "visits": "visits",
+    "payments": "payments",
+    "noDataYet": "No data yet",
+    "installTracker": "install tracker →"
+  },
+  "emptyState": {
+    "title": "No organizations yet",
+    "description": "Create your first organization to start collecting data and tracking your business growth.",
+    "createButton": "Create organization"
+  },
+  "header": {
+    "plan": "Plan",
+    "signOut": "Sign out"
+  },
+  "content": {
+    "title": "Your organizations",
+    "subtitle": "Select an organization to access the dashboard",
+    "newOrganization": "New organization",
+    "orgLimitTooltip": "Your plan allows a maximum of {maxOrgs} org(s)"
+  },
+  "billingBar": {
+    "plan": "Plan",
+    "revenue": "revenue",
+    "orgs": "orgs",
+    "upgrade": "upgrade",
+    "details": "details"
+  },
+  "createDialog": {
+    "title": "New organization",
+    "description": "Create a workspace for a new product or company.",
+    "nameLabel": "Name",
+    "namePlaceholder": "My Company",
+    "nameMinError": "Name must have at least 2 characters",
+    "slugLabel": "Slug",
+    "slugPrefix": "org/",
+    "slugPlaceholder": "my-company",
+    "slugMinError": "Slug must have at least 2 characters",
+    "slugFormatError": "Slug must contain only lowercase letters, numbers and hyphens",
+    "cancel": "Cancel",
+    "creating": "Creating...",
+    "createButton": "Create organization",
+    "successToast": "Organization \"{name}\" created successfully!",
+    "errorToast": "Error creating organization"
+  }
+}

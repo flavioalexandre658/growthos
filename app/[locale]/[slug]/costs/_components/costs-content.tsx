@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,6 +54,7 @@ function CostsPageSkeleton() {
 }
 
 export function CostsContent() {
+  const t = useTranslations("finance.costsContent");
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
@@ -65,9 +67,9 @@ export function CostsContent() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-lg font-bold text-zinc-100">Gerenciar Custos</h1>
+        <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>
         <p className="text-xs text-zinc-500">
-          Cadastre custos fixos e variáveis para calcular o P&L no Financeiro
+          {t("subtitle")}
         </p>
       </div>
 
@@ -81,13 +83,13 @@ export function CostsContent() {
             value="fixed"
             className="text-xs data-[state=active]:bg-zinc-700 data-[state=active]:text-zinc-100 text-zinc-400"
           >
-            Custos Fixos
+            {t("fixedCostsTab")}
           </TabsTrigger>
           <TabsTrigger
             value="variable"
             className="text-xs data-[state=active]:bg-zinc-700 data-[state=active]:text-zinc-100 text-zinc-400"
           >
-            Custos Variáveis
+            {t("variableCostsTab")}
           </TabsTrigger>
         </TabsList>
 

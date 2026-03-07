@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { IconAdjustments, IconX } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,7 @@ function NumericInput({
 }
 
 export function MetricFiltersPanel({ fields, values, onChange }: MetricFiltersPanelProps) {
+  const t = useTranslations("commonUi.metricFilters");
   const [isOpen, setIsOpen] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
 
@@ -86,7 +88,7 @@ export function MetricFiltersPanel({ fields, values, onChange }: MetricFiltersPa
           )}
         >
           <IconAdjustments size={13} />
-          Filtros de métrica
+          {t("title")}
           {activeCount > 0 && (
             <span className="ml-0.5 flex h-4 min-w-4 px-1 items-center justify-center rounded-full bg-indigo-600 text-[10px] text-white font-bold">
               {activeCount}
@@ -100,7 +102,7 @@ export function MetricFiltersPanel({ fields, values, onChange }: MetricFiltersPa
             className="flex items-center gap-1 text-xs text-zinc-500 hover:text-red-400 transition-colors"
           >
             <IconX size={11} />
-            Limpar
+            {t("clear")}
           </button>
         )}
       </div>
@@ -128,13 +130,13 @@ export function MetricFiltersPanel({ fields, values, onChange }: MetricFiltersPa
                   </p>
                   <div className="flex items-center gap-1">
                     <NumericInput
-                      placeholder="Min"
+                      placeholder={t("minPlaceholder")}
                       value={draft[minKey] ?? ""}
                       onChange={(v) => setField(minKey, v)}
                     />
                     <span className="text-[10px] text-zinc-700 shrink-0">–</span>
                     <NumericInput
-                      placeholder="Max"
+                      placeholder={t("maxPlaceholder")}
                       value={draft[maxKey] ?? ""}
                       onChange={(v) => setField(maxKey, v)}
                     />
@@ -149,7 +151,7 @@ export function MetricFiltersPanel({ fields, values, onChange }: MetricFiltersPa
               onClick={handleClearAll}
               className="text-xs text-zinc-500 hover:text-red-400 transition-colors"
             >
-              Limpar tudo
+              {t("clearAll")}
             </button>
             <div className="flex gap-2">
               <Button
@@ -158,14 +160,14 @@ export function MetricFiltersPanel({ fields, values, onChange }: MetricFiltersPa
                 onClick={() => setIsOpen(false)}
                 className="h-7 text-xs text-zinc-400"
               >
-                Cancelar
+                {t("cancel")}
               </Button>
               <Button
                 size="sm"
                 onClick={handleApply}
                 className="h-7 text-xs bg-indigo-600 hover:bg-indigo-700 text-white"
               >
-                Aplicar
+                {t("apply")}
               </Button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useEvents } from "@/hooks/queries/use-events";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -23,15 +24,12 @@ interface EventsContentProps {
   initialEventTypes?: string[];
 }
 
-function getFilterLabel(filter: IDateFilter): string {
+function getFilterLabel(
+  filter: IDateFilter,
+  labels: Record<string, string>,
+  fallback: string
+): string {
   if (filter.period) {
-    const labels: Record<string, string> = {
-      today: "hoje",
-      yesterday: "ontem",
-      "7d": "últimos 7 dias",
-      "30d": "últimos 30 dias",
-      "90d": "últimos 90 dias",
-    };
     return labels[filter.period] ?? filter.period;
   }
   if (filter.start_date && filter.end_date) {
@@ -39,10 +37,11 @@ function getFilterLabel(filter: IDateFilter): string {
     const to = dayjs(filter.end_date).format("D MMM");
     return `${from} – ${to}`;
   }
-  return "período";
+  return fallback;
 }
 
 export function EventsContent({ filter, initialEventTypes = [] }: EventsContentProps) {
+  const t = useTranslations("eventsContent");
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
@@ -87,7 +86,7 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
 
   const toggleEventType = (et: string) => {
     setSelectedEventTypes((prev) =>
-      prev.includes(et) ? prev.filter((t) => t !== et) : [...prev, et]
+      prev.includes(et) ? prev.filter((v) => v !== et) : [...prev, et]
     );
     setPage(1);
   };
@@ -135,7 +134,14 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
     }
   };
 
-  const periodLabel = getFilterLabel(filter);
+  const periodLabels: Record<string, string> = {
+    today: t("periodLabels.today"),
+    yesterday: t("periodLabels.yesterday"),
+    "7d": t("periodLabels.7d"),
+    "30d": t("periodLabels.30d"),
+    "90d": t("periodLabels.90d"),
+  };
+  const periodLabel = getFilterLabel(filter, periodLabels, t("periodLabels.period"));
 
   return (
     <div className="space-y-4">
@@ -145,9 +151,9 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
             <IconList size={16} className="text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-zinc-100">Eventos</h1>
+            <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>
             <p className="text-xs text-zinc-500">
-              Log em tempo real de todos os eventos recebidos
+              {t("subtitle")}
             </p>
           </div>
         </div>
@@ -163,7 +169,7 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
             type="button"
             onClick={handleExport}
             disabled={isExporting || pagination.total === 0}
-            title="Exportar CSV"
+            title={t("exportTitle")}
             className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-zinc-800 bg-zinc-900 text-xs text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isExporting ? (
@@ -171,7 +177,7 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
             ) : (
               <IconDownload size={13} />
             )}
-            <span className="hidden sm:inline">CSV</span>
+            <span className="hidden sm:inline">{t("exportCsv")}</span>
           </button>
         </div>
       </div>

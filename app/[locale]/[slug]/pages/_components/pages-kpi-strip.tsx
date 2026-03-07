@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtBRLDecimal, fmtInt } from "@/utils/format";
 import type { ILandingPagesResult } from "@/interfaces/dashboard.interface";
@@ -38,6 +39,8 @@ function KpiItem({ label, value, sub, rightBorder, bottomBorder }: KpiItemProps)
 }
 
 export function PagesKpiStrip({ data, isLoading }: PagesKpiStripProps) {
+  const t = useTranslations("pages.kpiStrip");
+
   if (isLoading) {
     return (
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 grid grid-cols-2 sm:flex overflow-hidden">
@@ -71,54 +74,54 @@ export function PagesKpiStrip({ data, isLoading }: PagesKpiStripProps) {
     <>
       <div className="sm:hidden rounded-xl border border-zinc-800 bg-zinc-900/50 grid grid-cols-2 overflow-hidden">
         <KpiItem
-          label="Total de Páginas"
+          label={t("totalPages")}
           value={fmtInt(totalPages)}
-          sub={`${fmtInt(pagesWithRevenue)} com receita`}
+          sub={t("withRevenue", { count: fmtInt(pagesWithRevenue) })}
           rightBorder
           bottomBorder
         />
         <KpiItem
-          label="Receita Total"
+          label={t("totalRevenue")}
           value={<span className="text-emerald-400">{fmtBRLDecimal(totalRevenue / 100)}</span>}
-          sub="no período"
+          sub={t("inPeriod")}
           bottomBorder
         />
         <KpiItem
-          label="Melhor Conversão"
+          label={t("bestConversionShort")}
           value={
             bestConversionPage ? (
               <span className="text-indigo-400 font-mono text-xs">{shortPath(bestConversionPage)}</span>
             ) : "—"
           }
-          sub={bestConversionPage ? `${bestConversionRate} conv.` : undefined}
+          sub={bestConversionPage ? t("conversionRateShort", { rate: bestConversionRate }) : undefined}
           rightBorder
         />
         <KpiItem
-          label="Maior Oport."
+          label={t("biggestOpportunityShort")}
           value={
             biggestOpportunityPage ? (
               <span className="text-amber-400 font-mono text-xs">{shortPath(biggestOpportunityPage)}</span>
             ) : "—"
           }
-          sub={biggestOpportunityPage ? `${fmtInt(biggestOpportunityVisits)} vis.` : undefined}
+          sub={biggestOpportunityPage ? t("visitsShort", { count: fmtInt(biggestOpportunityVisits) }) : undefined}
         />
       </div>
 
       <div className="hidden sm:flex rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
         <KpiItem
-          label="Total de Páginas"
+          label={t("totalPages")}
           value={fmtInt(totalPages)}
-          sub={`${fmtInt(pagesWithRevenue)} com receita`}
+          sub={t("withRevenue", { count: fmtInt(pagesWithRevenue) })}
           rightBorder
         />
         <KpiItem
-          label="Receita Total"
+          label={t("totalRevenue")}
           value={<span className="text-emerald-400">{fmtBRLDecimal(totalRevenue / 100)}</span>}
-          sub="no período"
+          sub={t("inPeriod")}
           rightBorder
         />
         <KpiItem
-          label="Melhor Conversão"
+          label={t("bestConversion")}
           value={
             bestConversionPage ? (
               <span className="text-indigo-400 font-mono text-xs">
@@ -126,11 +129,11 @@ export function PagesKpiStrip({ data, isLoading }: PagesKpiStripProps) {
               </span>
             ) : "—"
           }
-          sub={bestConversionPage ? `${bestConversionRate} de conversão` : undefined}
+          sub={bestConversionPage ? t("conversionRate", { rate: bestConversionRate }) : undefined}
           rightBorder
         />
         <KpiItem
-          label="Maior Oportunidade"
+          label={t("biggestOpportunity")}
           value={
             biggestOpportunityPage ? (
               <span className="text-amber-400 font-mono text-xs">
@@ -138,7 +141,7 @@ export function PagesKpiStrip({ data, isLoading }: PagesKpiStripProps) {
               </span>
             ) : "—"
           }
-          sub={biggestOpportunityPage ? `${fmtInt(biggestOpportunityVisits)} visitas, conv. < 1%` : undefined}
+          sub={biggestOpportunityPage ? t("visitsLowConversion", { count: fmtInt(biggestOpportunityVisits) }) : undefined}
         />
       </div>
     </>

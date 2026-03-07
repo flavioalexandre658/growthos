@@ -88,9 +88,14 @@ export async function inviteOrgMember(input: z.infer<typeof schema>) {
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
   const inviteUrl = `${baseUrl}/invite/${token}`;
 
+  const senderLocale = (session.user.locale === "en" ? "en" : "pt") as "pt" | "en";
+  const inviteSubject = senderLocale === "en"
+    ? `You've been invited to ${org?.name ?? "a workspace"} on Groware`
+    : `Você foi convidado para ${org?.name ?? "um workspace"} no Groware`;
+
   await sendEmail({
     to: data.email,
-    subject: `Você foi convidado para ${org?.name ?? "um workspace"} no Groware`,
+    subject: inviteSubject,
     html: teamInviteEmail({
       inviteeEmail: data.email,
       orgName: org?.name ?? "workspace",
@@ -98,6 +103,7 @@ export async function inviteOrgMember(input: z.infer<typeof schema>) {
       role: data.role,
       inviteUrl,
       expiresInDays: 7,
+      locale: senderLocale,
     }),
   });
 

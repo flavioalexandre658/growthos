@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -37,41 +38,6 @@ import type {
   FixedCostFrequency,
 } from "@/interfaces/cost.interface";
 
-const PAYMENT_METHOD_OPTIONS = [
-  { value: "credit_card", label: "Cartão de crédito" },
-  { value: "debit_card", label: "Cartão de débito" },
-  { value: "pix", label: "PIX" },
-  { value: "boleto", label: "Boleto" },
-  { value: "other", label: "Outro" },
-];
-
-const BILLING_TYPE_OPTIONS = [
-  { value: "one_time", label: "Avulso (one_time)" },
-  { value: "recurring", label: "Recorrente (recurring)" },
-];
-
-const FREQUENCY_OPTIONS: { value: FixedCostFrequency; label: string; sub: string }[] = [
-  { value: "monthly", label: "Mensal", sub: "pago todo mês" },
-  { value: "quarterly", label: "Trimestral", sub: "rateado em 3 meses" },
-  { value: "semiannual", label: "Semestral", sub: "rateado em 6 meses" },
-  { value: "annual", label: "Anual", sub: "rateado em 12 meses" },
-];
-
-const formSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
-  amountInCents: z
-    .number({ required_error: "Valor é obrigatório" })
-    .positive("Valor deve ser positivo"),
-  frequency: z
-    .enum(["monthly", "quarterly", "semiannual", "annual"])
-    .optional(),
-  description: z.string().optional(),
-  applyTo: z.enum(["all", "payment_method", "billing_type", "category"]).optional(),
-  applyToValue: z.string().nullable().optional(),
-});
-
-type FormData = z.infer<typeof formSchema>;
-
 interface CostFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -97,9 +63,48 @@ export function CostFormDialog({
   onSubmit,
   isLoading,
 }: CostFormDialogProps) {
+  const t = useTranslations("finance.costForm");
   const isVariable = costKind === "variable";
   const isEditing = !!initialData;
-  const title = `${isEditing ? "Editar" : "Adicionar"} Custo ${isVariable ? "Variável" : "Fixo"}`;
+
+  const title = isVariable
+    ? (isEditing ? t("editVariable") : t("addVariable"))
+    : (isEditing ? t("editFixed") : t("addFixed"));
+
+  const formSchema = z.object({
+    name: z.string().min(1, t("validation.nameRequired")),
+    amountInCents: z
+      .number({ required_error: t("validation.valueRequired") })
+      .positive(t("validation.valueMustBePositive")),
+    frequency: z
+      .enum(["monthly", "quarterly", "semiannual", "annual"])
+      .optional(),
+    description: z.string().optional(),
+    applyTo: z.enum(["all", "payment_method", "billing_type", "category"]).optional(),
+    applyToValue: z.string().nullable().optional(),
+  });
+
+  type FormData = z.infer<typeof formSchema>;
+
+  const paymentMethodOptions = [
+    { value: "credit_card", label: t("paymentMethods.creditCard") },
+    { value: "debit_card", label: t("paymentMethods.debitCard") },
+    { value: "pix", label: t("paymentMethods.pix") },
+    { value: "boleto", label: t("paymentMethods.boleto") },
+    { value: "other", label: t("paymentMethods.other") },
+  ];
+
+  const billingTypeOptions = [
+    { value: "one_time", label: t("billingTypes.oneTime") },
+    { value: "recurring", label: t("billingTypes.recurring") },
+  ];
+
+  const frequencyOptions: { value: FixedCostFrequency; label: string; sub: string }[] = [
+    { value: "monthly", label: t("frequencyOptions.monthly"), sub: t("frequencyOptions.monthlySub") },
+    { value: "quarterly", label: t("frequencyOptions.quarterly"), sub: t("frequencyOptions.quarterlySub") },
+    { value: "semiannual", label: t("frequencyOptions.semiannual"), sub: t("frequencyOptions.semiannualSub") },
+    { value: "annual", label: t("frequencyOptions.annual"), sub: t("frequencyOptions.annualSub") },
+  ];
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -164,12 +169,12 @@ export function CostFormDialog({
 
         {isVariable && (
           <p className="text-xs text-zinc-500 -mt-1">
-            Percentual aplicado sobre a receita do período. Use para impostos, comissões e taxas de gateway.
+            {t("variableDescription")}
           </p>
         )}
         {!isVariable && (
           <p className="text-xs text-zinc-500 -mt-1">
-            Valor fixo rateado automaticamente conforme o período selecionado.
+            {t("fixedDescription")}
           </p>
         )}
 
@@ -180,14 +185,14 @@ export function CostFormDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-zinc-300">Nome</FormLabel>
+                  <FormLabel className="text-zinc-300">{t("nameLabel")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       placeholder={
                         isVariable
-                          ? "Ex: Simples Nacional, Taxa Efibank..."
-                          : "Ex: Servidor, Salário, Aluguel..."
+                          ? t("namePlaceholderVariable")
+                          : t("namePlaceholderFixed")
                       }
                       className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600"
                     />
@@ -203,7 +208,7 @@ export function CostFormDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-zinc-300">
-                    {isVariable ? "Percentual" : "Valor"}
+                    {isVariable ? t("percentageLabel") : t("valueLabel")}
                   </FormLabel>
                   <FormControl>
                     {isVariable ? (
@@ -216,7 +221,7 @@ export function CostFormDialog({
                         thousandSeparator="."
                         decimalScale={2}
                         suffix="%"
-                        placeholder="Ex: 10,00%"
+                        placeholder={t("percentagePlaceholder")}
                         customInput={Input}
                         className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600"
                       />
@@ -230,7 +235,7 @@ export function CostFormDialog({
                         decimalSeparator=","
                         prefix="R$ "
                         decimalScale={2}
-                        placeholder="R$ 0,00"
+                        placeholder={t("valuePlaceholder")}
                         customInput={Input}
                         className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600"
                       />
@@ -247,9 +252,9 @@ export function CostFormDialog({
                 name="frequency"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Frequência</FormLabel>
+                    <FormLabel className="text-zinc-300">{t("frequencyLabel")}</FormLabel>
                     <div className="grid grid-cols-2 gap-2">
-                      {FREQUENCY_OPTIONS.map((opt) => (
+                      {frequencyOptions.map((opt) => (
                         <button
                           key={opt.value}
                           type="button"
@@ -277,7 +282,7 @@ export function CostFormDialog({
                 name="applyTo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Aplicar sobre</FormLabel>
+                    <FormLabel className="text-zinc-300">{t("applyToLabel")}</FormLabel>
                     <FormControl>
                       <RadioGroup
                         value={field.value ?? "all"}
@@ -290,25 +295,25 @@ export function CostFormDialog({
                         <div className="flex items-center gap-2">
                           <RadioGroupItem value="all" id="apply-all" className="border-zinc-600" />
                           <Label htmlFor="apply-all" className="text-zinc-300 font-normal cursor-pointer">
-                            Toda receita
+                            {t("applyToAllRevenue")}
                           </Label>
                         </div>
                         <div className="flex items-center gap-2">
                           <RadioGroupItem value="payment_method" id="apply-payment" className="border-zinc-600" />
                           <Label htmlFor="apply-payment" className="text-zinc-300 font-normal cursor-pointer">
-                            Método de pagamento
+                            {t("applyToPaymentMethod")}
                           </Label>
                         </div>
                         <div className="flex items-center gap-2">
                           <RadioGroupItem value="billing_type" id="apply-billing" className="border-zinc-600" />
                           <Label htmlFor="apply-billing" className="text-zinc-300 font-normal cursor-pointer">
-                            Tipo de cobrança
+                            {t("applyToBillingType")}
                           </Label>
                         </div>
                         <div className="flex items-center gap-2">
                           <RadioGroupItem value="category" id="apply-category" className="border-zinc-600" />
                           <Label htmlFor="apply-category" className="text-zinc-300 font-normal cursor-pointer">
-                            Por categoria
+                            {t("applyToCategory")}
                           </Label>
                         </div>
                       </RadioGroup>
@@ -325,15 +330,15 @@ export function CostFormDialog({
                 name="applyToValue"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Método de pagamento</FormLabel>
+                    <FormLabel className="text-zinc-300">{t("paymentMethodLabel")}</FormLabel>
                     <Select value={field.value ?? ""} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100">
-                          <SelectValue placeholder="Selecione o método..." />
+                          <SelectValue placeholder={t("paymentMethodPlaceholder")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-zinc-900 border-zinc-700">
-                        {PAYMENT_METHOD_OPTIONS.map((opt) => (
+                        {paymentMethodOptions.map((opt) => (
                           <SelectItem
                             key={opt.value}
                             value={opt.value}
@@ -356,15 +361,15 @@ export function CostFormDialog({
                 name="applyToValue"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Tipo de cobrança</FormLabel>
+                    <FormLabel className="text-zinc-300">{t("billingTypeLabel")}</FormLabel>
                     <Select value={field.value ?? ""} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger className="bg-zinc-900 border-zinc-700 text-zinc-100">
-                          <SelectValue placeholder="Selecione o tipo..." />
+                          <SelectValue placeholder={t("billingTypePlaceholder")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent className="bg-zinc-900 border-zinc-700">
-                        {BILLING_TYPE_OPTIONS.map((opt) => (
+                        {billingTypeOptions.map((opt) => (
                           <SelectItem
                             key={opt.value}
                             value={opt.value}
@@ -387,17 +392,17 @@ export function CostFormDialog({
                 name="applyToValue"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-zinc-300">Nome da categoria</FormLabel>
+                    <FormLabel className="text-zinc-300">{t("categoryNameLabel")}</FormLabel>
                     <FormControl>
                       <Input
                         value={field.value ?? ""}
                         onChange={(e) => field.onChange(e.target.value || null)}
-                        placeholder="Ex: Casamento, Aniversário..."
+                        placeholder={t("categoryPlaceholder")}
                         className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600"
                       />
                     </FormControl>
                     <p className="text-[10px] text-zinc-600">
-                      Deve corresponder exatamente ao campo category enviado nos eventos de pagamento.
+                      {t("categoryHint")}
                     </p>
                     <FormMessage />
                   </FormItem>
@@ -410,11 +415,11 @@ export function CostFormDialog({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-zinc-300">Descrição (opcional)</FormLabel>
+                  <FormLabel className="text-zinc-300">{t("descriptionLabel")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="Observações..."
+                      placeholder={t("descriptionPlaceholder")}
                       className="bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600"
                     />
                   </FormControl>
@@ -430,14 +435,14 @@ export function CostFormDialog({
                 className="flex-1 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
                 onClick={() => onOpenChange(false)}
               >
-                Cancelar
+                {t("cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={isLoading}
                 className="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white"
               >
-                {isLoading ? "Salvando..." : isEditing ? "Salvar" : "Adicionar"}
+                {isLoading ? t("saving") : isEditing ? t("save") : t("addButton")}
               </Button>
             </div>
           </form>

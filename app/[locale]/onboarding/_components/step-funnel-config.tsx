@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import {
   IconFilter,
@@ -17,65 +18,62 @@ import { updateFunnelSteps } from "@/actions/organizations/update-funnel-steps.a
 import { cn } from "@/lib/utils";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
-const PRESETS: { label: string; description: string; steps: IFunnelStepConfig[] }[] = [
-  {
-    label: "E-commerce",
-    description: "pageview → signup → payment",
-    steps: [
-      { eventType: "pageview", label: "Visitas", countUnique: true },
-      { eventType: "signup", label: "Cadastros" },
-      { eventType: "purchase", label: "Compras" },
-    ],
-  },
-  {
-    label: "SaaS / Trial",
-    description: "signup → trial → payment",
-    steps: [
-      { eventType: "signup", label: "Cadastros" },
-      { eventType: "trial_started", label: "Trials" },
-      { eventType: "purchase", label: "Compras" },
-    ],
-  },
-  {
-    label: "SaaS Recorrente",
-    description: "signup → trial → payment → churn",
-    steps: [
-      { eventType: "signup", label: "Cadastros" },
-      { eventType: "trial_started", label: "Trials" },
-      { eventType: "purchase", label: "Compras" },
-      { eventType: "subscription_canceled", label: "Churn" },
-    ],
-  },
-  {
-    label: "Simples",
-    description: "signup → payment",
-    steps: [
-      { eventType: "signup", label: "Cadastros" },
-      { eventType: "purchase", label: "Compras" },
-    ],
-  },
-  {
-    label: "Custom",
-    description: "Configure do zero",
-    steps: [],
-  },
-];
-
 interface StepFunnelConfigProps {
   organizationId: string;
   onComplete: (steps: IFunnelStepConfig[]) => void;
 }
 
 export function StepFunnelConfig({ organizationId, onComplete }: StepFunnelConfigProps) {
+  const t = useTranslations("onboarding.stepFunnelConfig");
+
+  const PRESETS: { key: string; steps: IFunnelStepConfig[] }[] = [
+    {
+      key: "ecommerce",
+      steps: [
+        { eventType: "pageview", label: t("defaultStepLabels.visits"), countUnique: true },
+        { eventType: "signup", label: t("defaultStepLabels.signups") },
+        { eventType: "purchase", label: t("defaultStepLabels.purchases") },
+      ],
+    },
+    {
+      key: "saas",
+      steps: [
+        { eventType: "signup", label: t("defaultStepLabels.signups") },
+        { eventType: "trial_started", label: t("defaultStepLabels.trials") },
+        { eventType: "purchase", label: t("defaultStepLabels.purchases") },
+      ],
+    },
+    {
+      key: "saasRecurring",
+      steps: [
+        { eventType: "signup", label: t("defaultStepLabels.signups") },
+        { eventType: "trial_started", label: t("defaultStepLabels.trials") },
+        { eventType: "purchase", label: t("defaultStepLabels.purchases") },
+        { eventType: "subscription_canceled", label: t("defaultStepLabels.churn") },
+      ],
+    },
+    {
+      key: "simple",
+      steps: [
+        { eventType: "signup", label: t("defaultStepLabels.signups") },
+        { eventType: "purchase", label: t("defaultStepLabels.purchases") },
+      ],
+    },
+    {
+      key: "custom",
+      steps: [],
+    },
+  ];
+
   const [steps, setSteps] = useState<IFunnelStepConfig[]>([
-    { eventType: "signup", label: "Cadastros" },
-    { eventType: "purchase", label: "Compras" },
+    { eventType: "signup", label: t("defaultStepLabels.signups") },
+    { eventType: "purchase", label: t("defaultStepLabels.purchases") },
   ]);
-  const [activePreset, setActivePreset] = useState("Simples");
+  const [activePreset, setActivePreset] = useState("simple");
   const [isLoading, setIsLoading] = useState(false);
 
   const applyPreset = (preset: typeof PRESETS[number]) => {
-    setActivePreset(preset.label);
+    setActivePreset(preset.key);
     if (preset.steps.length > 0) {
       setSteps(preset.steps.map((s) => ({ ...s })));
     }
@@ -86,12 +84,12 @@ export function StepFunnelConfig({ organizationId, onComplete }: StepFunnelConfi
       ...prev,
       { eventType: "", label: "", countUnique: false },
     ]);
-    setActivePreset("Custom");
+    setActivePreset("custom");
   };
 
   const removeStep = (index: number) => {
     setSteps((prev) => prev.filter((_, i) => i !== index));
-    setActivePreset("Custom");
+    setActivePreset("custom");
   };
 
   const moveStep = (index: number, direction: "up" | "down") => {
@@ -102,7 +100,7 @@ export function StepFunnelConfig({ organizationId, onComplete }: StepFunnelConfi
       [next[index], next[target]] = [next[target], next[index]];
       return next;
     });
-    setActivePreset("Custom");
+    setActivePreset("custom");
   };
 
   const updateStep = (
@@ -113,26 +111,26 @@ export function StepFunnelConfig({ organizationId, onComplete }: StepFunnelConfi
     setSteps((prev) =>
       prev.map((s, i) => (i === index ? { ...s, [field]: value } : s))
     );
-    setActivePreset("Custom");
+    setActivePreset("custom");
   };
 
   const handleSave = async () => {
     const valid = steps.every((s) => s.eventType.trim() && s.label.trim());
     if (!valid) {
-      toast.error("Preencha todos os campos dos steps");
+      toast.error(t("validationFillAll"));
       return;
     }
     if (steps.length < 1) {
-      toast.error("Adicione pelo menos 1 step ao funil");
+      toast.error(t("validationMinStep"));
       return;
     }
     setIsLoading(true);
     try {
       await updateFunnelSteps({ organizationId, funnelSteps: steps });
-      toast.success("Funil configurado!");
+      toast.success(t("successToast"));
       onComplete(steps);
     } catch {
-      toast.error("Erro ao salvar funil");
+      toast.error(t("errorToast"));
     } finally {
       setIsLoading(false);
     }
@@ -145,25 +143,25 @@ export function StepFunnelConfig({ organizationId, onComplete }: StepFunnelConfi
           <IconFilter size={18} className="text-violet-400" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-zinc-100">Configurar funil</h2>
+          <h2 className="text-lg font-bold text-zinc-100">{t("title")}</h2>
           <p className="text-xs text-zinc-500">
-            Defina as etapas que você quer rastrear
+            {t("subtitle")}
           </p>
         </div>
       </div>
 
       <div className="space-y-2">
         <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
-          Presets
+          {t("presetsLabel")}
         </p>
         <div className="grid grid-cols-2 gap-2">
           {PRESETS.map((preset) => (
             <button
-              key={preset.label}
+              key={preset.key}
               onClick={() => applyPreset(preset)}
               className={cn(
                 "rounded-lg border p-3 text-left transition-all",
-                activePreset === preset.label
+                activePreset === preset.key
                   ? "border-indigo-600/50 bg-indigo-600/10"
                   : "border-zinc-800 bg-zinc-900/40 hover:border-zinc-700"
               )}
@@ -171,15 +169,15 @@ export function StepFunnelConfig({ organizationId, onComplete }: StepFunnelConfi
               <p
                 className={cn(
                   "text-xs font-bold",
-                  activePreset === preset.label
+                  activePreset === preset.key
                     ? "text-indigo-300"
                     : "text-zinc-300"
                 )}
               >
-                {preset.label}
+                {t(`presets.${preset.key}.label`)}
               </p>
               <p className="text-[10px] text-zinc-600 font-mono mt-0.5">
-                {preset.description}
+                {t(`presets.${preset.key}.description`)}
               </p>
             </button>
           ))}
@@ -188,7 +186,7 @@ export function StepFunnelConfig({ organizationId, onComplete }: StepFunnelConfi
 
       <div className="space-y-2">
         <p className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
-          Steps do funil
+          {t("stepsLabel")}
         </p>
 
         <div className="space-y-2">
@@ -264,13 +262,13 @@ export function StepFunnelConfig({ organizationId, onComplete }: StepFunnelConfi
           className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-indigo-400 transition-colors mt-1"
         >
           <IconPlus size={13} />
-          Adicionar step
+          {t("addStep")}
         </button>
       </div>
 
       <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/20 p-3">
         <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold mb-2">
-          Preview do funil
+          {t("previewLabel")}
         </p>
         <div className="flex items-center gap-1.5 flex-wrap">
           {steps.map((step, i) => (
@@ -294,11 +292,11 @@ export function StepFunnelConfig({ organizationId, onComplete }: StepFunnelConfi
         {isLoading ? (
           <>
             <IconLoader2 size={16} className="animate-spin" />
-            Salvando...
+            {t("submitting")}
           </>
         ) : (
           <>
-            Continuar
+            {t("submit")}
             <IconArrowRight
               size={16}
               className="transition-transform group-hover:translate-x-0.5"

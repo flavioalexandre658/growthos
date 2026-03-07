@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/popover";
 import { IconEye, IconEyeOff } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface StepOption {
   eventType: string;
@@ -34,6 +35,7 @@ interface StepVisibilityToggleProps {
 }
 
 function StepVisibilityToggle({ steps, hiddenKeys, onToggle }: StepVisibilityToggleProps) {
+  const t = useTranslations("dashboard.overview");
   const hiddenCount = steps.filter((s) => hiddenKeys.has(s.eventType)).length;
 
   return (
@@ -46,10 +48,10 @@ function StepVisibilityToggle({ steps, hiddenKeys, onToggle }: StepVisibilityTog
               ? "border-amber-800/40 bg-amber-950/20 text-amber-400 hover:bg-amber-950/30"
               : "border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600"
           )}
-          title="Etapas visíveis"
+          title={t("stepsVisibleTitle")}
         >
           <IconEye size={13} />
-          <span className="hidden sm:inline">Etapas</span>
+          <span className="hidden sm:inline">{t("stepsButton")}</span>
           {hiddenCount > 0 && (
             <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-600/30 text-[9px] font-bold text-amber-300">
               {hiddenCount}
@@ -63,8 +65,8 @@ function StepVisibilityToggle({ steps, hiddenKeys, onToggle }: StepVisibilityTog
         sideOffset={6}
       >
         <div className="px-3 py-2.5 border-b border-zinc-800">
-          <p className="text-xs font-semibold text-zinc-300">Etapas visíveis</p>
-          <p className="text-[10px] text-zinc-600 mt-0.5">Alternância temporária — não persiste</p>
+          <p className="text-xs font-semibold text-zinc-300">{t("stepsPopoverTitle")}</p>
+          <p className="text-[10px] text-zinc-600 mt-0.5">{t("stepsPopoverDescription")}</p>
         </div>
         <div className="p-1.5 space-y-0.5">
           {steps.map((step) => {
@@ -110,7 +112,7 @@ function StepVisibilityToggle({ steps, hiddenKeys, onToggle }: StepVisibilityTog
               onClick={() => steps.forEach((s) => { if (hiddenKeys.has(s.eventType)) onToggle(s.eventType); })}
               className="w-full rounded-md border border-zinc-700/50 py-1.5 text-[11px] font-medium text-zinc-500 hover:text-zinc-200 hover:border-zinc-600 transition-colors"
             >
-              Mostrar todas
+              {t("showAll")}
             </button>
           </div>
         )}
@@ -124,6 +126,7 @@ interface OverviewContentProps {
 }
 
 export function OverviewContent({ filter }: OverviewContentProps) {
+  const t = useTranslations("dashboard.overview");
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
@@ -159,8 +162,8 @@ export function OverviewContent({ filter }: OverviewContentProps) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-bold text-zinc-100">Visão Geral</h1>
-          <p className="text-xs text-zinc-500">Performance consolidada do período</p>
+          <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>
+          <p className="text-xs text-zinc-500">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           {allSteps.length > 0 && (

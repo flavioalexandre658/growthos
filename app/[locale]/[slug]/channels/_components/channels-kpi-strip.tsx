@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getChannelName, getChannelColor } from "@/utils/channel-colors";
 import { fmtBRLDecimal } from "@/utils/format";
@@ -39,6 +40,8 @@ function KpiItem({ label, value, sub, rightBorder, bottomBorder }: KpiItemProps)
 }
 
 export function ChannelsKpiStrip({ data, isLoading }: ChannelsKpiStripProps) {
+  const t = useTranslations("channels.kpiStrip");
+
   if (isLoading) {
     return (
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 grid grid-cols-2 sm:flex overflow-hidden">
@@ -68,20 +71,20 @@ export function ChannelsKpiStrip({ data, isLoading }: ChannelsKpiStripProps) {
     <>
       <div className="sm:hidden rounded-xl border border-zinc-800 bg-zinc-900/50 grid grid-cols-2 overflow-hidden">
         <KpiItem
-          label="Total de Canais"
+          label={t("totalChannels")}
           value={totalChannels}
-          sub={`${channelsWithRevenue} com receita`}
+          sub={t("withRevenue", { count: channelsWithRevenue })}
           rightBorder
           bottomBorder
         />
         <KpiItem
-          label="Receita Total"
+          label={t("totalRevenue")}
           value={<span className="text-emerald-400">{fmtBRLDecimal(totalRevenue / 100)}</span>}
-          sub="no período"
+          sub={t("inPeriod")}
           bottomBorder
         />
         <KpiItem
-          label="Canal Líder"
+          label={t("leadChannel")}
           value={
             <span className="flex items-center gap-1.5">
               <span
@@ -91,11 +94,11 @@ export function ChannelsKpiStrip({ data, isLoading }: ChannelsKpiStripProps) {
               <span className="truncate">{topChannelName || "—"}</span>
             </span>
           }
-          sub={topChannel ? "maior receita" : undefined}
+          sub={topChannel ? t("highestRevenue") : undefined}
           rightBorder
         />
         <KpiItem
-          label="Concentração"
+          label={t("concentration")}
           value={
             concentrationTop2 > 0 ? (
               <span className={concentrationTop2 >= 80 ? "text-amber-400" : "text-zinc-100"}>
@@ -103,25 +106,25 @@ export function ChannelsKpiStrip({ data, isLoading }: ChannelsKpiStripProps) {
               </span>
             ) : "—"
           }
-          sub={concentrationTop2 > 0 ? "top 2 canais" : undefined}
+          sub={concentrationTop2 > 0 ? t("top2Channels") : undefined}
         />
       </div>
 
       <div className="hidden sm:flex rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
         <KpiItem
-          label="Total de Canais"
+          label={t("totalChannels")}
           value={totalChannels}
-          sub={`${channelsWithRevenue} com receita`}
+          sub={t("withRevenue", { count: channelsWithRevenue })}
           rightBorder
         />
         <KpiItem
-          label="Receita Total"
+          label={t("totalRevenue")}
           value={<span className="text-emerald-400">{fmtBRLDecimal(totalRevenue / 100)}</span>}
-          sub="no período"
+          sub={t("inPeriod")}
           rightBorder
         />
         <KpiItem
-          label="Canal Líder"
+          label={t("leadChannel")}
           value={
             <span className="flex items-center gap-1.5">
               <span
@@ -131,11 +134,11 @@ export function ChannelsKpiStrip({ data, isLoading }: ChannelsKpiStripProps) {
               {topChannelName || "—"}
             </span>
           }
-          sub={topChannel ? "maior receita" : undefined}
+          sub={topChannel ? t("highestRevenue") : undefined}
           rightBorder
         />
         <KpiItem
-          label="Concentração"
+          label={t("concentration")}
           value={
             concentrationTop2 > 0 ? (
               <span className={concentrationTop2 >= 80 ? "text-amber-400" : "text-zinc-100"}>
@@ -143,7 +146,7 @@ export function ChannelsKpiStrip({ data, isLoading }: ChannelsKpiStripProps) {
               </span>
             ) : "—"
           }
-          sub={concentrationTop2 > 0 ? "top 2 canais" : undefined}
+          sub={concentrationTop2 > 0 ? t("top2Channels") : undefined}
         />
       </div>
     </>

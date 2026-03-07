@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { SettingsCompleteness } from "./settings-completeness";
@@ -17,6 +18,7 @@ export function SettingsSectionWrapper({
   hideCompleteness = false,
   children,
 }: SettingsSectionWrapperProps) {
+  const t = useTranslations("settings.wrapper");
   const { organization, isLoading } = useOrganization();
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
@@ -33,7 +35,7 @@ export function SettingsSectionWrapper({
   if (!organization) {
     return (
       <p className="text-center py-8 text-zinc-600 text-sm">
-        Organização não encontrada.
+        {t("notFound")}
       </p>
     );
   }

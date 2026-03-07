@@ -14,6 +14,7 @@ import {
   IconCrown,
   IconX,
 } from "@tabler/icons-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,10 +32,10 @@ import "dayjs/locale/pt-br";
 dayjs.extend(relativeTime);
 dayjs.locale("pt-br");
 
-const ROLE_LABELS: Record<OrgMemberRole, string> = {
-  owner: "Proprietário",
-  admin: "Admin",
-  viewer: "Visualizador",
+const ROLE_LABEL_KEYS: Record<OrgMemberRole, string> = {
+  owner: "roleOwner",
+  admin: "roleAdmin",
+  viewer: "roleViewer",
 };
 
 const ROLE_ICONS: Record<OrgMemberRole, React.ReactNode> = {
@@ -65,6 +66,7 @@ interface InviteFormProps {
 }
 
 function InviteForm({ orgId, onClose }: InviteFormProps) {
+  const t = useTranslations("settings.team");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<"admin" | "viewer">("viewer");
   const invite = useInviteOrgMember(orgId);
@@ -72,7 +74,7 @@ function InviteForm({ orgId, onClose }: InviteFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
-      toast.error("Informe o email do convidado.");
+      toast.error(t("emailRequiredToast"));
       return;
     }
     const result = await invite.mutateAsync({
@@ -81,7 +83,7 @@ function InviteForm({ orgId, onClose }: InviteFormProps) {
       role,
     });
     if (result) {
-      toast.success(`Convite enviado para ${email}!`);
+      toast.success(t("inviteSentToast", { email }));
       setEmail("");
       onClose();
     }
@@ -92,28 +94,28 @@ function InviteForm({ orgId, onClose }: InviteFormProps) {
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1.5 flex-1 min-w-[200px]">
           <Label className="text-[11px] text-zinc-500 uppercase tracking-wider">
-            Email
+            {t("emailLabel")}
           </Label>
           <Input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="colega@empresa.com"
+            placeholder={t("emailPlaceholder")}
             className="h-8 bg-zinc-900 border-zinc-700 text-zinc-200 text-xs placeholder:text-zinc-600 focus-visible:ring-indigo-500 focus-visible:border-indigo-500"
           />
         </div>
 
         <div className="space-y-1.5 min-w-[130px]">
           <Label className="text-[11px] text-zinc-500 uppercase tracking-wider">
-            Papel
+            {t("roleLabel")}
           </Label>
           <select
             value={role}
             onChange={(e) => setRole(e.target.value as "admin" | "viewer")}
             className="h-8 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-2.5 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none"
           >
-            <option value="viewer">Visualizador</option>
-            <option value="admin">Admin</option>
+            <option value="viewer">{t("roleViewer")}</option>
+            <option value="admin">{t("roleAdmin")}</option>
           </select>
         </div>
 
@@ -128,7 +130,7 @@ function InviteForm({ orgId, onClose }: InviteFormProps) {
           ) : (
             <IconCheck size={13} />
           )}
-          Enviar convite
+          {t("sendInvite")}
         </Button>
       </div>
     </form>
@@ -141,13 +143,14 @@ interface TeamSectionProps {
 }
 
 export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
+  const t = useTranslations("settings.team");
   const [showInviteForm, setShowInviteForm] = useState(false);
   const { data, isLoading } = useOrgMembers(orgId);
   const removeMutation = useRemoveOrgMember(orgId);
 
   const handleRemove = async (id: string, name: string | null) => {
     await removeMutation.mutateAsync({ id });
-    toast.success(`${name ?? "Membro"} removido da organização.`);
+    toast.success(t("memberRemovedToast", { name: name ?? t("defaultMemberName") }));
   };
 
   return (
@@ -158,9 +161,9 @@ export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
             <IconUsers size={14} className="text-indigo-400" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-zinc-100">Equipe</h3>
+            <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
             <p className="text-xs text-zinc-500 mt-0.5">
-              Gerencie quem tem acesso a esta organização
+              {t("description")}
             </p>
           </div>
         </div>
@@ -175,7 +178,7 @@ export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
           )}
         >
           {showInviteForm ? <IconX size={13} /> : <IconPlus size={13} />}
-          {showInviteForm ? "Cancelar" : "Convidar"}
+          {showInviteForm ? t("cancel") : t("invite")}
         </Button>
       </div>
 
@@ -183,7 +186,7 @@ export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
         {showInviteForm && (
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4">
             <p className="text-xs font-semibold text-zinc-400 mb-3">
-              Convidar novo membro
+              {t("inviteNewMember")}
             </p>
             <InviteForm
               orgId={orgId}
@@ -206,7 +209,7 @@ export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
             {data?.members && data.members.length > 0 && (
               <div className="space-y-2">
                 <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold">
-                  Membros ({data.members.length})
+                  {t("membersTitle")} ({data.members.length})
                 </p>
                 {data.members.map((member) => {
                   const role = member.role as OrgMemberRole;
@@ -227,7 +230,7 @@ export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
                           </p>
                           {isCurrentUser && (
                             <span className="text-[10px] font-semibold text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">
-                              você
+                              {t("you")}
                             </span>
                           )}
                         </div>
@@ -243,7 +246,7 @@ export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
                           )}
                         >
                           {ROLE_ICONS[role]}
-                          {ROLE_LABELS[role]}
+                          {t(ROLE_LABEL_KEYS[role])}
                         </span>
                         {!isOwner && !isCurrentUser && (
                           <Button
@@ -254,7 +257,7 @@ export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
                             }
                             disabled={removeMutation.isPending}
                             className="h-7 w-7 text-zinc-600 hover:text-red-400"
-                            title="Remover membro"
+                            title={t("removeMember")}
                           >
                             <IconTrash size={13} />
                           </Button>
@@ -269,7 +272,7 @@ export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
             {data?.invites && data.invites.length > 0 && (
               <div className="space-y-2">
                 <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold">
-                  Convites pendentes ({data.invites.length})
+                  {t("pendingInvites")} ({data.invites.length})
                 </p>
                 {data.invites.map((invite) => {
                   const isExpired = new Date() > invite.expiresAt;
@@ -303,13 +306,13 @@ export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
                             )}
                           >
                             {ROLE_ICONS[invite.role as OrgMemberRole]}
-                            {ROLE_LABELS[invite.role as OrgMemberRole]}
+                            {t(ROLE_LABEL_KEYS[invite.role as OrgMemberRole])}
                           </span>
                           <span className="text-[10px] text-zinc-600 flex items-center gap-1">
                             <IconClock size={10} />
                             {isExpired
-                              ? "Expirado"
-                              : `Expira ${dayjs(invite.expiresAt).fromNow()}`}
+                              ? t("expired")
+                              : t("expiresIn", { time: dayjs(invite.expiresAt).fromNow() })}
                           </span>
                         </div>
                       </div>
@@ -322,7 +325,7 @@ export function TeamSection({ orgId, currentUserId }: TeamSectionProps) {
             {(!data?.members || data.members.length === 0) &&
               (!data?.invites || data.invites.length === 0) && (
                 <p className="text-center py-6 text-zinc-600 text-sm">
-                  Nenhum membro ou convite encontrado.
+                  {t("noMembersOrInvites")}
                 </p>
               )}
           </>

@@ -276,3 +276,71 @@ import toast from "react-hot-toast";
 toast.success("Operação realizada com sucesso!");
 toast.error("Erro ao processar operação");
 ```
+
+## Internacionalização (i18n)
+
+**Lib:** `next-intl` · **Locales:** `pt` (default), `en`
+
+**Estrutura de arquivos de tradução:**
+
+```
+messages/
+├── pt/
+│   ├── common.json       # nav, footer, cta
+│   ├── common-ui.json    # metricFilters, responsiveTable
+│   ├── auth.json         # login, register, forgotPassword, resetPassword
+│   ├── landing.json      # landing page
+│   ├── legal.json        # privacy, terms, changelog
+│   ├── metadata.json     # SEO metadata
+│   ├── sidebar.json      # sidebar nav
+│   ├── dashboard.json    # kpi, funnel, daily, sourceChart, alerts, overview, periodFilter
+│   ├── organizations.json
+│   ├── settings.json     # nav, layout, regional, team, billing, integrations
+│   ├── finance.json      # financeContent, kpiCards, costs, costForm, profitLoss
+│   ├── events.json       # eventsTable, eventsFilters, customerTimeline
+│   ├── mrr.json          # kpiCards, subscriptionsTable, movementChart, growthChart
+│   ├── ai.json           # content, results, comparison
+│   ├── channels.json
+│   ├── pages.json
+│   └── onboarding.json   # wizard, stepCreateOrg, stepFunnelConfig, etc.
+└── en/
+    └── (mesma estrutura)
+```
+
+**Regras:**
+
+- NUNCA use strings hardcoded em componentes React
+- SEMPRE use `useTranslations("namespace")` em Client Components
+- SEMPRE use `getTranslations("namespace")` em Server Components
+- Namespaces seguem o nome do arquivo JSON (ex: `sidebar`, `dashboard.kpi`, `settings.billing.currentPlan`)
+- Use camelCase para chaves de tradução
+- Para variáveis: `t("key", { var: value })`
+
+**Ao criar nova feature/página:**
+
+1. Crie chaves em `messages/pt/<domain>.json` e `messages/en/<domain>.json`
+2. Se for um domínio novo, adicione o nome do arquivo ao array `MESSAGE_FILES` em `i18n/request.ts`
+3. Use `useTranslations("domain.subKey")` no componente
+
+```typescript
+import { useTranslations } from "next-intl";
+
+export function MyComponent() {
+  const t = useTranslations("myDomain");
+  return <h1>{t("title")}</h1>;
+}
+```
+
+**Emails:** Todos os templates aceitam `locale?: "pt" | "en"` (default `"pt"`). O locale do user é salvo no banco (`users.locale`) e disponível via `session.user.locale`.
+
+## Google OAuth
+
+- GoogleProvider configurado em `lib/auth-options.ts`
+- Callback `signIn` faz auto-register se email não existe no banco
+- Se user já existe com credentials, o `authProvider` é atualizado para `"google"`
+- `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` devem estar no `.env`
+
+## Drizzle
+
+- NUNCA use migrations (`drizzle-kit generate`)
+- SEMPRE use `drizzle-kit push` para sincronizar schema com o banco

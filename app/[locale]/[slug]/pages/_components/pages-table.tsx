@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   ILandingPageData,
   IStepMeta,
@@ -39,6 +40,7 @@ function heatmapStyle(
 }
 
 function UrlCell({ page }: { page: string }) {
+  const t = useTranslations("pages.table");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = (e: React.MouseEvent) => {
@@ -59,7 +61,7 @@ function UrlCell({ page }: { page: string }) {
       <button
         onClick={handleCopy}
         className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 p-0.5 rounded text-zinc-600 hover:text-zinc-300"
-        title="Copiar URL"
+        title={t("copyUrl")}
       >
         {copied ? (
           <IconCheck size={10} className="text-emerald-400" />
@@ -103,6 +105,8 @@ export function PagesTable({
   onPageChange,
   onPageSizeChange,
 }: PagesTableProps) {
+  const t = useTranslations("pages.table");
+
   const handleSort = (key: string) => {
     if (key === orderBy) {
       onOrderDir(orderDir === "DESC" ? "ASC" : "DESC");
@@ -130,8 +134,8 @@ export function PagesTable({
   const maxRevenue = Math.max(...data.map((lp) => lp.revenue), 0);
 
   const fixedSortOptions = [
-    { key: "revenue", label: "Receita" },
-    { key: "conversion_rate", label: "Conversão" },
+    { key: "revenue", label: t("columns.revenue") },
+    { key: "conversion_rate", label: t("columns.conversion") },
   ];
   const stepSortOptions = stepMeta.map((s) => ({ key: s.key, label: s.label }));
   const allSortOptions = [...stepSortOptions, ...fixedSortOptions];
@@ -156,14 +160,14 @@ export function PagesTable({
   const columns: TableColumn<ILandingPageData>[] = [
     {
       key: "page",
-      header: "Página",
+      header: t("columns.page"),
       mobilePrimary: true,
       render: (lp) => <UrlCell page={lp.page} />,
     },
     ...stepColumns,
     {
       key: "conversion_rate",
-      header: "Conversão",
+      header: t("columns.conversion"),
       align: "right",
       render: (lp) => (
         <span
@@ -178,7 +182,7 @@ export function PagesTable({
     },
     {
       key: "revenue",
-      header: "Receita",
+      header: t("columns.revenue"),
       align: "right",
       render: (lp) => (
         <span
@@ -198,15 +202,15 @@ export function PagesTable({
       getRowKey={(lp) => lp.page}
       isLoading={isLoading}
       serverPagination={serverPagination}
-      emptyMessage="Nenhuma página encontrada no período"
+      emptyMessage={t("emptyMessage")}
       header={
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h3 className="text-sm font-bold text-zinc-100">
-              Páginas por Receita
+              {t("title")}
             </h3>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Páginas de entrada que mais convertem e geram receita
+              {t("subtitle")}
             </p>
           </div>
           <div className="flex flex-wrap gap-1.5 shrink-0">

@@ -4,11 +4,15 @@ export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
+  passwordHash: text("password_hash"),
   role: text("role", { enum: ["ADMIN", "VIEWER"] })
     .notNull()
     .default("ADMIN"),
   onboardingCompleted: boolean("onboarding_completed").notNull().default(false),
+  locale: text("locale").notNull().default("pt"),
+  authProvider: text("auth_provider", { enum: ["credentials", "google"] })
+    .notNull()
+    .default("credentials"),
   stripeCustomerId: text("stripe_customer_id"),
   planSlug: text("plan_slug").notNull().default("free"),
   stripeSubscriptionId: text("stripe_subscription_id"),

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -101,6 +102,7 @@ function KpiCard({
   hero,
   tooltip,
 }: KpiCardProps) {
+  const t = useTranslations("mrr.kpiCards");
   const hasPrev = previous !== undefined && previous > 0 && current !== undefined;
   return (
     <div
@@ -119,7 +121,7 @@ function KpiCard({
                 <button
                   type="button"
                   className="shrink-0 text-zinc-700 hover:text-zinc-400 transition-colors focus:outline-none"
-                  aria-label={`Informação sobre ${label}`}
+                  aria-label={t("infoAbout", { label })}
                 >
                   <IconInfoCircle size={11} />
                 </button>
@@ -155,7 +157,7 @@ function KpiCard({
 
       {hasPrev && (
         <p className="text-[10px] text-zinc-600 leading-tight truncate">
-          Comparado ao período anterior
+          {t("comparedToPreviousPeriod")}
         </p>
       )}
       {!hasPrev && subLabel && (
@@ -191,6 +193,8 @@ interface MrrKpiCardsProps {
 }
 
 export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
+  const t = useTranslations("mrr.kpiCards");
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -234,139 +238,139 @@ export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
 
   return (
     <div className="space-y-3">
-      <BlockHeader label="Snapshot Atual" muted="— independente do filtro de data" />
+      <BlockHeader label={t("snapshotHeader")} muted={t("snapshotMuted")} />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard
-          label="MRR"
+          label={t("mrr.label")}
           value={fmtBRLDecimal(mrr / 100)}
-          subLabel="Receita mensal recorrente"
+          subLabel={t("mrr.subLabel")}
           icon={IconCurrencyDollar}
           color="text-cyan-400"
           bgColor="bg-cyan-600/20"
           current={mrr}
           previous={data?.previousMrr}
-          tooltip="Monthly Recurring Revenue — soma do valor mensal normalizado de todas as assinaturas ativas agora. Não muda com o filtro de data."
+          tooltip={t("mrr.tooltip")}
         />
         <KpiCard
-          label="ARR"
+          label={t("arr.label")}
           value={fmtBRLDecimal(arr / 100)}
-          subLabel="MRR × 12"
+          subLabel={t("arr.subLabel")}
           icon={IconReceipt}
           color="text-violet-400"
           bgColor="bg-violet-600/20"
           current={arr}
           previous={data?.previousArr}
-          tooltip="Annual Recurring Revenue — projeção anual da receita recorrente atual. Calculado como MRR × 12."
+          tooltip={t("arr.tooltip")}
         />
         <KpiCard
-          label="Assinantes"
+          label={t("subscribers.label")}
           value={String(activeSubscriptions)}
-          subLabel="Ativos agora"
+          subLabel={t("subscribers.subLabel")}
           icon={IconUsers}
           color="text-amber-400"
           bgColor="bg-amber-600/20"
           current={activeSubscriptions}
           previous={data?.previousActiveSubscriptions}
-          tooltip="Total de assinaturas com status ativo ou em trial no momento. Snapshot atual, não filtrado por período."
+          tooltip={t("subscribers.tooltip")}
         />
         <KpiCard
-          label="ARPU"
+          label={t("arpu.label")}
           value={fmtBRLDecimal(arpu / 100)}
-          subLabel="Por assinante/mês"
+          subLabel={t("arpu.subLabel")}
           icon={IconHeartHandshake}
           color="text-indigo-400"
           bgColor="bg-indigo-600/20"
           current={arpu}
           previous={data?.previousArpu}
-          tooltip="Average Revenue Per User — MRR dividido pelo número de assinantes ativos. Indica o valor médio que cada cliente gera por mês."
+          tooltip={t("arpu.tooltip")}
         />
       </div>
 
-      <BlockHeader label="Período Selecionado" muted="— muda com o filtro de data" />
+      <BlockHeader label={t("periodHeader")} muted={t("periodMuted")} />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard
           hero
-          label="Receita no Período"
+          label={t("periodRevenue.label")}
           value={fmtBRLDecimal(totalPeriodRevenue / 100)}
-          subLabel={`${totalPurchaseCount} compra${totalPurchaseCount !== 1 ? "s" : ""} no período`}
+          subLabel={t("periodRevenue.subLabel", { count: totalPurchaseCount })}
           icon={IconZoomMoney}
           color="text-emerald-400"
           bgColor="bg-emerald-600/20"
           current={totalPeriodRevenue}
           previous={data?.previousPeriodRevenue}
-          tooltip="Soma de todos os pagamentos recebidos dentro do período filtrado. Inclui renovações e novas assinaturas. É o caixa que realmente entrou."
+          tooltip={t("periodRevenue.tooltip")}
         />
         <KpiCard
-          label="Renovações"
+          label={t("renewals.label")}
           value={String(renewalSubscriptions)}
-          subLabel={`${totalPurchaseCount} cobranças no período`}
+          subLabel={t("renewals.subLabel", { count: totalPurchaseCount })}
           icon={IconRefresh}
           color="text-sky-400"
           bgColor="bg-sky-600/20"
-          tooltip="Número de assinaturas existentes (criadas antes do período) que tiveram um pagamento registrado dentro do filtro de data selecionado."
+          tooltip={t("renewals.tooltip")}
         />
         <KpiCard
-          label="NRR"
+          label={t("nrr.label")}
           value={`${nrr}%`}
-          subLabel={nrr >= 100 ? "Expansão supera churn" : "Churn supera expansão"}
+          subLabel={nrr >= 100 ? t("nrr.expansionExceedsChurn") : t("nrr.churnExceedsExpansion")}
           icon={isNrrPositive ? IconArrowUpRight : IconTrendingDown}
           color={isNrrPositive ? "text-emerald-400" : "text-rose-400"}
           bgColor={isNrrPositive ? "bg-emerald-600/20" : "bg-rose-600/20"}
           current={nrr}
           previous={data?.previousNrr}
-          tooltip="Net Revenue Retention — mede se a receita da base existente está crescendo. Acima de 100% significa que upgrades e expansão compensam os cancelamentos. Abaixo de 100% é sinal de perda de receita."
+          tooltip={t("nrr.tooltip")}
         />
       </div>
 
-      <BlockHeader label="Saúde" />
+      <BlockHeader label={t("healthHeader")} />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard
-          label="Churn Rate"
+          label={t("churnRate.label")}
           value={`${churnRate}%`}
-          subLabel="Assinantes cancelados"
+          subLabel={t("churnRate.subLabel")}
           icon={IconAlertCircle}
           color="text-rose-400"
           bgColor="bg-rose-600/20"
           current={churnRate}
           previous={data?.previousChurnRate}
           invertColors
-          tooltip="Percentual de assinantes que cancelaram no período em relação à base ativa. Quanto menor, mais saudável é a retenção."
+          tooltip={t("churnRate.tooltip")}
         />
         <KpiCard
-          label="Churn Receita"
+          label={t("revenueChurn.label")}
           value={`${revenueChurnRate}%`}
-          subLabel="MRR perdido"
+          subLabel={t("revenueChurn.subLabel")}
           icon={IconTrendingDown}
           color="text-red-400"
           bgColor="bg-red-600/20"
           current={revenueChurnRate}
           previous={data?.previousRevenueChurnRate}
           invertColors
-          tooltip="Percentual do MRR perdido por cancelamentos no período. Diferente do Churn Rate: um cliente com plano caro cancelando pesa mais aqui."
+          tooltip={t("revenueChurn.tooltip")}
         />
         <KpiCard
-          label="Crescimento MRR"
+          label={t("mrrGrowth.label")}
           value={`${mrrGrowthRate > 0 ? "+" : ""}${mrrGrowthRate}%`}
-          subLabel="Net MRR Growth Rate"
+          subLabel={t("mrrGrowth.subLabel")}
           icon={isGrowthPositive ? IconChartBar : IconTrendingDown}
           color={isGrowthPositive ? "text-emerald-400" : "text-rose-400"}
           bgColor={isGrowthPositive ? "bg-emerald-600/20" : "bg-rose-600/20"}
-          tooltip="Taxa de crescimento líquido do MRR: (MRR novo + expansão − churn − contração) ÷ MRR inicial. Positivo = negócio crescendo."
+          tooltip={t("mrrGrowth.tooltip")}
         />
         <KpiCard
-          label="LTV Est."
+          label={t("ltv.label")}
           value={fmtBRLDecimal(estimatedLtv / 100)}
-          subLabel="Valor vitalício estimado"
+          subLabel={t("ltv.subLabel")}
           icon={IconTrendingUp}
           color="text-indigo-400"
           bgColor="bg-indigo-600/20"
           current={estimatedLtv}
           previous={data?.previousEstimatedLtv}
-          tooltip="Lifetime Value estimado — valor total médio que um assinante gera durante todo o relacionamento. Calculado como ARPU ÷ Churn Rate."
+          tooltip={t("ltv.tooltip")}
         />
       </div>
 
-      <BlockHeader label="Previsão" />
+      <BlockHeader label={t("forecastHeader")} />
       <div className="grid grid-cols-1 gap-3">
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
@@ -376,7 +380,7 @@ export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
             <div className="min-w-0">
               <div className="flex items-center gap-1">
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500">
-                  Previsão próximos 30 dias
+                  {t("forecast.label")}
                 </p>
                 <TooltipProvider delayDuration={100}>
                   <Tooltip>
@@ -384,7 +388,7 @@ export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
                       <button
                         type="button"
                         className="shrink-0 text-zinc-700 hover:text-zinc-400 transition-colors focus:outline-none"
-                        aria-label="Informação sobre Previsão"
+                        aria-label={t("forecast.infoAriaLabel")}
                       >
                         <IconInfoCircle size={11} />
                       </button>
@@ -393,13 +397,13 @@ export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
                       side="top"
                       className="max-w-[220px] bg-zinc-800 border-zinc-700 text-zinc-200 text-xs leading-relaxed"
                     >
-                      Soma do valor das assinaturas ativas cuja próxima data de cobrança cai dentro dos próximos 30 dias. Útil para projetar o caixa de curto prazo.
+                      {t("forecast.tooltip")}
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
               </div>
               <p className="text-[10px] text-zinc-600 mt-0.5">
-                {forecastNext30dCount} renovação{forecastNext30dCount !== 1 ? "ões" : ""} esperada{forecastNext30dCount !== 1 ? "s" : ""}
+                {t("forecast.renewalsExpected", { count: forecastNext30dCount })}
               </p>
             </div>
           </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { SettingsNav } from "./settings-nav";
 
 interface SettingsLayoutShellProps {
@@ -11,12 +12,14 @@ export function SettingsLayoutShell({
   slug,
   children,
 }: SettingsLayoutShellProps) {
+  const t = useTranslations("settings.layout");
+
   return (
     <div className="p-5 lg:p-6 space-y-4">
       <div>
-        <h1 className="text-lg font-bold text-zinc-100">Configurações</h1>
+        <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>
         <p className="text-xs text-zinc-500">
-          Gerencie a organização, integrações e preferências
+          {t("subtitle")}
         </p>
       </div>
 

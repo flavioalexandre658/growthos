@@ -14,6 +14,7 @@ import {
   IconCircleCheckFilled,
 } from "@tabler/icons-react";
 import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
+import { useTranslations } from "next-intl";
 
 interface Alert {
   id: string;
@@ -37,7 +38,7 @@ const TYPE_STYLES = {
   info:    { bg: "bg-indigo-950/40", border: "border-indigo-900/40", icon: "text-indigo-400", title: "text-indigo-300"  },
 };
 
-function buildAlerts(data: IGenericFunnelData, slug: string): Alert[] {
+function buildAlerts(data: IGenericFunnelData, slug: string, t: (key: string, values?: Record<string, string | number | Date>) => string): Alert[] {
   const alerts: Alert[] = [];
 
   const prevMap = new Map(
@@ -59,10 +60,10 @@ function buildAlerts(data: IGenericFunnelData, slug: string): Alert[] {
       id: "abandoned",
       type: "danger",
       icon: IconShoppingCartX,
-      title: `${abandonedCount} carrinhos abandonados`,
-      description: `~${fmtBRLDecimal(lostRevenue / 100)} em receita potencial perdida no período`,
+      title: t("abandonedCarts", { count: abandonedCount }),
+      description: t("abandonedRevenue", { amount: fmtBRLDecimal(lostRevenue / 100) }),
       linkHref: `/${slug}/events?event_types=checkout_abandoned`,
-      linkLabel: "Ver abandonos",
+      linkLabel: t("viewAbandoned"),
     });
   }
 
@@ -78,11 +79,11 @@ function buildAlerts(data: IGenericFunnelData, slug: string): Alert[] {
       type: isUp ? "success" : "warning",
       icon: isUp ? IconTrendingUp : IconTrendingDown,
       title: isUp
-        ? `Receita cresceu ${revenueChange.toFixed(0)}% vs período anterior`
-        : `Receita caiu ${Math.abs(revenueChange).toFixed(0)}% vs período anterior`,
+        ? t("revenueGrew", { pct: revenueChange.toFixed(0) })
+        : t("revenueFell", { pct: Math.abs(revenueChange).toFixed(0) }),
       description: isUp
-        ? `De ${fmtBRLDecimal((data.previousRevenue ?? 0) / 100)} para ${fmtBRLDecimal(data.revenue / 100)}`
-        : `De ${fmtBRLDecimal((data.previousRevenue ?? 0) / 100)} para ${fmtBRLDecimal(data.revenue / 100)} — verifique os canais`,
+        ? t("revenueChangeUp", { from: fmtBRLDecimal((data.previousRevenue ?? 0) / 100), to: fmtBRLDecimal(data.revenue / 100) })
+        : t("revenueChangeDown", { from: fmtBRLDecimal((data.previousRevenue ?? 0) / 100), to: fmtBRLDecimal(data.revenue / 100) }),
     });
   }
 
@@ -106,8 +107,8 @@ function buildAlerts(data: IGenericFunnelData, slug: string): Alert[] {
       id: "bottleneck",
       type: "warning",
       icon: IconAlertTriangle,
-      title: `Gargalo: ${worstFromLabel} → ${worstLabel}`,
-      description: `Apenas ${worstRate.toFixed(0)}% de conversão nessa etapa — maior oportunidade de melhora`,
+      title: t("bottleneck", { from: worstFromLabel, to: worstLabel }),
+      description: t("bottleneckDescription", { pct: worstRate.toFixed(0) }),
     });
   }
 
@@ -124,8 +125,8 @@ function buildAlerts(data: IGenericFunnelData, slug: string): Alert[] {
       id: "growth-step",
       type: "success",
       icon: IconCircleCheckFilled,
-      title: `${best.label} cresceu ${pct.toFixed(0)}% vs período anterior`,
-      description: `De ${prev} para ${best.value} — etapa com melhor desempenho`,
+      title: t("stepGrew", { label: best.label, pct: pct.toFixed(0) }),
+      description: t("stepGrewDescription", { from: prev, to: best.value }),
     });
   }
 
@@ -134,8 +135,8 @@ function buildAlerts(data: IGenericFunnelData, slug: string): Alert[] {
       id: "ok",
       type: "info",
       icon: IconBulb,
-      title: "Tudo dentro do esperado",
-      description: "Nenhuma anomalia detectada no período. Métricas estáveis.",
+      title: t("allGood"),
+      description: t("allGoodDescription"),
     });
   }
 
@@ -143,6 +144,7 @@ function buildAlerts(data: IGenericFunnelData, slug: string): Alert[] {
 }
 
 export function DashboardAlerts({ data, isLoading }: DashboardAlertsProps) {
+  const t = useTranslations("dashboard.alerts");
   const { slug } = useParams<{ slug: string }>();
 
   return (
@@ -152,8 +154,8 @@ export function DashboardAlerts({ data, isLoading }: DashboardAlertsProps) {
           <IconBulb size={14} className="text-amber-400" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-zinc-100">Alertas & Oportunidades</h3>
-          <p className="text-[11px] text-zinc-500">Insights automáticos do período</p>
+          <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
+          <p className="text-[11px] text-zinc-500">{t("subtitle")}</p>
         </div>
       </div>
 
@@ -165,11 +167,11 @@ export function DashboardAlerts({ data, isLoading }: DashboardAlertsProps) {
         </div>
       ) : !data ? (
         <div className="flex flex-1 items-center justify-center py-6">
-          <p className="text-xs text-zinc-700">Sem dados disponíveis</p>
+          <p className="text-xs text-zinc-700">{t("noData")}</p>
         </div>
       ) : (
         <div className="space-y-2.5">
-          {buildAlerts(data, slug).map((alert) => {
+          {buildAlerts(data, slug, t).map((alert) => {
             const styles = TYPE_STYLES[alert.type];
             const Icon = alert.icon;
             return (

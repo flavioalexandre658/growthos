@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { IBillingData } from "@/actions/billing/get-billing.action";
@@ -38,6 +39,7 @@ export function BillingCurrentPlan({
   onManage,
   isLoadingPortal,
 }: BillingCurrentPlanProps) {
+  const t = useTranslations("settings.billing.currentPlan");
   const { plan, revenue, ownedOrgsCount, totalMembersInOrg } = billing;
   const isFree = plan.slug === "free";
 
@@ -52,7 +54,7 @@ export function BillingCurrentPlan({
   const planColor = plan.color;
 
   const priceLabel = isFree
-    ? currency === "brl" ? "Gratuito para sempre" : "Free forever"
+    ? currency === "brl" ? t("freeForeverBrl") : t("freeForeverUsd")
     : currency === "brl"
       ? `R$ ${(plan.priceBrlCents / 100).toFixed(0)}/mês`
       : `$${(plan.priceUsdCents / 100).toFixed(0)}/mo`;
@@ -71,7 +73,7 @@ export function BillingCurrentPlan({
               className="w-2 h-2 rounded-full"
               style={{ background: planColor, boxShadow: `0 0 8px ${planColor}60` }}
             />
-            <span className="text-[11px] text-zinc-500 uppercase tracking-[0.1em]">Plano atual</span>
+            <span className="text-[11px] text-zinc-500 uppercase tracking-[0.1em]">{t("label")}</span>
           </div>
           <h2 className="text-2xl font-bold text-zinc-100">{plan.name}</h2>
           <p className="text-[13px] text-zinc-600 mt-0.5">{priceLabel}</p>
@@ -86,7 +88,7 @@ export function BillingCurrentPlan({
               onClick={onManage}
               disabled={isLoadingPortal}
             >
-              {isLoadingPortal ? "Abrindo..." : "Gerenciar assinatura"}
+              {isLoadingPortal ? t("openingPortal") : t("manageSubscription")}
             </Button>
           )}
           <button
@@ -94,7 +96,7 @@ export function BillingCurrentPlan({
             style={{ background: "linear-gradient(135deg, #7c3aed, #6d28d9)", boxShadow: "0 0 20px #7c3aed30" }}
             onClick={() => document.getElementById("plans-grid")?.scrollIntoView({ behavior: "smooth" })}
           >
-            Fazer upgrade →
+            {t("upgrade")}
           </button>
         </div>
       </div>
@@ -102,7 +104,7 @@ export function BillingCurrentPlan({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-[#0a0a14] border border-[#1a1a2e] rounded-[10px] p-4">
           <div className="flex justify-between items-center mb-3">
-            <span className="text-[11px] text-zinc-500 uppercase tracking-[0.1em]">Receita este mês</span>
+            <span className="text-[11px] text-zinc-500 uppercase tracking-[0.1em]">{t("revenueThisMonth")}</span>
             {plan.maxRevenuePerMonthBrl !== Infinity && (
               <span className={cn("text-[11px]", revPct > 80 ? "text-red-500" : "text-zinc-500")}>
                 {revPct.toFixed(0)}%
@@ -155,9 +157,9 @@ export function BillingCurrentPlan({
 
         <div className={cn("bg-[#0a0a14] border rounded-[10px] p-4", isOverOrgLimit ? "border-red-900/60" : "border-[#1a1a2e]")}>
           <div className="flex justify-between items-center mb-3">
-            <span className="text-[11px] text-zinc-500 uppercase tracking-[0.1em]">Organizações</span>
+            <span className="text-[11px] text-zinc-500 uppercase tracking-[0.1em]">{t("organizations")}</span>
             {isOverOrgLimit && (
-              <span className="text-[10px] bg-red-900/80 text-red-300 px-1.5 py-0.5 rounded font-semibold">Limite</span>
+              <span className="text-[10px] bg-red-900/80 text-red-300 px-1.5 py-0.5 rounded font-semibold">{t("limit")}</span>
             )}
           </div>
           <div className="flex items-baseline gap-1.5 mb-3">
@@ -174,16 +176,16 @@ export function BillingCurrentPlan({
           </div>
           {isOverOrgLimit && (
             <div className="bg-red-900/10 border border-red-900/30 rounded-md px-2.5 py-2 text-xs text-red-300">
-              Limite atingido. Faça upgrade para criar mais organizações.
+              {t("orgLimitReached")}
             </div>
           )}
         </div>
 
         <div className={cn("bg-[#0a0a14] border rounded-[10px] p-4", isOverMemberLimit ? "border-red-900/60" : "border-[#1a1a2e]")}>
           <div className="flex justify-between items-center mb-3">
-            <span className="text-[11px] text-zinc-500 uppercase tracking-[0.1em]">Membros</span>
+            <span className="text-[11px] text-zinc-500 uppercase tracking-[0.1em]">{t("members")}</span>
             {isOverMemberLimit && (
-              <span className="text-[10px] bg-red-900/80 text-red-300 px-1.5 py-0.5 rounded font-semibold">Limite</span>
+              <span className="text-[10px] bg-red-900/80 text-red-300 px-1.5 py-0.5 rounded font-semibold">{t("limit")}</span>
             )}
           </div>
           <div className="flex items-baseline gap-1.5 mb-3">
@@ -207,10 +209,7 @@ export function BillingCurrentPlan({
       <div className="mt-4 px-3.5 py-2.5 bg-[#0d1117] border border-[#1a2035] rounded-lg flex items-center gap-2">
         <SparkleIcon />
         <span className="text-xs text-zinc-500">
-          Seu plano {plan.name} inclui{" "}
-          <span className="text-violet-400">Stripe</span> e{" "}
-          <span className="text-violet-400">MRR/Recorrência</span> — conecte
-          seu gateway para ver de onde vem cada real da sua receita.
+          {t("planIncludes", { planName: plan.name })}
         </span>
       </div>
     </div>

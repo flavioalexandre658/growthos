@@ -1,0 +1,46 @@
+{
+  "pages": {
+    "content": {
+      "title": "Pages",
+      "subtitle": "Conversion and revenue by landing page",
+      "searchPlaceholder": "Search page..."
+    },
+    "pageTypes": {
+      "label": "Page Type",
+      "allTypes": "All types",
+      "countTypes": "{count, plural, =1 {# type} other {# types}}",
+      "all": "All",
+      "product": "Product",
+      "category": "Category",
+      "checkout": "Checkout",
+      "system": "System",
+      "landing": "Landing",
+      "other": "Other"
+    },
+    "table": {
+      "title": "Pages by Revenue",
+      "subtitle": "Landing pages that convert and generate the most revenue",
+      "emptyMessage": "No pages found in the period",
+      "copyUrl": "Copy URL",
+      "columns": {
+        "page": "Page",
+        "conversion": "Conversion",
+        "revenue": "Revenue"
+      }
+    },
+    "kpiStrip": {
+      "totalPages": "Total Pages",
+      "withRevenue": "{count} with revenue",
+      "totalRevenue": "Total Revenue",
+      "inPeriod": "in period",
+      "bestConversion": "Best Conversion",
+      "bestConversionShort": "Best Conversion",
+      "conversionRate": "{rate} conversion",
+      "conversionRateShort": "{rate} conv.",
+      "biggestOpportunity": "Biggest Opportunity",
+      "biggestOpportunityShort": "Biggest Opp.",
+      "visitsShort": "{count} vis.",
+      "visitsLowConversion": "{count} visits, conv. < 1%"
+    }
+  }
+}

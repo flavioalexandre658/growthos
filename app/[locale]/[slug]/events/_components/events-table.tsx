@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -52,6 +53,7 @@ function EventDetailGrid({
   event: IEvent;
   organizationId: string;
 }) {
+  const t = useTranslations("eventsTable");
   const [sessionOpen, setSessionOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const fields: DetailFieldProps[] = [];
@@ -88,7 +90,7 @@ function EventDetailGrid({
               <button
                 type="button"
                 onClick={() => setSessionOpen((v) => !v)}
-                title="Ver timeline da sessão"
+                title={t("viewSessionTimeline")}
                 className={cn(
                   "ml-1.5 shrink-0 p-0.5 rounded transition-colors",
                   sessionOpen
@@ -125,7 +127,7 @@ function EventDetailGrid({
               <button
                 type="button"
                 onClick={() => setCustomerOpen((v) => !v)}
-                title="Ver funil completo do cliente"
+                title={t("viewCustomerFunnel")}
                 className={cn(
                   "ml-1.5 shrink-0 p-0.5 rounded transition-colors",
                   customerOpen
@@ -191,13 +193,14 @@ function EventCard({
   isSelected: boolean;
   onToggle: (id: string) => void;
 }) {
+  const t = useTranslations("eventsTable");
   const [expanded, setExpanded] = useState(false);
   const deleteMutation = useDeleteEvent();
   const details = hasEventDetails(event);
 
   const handleDelete = async () => {
     await deleteMutation.mutateAsync({ id: event.id, organizationId });
-    toast.success("Evento excluído");
+    toast.success(t("eventDeleted"));
   };
 
   return (
@@ -227,30 +230,30 @@ function EventCard({
               </span>
               {event.eventType === "renewal" && (
                 <span className="rounded border border-sky-600/40 bg-sky-600/15 px-1.5 py-0.5 text-[9px] font-semibold text-sky-300 shrink-0">
-                  renovação
+                  {t("renewalBadge")}
                 </span>
               )}
               {event.billingType === "recurring" && event.eventType !== "renewal" && event.subscriptionId && (
                 <span className="rounded border border-violet-600/40 bg-violet-600/15 px-1.5 py-0.5 text-[9px] font-semibold text-violet-300 shrink-0">
-                  recorrente
+                  {t("recurringBadge")}
                 </span>
               )}
               {event.possibleDuplicate && (
                 <span
-                  title="Possível duplicata"
+                  title={t("possibleDuplicate")}
                   className="flex items-center gap-0.5 rounded border border-amber-600/40 bg-amber-600/10 px-1 py-0.5 text-[9px] font-semibold text-amber-400 shrink-0"
                 >
                   <IconAlertCircle size={9} />
-                  dup
+                  {t("dupBadge")}
                 </span>
               )}
               {event.isRetry && (
                 <span
-                  title="Evento enviado por retentativa — falhou originalmente por erro de rede"
+                  title={t("retryTooltip")}
                   className="flex items-center gap-0.5 rounded border border-sky-600/40 bg-sky-600/10 px-1 py-0.5 text-[9px] font-semibold text-sky-400 shrink-0"
                 >
                   <IconRepeat size={9} />
-                  retry
+                  {t("retryBadgeMobile")}
                 </span>
               )}
             </div>
@@ -323,13 +326,14 @@ function EventRow({
   isSelected: boolean;
   onToggle: (id: string) => void;
 }) {
+  const t = useTranslations("eventsTable");
   const [expanded, setExpanded] = useState(false);
   const deleteMutation = useDeleteEvent();
   const details = hasEventDetails(event);
 
   const handleDelete = async () => {
     await deleteMutation.mutateAsync({ id: event.id, organizationId });
-    toast.success("Evento excluído");
+    toast.success(t("eventDeleted"));
   };
 
   return (
@@ -371,12 +375,12 @@ function EventRow({
             </span>
             {event.eventType === "renewal" && (
               <span className="rounded border border-sky-600/40 bg-sky-600/15 px-1.5 py-0.5 text-[9px] font-semibold text-sky-300">
-                renovação
+                {t("renewalBadge")}
               </span>
             )}
             {event.billingType === "recurring" && event.eventType !== "renewal" && event.subscriptionId && (
               <span className="rounded border border-violet-600/40 bg-violet-600/15 px-1.5 py-0.5 text-[9px] font-semibold text-violet-300">
-                recorrente
+                {t("recurringBadge")}
               </span>
             )}
             {event.provider && (
@@ -386,20 +390,20 @@ function EventRow({
             )}
             {event.possibleDuplicate && (
               <span
-                title="Possível duplicata — outro evento idêntico foi detectado em até 10 minutos"
+                title={t("possibleDuplicateDetail")}
                 className="flex items-center gap-1 rounded border border-amber-600/40 bg-amber-600/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-400"
               >
                 <IconAlertCircle size={10} />
-                duplicata
+                {t("duplicateBadge")}
               </span>
             )}
             {event.isRetry && (
               <span
-                title="Evento enviado por retentativa — falhou originalmente por erro de rede"
+                title={t("retryTooltip")}
                 className="flex items-center gap-1 rounded border border-sky-600/40 bg-sky-600/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-400"
               >
                 <IconRepeat size={10} />
-                retentativa
+                {t("retryBadge")}
               </span>
             )}
           </div>
@@ -448,7 +452,7 @@ function EventRow({
             onClick={handleDelete}
             disabled={deleteMutation.isPending}
             className="p-1.5 text-zinc-700 hover:text-red-400 transition-colors disabled:opacity-40 opacity-0 group-hover/row:opacity-100"
-            title="Excluir evento"
+            title={t("deleteEvent")}
           >
             {deleteMutation.isPending ? (
               <IconLoader2 size={13} className="animate-spin" />
@@ -488,6 +492,7 @@ export function EventsTable({
   onPageChange,
   onPageSizeChange,
 }: EventsTableProps) {
+  const t = useTranslations("eventsTable");
   const { organization } = useOrganization();
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -522,7 +527,7 @@ export function EventsTable({
     });
     setSelectedIds(new Set());
     setConfirmDelete(false);
-    toast.success(`${count} evento(s) excluído(s)`);
+    toast.success(t("batchDeleted", { count }));
   };
 
   const allSelected = data.length > 0 && selectedIds.size === data.length;
@@ -538,13 +543,13 @@ export function EventsTable({
           <div className="flex items-center gap-2">
             <IconAlertTriangle size={13} className="text-red-400 shrink-0" />
             <span className="text-xs text-red-300 font-medium whitespace-nowrap">
-              Excluir {selectedIds.size} evento{selectedIds.size > 1 ? "s" : ""}?
+              {t("selection.deleteConfirm", { count: selectedIds.size })}
             </span>
           </div>
         ) : (
           <div className="flex items-center gap-2.5">
             <span className="text-xs text-zinc-400 font-medium tabular-nums">
-              {selectedIds.size} de {data.length} selecionado{selectedIds.size > 1 ? "s" : ""}
+              {t("selection.selectedOf", { selected: selectedIds.size, total: data.length })}
             </span>
             <button
               type="button"
@@ -552,7 +557,7 @@ export function EventsTable({
               className="text-[10px] text-zinc-600 hover:text-zinc-300 transition-colors flex items-center gap-0.5"
             >
               <IconX size={10} />
-              Desmarcar
+              {t("selection.deselect")}
             </button>
           </div>
         )}
@@ -567,7 +572,7 @@ export function EventsTable({
               onClick={() => setConfirmDelete(false)}
               className="h-7 px-3 text-xs text-zinc-400 hover:text-zinc-100"
             >
-              Cancelar
+              {t("selection.cancel")}
             </Button>
             <Button
               size="sm"
@@ -580,7 +585,7 @@ export function EventsTable({
               ) : (
                 <IconTrash size={12} />
               )}
-              Confirmar
+              {t("selection.confirm")}
             </Button>
           </>
         ) : (
@@ -591,7 +596,7 @@ export function EventsTable({
             className="h-7 gap-1.5 text-xs text-red-400 hover:text-red-300 hover:bg-red-950/30 border border-red-900/40"
           >
             <IconTrash size={12} />
-            Excluir
+            {t("selection.delete")}
           </Button>
         )}
       </div>
@@ -601,7 +606,7 @@ export function EventsTable({
   const paginationBar = pagination.total > 0 && (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 px-4 py-3">
       <div className="flex items-center gap-2">
-        <span className="text-xs text-zinc-500 hidden sm:inline">Linhas por página</span>
+        <span className="text-xs text-zinc-500 hidden sm:inline">{t("pagination.rowsPerPage")}</span>
         <Select
           value={String(pagination.limit)}
           onValueChange={(v) => {
@@ -627,7 +632,7 @@ export function EventsTable({
       </div>
       <div className="flex items-center gap-3">
         <span className="text-xs text-zinc-500 tabular-nums">
-          {paginationStart}–{paginationEnd} de {pagination.total}
+          {t("pagination.rangeOf", { start: paginationStart, end: paginationEnd, total: pagination.total })}
         </span>
         <div className="flex gap-1">
           <Button
@@ -673,22 +678,22 @@ export function EventsTable({
                 />
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Tipo
+                {t("columnType")}
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500 text-right">
-                Valor
+                {t("columnValue")}
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Canal
+                {t("columnChannel")}
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Produto
+                {t("columnProduct")}
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Device
+                {t("columnDevice")}
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
-                Quando
+                {t("columnWhen")}
               </th>
               <th className="px-3 py-2.5 w-10" />
             </tr>
@@ -707,7 +712,7 @@ export function EventsTable({
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-4 py-12 text-center text-sm text-zinc-600">
-                  Nenhum evento encontrado para os filtros aplicados
+                  {t("emptyState")}
                 </td>
               </tr>
             ) : (
@@ -741,7 +746,7 @@ export function EventsTable({
           </div>
         ) : data.length === 0 ? (
           <div className="px-4 py-12 text-center text-sm text-zinc-600">
-            Nenhum evento encontrado para os filtros aplicados
+            {t("emptyState")}
           </div>
         ) : (
           <>
@@ -756,7 +761,7 @@ export function EventsTable({
                 className="accent-indigo-500 h-3.5 w-3.5 cursor-pointer"
               />
               <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold">
-                Selecionar todos
+                {t("selectAll")}
               </span>
             </div>
             {data.map((event) => (

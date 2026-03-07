@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import {
   IconKey,
@@ -27,12 +28,13 @@ interface StepApiKeyProps {
 }
 
 function CopyButton({ text }: { text: string }) {
+  const t = useTranslations("onboarding.stepApiKey");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(text);
     setCopied(true);
-    toast.success("Copiado!");
+    toast.success(t("copiedToast"));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -46,7 +48,7 @@ function CopyButton({ text }: { text: string }) {
       ) : (
         <IconCopy size={12} />
       )}
-      {copied ? "Copiado" : "Copiar"}
+      {copied ? t("copied") : t("copy")}
     </button>
   );
 }
@@ -86,20 +88,20 @@ function buildEventExample(step: IFunnelStepConfig, currency: string): string | 
   if (!t) return null;
 
   if (step.countUnique || t === "pageview") {
-    return `// '${t}' é rastreado automaticamente pelo tracker\n// Nenhuma chamada manual necessária`;
+    return `// '${t}' is auto-tracked by the tracker\n// No manual call needed`;
   }
 
   const examples: Record<string, string> = {
-    purchase: `window.Groware.track('purchase', {\n  dedupe: invoice.id,           // OBRIGATÓRIO: ID único da transação\n  gross_value: 150.00,          // obrigatório\n  currency: '${currency}',           // obrigatório sempre\n  customer_id: hashAnonymous(user.id), // OBRIGATÓRIO — 400 se ausente\n  discount: 10.00,              // opcional: desconto aplicado\n  payment_method: 'pix',        // pix | credit_card | boleto\n  product_id: 'produto-001',    // opcional mas recomendado\n  category: 'principal',        // opcional\n  customer_type: 'new',         // new | returning\n})`,
-    signup: `window.Groware.track('signup', {\n  dedupe: true,                 // 1 cadastro por sessão (24h)\n  customer_id: hashAnonymous(user.id), // OBRIGATÓRIO — 400 se ausente\n  customer_type: 'new',         // new | returning\n  // contexto automático: source, medium, device, landing_page\n})`,
-    trial_started: `window.Groware.track('trial_started', {\n  dedupe: true,                 // 1 trial por sessão (24h)\n  customer_id: hashAnonymous(user.id), // OBRIGATÓRIO — 400 se ausente\n  plan_id: 'plano-pro',\n  plan_name: 'Pro Mensal',\n  // contexto automático: source, medium, device\n})`,
-    checkout_started: `window.Groware.track('checkout_started', {\n  gross_value: 89.00,\n  currency: '${currency}',\n  product_id: 'produto-001',\n  customer_id: hashAnonymous(user.id),\n  // abandono automático detectado no beforeunload\n})`,
+    purchase: `window.Groware.track('purchase', {\n  dedupe: invoice.id,           // REQUIRED: unique transaction ID\n  gross_value: 150.00,          // required\n  currency: '${currency}',           // always required\n  customer_id: hashAnonymous(user.id), // REQUIRED — 400 if missing\n  discount: 10.00,              // optional: applied discount\n  payment_method: 'pix',        // pix | credit_card | boleto\n  product_id: 'produto-001',    // optional but recommended\n  category: 'principal',        // optional\n  customer_type: 'new',         // new | returning\n})`,
+    signup: `window.Groware.track('signup', {\n  dedupe: true,                 // 1 signup per session (24h)\n  customer_id: hashAnonymous(user.id), // REQUIRED — 400 if missing\n  customer_type: 'new',         // new | returning\n  // auto context: source, medium, device, landing_page\n})`,
+    trial_started: `window.Groware.track('trial_started', {\n  dedupe: true,                 // 1 trial per session (24h)\n  customer_id: hashAnonymous(user.id), // REQUIRED — 400 if missing\n  plan_id: 'plano-pro',\n  plan_name: 'Pro Mensal',\n  // auto context: source, medium, device\n})`,
+    checkout_started: `window.Groware.track('checkout_started', {\n  gross_value: 89.00,\n  currency: '${currency}',\n  product_id: 'produto-001',\n  customer_id: hashAnonymous(user.id),\n  // abandonment auto-detected on beforeunload\n})`,
     checkout_abandoned: `window.Groware.track('checkout_abandoned', {\n  gross_value: 89.00,\n  currency: '${currency}',\n  product_id: 'produto-001',\n  reason: 'exit',  // exit | payment_failed | timeout\n})`,
   };
 
   if (examples[t]) return examples[t];
 
-  return `window.Groware.track('${t}', {\n  product_id: /* ID do recurso envolvido */,\n  customer_id: hashAnonymous(user.id), // NUNCA email ou CPF\n})`;
+  return `window.Groware.track('${t}', {\n  product_id: /* resource ID */,\n  customer_id: hashAnonymous(user.id), // NEVER email or CPF\n})`;
 }
 
 export function StepApiKey({
@@ -111,6 +113,7 @@ export function StepApiKey({
   existingKey,
   onComplete,
 }: StepApiKeyProps) {
+  const t = useTranslations("onboarding.stepApiKey");
   const [apiKey, setApiKey] = useState<string | null>(existingKey ?? null);
   const [isGenerating, setIsGenerating] = useState(!existingKey);
   const [baseUrl] = useState(
@@ -134,13 +137,13 @@ export function StepApiKey({
         });
         setApiKey(result.key);
       } catch {
-        toast.error("Erro ao gerar API key. Tente novamente.");
+        toast.error(t("generateErrorToast"));
       } finally {
         setIsGenerating(false);
       }
     }
     generate();
-  }, [organizationId, organizationName, existingKey]);
+  }, [organizationId, organizationName, existingKey, t]);
 
   const snippet = apiKey
     ? `<script async src="${baseUrl}/tracker.js" data-key="${apiKey}"></script>`
@@ -150,7 +153,7 @@ export function StepApiKey({
     if (!apiKey) return;
     navigator.clipboard.writeText(apiKey);
     setCopied(true);
-    toast.success("API key copiada!");
+    toast.success(t("apiKeyCopiedToast"));
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -162,23 +165,23 @@ export function StepApiKey({
         </div>
         <div>
           <h2 className="text-lg font-bold text-zinc-100">
-            API key + Instalação
+            {t("title")}
           </h2>
           <p className="text-xs text-zinc-500">
-            Cole um script no seu site e os dados chegam automaticamente
+            {t("subtitle")}
           </p>
         </div>
       </div>
 
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-4 space-y-3">
         <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-          Sua API key
+          {t("yourApiKey")}
         </p>
 
         {isGenerating ? (
           <div className="flex items-center gap-2 text-zinc-500 text-sm">
             <IconLoader2 size={16} className="animate-spin" />
-            Gerando chave...
+            {t("generatingKey")}
           </div>
         ) : apiKey ? (
           <div className="flex items-center gap-2">
@@ -197,15 +200,12 @@ export function StepApiKey({
             </button>
           </div>
         ) : (
-          <p className="text-xs text-red-400">Erro ao gerar key.</p>
+          <p className="text-xs text-red-400">{t("generateError")}</p>
         )}
 
         <div className="rounded-md bg-amber-900/20 border border-amber-800/30 px-3 py-2">
           <p className="text-[11px] text-amber-400">
-            Esta key autentica todos os eventos de{" "}
-            <strong className="text-amber-300">{organizationName}</strong>.
-            Não commite no Git — use variável de ambiente (
-            <code className="font-mono">NEXT_PUBLIC_GROWARE_KEY</code>).
+            {t("keyWarning", { orgName: organizationName })}
           </p>
         </div>
       </div>
@@ -216,20 +216,17 @@ export function StepApiKey({
         )}
 
         <p className="text-[11px] text-zinc-600 leading-relaxed">
-          Cole no <code className="text-zinc-400">&lt;head&gt;</code> de
-          qualquer página. O tracker captura UTMs, device, referrer e pageviews
-          automaticamente.
+          {t("snippetHint")}
         </p>
       </div>
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
-            Como rastrear seu funil
+            {t("trackFunnelTitle")}
           </p>
           <span className="text-[10px] text-zinc-600 font-mono">
-            {funnelSteps.length} etapa{funnelSteps.length !== 1 ? "s" : ""}{" "}
-            configurada{funnelSteps.length !== 1 ? "s" : ""}
+            {t("stepsConfigured", { count: funnelSteps.length })}
           </span>
         </div>
 
@@ -240,8 +237,7 @@ export function StepApiKey({
               className="text-zinc-600 mt-0.5 shrink-0"
             />
             <p className="text-xs text-zinc-500">
-              Nenhuma etapa de funil configurada. Volte ao passo anterior para
-              definir seu funil.
+              {t("noStepsConfigured")}
             </p>
           </div>
         ) : (
@@ -284,15 +280,10 @@ export function StepApiKey({
             <IconInfoCircle size={14} className="text-indigo-400 mt-0.5 shrink-0" />
             <div className="space-y-1">
               <p className="text-xs font-medium text-zinc-300">
-                Evento opcional:{" "}
-                <code className="font-mono text-indigo-300">checkout_started</code>
+                {t("optionalEvent.title")}
               </p>
               <p className="text-[11px] text-zinc-500 leading-relaxed">
-                Se o seu fluxo tem um checkout (modal, redirecionamento ou página
-                separada), adicione este evento <strong className="text-zinc-400">antes do purchase</strong>.
-                Ele habilita a análise de abandono de checkout — quantos usuários
-                chegaram até aqui mas não converteram. O tracker detecta o abandono
-                automaticamente via <code className="font-mono text-zinc-400">beforeunload</code>.
+                {t("optionalEvent.description")}
               </p>
             </div>
           </div>
@@ -314,7 +305,7 @@ export function StepApiKey({
         disabled={isGenerating || !apiKey}
         className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold gap-2 group"
       >
-        Continuar — Verificar instalação
+        {t("submit")}
         <IconArrowRight
           size={16}
           className="transition-transform group-hover:translate-x-0.5"

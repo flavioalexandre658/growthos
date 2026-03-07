@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtBRLDecimal } from "@/utils/format";
 import type { ICostsSummary } from "@/interfaces/cost.interface";
@@ -18,6 +19,8 @@ interface Segment {
 }
 
 export function CostCompositionChart({ data, isLoading }: CostCompositionChartProps) {
+  const t = useTranslations("finance.costComposition");
+
   if (isLoading) {
     return (
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
@@ -40,12 +43,12 @@ export function CostCompositionChart({ data, isLoading }: CostCompositionChartPr
   if (gross === 0 && fixedCosts === 0 && varCosts === 0) {
     return (
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-        <h3 className="text-sm font-bold text-zinc-100 mb-1">Composição de Custos</h3>
+        <h3 className="text-sm font-bold text-zinc-100 mb-1">{t("title")}</h3>
         <p className="text-xs text-zinc-500 mb-4">
-          Proporção visual de custos sobre a receita do mês atual
+          {t("subtitle")}
         </p>
         <div className="flex items-center justify-center h-10 rounded-full bg-zinc-800/50 border border-zinc-700/40">
-          <span className="text-xs text-zinc-600">Sem dados para o período</span>
+          <span className="text-xs text-zinc-600">{t("noDataForPeriod")}</span>
         </div>
       </div>
     );
@@ -54,21 +57,21 @@ export function CostCompositionChart({ data, isLoading }: CostCompositionChartPr
   const total = fixedCosts + varCosts + remaining;
   const segments: Segment[] = [
     {
-      label: "Custos Variáveis",
+      label: t("variableCosts"),
       value: varCosts,
       color: "#f97316",
       bgColor: "bg-orange-500",
       textColor: "text-orange-400",
     },
     {
-      label: "Custos Fixos",
+      label: t("fixedCosts"),
       value: fixedCosts,
       color: "#ef4444",
       bgColor: "bg-red-500",
       textColor: "text-red-400",
     },
     {
-      label: "Sobra / Margem",
+      label: t("remainingMargin"),
       value: remaining,
       color: "#22c55e",
       bgColor: "bg-emerald-500",
@@ -81,9 +84,9 @@ export function CostCompositionChart({ data, isLoading }: CostCompositionChartPr
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-      <h3 className="text-sm font-bold text-zinc-100 mb-1">Composição de Custos</h3>
+      <h3 className="text-sm font-bold text-zinc-100 mb-1">{t("title")}</h3>
       <p className="text-xs text-zinc-500 mb-4">
-        Proporção visual de custos sobre a receita do mês atual ({fmtBRLDecimal(gross)})
+        {t("subtitleWithValue", { value: fmtBRLDecimal(gross) })}
       </p>
 
       <div className="flex h-8 w-full rounded-lg overflow-hidden gap-0.5 mb-4">

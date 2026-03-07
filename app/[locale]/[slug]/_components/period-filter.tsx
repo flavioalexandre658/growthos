@@ -7,16 +7,7 @@ import { DashboardPeriod, IDateFilter } from "@/interfaces/dashboard.interface";
 import { cn } from "@/lib/utils";
 import { IconCalendar, IconX, IconRefresh, IconChevronDown, IconCheck } from "@tabler/icons-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
-const PERIOD_OPTIONS: { value: DashboardPeriod; label: string }[] = [
-  { value: "today", label: "Hoje" },
-  { value: "yesterday", label: "Ontem" },
-  { value: "3d", label: "3d" },
-  { value: "7d", label: "7d" },
-  { value: "this_month", label: "Mês" },
-  { value: "30d", label: "30d" },
-  { value: "90d", label: "90d" },
-];
+import { useTranslations } from "next-intl";
 
 const MOBILE_QUICK: DashboardPeriod[] = ["today", "7d", "30d"];
 
@@ -29,8 +20,19 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const t = useTranslations("dashboard.periodFilter");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const PERIOD_OPTIONS: { value: DashboardPeriod; label: string }[] = [
+    { value: "today", label: t("today") },
+    { value: "yesterday", label: t("yesterday") },
+    { value: "3d", label: t("3d") },
+    { value: "7d", label: t("7d") },
+    { value: "this_month", label: t("thisMonth") },
+    { value: "30d", label: t("30d") },
+    { value: "90d", label: t("90d") },
+  ];
 
   const hasRange = !!(filter.start_date && filter.end_date);
   const [showCustom, setShowCustom] = useState(hasRange);
@@ -79,7 +81,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
 
   const activeLabel = hasRange
     ? `${filter.start_date} → ${filter.end_date}`
-    : PERIOD_OPTIONS.find((o) => o.value === activePeriod)?.label ?? "Hoje";
+    : PERIOD_OPTIONS.find((o) => o.value === activePeriod)?.label ?? t("today");
 
   const isOtherActive = (activePeriod !== null && !MOBILE_QUICK.includes(activePeriod)) || hasRange;
 
@@ -90,7 +92,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          title="Atualizar dados"
+          title={t("refreshData")}
           className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600 transition-colors disabled:opacity-50 shrink-0"
         >
           <IconRefresh size={14} className={isRefreshing ? "animate-spin" : ""} />
@@ -127,7 +129,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
                     : "text-zinc-400 hover:text-zinc-100"
                 )}
               >
-                {isOtherActive && !hasRange ? activeLabel : "Mais"}
+                {isOtherActive && !hasRange ? activeLabel : t("more")}
                 <IconChevronDown size={10} />
               </button>
             </PopoverTrigger>
@@ -165,7 +167,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
                   )}
                 >
                   <IconCalendar size={12} />
-                  {hasRange ? "Custom ativo" : "Intervalo personalizado"}
+                  {hasRange ? t("customActive") : t("customRange")}
                   {hasRange && <IconCheck size={12} className="ml-auto" />}
                 </button>
 
@@ -197,7 +199,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
                         className="flex items-center justify-center gap-1.5 h-7 rounded-md border border-zinc-700 text-xs text-zinc-500 hover:border-red-800 hover:text-red-400 transition-colors"
                       >
                         <IconX size={11} />
-                        Limpar
+                        {t("clear")}
                       </button>
                     )}
                   </div>
@@ -213,7 +215,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
         <button
           onClick={handleRefresh}
           disabled={isRefreshing}
-          title="Atualizar dados"
+          title={t("refreshData")}
           className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600 transition-colors disabled:opacity-50 shrink-0"
         >
           <IconRefresh size={14} className={isRefreshing ? "animate-spin" : ""} />
@@ -245,10 +247,10 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
                     ? "bg-zinc-700 text-zinc-100"
                     : "text-zinc-400 hover:text-zinc-100"
               )}
-              title="Intervalo personalizado"
+              title={t("customRange")}
             >
               <IconCalendar size={12} />
-              {hasRange ? "Custom" : "Datas"}
+              {hasRange ? t("customDesktop") : t("dates")}
             </button>
           </div>
         </div>
@@ -282,7 +284,7 @@ export function PeriodFilter({ filter }: PeriodFilterProps) {
             <button
               onClick={handleClearCustom}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-500 hover:border-red-800 hover:text-red-400 transition-colors shrink-0"
-              title="Limpar intervalo"
+              title={t("clearRange")}
             >
               <IconX size={13} />
             </button>

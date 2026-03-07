@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { IconUsers } from "@tabler/icons-react";
 import { fmtInt, fmtBRLDecimal } from "@/utils/format";
 import type { ISourceDistribution } from "@/interfaces/dashboard.interface";
+import { useTranslations } from "next-intl";
 
 const CHART_COLORS = [
   "#6366f1",
@@ -49,6 +50,7 @@ function renderActiveShape(props: unknown) {
 }
 
 export function SourceChart({ data, isLoading }: SourceChartProps) {
+  const t = useTranslations("dashboard.sourceChart");
   const sources = data?.sources ?? [];
   const total = data?.total ?? 0;
   const [activeIdx, setActiveIdx] = useState<number | undefined>(undefined);
@@ -67,8 +69,8 @@ export function SourceChart({ data, isLoading }: SourceChartProps) {
           <IconUsers size={14} className="text-indigo-400" />
         </div>
         <div>
-          <h3 className="text-sm font-bold text-zinc-100">Canais de Entrada</h3>
-          <p className="text-[11px] text-zinc-500">Origem dos cadastros</p>
+          <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
+          <p className="text-[11px] text-zinc-500">{t("subtitle")}</p>
         </div>
       </div>
 
@@ -83,7 +85,7 @@ export function SourceChart({ data, isLoading }: SourceChartProps) {
         </div>
       ) : sources.length === 0 ? (
         <div className="flex flex-1 items-center justify-center">
-          <p className="text-xs text-zinc-700">Nenhum dado disponível</p>
+          <p className="text-xs text-zinc-700">{t("noData")}</p>
         </div>
       ) : (
         <div className="flex flex-col sm:flex-row gap-5 flex-1 items-stretch">
@@ -138,7 +140,7 @@ export function SourceChart({ data, isLoading }: SourceChartProps) {
                   <span className="text-lg font-bold font-mono text-zinc-100 leading-tight">
                     {fmtInt(total)}
                   </span>
-                  <span className="text-[10px] text-zinc-600">total</span>
+                  <span className="text-[10px] text-zinc-600">{t("totalLabel")}</span>
                 </>
               )}
             </div>

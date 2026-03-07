@@ -1,0 +1,28 @@
+{
+  "nav": {
+    "features": "Features",
+    "integrations": "Integrations",
+    "ai": "AI Analysis",
+    "docs": "Docs",
+    "signIn": "Sign in",
+    "earlyAccess": "Early access"
+  },
+  "footer": {
+    "copyright": "© 2026 Groware. All rights reserved.",
+    "version": "v0.1.0-beta · groware.io",
+    "links": {
+      "docs": "Docs",
+      "changelog": "Changelog",
+      "privacy": "Privacy",
+      "terms": "Terms"
+    }
+  },
+  "cta": {
+    "emailPlaceholder": "you@email.com",
+    "emailPlaceholderWork": "Your work email",
+    "submitHero": "Start for free →",
+    "submitCta": "Request access →",
+    "successToast": "You're on the list! We'll reach out soon.",
+    "invalidEmail": "Enter a valid email"
+  }
+}

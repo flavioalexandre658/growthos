@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -44,6 +45,7 @@ function CustomTooltip({
 }
 
 export function MrrGrowthChart({ data, isLoading }: MrrGrowthChartProps) {
+  const t = useTranslations("mrr.growthChart");
   const chartData = (data ?? []).map((d) => ({
     ...d,
     label: formatDateLabel(d.date),
@@ -51,15 +53,15 @@ export function MrrGrowthChart({ data, isLoading }: MrrGrowthChartProps) {
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-      <h3 className="text-sm font-bold text-zinc-100">Evolução do MRR</h3>
+      <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
       <p className="mt-0.5 text-xs text-zinc-500 mb-4">
-        Crescimento da receita recorrente mensal no período
+        {t("subtitle")}
       </p>
       {isLoading ? (
         <Skeleton className="h-56 w-full rounded-lg bg-zinc-800" />
       ) : chartData.length === 0 ? (
         <div className="flex items-center justify-center h-56 text-zinc-600 text-sm">
-          Sem dados de recorrência no período
+          {t("emptyMessage")}
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={220}>

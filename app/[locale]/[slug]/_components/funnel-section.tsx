@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fmtInt } from "@/utils/format";
 import { getStepColor } from "@/utils/step-colors";
 import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
+import { useTranslations } from "next-intl";
 
 interface FunnelSectionProps {
   data: IGenericFunnelData | null | undefined;
@@ -365,6 +366,7 @@ export function FunnelSection({
   isLoading,
   hiddenKeys,
 }: FunnelSectionProps) {
+  const t = useTranslations("dashboard.funnel");
   const allStepKeys = (data?.steps ?? [])
     .filter((s) => s.key !== "pageview")
     .map((s) => s.key);
@@ -377,9 +379,9 @@ export function FunnelSection({
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-      <h3 className="text-sm font-bold text-zinc-100">Funil de Conversão</h3>
+      <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
       <p className="mt-0.5 text-xs text-zinc-500 mb-2">
-        {visibleSteps.map((s) => s.label).join(" → ") || "Funil de Conversão"}
+        {visibleSteps.map((s) => s.label).join(" → ") || t("fallbackSubtitle")}
       </p>
 
       {isLoading ? (
@@ -387,7 +389,7 @@ export function FunnelSection({
       ) : visibleSteps.length < 2 ? (
         <div className="flex h-56 items-center justify-center">
           <p className="text-xs text-zinc-700">
-            Configure ao menos 2 etapas no funil
+            {t("minStepsWarning")}
           </p>
         </div>
       ) : (

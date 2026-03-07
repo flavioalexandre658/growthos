@@ -1,0 +1,154 @@
+{
+  "ai": {
+    "content": {
+      "title": "Análise com IA",
+      "subtitle": "Insights inteligentes sobre performance, custos e oportunidades",
+      "fullAnalysis": {
+        "title": "Análise Completa",
+        "description": "P&L, funil, canais, produtos e oportunidades de melhoria",
+        "running": "Analisando...",
+        "execute": "Executar"
+      },
+      "comparePeriods": {
+        "title": "Comparar Períodos",
+        "description": "Compare métricas entre dois períodos distintos",
+        "cta": "Comparar"
+      },
+      "comingSoon": {
+        "title": "Em Breve",
+        "description": "Previsões, alertas automáticos e relatórios agendados"
+      },
+      "analyzing": {
+        "title": "Analisando seus dados...",
+        "subtitle": "A IA está processando P&L, funil, canais e produtos"
+      },
+      "error": {
+        "title": "Erro na análise",
+        "connectionError": "Erro ao conectar com a IA",
+        "unknownError": "Erro desconhecido ao obter análise."
+      }
+    },
+    "results": {
+      "title": "Resultado da Análise",
+      "redo": "Refazer",
+      "executiveSummary": "Resumo Executivo",
+      "findings": "Achados",
+      "diagnosis": "Diagnóstico",
+      "actionPlan": "Plano de Ação",
+      "estimatedImpact": "Impacto estimado: {impact}",
+      "markAsDone": "Marcar como feito",
+      "undo": "Desfazer",
+      "view": "Ver"
+    },
+    "severity": {
+      "critical": "Crítico",
+      "warning": "Atenção",
+      "good": "Bom",
+      "info": "Info"
+    },
+    "roi": {
+      "high": "ROI Alto",
+      "medium": "ROI Médio",
+      "low": "ROI Baixo"
+    },
+    "history": {
+      "title": "Histórico de Análises ({count})",
+      "criticalCount": "{count} crítico",
+      "warningCount": "{count} atenção",
+      "goodCount": "{count} bom"
+    },
+    "comparison": {
+      "breadcrumb": "Análise com IA",
+      "title": "Comparativo com IA",
+      "subtitle": "Compare dois períodos e obtenha diagnóstico estruturado",
+      "configuration": "Configuração",
+      "section": "Seção",
+      "periodA": "Período A",
+      "periodB": "Período B",
+      "dates": "Datas",
+      "comparing": "Comparando...",
+      "compareWithAi": "Comparar com IA",
+      "loading": {
+        "title": "Comparando períodos...",
+        "subtitle": "A IA está analisando as variações e identificando padrões"
+      },
+      "error": {
+        "title": "Erro na comparação",
+        "connectionError": "Erro ao conectar com a IA",
+        "unknownError": "Erro desconhecido."
+      },
+      "metricsVariation": "Variação de Métricas — {labelA} vs {labelB}",
+      "verdict": "Veredicto",
+      "findings": "Achados",
+      "diagnosis": "Diagnóstico",
+      "analysis": "Análise",
+      "actionPlan": "Plano de Ação",
+      "estimatedImpact": "Impacto estimado: {impact}",
+      "readyToCompare": {
+        "title": "Pronto para comparar",
+        "description": "Selecione a seção e os dois períodos acima, depois clique em \"Comparar com IA\"",
+        "hint1": "A IA receberá valores em reais com variações pré-calculadas",
+        "hint2": "e retornará análise estruturada com achados e plano de ação"
+      },
+      "goToFullAnalysis": "Ir para Análise Completa",
+      "verdictLabels": {
+        "growth": "Crescimento",
+        "stability": "Estabilidade",
+        "decline": "Declínio",
+        "anomaly": "Anomalia"
+      },
+      "findingSeverity": {
+        "positive": "Positivo",
+        "warning": "Atenção",
+        "critical": "Crítico"
+      },
+      "actionDeadline": {
+        "immediate": "Imediato",
+        "thisWeek": "Esta semana",
+        "thisMonth": "Este mês"
+      },
+      "sections": {
+        "overview": "Visão Geral",
+        "channels": "Canais",
+        "finance": "Financeiro",
+        "pages": "Páginas",
+        "recurrence": "Recorrência",
+        "costs": "Custos",
+        "events": "Eventos"
+      },
+      "periodPresets": {
+        "today": "Hoje",
+        "yesterday": "Ontem",
+        "7d": "7 dias",
+        "thisMonth": "Este mês",
+        "30d": "30 dias",
+        "90d": "90 dias"
+      },
+      "metricLabels": {
+        "visits": "Visitas",
+        "signups": "Cadastros",
+        "payments": "Pagamentos",
+        "grossRevenue": "Receita Bruta",
+        "averageTicket": "Ticket Médio",
+        "conversionRate": "Taxa de Conversão (%)",
+        "totalRevenue": "Receita Total",
+        "netProfit": "Lucro Líquido",
+        "totalCosts": "Custos Totais",
+        "marginPercent": "Margem (%)",
+        "mrr": "MRR",
+        "arr": "ARR",
+        "activeSubscriptions": "Assinaturas Ativas",
+        "arpu": "ARPU",
+        "churnRatePercent": "Churn Rate (%)",
+        "estimatedLtv": "LTV Estimado",
+        "fixedCosts": "Custos Fixos",
+        "variableCosts": "Custos Variáveis",
+        "totalCost": "Custo Total",
+        "totalEvents": "Total de Eventos",
+        "pageviews": "Pageviews",
+        "checkoutsStarted": "Checkouts Iniciados",
+        "edits": "Edições"
+      }
+    }
+  }
+}

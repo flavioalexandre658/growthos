@@ -1,0 +1,163 @@
+{
+  "onboarding": {
+    "wizard": {
+      "greeting": "Hello,",
+      "stepProgress": "Step {current} of {total}",
+      "steps": {
+        "organization": "Organization",
+        "regional": "Regional",
+        "funnel": "Funnel",
+        "apiKey": "API Key",
+        "verify": "Verify",
+        "dashboard": "Dashboard"
+      }
+    },
+    "stepCreateOrg": {
+      "title": "Create organization",
+      "subtitle": "Your data will be separated by organization",
+      "nameLabel": "Name",
+      "namePlaceholder": "E.g.: My Online Store",
+      "slugLabel": "Slug (unique identifier)",
+      "slugPlaceholder": "my-store",
+      "slugHint": "Unique identifier:",
+      "submitting": "Creating...",
+      "submit": "Continue",
+      "successToast": "Organization created!",
+      "errorToast": "Error creating organization.",
+      "validation": {
+        "nameMinLength": "Name must be at least 2 characters",
+        "slugMinLength": "Slug must be at least 2 characters",
+        "slugPattern": "Only lowercase letters, numbers and hyphens"
+      }
+    },
+    "stepRegionalConfig": {
+      "title": "Regional settings",
+      "subtitle": "We detected your preferences — confirm or adjust",
+      "detectedAutomatically": "Values automatically detected by browser",
+      "localeLabel": "Location",
+      "localeHint": "Automatically sets currency, country and language",
+      "currencyLabel": "Base currency",
+      "aiLanguageLabel": "AI language",
+      "timezoneLabel": "Timezone",
+      "timezoneHint": "Defines how \"today\" and \"this week\" are interpreted in reports",
+      "summary": "Summary",
+      "summaryCurrency": "Currency:",
+      "summaryLocale": "Locale:",
+      "summaryAiLanguage": "AI Language:",
+      "summaryTimezone": "Timezone:",
+      "submitting": "Saving...",
+      "submit": "Continue",
+      "successToast": "Regional settings saved!",
+      "errorToast": "Error saving regional settings."
+    },
+    "stepFunnelConfig": {
+      "title": "Configure funnel",
+      "subtitle": "Define the steps you want to track",
+      "presetsLabel": "Presets",
+      "stepsLabel": "Funnel steps",
+      "addStep": "Add step",
+      "previewLabel": "Funnel preview",
+      "submitting": "Saving...",
+      "submit": "Continue",
+      "successToast": "Funnel configured!",
+      "errorToast": "Error saving funnel",
+      "validationFillAll": "Fill in all step fields",
+      "validationMinStep": "Add at least 1 step to the funnel",
+      "presets": {
+        "ecommerce": {
+          "label": "E-commerce",
+          "description": "pageview → signup → payment"
+        },
+        "saas": {
+          "label": "SaaS / Trial",
+          "description": "signup → trial → payment"
+        },
+        "saasRecurring": {
+          "label": "Recurring SaaS",
+          "description": "signup → trial → payment → churn"
+        },
+        "simple": {
+          "label": "Simple",
+          "description": "signup → payment"
+        },
+        "custom": {
+          "label": "Custom",
+          "description": "Configure from scratch"
+        }
+      },
+      "defaultStepLabels": {
+        "visits": "Visits",
+        "signups": "Signups",
+        "purchases": "Purchases",
+        "trials": "Trials",
+        "churn": "Churn"
+      }
+    },
+    "stepApiKey": {
+      "title": "API key + Installation",
+      "subtitle": "Paste a script on your site and data arrives automatically",
+      "yourApiKey": "Your API key",
+      "generatingKey": "Generating key...",
+      "generateError": "Error generating key.",
+      "generateErrorToast": "Error generating API key. Try again.",
+      "apiKeyCopiedToast": "API key copied!",
+      "copied": "Copied",
+      "copy": "Copy",
+      "copiedToast": "Copied!",
+      "keyWarning": "This key authenticates all events for {orgName}. Do not commit to Git — use an environment variable (NEXT_PUBLIC_GROWARE_KEY).",
+      "snippetHint": "Paste in the <head> of any page. The tracker captures UTMs, device, referrer and pageviews automatically.",
+      "trackFunnelTitle": "How to track your funnel",
+      "stepsConfigured": "{count, plural, =1 {# step configured} other {# steps configured}}",
+      "noStepsConfigured": "No funnel steps configured. Go back to the previous step to define your funnel.",
+      "optionalEvent": {
+        "title": "Optional event: checkout_started",
+        "description": "If your flow has a checkout (modal, redirect or separate page), add this event before purchase. It enables checkout abandonment analysis — how many users got here but didn't convert. The tracker detects abandonment automatically via beforeunload."
+      },
+      "submit": "Continue — Verify installation"
+    },
+    "stepVerifyEvent": {
+      "titleDetected": "Event detected!",
+      "titleWaiting": "Verify installation",
+      "subtitleDetected": "The tracker is working correctly",
+      "subtitleWaiting": "Waiting for the first event...",
+      "firstEventToast": "First event detected!",
+      "waitingForEvents": "Waiting for events from the last 5 minutes...",
+      "autoRefresh": "Auto-refreshes every 3 seconds",
+      "trackerWorking": "Tracker working!",
+      "eventLabels": {
+        "event": "event",
+        "channel": "channel",
+        "page": "page",
+        "device": "device",
+        "received": "received"
+      },
+      "curlTestTitle": "Quick test with cURL",
+      "copy": "Copy",
+      "copiedToast": "Copied!",
+      "skip": "Skip, configure later",
+      "submit": "Continue"
+    },
+    "stepTour": {
+      "verified": {
+        "title": "All set, {firstName}!",
+        "subtitle": "Events arriving. Your dashboard is ready to use.",
+        "submitting": "Entering...",
+        "submit": "Go to Overview"
+      },
+      "unverified": {
+        "title": "Almost there, {firstName}!",
+        "configComplete": "Configuration complete",
+        "nextStep": "Next step",
+        "nextStepDescription": "Install the tracker in your project and come back to see your data. Use the prompt below to integrate with AI in seconds.",
+        "copyPrompt": "Copy prompt for AI",
+        "promptCopied": "Prompt copied!",
+        "goBack": "Go back and verify installation now",
+        "submitting": "Entering...",
+        "submit": "Go to Dashboard"
+      },
+      "welcomeToast": "Welcome to Groware!",
+      "errorToast": "Error completing onboarding.",
+      "promptCopiedToast": "Prompt copied!"
+    }
+  }
+}

@@ -1,0 +1,154 @@
+{
+  "ai": {
+    "content": {
+      "title": "AI Analysis",
+      "subtitle": "Intelligent insights on performance, costs and opportunities",
+      "fullAnalysis": {
+        "title": "Full Analysis",
+        "description": "P&L, funnel, channels, products and improvement opportunities",
+        "running": "Analyzing...",
+        "execute": "Execute"
+      },
+      "comparePeriods": {
+        "title": "Compare Periods",
+        "description": "Compare metrics between two different periods",
+        "cta": "Compare"
+      },
+      "comingSoon": {
+        "title": "Coming Soon",
+        "description": "Forecasts, automatic alerts and scheduled reports"
+      },
+      "analyzing": {
+        "title": "Analyzing your data...",
+        "subtitle": "AI is processing P&L, funnel, channels and products"
+      },
+      "error": {
+        "title": "Analysis error",
+        "connectionError": "Error connecting to AI",
+        "unknownError": "Unknown error while fetching analysis."
+      }
+    },
+    "results": {
+      "title": "Analysis Result",
+      "redo": "Redo",
+      "executiveSummary": "Executive Summary",
+      "findings": "Findings",
+      "diagnosis": "Diagnosis",
+      "actionPlan": "Action Plan",
+      "estimatedImpact": "Estimated impact: {impact}",
+      "markAsDone": "Mark as done",
+      "undo": "Undo",
+      "view": "View"
+    },
+    "severity": {
+      "critical": "Critical",
+      "warning": "Warning",
+      "good": "Good",
+      "info": "Info"
+    },
+    "roi": {
+      "high": "High ROI",
+      "medium": "Medium ROI",
+      "low": "Low ROI"
+    },
+    "history": {
+      "title": "Analysis History ({count})",
+      "criticalCount": "{count} critical",
+      "warningCount": "{count} warning",
+      "goodCount": "{count} good"
+    },
+    "comparison": {
+      "breadcrumb": "AI Analysis",
+      "title": "AI Comparison",
+      "subtitle": "Compare two periods and get a structured diagnosis",
+      "configuration": "Configuration",
+      "section": "Section",
+      "periodA": "Period A",
+      "periodB": "Period B",
+      "dates": "Dates",
+      "comparing": "Comparing...",
+      "compareWithAi": "Compare with AI",
+      "loading": {
+        "title": "Comparing periods...",
+        "subtitle": "AI is analyzing variations and identifying patterns"
+      },
+      "error": {
+        "title": "Comparison error",
+        "connectionError": "Error connecting to AI",
+        "unknownError": "Unknown error."
+      },
+      "metricsVariation": "Metrics Variation — {labelA} vs {labelB}",
+      "verdict": "Verdict",
+      "findings": "Findings",
+      "diagnosis": "Diagnosis",
+      "analysis": "Analysis",
+      "actionPlan": "Action Plan",
+      "estimatedImpact": "Estimated impact: {impact}",
+      "readyToCompare": {
+        "title": "Ready to compare",
+        "description": "Select the section and two periods above, then click \"Compare with AI\"",
+        "hint1": "AI will receive values with pre-calculated variations",
+        "hint2": "and will return a structured analysis with findings and action plan"
+      },
+      "goToFullAnalysis": "Go to Full Analysis",
+      "verdictLabels": {
+        "growth": "Growth",
+        "stability": "Stability",
+        "decline": "Decline",
+        "anomaly": "Anomaly"
+      },
+      "findingSeverity": {
+        "positive": "Positive",
+        "warning": "Warning",
+        "critical": "Critical"
+      },
+      "actionDeadline": {
+        "immediate": "Immediate",
+        "thisWeek": "This week",
+        "thisMonth": "This month"
+      },
+      "sections": {
+        "overview": "Overview",
+        "channels": "Channels",
+        "finance": "Financial",
+        "pages": "Pages",
+        "recurrence": "Recurrence",
+        "costs": "Costs",
+        "events": "Events"
+      },
+      "periodPresets": {
+        "today": "Today",
+        "yesterday": "Yesterday",
+        "7d": "7 days",
+        "thisMonth": "This month",
+        "30d": "30 days",
+        "90d": "90 days"
+      },
+      "metricLabels": {
+        "visits": "Visits",
+        "signups": "Signups",
+        "payments": "Payments",
+        "grossRevenue": "Gross Revenue",
+        "averageTicket": "Average Ticket",
+        "conversionRate": "Conversion Rate (%)",
+        "totalRevenue": "Total Revenue",
+        "netProfit": "Net Profit",
+        "totalCosts": "Total Costs",
+        "marginPercent": "Margin (%)",
+        "mrr": "MRR",
+        "arr": "ARR",
+        "activeSubscriptions": "Active Subscriptions",
+        "arpu": "ARPU",
+        "churnRatePercent": "Churn Rate (%)",
+        "estimatedLtv": "Estimated LTV",
+        "fixedCosts": "Fixed Costs",
+        "variableCosts": "Variable Costs",
+        "totalCost": "Total Cost",
+        "totalEvents": "Total Events",
+        "pageviews": "Pageviews",
+        "checkoutsStarted": "Checkouts Started",
+        "edits": "Edits"
+      }
+    }
+  }
+}

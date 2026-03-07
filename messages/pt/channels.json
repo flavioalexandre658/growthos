@@ -1,0 +1,19 @@
+{
+  "channels": {
+    "content": {
+      "title": "Canais de Aquisição",
+      "subtitle": "Receita, conversão e ticket médio por canal",
+      "searchPlaceholder": "Buscar canal..."
+    },
+    "kpiStrip": {
+      "totalChannels": "Total de Canais",
+      "withRevenue": "{count} com receita",
+      "totalRevenue": "Receita Total",
+      "inPeriod": "no período",
+      "leadChannel": "Canal Líder",
+      "highestRevenue": "maior receita",
+      "concentration": "Concentração",
+      "top2Channels": "top 2 canais"
+    }
+  }
+}

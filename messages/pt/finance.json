@@ -1,0 +1,253 @@
+{
+  "financeContent": {
+    "title": "Financeiro",
+    "subtitle": "Receita, custos, resultado e oportunidades do período",
+    "fixedCostsWarning": "Custos fixos estão sendo rateados proporcionalmente ao período selecionado ({days} dia(s) de 30). Para visualizar o P&L completo mensal, selecione um período de 30 dias.",
+    "revenueByPaymentMethod": "Receita por Método de Pagamento",
+    "revenueByPaymentMethodSubtitle": "Distribuição do faturamento por forma de pagamento",
+    "revenueByCategory": "Receita por Categoria",
+    "revenueByCategorySubtitle": "Distribuição do faturamento por categoria de produto",
+    "howPlWorks": "Como funciona o P&L",
+    "plDescription": "O P&L calcula o resultado financeiro real do negócio a partir dos eventos de pagamento coletados.",
+    "aboutSegmentedVariableCosts": "Sobre custos variáveis segmentados",
+    "segmentedVariableCostsDescription": "Cada custo variável pode ser configurado para incidir apenas sobre a receita de um método de pagamento específico ou tipo de cobrança. Configure seus custos em",
+    "costsLink": "Custos",
+    "plSteps": {
+      "grossRevenue": {
+        "label": "Receita Bruta",
+        "desc": "Total bruto de pagamentos confirmados no período."
+      },
+      "discounts": {
+        "label": "− Descontos",
+        "desc": "Cupons e descontos enviados via campo discount no evento de pagamento."
+      },
+      "variableCosts": {
+        "label": "− Custos Variáveis",
+        "desc": "Percentuais configurados na plataforma (impostos, comissões etc.) aplicados sobre a receita."
+      },
+      "operatingProfit": {
+        "label": "= Lucro Operacional",
+        "desc": "Resultado após descontos e custos variáveis configurados."
+      },
+      "fixedCosts": {
+        "label": "− Custos Fixos",
+        "desc": "Valores mensais fixos configurados na plataforma, rateados proporcionalmente ao período."
+      },
+      "netProfit": {
+        "label": "= Lucro Líquido",
+        "desc": "O que de fato sobrou após todos os custos deduzidos."
+      },
+      "netMargin": {
+        "label": "Margem Líquida",
+        "desc": "Lucro Líquido ÷ Receita Bruta × 100."
+      }
+    }
+  },
+  "kpiCards": {
+    "blocks": {
+      "revenue": "Receita",
+      "costs": "Custos",
+      "result": "Resultado",
+      "opportunity": "Oportunidade"
+    },
+    "grossRevenue": "Receita Bruta",
+    "recurring": "Recorrente",
+    "recurringTooltip": "Receita proveniente de assinaturas e cobranças recorrentes no período.",
+    "oneTime": "Avulso",
+    "oneTimeTooltip": "Receita de vendas únicas, não ligadas a assinaturas.",
+    "averageTicket": "Ticket Médio",
+    "averageTicketTooltip": "Valor médio por transação no período. Calculado como Receita Bruta ÷ número de pagamentos.",
+    "purchases": "{count} compras",
+    "percentOfTotal": "{percent}% do total",
+    "discounts": "Descontos",
+    "discountsSubLabel": "cupons do período",
+    "discountsTooltip": "Valor total de cupons e descontos aplicados em pagamentos no período. Reduz a receita líquida.",
+    "variableCosts": "Custos Variáveis",
+    "variableCostsSubLabel": "% configurados sobre receita",
+    "variableCostsTooltip": "Custos que crescem proporcionalmente à receita — como taxas de gateway, comissões e impostos. Calculados como percentual da receita bruta.",
+    "fixedCosts": "Custos Fixos",
+    "fixedCostsSubLabelProrated": "rateado {days}d de 30",
+    "fixedCostsSubLabelMonthly": "valor mensal",
+    "fixedCostsTooltip": "Despesas mensais que não variam com a receita — como ferramentas, salários e aluguel. Rateadas proporcionalmente quando o período é menor que um mês.",
+    "operatingProfit": "Lucro Operacional",
+    "operatingProfitSubLabel": "receita − descontos − variáveis",
+    "operatingProfitTooltip": "Receita Bruta menos descontos e custos variáveis. Mostra a saúde operacional antes dos custos fixos.",
+    "netProfit": "Lucro Líquido",
+    "netProfitSubLabel": "após todos os custos",
+    "netProfitTooltip": "O que sobra depois de descontar todos os custos (variáveis + fixos + descontos) da receita bruta. É o lucro real do período.",
+    "netMargin": "Margem Líquida",
+    "netMarginSubLabel": "lucro líquido / receita bruta",
+    "netMarginTooltip": "Percentual da receita bruta que se converte em lucro líquido. Acima de 20% é saudável para SaaS.",
+    "lostRevenue": "em receita perdida",
+    "abandonedCheckouts": "{count} checkout(s) abandonado(s) no período",
+    "comparedToPrevious": "comparado a {value} no período anterior",
+    "vsPreviousPrefix": "vs",
+    "vsPreviousSuffix": "anterior",
+    "viewAbandonmentAnalysis": "Ver análise de abandono",
+    "infoAbout": "Informação sobre {label}"
+  },
+  "breakdownTable": {
+    "payments": "{count} pagamentos",
+    "noDataForPeriod": "Sem dados no período",
+    "margin": "margem"
+  },
+  "revenueChart": {
+    "title": "Evolução Diária do Resultado",
+    "subtitle": "Receita bruta, lucro operacional e lucro líquido no período selecionado",
+    "grossRevenue": "Receita Bruta",
+    "operatingProfit": "Lucro Operacional",
+    "netProfit": "Lucro Líquido"
+  },
+  "profitLossWaterfall": {
+    "title": "Composição do Resultado",
+    "subtitle": "Receita → Descontos → Custos Variáveis → Lucro Operacional → Custos Fixos → Lucro Líquido",
+    "revenue": "Receita",
+    "discounts": "Descontos",
+    "variableCosts": "Custos Var.",
+    "operatingProfit": "Lucro Op.",
+    "fixedCosts": "Custos Fixos",
+    "netProfit": "Lucro Líq."
+  },
+  "profitLossCards": {
+    "grossRevenue": "Receita Bruta",
+    "grossRevenueTooltip": "Total de pagamentos recebidos no período, antes de qualquer desconto ou custo. É a linha de topo do DRE.",
+    "variableCosts": "Custos Variáveis",
+    "variableCostsTooltip": "Soma dos custos que variam com a receita — taxas de gateway, comissões, impostos sobre vendas. Configurados como % da receita bruta.",
+    "variableCostsSubLabel": "{count} itens",
+    "operatingProfit": "Lucro Operacional",
+    "operatingProfitTooltip": "Receita Bruta menos os custos variáveis. Representa o que sobra antes de pagar as despesas fixas mensais.",
+    "operatingProfitSubLabel": "Receita − Variáveis",
+    "fixedCosts": "Custos Fixos",
+    "fixedCostsTooltip": "Despesas mensais independentes do volume de vendas. Quando o período é menor que 30 dias, o valor é rateado proporcionalmente.",
+    "fixedCostsSubLabel": "{count} itens",
+    "fixedCostsSubLabelProrated": "{count} itens · rateado {days}d",
+    "netProfit": "Lucro Líquido",
+    "netProfitTooltip": "O que sobra de fato no caixa após deduzir todos os custos. Negativo significa que o negócio está gastando mais do que fatura.",
+    "netProfitSubLabel": "Receita − Variáveis − Fixos",
+    "netMargin": "Margem Líquida",
+    "netMarginTooltip": "Lucro Líquido dividido pela Receita Bruta, em percentual. Uma margem acima de 20% é considerada saudável para SaaS.",
+    "infoAbout": "Informação sobre {label}"
+  },
+  "costsContent": {
+    "title": "Gerenciar Custos",
+    "subtitle": "Cadastre custos fixos e variáveis para calcular o P&L no Financeiro",
+    "fixedCostsTab": "Custos Fixos",
+    "variableCostsTab": "Custos Variáveis"
+  },
+  "fixedCosts": {
+    "title": "Custos Fixos",
+    "subtitle": "Despesas constantes — servidor, salário, ferramentas",
+    "add": "Adicionar",
+    "emptyTitle": "Nenhum custo fixo ainda",
+    "emptyDescription": "Custos fixos são despesas constantes como servidor, salários e ferramentas.",
+    "addFirst": "Adicionar primeiro custo",
+    "columnName": "Nome",
+    "columnFrequency": "Frequência",
+    "columnValue": "Valor",
+    "perMonth": "/mês",
+    "ofRevenue": "{percent}% da receita",
+    "toastCreated": "Custo fixo adicionado!",
+    "toastUpdated": "Custo fixo atualizado!",
+    "toastDeleted": "Custo fixo removido!",
+    "frequency": {
+      "monthly": "Mensal",
+      "quarterly": "Trimestral",
+      "semiannual": "Semestral",
+      "annual": "Anual"
+    }
+  },
+  "variableCosts": {
+    "title": "Custos Variáveis",
+    "subtitle": "Percentuais sobre a receita — impostos, comissões e taxas",
+    "add": "Adicionar",
+    "emptyTitle": "Nenhum custo variável ainda",
+    "emptyDescription": "Custos variáveis são percentuais sobre a receita como impostos, comissões e taxas de gateway.",
+    "addFirst": "Adicionar primeiro custo",
+    "columnName": "Nome",
+    "columnRate": "Taxa",
+    "columnApplyTo": "Aplicar sobre",
+    "toastCreated": "Custo variável adicionado!",
+    "toastUpdated": "Custo variável atualizado!",
+    "toastDeleted": "Custo variável removido!",
+    "allRevenue": "Toda receita",
+    "categoryPrefix": "Cat: {value}",
+    "applyToLabels": {
+      "creditCard": "Cartão de crédito",
+      "debitCard": "Cartão de débito",
+      "pix": "PIX",
+      "boleto": "Boleto",
+      "oneTime": "Avulso",
+      "recurring": "Recorrente",
+      "other": "Outro"
+    }
+  },
+  "costForm": {
+    "editFixed": "Editar Custo Fixo",
+    "addFixed": "Adicionar Custo Fixo",
+    "editVariable": "Editar Custo Variável",
+    "addVariable": "Adicionar Custo Variável",
+    "variableDescription": "Percentual aplicado sobre a receita do período. Use para impostos, comissões e taxas de gateway.",
+    "fixedDescription": "Valor fixo rateado automaticamente conforme o período selecionado.",
+    "nameLabel": "Nome",
+    "namePlaceholderVariable": "Ex: Simples Nacional, Taxa Efibank...",
+    "namePlaceholderFixed": "Ex: Servidor, Salário, Aluguel...",
+    "percentageLabel": "Percentual",
+    "valueLabel": "Valor",
+    "percentagePlaceholder": "Ex: 10,00%",
+    "valuePlaceholder": "R$ 0,00",
+    "frequencyLabel": "Frequência",
+    "frequencyOptions": {
+      "monthly": "Mensal",
+      "monthlySub": "pago todo mês",
+      "quarterly": "Trimestral",
+      "quarterlySub": "rateado em 3 meses",
+      "semiannual": "Semestral",
+      "semiannualSub": "rateado em 6 meses",
+      "annual": "Anual",
+      "annualSub": "rateado em 12 meses"
+    },
+    "applyToLabel": "Aplicar sobre",
+    "applyToAllRevenue": "Toda receita",
+    "applyToPaymentMethod": "Método de pagamento",
+    "applyToBillingType": "Tipo de cobrança",
+    "applyToCategory": "Por categoria",
+    "paymentMethodLabel": "Método de pagamento",
+    "paymentMethodPlaceholder": "Selecione o método...",
+    "billingTypeLabel": "Tipo de cobrança",
+    "billingTypePlaceholder": "Selecione o tipo...",
+    "categoryNameLabel": "Nome da categoria",
+    "categoryPlaceholder": "Ex: Casamento, Aniversário...",
+    "categoryHint": "Deve corresponder exatamente ao campo category enviado nos eventos de pagamento.",
+    "descriptionLabel": "Descrição (opcional)",
+    "descriptionPlaceholder": "Observações...",
+    "cancel": "Cancelar",
+    "saving": "Salvando...",
+    "save": "Salvar",
+    "addButton": "Adicionar",
+    "paymentMethods": {
+      "creditCard": "Cartão de crédito",
+      "debitCard": "Cartão de débito",
+      "pix": "PIX",
+      "boleto": "Boleto",
+      "other": "Outro"
+    },
+    "billingTypes": {
+      "oneTime": "Avulso (one_time)",
+      "recurring": "Recorrente (recurring)"
+    },
+    "validation": {
+      "nameRequired": "Nome é obrigatório",
+      "valueRequired": "Valor é obrigatório",
+      "valueMustBePositive": "Valor deve ser positivo"
+    }
+  },
+  "costComposition": {
+    "title": "Composição de Custos",
+    "subtitle": "Proporção visual de custos sobre a receita do mês atual",
+    "subtitleWithValue": "Proporção visual de custos sobre a receita do mês atual ({value})",
+    "noDataForPeriod": "Sem dados para o período",
+    "variableCosts": "Custos Variáveis",
+    "fixedCosts": "Custos Fixos",
+    "remainingMargin": "Sobra / Margem"
+  }
+}

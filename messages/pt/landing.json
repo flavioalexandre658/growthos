@@ -1,0 +1,264 @@
+{
+  "landing": {
+    "hero": {
+      "badge": "Em acesso antecipado",
+      "badgeSuffix": " · Integração com Stripe disponível",
+      "headline1": "Do funil ao lucro real.",
+      "headline2": "Tudo num só lugar.",
+      "subheadline": "MRR, canais de aquisição, P&L real e análise com IA — conectados em um único dashboard. Feito para founders de SaaS que querem crescer com clareza.",
+      "disclaimer": "Sem cartão de crédito · Grátis durante o beta",
+      "mockupLabel": "groware.io / visão-geral",
+      "overview": "Visão Geral",
+      "overviewSub": "Performance consolidada do período",
+      "stages": "Etapas",
+      "last30": "Últimos 30 dias ▾",
+      "kpis": {
+        "pageviews": "Pageviews",
+        "signups": "Cadastros",
+        "checkouts": "Checkouts",
+        "payments": "Pagamentos",
+        "revenue": "Receita",
+        "avgTicket": "Ticket Médio"
+      },
+      "funnel": "Funil de Conversão",
+      "revenueByChannel": "Receita por Canal"
+    },
+    "problem": {
+      "label": "// o problema",
+      "headline1": "Seus dados estão em todo lugar,",
+      "headline2": "menos conectados.",
+      "description": "MRR no Stripe. Custos numa planilha. Aquisição no Google Analytics. P&L no Excel. Nada conversa entre si — e você passa horas conectando os pontos manualmente.",
+      "items": [
+        {
+          "icon": "📊",
+          "title": "Dashboard do Stripe",
+          "desc": "Mostra receita — mas não de onde veio, quanto custou, ou qual é sua margem de verdade."
+        },
+        {
+          "icon": "📋",
+          "title": "Planilhas",
+          "desc": "Atualizações manuais, fórmulas quebradas, sempre com um mês de atraso. Ninguém confia nos números."
+        },
+        {
+          "icon": "📉",
+          "title": "Google Analytics",
+          "desc": "Pageviews e sessões — mas zero conexão com receita, assinaturas ou resultados reais do negócio."
+        }
+      ],
+      "solutionTitle": "O Groware conecta tudo isso.",
+      "solutionDesc": "Um script. Um webhook. Funil → MRR → canais → custos → margem → insight com IA — tudo em tempo real. Tudo que seu time de growth e seu CFO precisam, em um só lugar."
+    },
+    "features": {
+      "label": "// funcionalidades",
+      "headline1": "Tudo que você precisa para",
+      "headline2": "crescer com clareza.",
+      "items": [
+        {
+          "title": "Visão Geral",
+          "desc": "Funil em tempo real, KPIs com variação vs período anterior e gráfico diário. Veja visitas → cadastros → checkouts → receita em uma só tela.",
+          "tags": ["funil", "KPIs", "diário"]
+        },
+        {
+          "title": "Recorrência (MRR)",
+          "desc": "MRR, ARR, ARPU, LTV, Churn Rate, Revenue Churn. Sankey de fluxo de assinantes e gráfico de movimentação: Novo / Expansão / Contração / Churn.",
+          "tags": ["MRR", "ARR", "LTV", "churn"]
+        },
+        {
+          "title": "Financeiro",
+          "desc": "Receita bruta, líquida, descontos e ticket médio. Breakdown por método (PIX, cartão, boleto) e categoria de produto.",
+          "tags": ["receita", "ticket", "métodos"]
+        },
+        {
+          "title": "Custos & P&L",
+          "desc": "Cadastre custos fixos e variáveis (absoluto ou % da receita). P&L em tempo real: Receita Bruta → Lucro Bruto → Lucro Real → Margem Real.",
+          "tags": ["P&L", "margem", "custos"]
+        },
+        {
+          "title": "Canais de Aquisição",
+          "desc": "Receita, etapas do funil, taxa de conversão e ticket médio por canal de origem. Heatmap visual e tabela ordenável por qualquer coluna.",
+          "tags": ["UTMs", "fonte", "ROI"]
+        },
+        {
+          "title": "Landing Pages",
+          "desc": "Quais páginas de entrada geram mais receita? Métricas completas de funil por URL, com busca, ordenação e paginação.",
+          "tags": ["URL", "entrada", "conversão"]
+        },
+        {
+          "title": "Eventos & Debug",
+          "desc": "Tabela de eventos com atualização em tempo real. Filtre por tipo, modelo de cobrança, data. Alertas automáticos para IDs sem deduplicação.",
+          "tags": ["tempo real", "debug", "dedupe"]
+        },
+        {
+          "title": "Assinaturas",
+          "desc": "Ativo, em trial, em atraso, cancelado — com plano, intervalo, valor mensal normalizado e ID do cliente. Histórico completo.",
+          "tags": ["status", "planos", "intervalos"]
+        },
+        {
+          "title": "Comparativo de Períodos",
+          "desc": "Compare dois intervalos de datas — visão geral, canais, financeiro ou landing pages. Lado a lado ou resumo por IA.",
+          "tags": ["diff", "tendências", "comparar"]
+        }
+      ]
+    },
+    "code": {
+      "label": "// configuração",
+      "headline1": "Do zero ao analytics completo",
+      "headline2": "em 5 minutos.",
+      "description": "Uma tag de script para funil e aquisição. Um webhook para pagamentos e assinaturas. Sem alterações no backend.",
+      "tabLabel": "tracker.js · instalação",
+      "codeComment1": "// 1. Adicione ao seu '<'head'>'",
+      "codeComment2": "// 2. Rastreie eventos",
+      "codeComment3": "// 3. Rastreie pagamentos (server-side)",
+      "steps": [
+        {
+          "title": "Adicione a tag de script",
+          "desc": "Adicione uma linha no seu <head> com sua API Key. Pageviews, UTMs, device e sessão são rastreados automaticamente.",
+          "time": "~1 min"
+        },
+        {
+          "title": "Rastreie os eventos do funil",
+          "desc": "Chame Groware.track() nos eventos de cadastro, checkout e pagamento. O SDK é < 3 kB.",
+          "time": "~5 min"
+        },
+        {
+          "title": "Conecte seu gateway",
+          "desc": "Cole sua Chave Restrita do Stripe. O Groware importa o histórico completo e começa a receber webhooks automaticamente.",
+          "time": "~2 min"
+        }
+      ]
+    },
+    "integrations": {
+      "label": "// integrações",
+      "headline1": "Funciona com",
+      "headline2": "a sua stack.",
+      "description": "Integrações nativas com gateways fazem o trabalho pesado. Sincronização de histórico, webhooks em tempo real e atribuição de conversão integrados.",
+      "statusLive": "● Disponível",
+      "statusSoon": "⟳ Em breve",
+      "items": [
+        {
+          "name": "Stripe",
+          "desc": "Histórico completo, assinaturas, renovações, churn. Chave Restrita — somente leitura, sem risco.",
+          "status": "live"
+        },
+        {
+          "name": "Asaas",
+          "desc": "PIX, boleto, cartão. O gateway dominante para SaaS — integração nativa completa.",
+          "status": "soon"
+        },
+        {
+          "name": "Kiwify",
+          "desc": "Infoprodutos e produtos digitais. Eventos de pagamento, reembolsos e ciclo de vida da assinatura.",
+          "status": "soon"
+        },
+        {
+          "name": "Hotmart",
+          "desc": "Integração com marketplace digital. Compras, assinaturas e rastreamento de afiliados.",
+          "status": "soon"
+        },
+        {
+          "name": "Mercado Pago",
+          "desc": "Pagamentos para marketplace e e-commerce. A plataforma mais popular da América Latina.",
+          "status": "soon"
+        },
+        {
+          "name": "tracker.js",
+          "desc": "Seu fallback universal. Funciona com qualquer checkout. < 3 kB, zero dependências, auto-tracking.",
+          "status": "live"
+        },
+        {
+          "name": "Gemini AI",
+          "desc": "Powered by Google Gemini. Analisa P&L + funil + canais + recorrência. Streaming em tempo real.",
+          "status": "live"
+        },
+        {
+          "name": "REST API",
+          "desc": "Envie eventos server-side de qualquer linguagem. Node, Python, Go, Ruby, PHP — qualquer stack.",
+          "status": "live"
+        }
+      ]
+    },
+    "ai": {
+      "label": "// análise com ia",
+      "headline1": "P&L + funil + canais.",
+      "headline2": "IA analisa tudo.",
+      "description": "Clique em \"Analisar com IA\" na tela de Custos e o Groware envia seu P&L completo, funil e canais para o Gemini — e retorna insights priorizados com streaming em tempo real.",
+      "panelTitle": "Análise com IA",
+      "panelSub": "Gemini analisa seus custos e identifica oportunidades",
+      "compareBtn": "Comparar Períodos",
+      "analyzeBtn": "Analisar com IA",
+      "plLabel": "P&L do Período — Jan 2026",
+      "aiLabel": "Análise Gerada · Gemini 1.5 Flash",
+      "features": [
+        {
+          "title": "Contexto real do negócio",
+          "desc": "A IA recebe P&L detalhado (fixos, variáveis, margens), funil com taxas de conversão, ticket médio e nome da organização."
+        },
+        {
+          "title": "Comparativo de períodos",
+          "desc": "Compare dois intervalos de datas com análise por IA. Entenda o que mudou entre períodos com uma resposta clara e estruturada."
+        },
+        {
+          "title": "Streaming em tempo real",
+          "desc": "A resposta chega fragmento por fragmento, diretamente no dashboard. Cursor piscando enquanto a IA pensa."
+        }
+      ],
+      "mockupPlItems": [
+        { "label": "RECEITA BRUTA", "value": "R$48.240" },
+        { "label": "CUSTOS VARIÁVEIS", "value": "− R$7.120" },
+        { "label": "LUCRO OPERACIONAL", "value": "R$41.120" },
+        { "label": "CUSTOS FIXOS", "value": "− R$11.400" },
+        { "label": "LUCRO LÍQUIDO", "value": "R$29.720" },
+        { "label": "MARGEM REAL", "value": "61,6%" }
+      ],
+      "mockupDiagnosisHeader": "## Diagnóstico",
+      "mockupDiagnosisLine": "Sua margem real de <highlight>61,6%</highlight> está <above>acima da média</above> para SaaS B2C.",
+      "mockupOpportunitiesHeader": "## Oportunidades",
+      "mockupOp1": "Custos fixos representam <warn>23,6%</warn> da receita.",
+      "mockupOp2": "Taxa de gateway <warn>R$4.200</warn> → avalie plano negociado.",
+      "mockupOp3": "Ticket médio cresceu <good>+8,1%</good> — sinal de upsell.",
+      "mockupRecsHeader": "## Recomendações",
+      "mockupRec1": "1. Negociar taxa de processamento com Stripe",
+      "mockupRec2": "2. Revisar ferramentas SaaS redundantes",
+      "mockupRec3": "3. Acelerar upsell com expansão de MRR"
+    },
+    "metrics": {
+      "label": "// atribuição de receita",
+      "headline1": "Saiba exatamente de onde",
+      "headline2": "vem cada real.",
+      "description": "Cada pagamento é atribuído à sua fonte de aquisição — mesmo pagamentos feitos via webhook do gateway, meses após o primeiro clique.",
+      "tableTitle": "Detalhamento por Canal",
+      "tableSub": "5 canais com receita · ordenado por receita",
+      "columns": {
+        "channel": "Canal",
+        "signups": "Cadastros",
+        "payments": "Pagamentos",
+        "conversion": "Conversão",
+        "revenue": "Receita",
+        "vs": "vs anterior"
+      },
+      "filters": ["Receita", "Conversão", "Ticket"]
+    },
+    "ctaSection": {
+      "badge": "GRÁTIS DURANTE O BETA",
+      "headline1": "Pare de adivinhar.",
+      "headline2": "Comece a",
+      "headline3": "crescer com clareza.",
+      "description": "Acesse o Groware com antecedência e transforme seus dados espalhados em decisões de crescimento — antes que sua concorrência o faça.",
+      "disclaimer": "Grátis durante o beta · Sem cartão · Configuração em 5 minutos"
+    },
+    "strip": [
+      "MRR & ARR",
+      "Análise de Churn",
+      "ROI por Canal",
+      "P&L Real",
+      "Análise com IA",
+      "Integração Stripe",
+      "Integração Asaas",
+      "Rastreamento de Funil",
+      "Landing Pages",
+      "Debug de Eventos",
+      "Multi-tenant",
+      "tracker.js"
+    ]
+  }
+}

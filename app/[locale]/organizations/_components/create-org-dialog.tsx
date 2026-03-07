@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
+import { useTranslations } from "next-intl";
 import { IconBuilding, IconLoader2 } from "@tabler/icons-react";
 import {
   Dialog,
@@ -26,18 +27,16 @@ import { Button } from "@/components/ui/button";
 import { createOrganization } from "@/actions/organizations/create-organization.action";
 import type { IOrganization } from "@/interfaces/organization.interface";
 
-const formSchema = z.object({
-  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  slug: z
-    .string()
-    .min(2, "Slug deve ter pelo menos 2 caracteres")
-    .regex(
-      /^[a-z0-9-]+$/,
-      "Slug deve conter apenas letras minúsculas, números e hífens"
-    ),
-});
+const createFormSchema = (t: (key: string) => string) =>
+  z.object({
+    name: z.string().min(2, t("nameMinError")),
+    slug: z
+      .string()
+      .min(2, t("slugMinError"))
+      .regex(/^[a-z0-9-]+$/, t("slugFormatError")),
+  });
 
-type FormData = z.infer<typeof formSchema>;
+type FormData = z.infer<ReturnType<typeof createFormSchema>>;
 
 function toSlug(value: string): string {
   return value
@@ -60,6 +59,8 @@ export function CreateOrgDialog({
   onOpenChange,
   onSuccess,
 }: CreateOrgDialogProps) {
+  const t = useTranslations("organizations.createDialog");
+  const formSchema = createFormSchema(t);
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: "", slug: "" },
@@ -83,11 +84,11 @@ export function CreateOrgDialog({
   const onSubmit = async (data: FormData) => {
     try {
       const org = await createOrganization(data);
-      toast.success(`Organização "${org.name}" criada com sucesso!`);
+      toast.success(t("successToast", { name: org.name }));
       onSuccess(org as IOrganization);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Erro ao criar organização";
+        err instanceof Error ? err.message : t("errorToast");
       toast.error(message);
     }
   };
@@ -99,9 +100,9 @@ export function CreateOrgDialog({
           <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600/20 ring-1 ring-indigo-600/30">
             <IconBuilding size={18} className="text-indigo-400" />
           </div>
-          <DialogTitle className="text-zinc-100">Nova organização</DialogTitle>
+          <DialogTitle className="text-zinc-100">{t("title")}</DialogTitle>
           <DialogDescription className="text-zinc-500">
-            Crie um workspace para um novo produto ou empresa.
+            {t("description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -112,11 +113,11 @@ export function CreateOrgDialog({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-zinc-300">Nome</FormLabel>
+                  <FormLabel className="text-zinc-300">{t("nameLabel")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="Minha Empresa"
+                      placeholder={t("namePlaceholder")}
                       className="border-zinc-700 bg-zinc-900 text-zinc-100 placeholder:text-zinc-600 focus:border-indigo-500 focus:ring-indigo-500/20"
                     />
                   </FormControl>
@@ -130,15 +131,15 @@ export function CreateOrgDialog({
               name="slug"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-zinc-300">Slug</FormLabel>
+                  <FormLabel className="text-zinc-300">{t("slugLabel")}</FormLabel>
                   <FormControl>
                     <div className="flex items-stretch rounded-lg border border-zinc-700 overflow-hidden">
                       <span className="flex items-center px-3 bg-zinc-800/70 text-zinc-500 text-xs font-mono select-none border-r border-zinc-700 whitespace-nowrap shrink-0">
-                        org/
+                        {t("slugPrefix")}
                       </span>
                       <Input
                         {...field}
-                        placeholder="minha-empresa"
+                        placeholder={t("slugPlaceholder")}
                         className="font-mono text-sm text-zinc-100 placeholder:text-zinc-600 border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 bg-zinc-900"
                       />
                     </div>
@@ -155,7 +156,7 @@ export function CreateOrgDialog({
                 onClick={() => onOpenChange(false)}
                 className="text-zinc-400 hover:text-zinc-100"
               >
-                Cancelar
+                {t("cancel")}
               </Button>
               <Button
                 type="submit"
@@ -165,7 +166,7 @@ export function CreateOrgDialog({
                 {isSubmitting ? (
                   <IconLoader2 size={14} className="animate-spin" />
                 ) : null}
-                {isSubmitting ? "Criando..." : "Criar organização"}
+                {isSubmitting ? t("creating") : t("createButton")}
               </Button>
             </div>
           </form>

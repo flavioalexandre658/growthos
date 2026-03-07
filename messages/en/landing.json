@@ -1,0 +1,264 @@
+{
+  "landing": {
+    "hero": {
+      "badge": "Now in early access",
+      "badgeSuffix": " · Stripe integration available",
+      "headline1": "From funnel to real profit.",
+      "headline2": "Everything in one place.",
+      "subheadline": "MRR, acquisition channels, real P&L and AI analysis — connected in a single dashboard. Built for SaaS founders who want to grow with clarity.",
+      "disclaimer": "No credit card · Free during beta",
+      "mockupLabel": "groware.io / overview",
+      "overview": "Overview",
+      "overviewSub": "Consolidated period performance",
+      "stages": "Stages",
+      "last30": "Last 30 days ▾",
+      "kpis": {
+        "pageviews": "Pageviews",
+        "signups": "Sign-ups",
+        "checkouts": "Checkouts",
+        "payments": "Payments",
+        "revenue": "Revenue",
+        "avgTicket": "Avg. Ticket"
+      },
+      "funnel": "Conversion Funnel",
+      "revenueByChannel": "Revenue by Channel"
+    },
+    "problem": {
+      "label": "// the problem",
+      "headline1": "Your data is scattered everywhere,",
+      "headline2": "nothing is connected.",
+      "description": "MRR in Stripe. Costs in a spreadsheet. Acquisition in Google Analytics. P&L in Excel. Nothing talks to each other — and you spend hours connecting the dots manually.",
+      "items": [
+        {
+          "icon": "📊",
+          "title": "Stripe Dashboard",
+          "desc": "Shows revenue — but not where it came from, what it cost, or what your real margin is."
+        },
+        {
+          "icon": "📋",
+          "title": "Spreadsheets",
+          "desc": "Manual updates, broken formulas, always a month behind. Nobody trusts the numbers."
+        },
+        {
+          "icon": "📉",
+          "title": "Google Analytics",
+          "desc": "Pageviews and sessions — but zero connection to revenue, subscriptions, or real business results."
+        }
+      ],
+      "solutionTitle": "Groware connects all of it.",
+      "solutionDesc": "One script. One webhook. Funnel → MRR → channels → costs → margin → AI insight — all in real time. Everything your growth team and CFO need, in one place."
+    },
+    "features": {
+      "label": "// features",
+      "headline1": "Everything you need to",
+      "headline2": "grow with clarity.",
+      "items": [
+        {
+          "title": "Overview",
+          "desc": "Real-time funnel, KPIs with vs. prior period delta and daily chart. See visits → sign-ups → checkouts → revenue in one screen.",
+          "tags": ["funnel", "KPIs", "daily"]
+        },
+        {
+          "title": "Recurring Revenue (MRR)",
+          "desc": "MRR, ARR, ARPU, LTV, Churn Rate, Revenue Churn. Subscriber flow Sankey and movement chart: New / Expansion / Contraction / Churn.",
+          "tags": ["MRR", "ARR", "LTV", "churn"]
+        },
+        {
+          "title": "Financials",
+          "desc": "Gross revenue, net revenue, discounts and average ticket. Breakdown by payment method (card, bank transfer) and product category.",
+          "tags": ["revenue", "ticket", "methods"]
+        },
+        {
+          "title": "Costs & P&L",
+          "desc": "Add fixed and variable costs (absolute or % of revenue). Real-time P&L: Gross Revenue → Gross Profit → Net Profit → Real Margin.",
+          "tags": ["P&L", "margin", "costs"]
+        },
+        {
+          "title": "Acquisition Channels",
+          "desc": "Revenue, funnel stages, conversion rate and average ticket by source. Visual heatmap and sortable table by any column.",
+          "tags": ["UTMs", "source", "ROI"]
+        },
+        {
+          "title": "Landing Pages",
+          "desc": "Which entry pages generate the most revenue? Full funnel metrics by URL, with search, sorting and pagination.",
+          "tags": ["URL", "entry", "conversion"]
+        },
+        {
+          "title": "Events & Debug",
+          "desc": "Real-time event table. Filter by type, billing model, date. Automatic alerts for IDs missing deduplication.",
+          "tags": ["real-time", "debug", "dedupe"]
+        },
+        {
+          "title": "Subscriptions",
+          "desc": "Active, in trial, past due, canceled — with plan, interval, normalized monthly value and customer ID. Full history.",
+          "tags": ["status", "plans", "intervals"]
+        },
+        {
+          "title": "Period Comparison",
+          "desc": "Compare two date ranges — overview, channels, financials or landing pages. Side by side or AI summary.",
+          "tags": ["diff", "trends", "compare"]
+        }
+      ]
+    },
+    "code": {
+      "label": "// setup",
+      "headline1": "From zero to full analytics",
+      "headline2": "in 5 minutes.",
+      "description": "One script tag for funnel and acquisition. One webhook for payments and subscriptions. No backend changes.",
+      "tabLabel": "tracker.js · installation",
+      "codeComment1": "// 1. Add to your '<'head'>'",
+      "codeComment2": "// 2. Track events",
+      "codeComment3": "// 3. Track payments (server-side)",
+      "steps": [
+        {
+          "title": "Add the script tag",
+          "desc": "Add one line in your <head> with your API Key. Pageviews, UTMs, device and session are tracked automatically.",
+          "time": "~1 min"
+        },
+        {
+          "title": "Track funnel events",
+          "desc": "Call Groware.track() on sign-up, checkout and payment events. The SDK is < 3 kB.",
+          "time": "~5 min"
+        },
+        {
+          "title": "Connect your gateway",
+          "desc": "Paste your Stripe Restricted Key. Groware imports the full history and starts receiving webhooks automatically.",
+          "time": "~2 min"
+        }
+      ]
+    },
+    "integrations": {
+      "label": "// integrations",
+      "headline1": "Works with",
+      "headline2": "your stack.",
+      "description": "Native gateway integrations do the heavy lifting. History sync, real-time webhooks and conversion attribution built in.",
+      "statusLive": "● Available",
+      "statusSoon": "⟳ Coming soon",
+      "items": [
+        {
+          "name": "Stripe",
+          "desc": "Full history, subscriptions, renewals, churn. Restricted Key — read-only, no risk.",
+          "status": "live"
+        },
+        {
+          "name": "Asaas",
+          "desc": "PIX, bank slip, credit card. The dominant gateway for Brazilian SaaS — full native integration.",
+          "status": "soon"
+        },
+        {
+          "name": "Kiwify",
+          "desc": "Digital products and info-products. Payment events, refunds and subscription lifecycle.",
+          "status": "soon"
+        },
+        {
+          "name": "Hotmart",
+          "desc": "Digital marketplace integration. Purchases, subscriptions and affiliate tracking.",
+          "status": "soon"
+        },
+        {
+          "name": "Mercado Pago",
+          "desc": "Payments for marketplace and e-commerce. The most popular platform in Latin America.",
+          "status": "soon"
+        },
+        {
+          "name": "tracker.js",
+          "desc": "Your universal fallback. Works with any checkout. < 3 kB, zero dependencies, auto-tracking.",
+          "status": "live"
+        },
+        {
+          "name": "Gemini AI",
+          "desc": "Powered by Google Gemini. Analyzes P&L + funnel + channels + recurring revenue. Real-time streaming.",
+          "status": "live"
+        },
+        {
+          "name": "REST API",
+          "desc": "Send server-side events from any language. Node, Python, Go, Ruby, PHP — any stack.",
+          "status": "live"
+        }
+      ]
+    },
+    "ai": {
+      "label": "// ai analysis",
+      "headline1": "P&L + funnel + channels.",
+      "headline2": "AI analyzes everything.",
+      "description": "Click \"Analyze with AI\" on the Costs screen and Groware sends your full P&L, funnel and channels to Gemini — returning prioritized insights with real-time streaming.",
+      "panelTitle": "AI Analysis",
+      "panelSub": "Gemini analyzes your costs and identifies opportunities",
+      "compareBtn": "Compare Periods",
+      "analyzeBtn": "Analyze with AI",
+      "plLabel": "P&L for Period — Jan 2026",
+      "aiLabel": "Generated Analysis · Gemini 1.5 Flash",
+      "features": [
+        {
+          "title": "Real business context",
+          "desc": "AI receives detailed P&L (fixed, variable, margins), funnel with conversion rates, average ticket and organization name."
+        },
+        {
+          "title": "Period comparison",
+          "desc": "Compare two date ranges with AI analysis. Understand what changed between periods with a clear, structured response."
+        },
+        {
+          "title": "Real-time streaming",
+          "desc": "The response arrives fragment by fragment, directly in the dashboard. Blinking cursor while the AI thinks."
+        }
+      ],
+      "mockupPlItems": [
+        { "label": "GROSS REVENUE", "value": "$48,240" },
+        { "label": "VARIABLE COSTS", "value": "- $7,120" },
+        { "label": "OPERATING INCOME", "value": "$41,120" },
+        { "label": "FIXED COSTS", "value": "- $11,400" },
+        { "label": "NET INCOME", "value": "$29,720" },
+        { "label": "REAL MARGIN", "value": "61.6%" }
+      ],
+      "mockupDiagnosisHeader": "## Diagnosis",
+      "mockupDiagnosisLine": "Your real margin of <highlight>61.6%</highlight> is <above>above average</above> for B2C SaaS.",
+      "mockupOpportunitiesHeader": "## Opportunities",
+      "mockupOp1": "Fixed costs represent <warn>23.6%</warn> of revenue.",
+      "mockupOp2": "Gateway fee <warn>$4,200</warn> → evaluate negotiated plan.",
+      "mockupOp3": "Average ticket grew <good>+8.1%</good> — upsell signal.",
+      "mockupRecsHeader": "## Recommendations",
+      "mockupRec1": "1. Negotiate processing fee with Stripe",
+      "mockupRec2": "2. Review redundant SaaS tools",
+      "mockupRec3": "3. Accelerate upsell with MRR expansion"
+    },
+    "metrics": {
+      "label": "// revenue attribution",
+      "headline1": "Know exactly where",
+      "headline2": "every dollar comes from.",
+      "description": "Each payment is attributed to its acquisition source — even payments made via gateway webhook, months after the first click.",
+      "tableTitle": "Channel Breakdown",
+      "tableSub": "5 channels with revenue · sorted by revenue",
+      "columns": {
+        "channel": "Channel",
+        "signups": "Sign-ups",
+        "payments": "Payments",
+        "conversion": "Conversion",
+        "revenue": "Revenue",
+        "vs": "vs previous"
+      },
+      "filters": ["Revenue", "Conversion", "Ticket"]
+    },
+    "ctaSection": {
+      "badge": "FREE DURING BETA",
+      "headline1": "Stop guessing.",
+      "headline2": "Start",
+      "headline3": "growing with clarity.",
+      "description": "Get early access to Groware and turn your scattered data into growth decisions — before your competitors do.",
+      "disclaimer": "Free during beta · No card · 5-minute setup"
+    },
+    "strip": [
+      "MRR & ARR",
+      "Churn Analysis",
+      "ROI by Channel",
+      "Real P&L",
+      "AI Analysis",
+      "Stripe Integration",
+      "Asaas Integration",
+      "Funnel Tracking",
+      "Landing Pages",
+      "Event Debug",
+      "Multi-tenant",
+      "tracker.js"
+    ]
+  }
+}

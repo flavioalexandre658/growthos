@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, LabelList } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtBRLDecimal } from "@/utils/format";
@@ -12,7 +13,16 @@ interface WaterfallEntry {
   isNegative: boolean;
 }
 
-function buildData(pl: IProfitAndLoss): WaterfallEntry[] {
+interface WaterfallNames {
+  revenue: string;
+  discounts: string;
+  variableCosts: string;
+  operatingProfit: string;
+  fixedCosts: string;
+  netProfit: string;
+}
+
+function buildData(pl: IProfitAndLoss, names: WaterfallNames): WaterfallEntry[] {
   const gross = pl.grossRevenueInCents / 100;
   const eventCosts = Math.abs(pl.eventCostsInCents / 100);
   const varTotal = Math.abs(pl.totalVariableCostsInCents / 100);
@@ -21,12 +31,12 @@ function buildData(pl: IProfitAndLoss): WaterfallEntry[] {
   const net = pl.netProfitInCents / 100;
 
   return [
-    { name: "Receita", value: gross, color: "#22c55e", isNegative: false },
-    { name: "Descontos", value: -eventCosts, color: "#f43f5e", isNegative: true },
-    { name: "Custos Var.", value: -varTotal, color: "#f97316", isNegative: true },
-    { name: "Lucro Op.", value: opProfit, color: opProfit >= 0 ? "#06b6d4" : "#ef4444", isNegative: opProfit < 0 },
-    { name: "Custos Fixos", value: -fixedTotal, color: "#ef4444", isNegative: true },
-    { name: "Lucro Líq.", value: net, color: net >= 0 ? "#6366f1" : "#ef4444", isNegative: net < 0 },
+    { name: names.revenue, value: gross, color: "#22c55e", isNegative: false },
+    { name: names.discounts, value: -eventCosts, color: "#f43f5e", isNegative: true },
+    { name: names.variableCosts, value: -varTotal, color: "#f97316", isNegative: true },
+    { name: names.operatingProfit, value: opProfit, color: opProfit >= 0 ? "#06b6d4" : "#ef4444", isNegative: opProfit < 0 },
+    { name: names.fixedCosts, value: -fixedTotal, color: "#ef4444", isNegative: true },
+    { name: names.netProfit, value: net, color: net >= 0 ? "#6366f1" : "#ef4444", isNegative: net < 0 },
   ].filter((d) => d.value !== 0);
 }
 
@@ -140,6 +150,8 @@ interface ProfitLossWaterfallProps {
 }
 
 export function ProfitLossWaterfall({ pl, isLoading }: ProfitLossWaterfallProps) {
+  const t = useTranslations("finance.profitLossWaterfall");
+
   if (isLoading) {
     return (
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
@@ -151,7 +163,16 @@ export function ProfitLossWaterfall({ pl, isLoading }: ProfitLossWaterfallProps)
 
   if (!pl) return null;
 
-  const data = buildData(pl);
+  const names: WaterfallNames = {
+    revenue: t("revenue"),
+    discounts: t("discounts"),
+    variableCosts: t("variableCosts"),
+    operatingProfit: t("operatingProfit"),
+    fixedCosts: t("fixedCosts"),
+    netProfit: t("netProfit"),
+  };
+
+  const data = buildData(pl, names);
   const CustomLabel = makeLabel(data);
 
   const allValues = data.map((d) => d.value);
@@ -163,9 +184,9 @@ export function ProfitLossWaterfall({ pl, isLoading }: ProfitLossWaterfallProps)
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-      <h3 className="text-sm font-bold text-zinc-100 mb-1">Composição do Resultado</h3>
+      <h3 className="text-sm font-bold text-zinc-100 mb-1">{t("title")}</h3>
       <p className="text-xs text-zinc-500 mb-5">
-        Receita → Descontos → Custos Variáveis → Lucro Operacional → Custos Fixos → Lucro Líquido
+        {t("subtitle")}
       </p>
 
       <ResponsiveContainer width="100%" height={340}>

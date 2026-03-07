@@ -14,6 +14,7 @@ import type { IDailyData, IStepMeta } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtInt } from "@/utils/format";
 import { getStepColor } from "@/utils/step-colors";
+import { useTranslations } from "next-intl";
 
 interface DailyChartProps {
   data: IDailyData[] | undefined;
@@ -28,6 +29,7 @@ function formatDateLabel(dateStr: string) {
 }
 
 export function DailyChart({ data, stepMeta, isLoading, hiddenKeys }: DailyChartProps) {
+  const t = useTranslations("dashboard.daily");
   const allStepKeys = stepMeta
     .filter((s) => s.key !== "pageview")
     .map((s) => s.key);
@@ -43,8 +45,8 @@ export function DailyChart({ data, stepMeta, isLoading, hiddenKeys }: DailyChart
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-      <h3 className="text-sm font-bold text-zinc-100">Evolução Diária</h3>
-      <p className="mt-0.5 text-xs text-zinc-500">Progresso do funil por dia</p>
+      <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
+      <p className="mt-0.5 text-xs text-zinc-500">{t("subtitle")}</p>
 
       <div className="mt-5">
         {isLoading ? (

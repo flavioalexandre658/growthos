@@ -1,4 +1,4 @@
-import { baseEmailLayout, ctaButton, divider } from "./base-layout";
+import { baseEmailLayout, ctaButton, divider, type Locale } from "./base-layout";
 
 export interface IQuotaUsageEmailParams {
   userName: string;
@@ -10,13 +10,15 @@ export interface IQuotaUsageEmailParams {
   upgradeUrl: string;
   dashboardUrl: string;
   isExceeded: boolean;
+  locale?: Locale;
 }
 
-function formatRevenue(cents: number): string {
+function formatRevenue(cents: number, locale: Locale): string {
   const val = cents / 100;
-  if (val >= 1_000_000) return `R$ ${(val / 1_000_000).toFixed(1)}M`;
-  if (val >= 1_000) return `R$ ${(val / 1_000).toFixed(1)}k`;
-  return `R$ ${val.toFixed(0)}`;
+  const prefix = locale === "pt" ? "R$ " : "$";
+  if (val >= 1_000_000) return `${prefix}${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1_000) return `${prefix}${(val / 1_000).toFixed(1)}k`;
+  return `${prefix}${val.toFixed(0)}`;
 }
 
 function usageBar(percentage: number, isExceeded: boolean): string {
@@ -40,6 +42,49 @@ function usageBar(percentage: number, isExceeded: boolean): string {
   </table>`;
 }
 
+const translations = {
+  pt: {
+    badgeExceeded: "LIMITE ATINGIDO",
+    badgeWarning: "AVISO DE RECEITA",
+    titleExceeded: "Limite de receita atingido",
+    titleWarning: "Você está perto do limite de receita",
+    descriptionExceeded: (planName: string) =>
+      `Sua conta atingiu <strong style="color:#fca5a5;">100%</strong> do limite de receita do plano <strong style="color:#d4d4d8;">${planName}</strong>. Faça upgrade para continuar acompanhando seus dados sem restrições.`,
+    descriptionWarning: (planName: string, percentage: number) =>
+      `Sua conta atingiu <strong style="color:#fcd34d;">${percentage}%</strong> do limite de receita do plano <strong style="color:#d4d4d8;">${planName}</strong>. Considere fazer upgrade antes de atingir o limite.`,
+    greeting: (name: string) => `Olá, <strong style="color:#d4d4d8;">${name}</strong>.`,
+    revenueTitle: "RECEITA ESTE MÊS",
+    ctaExceeded: "Fazer upgrade agora",
+    ctaWarning: "Ver planos disponíveis",
+    billingNote: (url: string) =>
+      `Você pode gerenciar seu plano a qualquer momento nas <a href="${url}" style="color:#6366f1; text-decoration:none;">configurações de cobrança</a>.`,
+    previewExceeded: (total: string, limit: string) =>
+      `Limite de receita atingido: ${total} / ${limit} este mês`,
+    previewWarning: (percentage: number) =>
+      `Aviso: você usou ${percentage}% do limite mensal de receita`,
+  },
+  en: {
+    badgeExceeded: "LIMIT REACHED",
+    badgeWarning: "REVENUE WARNING",
+    titleExceeded: "Revenue limit reached",
+    titleWarning: "You're approaching the revenue limit",
+    descriptionExceeded: (planName: string) =>
+      `Your account has reached <strong style="color:#fca5a5;">100%</strong> of the revenue limit on the <strong style="color:#d4d4d8;">${planName}</strong> plan. Upgrade to continue tracking your data without restrictions.`,
+    descriptionWarning: (planName: string, percentage: number) =>
+      `Your account has reached <strong style="color:#fcd34d;">${percentage}%</strong> of the revenue limit on the <strong style="color:#d4d4d8;">${planName}</strong> plan. Consider upgrading before you hit the limit.`,
+    greeting: (name: string) => `Hello, <strong style="color:#d4d4d8;">${name}</strong>.`,
+    revenueTitle: "REVENUE THIS MONTH",
+    ctaExceeded: "Upgrade now",
+    ctaWarning: "View available plans",
+    billingNote: (url: string) =>
+      `You can manage your plan at any time in <a href="${url}" style="color:#6366f1; text-decoration:none;">billing settings</a>.`,
+    previewExceeded: (total: string, limit: string) =>
+      `Revenue limit reached: ${total} / ${limit} this month`,
+    previewWarning: (percentage: number) =>
+      `Warning: you've used ${percentage}% of your monthly revenue limit`,
+  },
+} as const;
+
 export function quotaUsageEmail(params: IQuotaUsageEmailParams): string {
   const {
     userName,
@@ -51,18 +96,18 @@ export function quotaUsageEmail(params: IQuotaUsageEmailParams): string {
     upgradeUrl,
     isExceeded,
   } = params;
+  const locale = params.locale ?? "pt";
+  const t = translations[locale];
 
   const badgeColor = isExceeded ? "#1a0000" : "#2d1f00";
   const badgeBorder = isExceeded ? "#450a0a" : "#451a03";
   const badgeText = isExceeded ? "#fca5a5" : "#fcd34d";
-  const badgeLabel = isExceeded ? "LIMITE ATINGIDO" : "AVISO DE RECEITA";
+  const badgeLabel = isExceeded ? t.badgeExceeded : t.badgeWarning;
   const accentColor = isExceeded ? "#ef4444" : "#f59e0b";
-  const title = isExceeded
-    ? "Limite de receita atingido"
-    : "Você está perto do limite de receita";
+  const title = isExceeded ? t.titleExceeded : t.titleWarning;
   const description = isExceeded
-    ? `Sua conta atingiu <strong style="color:#fca5a5;">100%</strong> do limite de receita do plano <strong style="color:#d4d4d8;">${planName}</strong>. Faça upgrade para continuar acompanhando seus dados sem restrições.`
-    : `Sua conta atingiu <strong style="color:#fcd34d;">${percentage}%</strong> do limite de receita do plano <strong style="color:#d4d4d8;">${planName}</strong>. Considere fazer upgrade antes de atingir o limite.`;
+    ? t.descriptionExceeded(planName)
+    : t.descriptionWarning(planName, percentage);
 
   const orgRows = orgBreakdown
     .sort((a, b) => b.revenueInCents - a.revenueInCents)
@@ -75,7 +120,7 @@ export function quotaUsageEmail(params: IQuotaUsageEmailParams): string {
             <tr>
               <td style="color:#52525b; font-size:12px; width:16px;">${prefix}</td>
               <td style="color:#a1a1aa; font-size:13px;">${org.name}</td>
-              <td style="text-align:right; color:#d4d4d8; font-size:13px; font-weight:600;">${formatRevenue(org.revenueInCents)}</td>
+              <td style="text-align:right; color:#d4d4d8; font-size:13px; font-weight:600;">${formatRevenue(org.revenueInCents, locale)}</td>
             </tr>
           </table>
         </td>
@@ -102,7 +147,7 @@ export function quotaUsageEmail(params: IQuotaUsageEmailParams): string {
     </h1>
 
     <p style="color:#a1a1aa; font-size:14px; line-height:1.7; margin-bottom:0;">
-      Olá, <strong style="color:#d4d4d8;">${userName}</strong>. ${description}
+      ${t.greeting(userName)} ${description}
     </p>
 
     ${divider()}
@@ -116,7 +161,7 @@ export function quotaUsageEmail(params: IQuotaUsageEmailParams): string {
           padding:20px;
         ">
           <p style="color:#52525b; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:16px;">
-            RECEITA ESTE MÊS
+            ${t.revenueTitle}
           </p>
 
           <table width="100%" cellpadding="0" cellspacing="0">
@@ -125,8 +170,8 @@ export function quotaUsageEmail(params: IQuotaUsageEmailParams): string {
                 <table width="100%" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="color:#a1a1aa; font-size:13px;">
-                      <strong style="color:#fafafa; font-size:20px; font-weight:700;">${formatRevenue(revenueTotal)}</strong>
-                      <span style="color:#52525b; font-size:13px;"> / ${formatRevenue(revenueLimit)}</span>
+                      <strong style="color:#fafafa; font-size:20px; font-weight:700;">${formatRevenue(revenueTotal, locale)}</strong>
+                      <span style="color:#52525b; font-size:13px;"> / ${formatRevenue(revenueLimit, locale)}</span>
                     </td>
                     <td style="text-align:right; color:${accentColor}; font-size:16px; font-weight:700;">${percentage}%</td>
                   </tr>
@@ -147,17 +192,16 @@ export function quotaUsageEmail(params: IQuotaUsageEmailParams): string {
       </tr>
     </table>
 
-    ${ctaButton(isExceeded ? "Fazer upgrade agora" : "Ver planos disponíveis", upgradeUrl)}
+    ${ctaButton(isExceeded ? t.ctaExceeded : t.ctaWarning, upgradeUrl)}
 
     <p style="color:#52525b; font-size:12px; margin-top:20px; line-height:1.6; text-align:center;">
-      Você pode gerenciar seu plano a qualquer momento nas
-      <a href="${upgradeUrl}" style="color:#6366f1; text-decoration:none;">configurações de cobrança</a>.
+      ${t.billingNote(upgradeUrl)}
     </p>
   `;
 
   const previewText = isExceeded
-    ? `Limite de receita atingido: ${formatRevenue(revenueTotal)} / ${formatRevenue(revenueLimit)} este mês`
-    : `Aviso: você usou ${percentage}% do limite mensal de receita`;
+    ? t.previewExceeded(formatRevenue(revenueTotal, locale), formatRevenue(revenueLimit, locale))
+    : t.previewWarning(percentage);
 
-  return baseEmailLayout(content, previewText);
+  return baseEmailLayout(content, locale, previewText);
 }

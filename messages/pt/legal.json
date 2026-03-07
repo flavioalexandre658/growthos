@@ -1,0 +1,142 @@
+{
+  "privacy": {
+    "pageTitle": "Política de Privacidade",
+    "label": "// legal",
+    "title": "Política de Privacidade",
+    "lastUpdated": "Última atualização: Março de 2026",
+    "sections": [
+      {
+        "title": "1. Informações que coletamos",
+        "content": "O Groware coleta informações necessárias para fornecer o serviço de analytics. Isso inclui dados de eventos enviados pelo seu script (tracker.js), dados de pagamento sincronizados via integrações com gateways, e informações da sua conta (nome, e-mail, organização).",
+        "extra": "Os dados de eventos são processados de forma anonimizada por padrão. Recomendamos utilizar a função hashAnonymous() para anonimizar identificadores de clientes antes de enviá-los ao Groware."
+      },
+      {
+        "title": "2. Como usamos seus dados",
+        "intro": "Utilizamos seus dados exclusivamente para:",
+        "items": [
+          "Fornecer os dashboards e análises contratados",
+          "Processar e exibir métricas de receita, funil e canais",
+          "Gerar análises de IA com base no contexto da sua organização",
+          "Enviar notificações sobre alertas e relatórios configurados",
+          "Melhorar a qualidade e confiabilidade do serviço"
+        ]
+      },
+      {
+        "title": "3. Compartilhamento de dados",
+        "content": "Não vendemos, alugamos ou compartilhamos seus dados pessoais com terceiros para fins comerciais. Os dados podem ser compartilhados com prestadores de serviço essenciais para a operação da plataforma, como provedores de infraestrutura em nuvem, sempre sujeitos a acordos de confidencialidade."
+      },
+      {
+        "title": "4. Segurança",
+        "content": "Utilizamos criptografia em trânsito (TLS) e em repouso para proteger seus dados. O acesso às chaves de API e integrações é feito com o mínimo de permissões necessárias (somente leitura no caso do Stripe). Recomendamos que você mantenha suas chaves de API em segurança e não as compartilhe publicamente."
+      },
+      {
+        "title": "5. Retenção de dados",
+        "content": "Mantemos seus dados enquanto sua conta estiver ativa. Ao solicitar o encerramento da conta, seus dados serão excluídos em até 30 dias, exceto quando houver obrigação legal de retenção."
+      },
+      {
+        "title": "6. Seus direitos (LGPD)",
+        "intro": "De acordo com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018), você tem direito a:",
+        "items": [
+          "Confirmação da existência de tratamento dos seus dados",
+          "Acesso aos seus dados pessoais",
+          "Correção de dados incompletos, inexatos ou desatualizados",
+          "Portabilidade dos dados a outro fornecedor",
+          "Eliminação dos dados pessoais tratados com seu consentimento",
+          "Revogação do consentimento a qualquer momento"
+        ]
+      },
+      {
+        "title": "7. Cookies",
+        "content": "Utilizamos cookies essenciais para autenticação e manutenção de sessão. Não utilizamos cookies de rastreamento de terceiros para fins publicitários."
+      },
+      {
+        "title": "8. Contato",
+        "content": "Para exercer seus direitos, dúvidas sobre privacidade ou solicitações de exclusão de dados, entre em contato pelo e-mail",
+        "email": "privacidade@groware.io"
+      }
+    ]
+  },
+  "terms": {
+    "pageTitle": "Termos de Uso",
+    "label": "// legal",
+    "title": "Termos de Uso",
+    "lastUpdated": "Última atualização: Março de 2026",
+    "sections": [
+      {
+        "title": "1. Aceitação dos termos",
+        "content": "Ao acessar ou utilizar o Groware, você concorda com estes Termos de Uso e com nossa Política de Privacidade. Se você não concordar com qualquer parte destes termos, não poderá utilizar o serviço."
+      },
+      {
+        "title": "2. Descrição do serviço",
+        "content": "O Groware é uma plataforma de analytics de crescimento e receita para empresas SaaS e negócios digitais. O serviço inclui dashboards de MRR, análise de canais de aquisição, P&L, rastreamento de eventos e análise com inteligência artificial."
+      },
+      {
+        "title": "3. Período de beta",
+        "content": "O Groware está atualmente em fase de acesso antecipado (beta). Durante este período, o serviço é oferecido gratuitamente. Nos reservamos o direito de alterar os planos e preços com aviso prévio razoável aos usuários antes do lançamento oficial."
+      },
+      {
+        "title": "4. Uso aceitável",
+        "intro": "Você concorda em não utilizar o Groware para:",
+        "items": [
+          "Violar qualquer lei ou regulamentação aplicável",
+          "Transmitir dados pessoais sensíveis sem o devido consentimento do titular",
+          "Tentar obter acesso não autorizado a sistemas ou dados de outros usuários",
+          "Realizar engenharia reversa ou copiar o serviço",
+          "Enviar dados de clientes não anonimizados que possam identificar pessoas físicas"
+        ]
+      },
+      {
+        "title": "5. Suas responsabilidades",
+        "content": "Você é responsável por manter a segurança das suas credenciais de acesso e chaves de API. O Groware não se responsabiliza por danos decorrentes do uso não autorizado da sua conta por terceiros.",
+        "extra": "Você também é responsável por garantir que os dados enviados ao Groware estejam em conformidade com a LGPD e demais legislações de proteção de dados aplicáveis ao seu negócio."
+      },
+      {
+        "title": "6. Propriedade intelectual",
+        "content": "O Groware e todo o seu conteúdo — incluindo interface, código, marca e documentação — são de propriedade exclusiva da Groware e protegidos por leis de propriedade intelectual. Estes termos não concedem a você nenhuma licença sobre a propriedade intelectual da Groware, exceto o direito limitado de uso do serviço."
+      },
+      {
+        "title": "7. Limitação de responsabilidade",
+        "content": "O serviço é fornecido \"como está\" durante o período de beta. O Groware não garante disponibilidade ininterrupta ou ausência de erros. Em nenhuma circunstância a Groware será responsável por danos indiretos, incidentais ou consequentes decorrentes do uso ou impossibilidade de uso do serviço."
+      },
+      {
+        "title": "8. Alterações nos termos",
+        "content": "Podemos atualizar estes Termos de Uso periodicamente. Notificaremos os usuários sobre mudanças significativas por e-mail ou por aviso na plataforma. O uso continuado do serviço após as alterações constitui aceitação dos novos termos."
+      },
+      {
+        "title": "9. Contato",
+        "content": "Para dúvidas sobre estes Termos de Uso, entre em contato pelo e-mail",
+        "email": "legal@groware.io"
+      }
+    ]
+  },
+  "changelog": {
+    "pageTitle": "Changelog",
+    "label": "// changelog",
+    "title": "O que mudou.",
+    "description": "Acompanhe todas as atualizações, melhorias e novidades do Groware.",
+    "releases": [
+      {
+        "version": "v0.1.0-beta",
+        "date": "Mar 2026",
+        "tag": "beta",
+        "items": [
+          "Dashboard com funil, KPIs e gráfico diário de receita",
+          "Módulo de MRR com crescimento, movimentação e Sankey de assinantes",
+          "Financeiro com breakdown por método de pagamento e categoria de produto",
+          "Custos & P&L com waterfall e análise de IA",
+          "Canais de aquisição com atribuição por UTM",
+          "Landing Pages com métricas de funil por URL",
+          "Tabela de eventos com debug e alertas de deduplicação",
+          "Gestão de assinaturas ativas, em trial e canceladas",
+          "Comparativo de períodos com análise por IA",
+          "Integração nativa com Stripe (webhooks + sync de histórico completo)",
+          "Análise com IA via Google Gemini 1.5 Flash com streaming",
+          "tracker.js — script de rastreamento (2,1 kB, zero dependências)",
+          "Página pública compartilhável por organização",
+          "Multi-tenant com suporte a times e convites por e-mail",
+          "Configurações regionais (moeda, fuso horário)"
+        ]
+      }
+    ]
+  }
+}

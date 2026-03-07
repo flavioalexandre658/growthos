@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { IconCopy, IconCheck, IconSparkles } from "@tabler/icons-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { IFunnelStep } from "@/interfaces/organization.interface";
@@ -331,6 +332,7 @@ export function AiPromptSection({
   funnelSteps,
   hasRecurringRevenue,
 }: AiPromptSectionProps) {
+  const t = useTranslations("settings.aiPrompt");
   const [copied, setCopied] = useState(false);
 
   const prompt = useMemo(
@@ -342,7 +344,7 @@ export function AiPromptSection({
     navigator.clipboard.writeText(prompt);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
-    toast.success("Prompt copiado! Cole no Cursor, Claude ou ChatGPT.");
+    toast.success(t("copiedToast"));
   };
 
   return (
@@ -353,13 +355,9 @@ export function AiPromptSection({
             <IconSparkles size={14} className="text-indigo-400" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-zinc-100">Prompt para IA</h3>
+            <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
             <p className="text-xs text-zinc-500 mt-0.5 leading-relaxed">
-              Cole no{" "}
-              <span className="text-zinc-400 font-medium">Cursor</span>,{" "}
-              <span className="text-zinc-400 font-medium">Claude</span> ou{" "}
-              <span className="text-zinc-400 font-medium">ChatGPT</span> — a IA
-              lê seu projeto e implementa a integração automaticamente.
+              {t("description")}
             </p>
           </div>
         </div>
@@ -378,7 +376,7 @@ export function AiPromptSection({
           ) : (
             <IconCopy size={13} />
           )}
-          {copied ? "Copiado!" : "Copiar prompt"}
+          {copied ? t("copied") : t("copyPrompt")}
         </Button>
       </div>
 

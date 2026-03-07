@@ -1,0 +1,142 @@
+{
+  "privacy": {
+    "pageTitle": "Privacy Policy",
+    "label": "// legal",
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: March 2026",
+    "sections": [
+      {
+        "title": "1. Information we collect",
+        "content": "Groware collects information necessary to provide the analytics service. This includes event data sent by your script (tracker.js), payment data synced via gateway integrations, and your account information (name, email, organization).",
+        "extra": "Event data is processed anonymously by default. We recommend using the hashAnonymous() function to anonymize customer identifiers before sending them to Groware."
+      },
+      {
+        "title": "2. How we use your data",
+        "intro": "We use your data exclusively to:",
+        "items": [
+          "Provide the contracted dashboards and analyses",
+          "Process and display revenue, funnel and channel metrics",
+          "Generate AI analyses based on your organization's context",
+          "Send notifications about configured alerts and reports",
+          "Improve the quality and reliability of the service"
+        ]
+      },
+      {
+        "title": "3. Data sharing",
+        "content": "We do not sell, rent or share your personal data with third parties for commercial purposes. Data may be shared with service providers essential to platform operation, such as cloud infrastructure providers, always subject to confidentiality agreements."
+      },
+      {
+        "title": "4. Security",
+        "content": "We use encryption in transit (TLS) and at rest to protect your data. Access to API keys and integrations is done with the minimum necessary permissions (read-only for Stripe). We recommend keeping your API keys secure and not sharing them publicly."
+      },
+      {
+        "title": "5. Data retention",
+        "content": "We retain your data while your account is active. Upon requesting account closure, your data will be deleted within 30 days, except where there is a legal obligation to retain it."
+      },
+      {
+        "title": "6. Your rights (GDPR)",
+        "intro": "In accordance with applicable data protection laws, you have the right to:",
+        "items": [
+          "Confirmation of the existence of processing of your data",
+          "Access to your personal data",
+          "Correction of incomplete, inaccurate or outdated data",
+          "Data portability to another provider",
+          "Deletion of personal data processed with your consent",
+          "Withdrawal of consent at any time"
+        ]
+      },
+      {
+        "title": "7. Cookies",
+        "content": "We use essential cookies for authentication and session management. We do not use third-party tracking cookies for advertising purposes."
+      },
+      {
+        "title": "8. Contact",
+        "content": "To exercise your rights, for privacy questions or data deletion requests, contact us at",
+        "email": "privacy@groware.io"
+      }
+    ]
+  },
+  "terms": {
+    "pageTitle": "Terms of Use",
+    "label": "// legal",
+    "title": "Terms of Use",
+    "lastUpdated": "Last updated: March 2026",
+    "sections": [
+      {
+        "title": "1. Acceptance of terms",
+        "content": "By accessing or using Groware, you agree to these Terms of Use and our Privacy Policy. If you do not agree with any part of these terms, you may not use the service."
+      },
+      {
+        "title": "2. Service description",
+        "content": "Groware is a growth and revenue analytics platform for SaaS companies and digital businesses. The service includes MRR dashboards, acquisition channel analysis, P&L, event tracking and AI-powered analysis."
+      },
+      {
+        "title": "3. Beta period",
+        "content": "Groware is currently in early access (beta). During this period, the service is offered free of charge. We reserve the right to change plans and pricing with reasonable prior notice to users before the official launch."
+      },
+      {
+        "title": "4. Acceptable use",
+        "intro": "You agree not to use Groware to:",
+        "items": [
+          "Violate any applicable law or regulation",
+          "Transmit sensitive personal data without the data subject's proper consent",
+          "Attempt to gain unauthorized access to other users' systems or data",
+          "Reverse engineer or copy the service",
+          "Send non-anonymized customer data that could identify individuals"
+        ]
+      },
+      {
+        "title": "5. Your responsibilities",
+        "content": "You are responsible for maintaining the security of your access credentials and API keys. Groware is not responsible for damages resulting from unauthorized use of your account by third parties.",
+        "extra": "You are also responsible for ensuring that data sent to Groware complies with GDPR and other applicable data protection laws for your business."
+      },
+      {
+        "title": "6. Intellectual property",
+        "content": "Groware and all its content — including interface, code, brand and documentation — are the exclusive property of Groware and protected by intellectual property laws. These terms do not grant you any license over Groware's intellectual property, except the limited right to use the service."
+      },
+      {
+        "title": "7. Limitation of liability",
+        "content": "The service is provided \"as is\" during the beta period. Groware does not guarantee uninterrupted availability or absence of errors. In no circumstances shall Groware be liable for indirect, incidental or consequential damages arising from the use or inability to use the service."
+      },
+      {
+        "title": "8. Changes to terms",
+        "content": "We may update these Terms of Use periodically. We will notify users of significant changes by email or via notice on the platform. Continued use of the service after changes constitutes acceptance of the new terms."
+      },
+      {
+        "title": "9. Contact",
+        "content": "For questions about these Terms of Use, contact us at",
+        "email": "legal@groware.io"
+      }
+    ]
+  },
+  "changelog": {
+    "pageTitle": "Changelog",
+    "label": "// changelog",
+    "title": "What changed.",
+    "description": "Track all updates, improvements and new features in Groware.",
+    "releases": [
+      {
+        "version": "v0.1.0-beta",
+        "date": "Mar 2026",
+        "tag": "beta",
+        "items": [
+          "Dashboard with funnel, KPIs and daily revenue chart",
+          "MRR module with growth, movement and subscriber Sankey",
+          "Financials with breakdown by payment method and product category",
+          "Costs & P&L with waterfall and AI analysis",
+          "Acquisition channels with UTM attribution",
+          "Landing Pages with funnel metrics by URL",
+          "Event table with debug and deduplication alerts",
+          "Active, trial and canceled subscription management",
+          "Period comparison with AI analysis",
+          "Native Stripe integration (webhooks + full history sync)",
+          "AI analysis via Google Gemini 1.5 Flash with streaming",
+          "tracker.js — tracking script (2.1 kB, zero dependencies)",
+          "Shareable public page per organization",
+          "Multi-tenant with team support and email invites",
+          "Regional settings (currency, timezone)"
+        ]
+      }
+    ]
+  }
+}

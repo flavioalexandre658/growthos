@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtInt, fmtBRLDecimal } from "@/utils/format";
 
@@ -26,6 +27,8 @@ export function FinanceBreakdownTable({
   isLoading,
   showMargin = false,
 }: FinanceBreakdownTableProps) {
+  const t = useTranslations("finance.breakdownTable");
+
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <h3 className="text-sm font-bold text-zinc-100">{title}</h3>
@@ -38,7 +41,7 @@ export function FinanceBreakdownTable({
           ))
         ) : rows.length === 0 ? (
           <p className="text-center py-8 text-zinc-600 text-sm">
-            Sem dados no período
+            {t("noDataForPeriod")}
           </p>
         ) : (
           rows.map((row) => {
@@ -54,7 +57,7 @@ export function FinanceBreakdownTable({
                     {row.name}
                   </p>
                   <p className="text-[11px] text-zinc-500 mt-0.5">
-                    {fmtInt(row.payments)} pagamentos
+                    {t("payments", { count: row.payments })}
                   </p>
                 </div>
 
@@ -76,7 +79,7 @@ export function FinanceBreakdownTable({
                     >
                       {marginPositive ? "+" : ""}{row.marginPercentage}
                     </span>
-                    <p className="text-[9px] text-zinc-700 text-center mt-0.5">margem</p>
+                    <p className="text-[9px] text-zinc-700 text-center mt-0.5">{t("margin")}</p>
                   </div>
                 )}
 

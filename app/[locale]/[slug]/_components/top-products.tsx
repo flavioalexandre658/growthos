@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fmtBRLDecimal, fmtInt } from "@/utils/format";
 import { IconPackage, IconArrowRight } from "@tabler/icons-react";
 import type { ITopProduct } from "@/interfaces/dashboard.interface";
+import { useTranslations } from "next-intl";
 
 interface TopProductsProps {
   data: ITopProduct[] | undefined;
@@ -13,6 +14,7 @@ interface TopProductsProps {
 }
 
 export function TopProducts({ data, isLoading }: TopProductsProps) {
+  const t = useTranslations("dashboard.topProducts");
   const { slug } = useParams<{ slug: string }>();
   const products = data ?? [];
   const maxRevenue = products[0]?.revenueInCents ?? 1;
@@ -25,15 +27,15 @@ export function TopProducts({ data, isLoading }: TopProductsProps) {
             <IconPackage size={14} className="text-violet-400" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-zinc-100">Top Produtos</h3>
-            <p className="text-[11px] text-zinc-500">Por receita no período</p>
+            <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
+            <p className="text-[11px] text-zinc-500">{t("subtitle")}</p>
           </div>
         </div>
         <Link
           href={`/${slug}/events?event_types=payment`}
           className="flex items-center gap-1 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors"
         >
-          Ver todos
+          {t("viewAll")}
           <IconArrowRight size={11} />
         </Link>
       </div>
@@ -52,7 +54,7 @@ export function TopProducts({ data, isLoading }: TopProductsProps) {
         </div>
       ) : products.length === 0 ? (
         <div className="flex flex-1 items-center justify-center py-6">
-          <p className="text-xs text-zinc-700">Nenhum pagamento no período</p>
+          <p className="text-xs text-zinc-700">{t("noPayments")}</p>
         </div>
       ) : (
         <div className="space-y-3">

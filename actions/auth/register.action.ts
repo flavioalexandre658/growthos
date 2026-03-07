@@ -13,6 +13,7 @@ const schema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
   confirmPassword: z.string().min(1, "Confirmação de senha é obrigatória"),
+  locale: z.enum(["pt", "en"]).optional().default("pt"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "As senhas não coincidem",
   path: ["confirmPassword"],
@@ -39,6 +40,8 @@ export async function register(input: z.infer<typeof schema>) {
       name: data.name,
       email: data.email,
       passwordHash,
+      locale: data.locale,
+      authProvider: "credentials",
       role: "ADMIN",
       onboardingCompleted: false,
     })
@@ -46,12 +49,17 @@ export async function register(input: z.infer<typeof schema>) {
 
   const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
+  const emailSubject = data.locale === "en"
+    ? `Welcome to Groware, ${user.name}!`
+    : `Bem-vindo ao Groware, ${user.name}!`;
+
   sendEmail({
     to: user.email,
-    subject: `Bem-vindo ao Groware, ${user.name}!`,
+    subject: emailSubject,
     html: welcomeEmail({
       userName: user.name,
       dashboardUrl: `${baseUrl}/organizations`,
+      locale: data.locale,
     }),
   }).catch((err) => {
     console.error("[welcome-email]", err);

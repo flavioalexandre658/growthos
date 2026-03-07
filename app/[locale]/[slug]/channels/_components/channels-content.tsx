@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Suspense } from "react";
+import { useTranslations } from "next-intl";
 import { useChannels } from "@/hooks/queries/use-channels";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useOrganization } from "@/components/providers/organization-provider";
@@ -19,6 +20,7 @@ interface ChannelsContentProps {
 }
 
 export function ChannelsContent({ filter }: ChannelsContentProps) {
+  const t = useTranslations("channels.content");
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
@@ -48,8 +50,8 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-bold text-zinc-100">Canais de Aquisição</h1>
-          <p className="text-xs text-zinc-500">Receita, conversão e ticket médio por canal</p>
+          <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>
+          <p className="text-xs text-zinc-500">{t("subtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
@@ -58,7 +60,7 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"
             />
             <Input
-              placeholder="Buscar canal..."
+              placeholder={t("searchPlaceholder")}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);

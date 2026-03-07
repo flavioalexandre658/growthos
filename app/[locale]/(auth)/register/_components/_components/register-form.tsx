@@ -54,7 +54,7 @@ export function RegisterForm() {
     setErrorMessage(null);
 
     try {
-      await registerUser(data);
+      await registerUser({ ...data, locale: "pt" });
 
       const result = await signIn("credentials", {
         email: data.email,

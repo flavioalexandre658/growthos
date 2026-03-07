@@ -1,0 +1,46 @@
+{
+  "pages": {
+    "content": {
+      "title": "Páginas",
+      "subtitle": "Conversão e receita por página de entrada",
+      "searchPlaceholder": "Buscar página..."
+    },
+    "pageTypes": {
+      "label": "Tipo de Página",
+      "allTypes": "Todos os tipos",
+      "countTypes": "{count, plural, =1 {# tipo} other {# tipos}}",
+      "all": "Todos",
+      "product": "Produto",
+      "category": "Categoria",
+      "checkout": "Checkout",
+      "system": "Sistema",
+      "landing": "Entrada",
+      "other": "Outras"
+    },
+    "table": {
+      "title": "Páginas por Receita",
+      "subtitle": "Páginas de entrada que mais convertem e geram receita",
+      "emptyMessage": "Nenhuma página encontrada no período",
+      "copyUrl": "Copiar URL",
+      "columns": {
+        "page": "Página",
+        "conversion": "Conversão",
+        "revenue": "Receita"
+      }
+    },
+    "kpiStrip": {
+      "totalPages": "Total de Páginas",
+      "withRevenue": "{count} com receita",
+      "totalRevenue": "Receita Total",
+      "inPeriod": "no período",
+      "bestConversion": "Melhor Conversão",
+      "bestConversionShort": "Melhor Conversão",
+      "conversionRate": "{rate} de conversão",
+      "conversionRateShort": "{rate} conv.",
+      "biggestOpportunity": "Maior Oportunidade",
+      "biggestOpportunityShort": "Maior Oport.",
+      "visitsShort": "{count} vis.",
+      "visitsLowConversion": "{count} visitas, conv. < 1%"
+    }
+  }
+}

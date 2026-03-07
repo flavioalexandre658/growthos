@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import {
@@ -38,6 +39,7 @@ export function StepTour({
   apiKey,
   onGoBack,
 }: StepTourProps) {
+  const t = useTranslations("onboarding.stepTour");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const { update } = useSession();
@@ -59,10 +61,10 @@ export function StepTour({
     try {
       await completeOnboarding();
       await update({ onboardingCompleted: true });
-      toast.success("Bem-vindo ao Groware!");
+      toast.success(t("welcomeToast"));
       window.location.href = slug ? `/${slug}` : "/organizations";
     } catch {
-      toast.error("Erro ao finalizar onboarding.");
+      toast.error(t("errorToast"));
       setIsLoading(false);
     }
   };
@@ -78,7 +80,7 @@ export function StepTour({
     );
     navigator.clipboard.writeText(prompt);
     setCopiedPrompt(true);
-    toast.success("Prompt copiado!");
+    toast.success(t("promptCopiedToast"));
     setTimeout(() => setCopiedPrompt(false), 2500);
   };
 
@@ -96,7 +98,7 @@ export function StepTour({
           </div>
           <div className="space-y-1.5">
             <h2 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-emerald-300 bg-clip-text text-transparent">
-              Tudo configurado, {firstName}!
+              {t("verified.title", { firstName })}
             </h2>
             {funnelLabel && (
               <p className="text-xs text-zinc-600 font-mono">
@@ -104,7 +106,7 @@ export function StepTour({
               </p>
             )}
             <p className="text-sm text-zinc-500 max-w-xs mx-auto leading-relaxed">
-              Eventos chegando. Seu dashboard está pronto para uso.
+              {t("verified.subtitle")}
             </p>
           </div>
         </div>
@@ -117,7 +119,7 @@ export function StepTour({
           {isLoading ? (
             <>
               <IconLoader2 size={16} className="animate-spin" />
-              Entrando...
+              {t("verified.submitting")}
             </>
           ) : (
             <>
@@ -125,7 +127,7 @@ export function StepTour({
                 size={16}
                 className="transition-transform group-hover:-translate-y-0.5"
               />
-              Ir para Visão Geral
+              {t("verified.submit")}
               <IconArrowRight size={15} className="ml-auto opacity-60 group-hover:translate-x-0.5 transition-transform" />
             </>
           )}
@@ -144,7 +146,7 @@ export function StepTour({
         </div>
         <div className="space-y-1">
           <h2 className="text-xl font-bold text-zinc-100">
-            Quase lá, {firstName}!
+            {t("unverified.title", { firstName })}
           </h2>
         </div>
       </div>
@@ -159,7 +161,7 @@ export function StepTour({
           <div className="flex items-center gap-1.5">
             <IconCheck size={13} className="text-emerald-400 shrink-0" />
             <p className="text-sm font-semibold text-zinc-200">
-              Configuração concluída
+              {t("unverified.configComplete")}
             </p>
           </div>
         </div>
@@ -167,10 +169,9 @@ export function StepTour({
         <div className="h-px bg-zinc-800" />
 
         <div className="space-y-1.5">
-          <p className="text-xs font-semibold text-zinc-400">Próximo passo</p>
+          <p className="text-xs font-semibold text-zinc-400">{t("unverified.nextStep")}</p>
           <p className="text-sm text-zinc-500 leading-relaxed">
-            Instale o tracker no seu projeto e volte para ver seus dados.
-            Use o prompt abaixo para integrar com IA em segundos.
+            {t("unverified.nextStepDescription")}
           </p>
         </div>
 
@@ -185,7 +186,7 @@ export function StepTour({
             ) : (
               <IconBolt size={15} />
             )}
-            {copiedPrompt ? "Prompt copiado!" : "Copiar prompt para IA"}
+            {copiedPrompt ? t("unverified.promptCopied") : t("unverified.copyPrompt")}
           </button>
 
           <button
@@ -194,7 +195,7 @@ export function StepTour({
             className="flex items-center justify-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-400 transition-colors py-1"
           >
             <IconArrowBack size={12} />
-            Voltar e verificar instalação agora
+            {t("unverified.goBack")}
           </button>
         </div>
       </div>
@@ -207,12 +208,12 @@ export function StepTour({
         {isLoading ? (
           <>
             <IconLoader2 size={16} className="animate-spin" />
-            Entrando...
+            {t("unverified.submitting")}
           </>
         ) : (
           <>
             <IconLayoutDashboard size={15} />
-            Ir para o Dashboard
+            {t("unverified.submit")}
           </>
         )}
       </Button>

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   IconSparkles,
   IconCalendar,
@@ -42,23 +43,23 @@ import type {
   IMetricVariation,
 } from "@/interfaces/ai.interface";
 
-const PERIOD_PRESETS: { value: DashboardPeriod; label: string }[] = [
-  { value: "today", label: "Hoje" },
-  { value: "yesterday", label: "Ontem" },
-  { value: "7d", label: "7 dias" },
-  { value: "this_month", label: "Este mês" },
-  { value: "30d", label: "30 dias" },
-  { value: "90d", label: "90 dias" },
+const PERIOD_PRESETS: { value: DashboardPeriod; key: string }[] = [
+  { value: "today", key: "today" },
+  { value: "yesterday", key: "yesterday" },
+  { value: "7d", key: "7d" },
+  { value: "this_month", key: "thisMonth" },
+  { value: "30d", key: "30d" },
+  { value: "90d", key: "90d" },
 ];
 
 const ALL_SECTIONS = [
-  { key: "overview", label: "Visão Geral" },
-  { key: "channels", label: "Canais" },
-  { key: "finance", label: "Financeiro" },
-  { key: "pages", label: "Páginas" },
-  { key: "recurrence", label: "Recorrência" },
-  { key: "costs", label: "Custos" },
-  { key: "events", label: "Eventos" },
+  { key: "overview" },
+  { key: "channels" },
+  { key: "finance" },
+  { key: "pages" },
+  { key: "recurrence" },
+  { key: "costs" },
+  { key: "events" },
 ];
 
 function formatBRL(cents: number): string {
@@ -76,11 +77,12 @@ function calcVariation(a: number, b: number): string {
   return `${sign}${pct.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`;
 }
 
-function getPeriodLabel(filter: IDateFilter): string {
+function getPeriodLabel(filter: IDateFilter, t: (key: string) => string): string {
   if (filter.start_date && filter.end_date) {
     return `${filter.start_date} → ${filter.end_date}`;
   }
-  return PERIOD_PRESETS.find((p) => p.value === filter.period)?.label ?? filter.period ?? "Período";
+  const preset = PERIOD_PRESETS.find((p) => p.value === filter.period);
+  return preset ? t(`comparison.periodPresets.${preset.key}`) : filter.period ?? "";
 }
 
 async function fetchAndFormatSection(
@@ -280,49 +282,50 @@ function buildVariations(
   section: string,
   metricsA: Record<string, number>,
   metricsB: Record<string, number>,
+  t: (key: string) => string,
 ): IMetricVariation[] {
-  const metricDefs: Record<string, { label: string; isCurrency: boolean; higherIsBetter: boolean }[]> = {
+  const metricDefs: Record<string, { labelKey: string; isCurrency: boolean; higherIsBetter: boolean }[]> = {
     overview: [
-      { label: "Visitas", isCurrency: false, higherIsBetter: true },
-      { label: "Cadastros", isCurrency: false, higherIsBetter: true },
-      { label: "Pagamentos", isCurrency: false, higherIsBetter: true },
-      { label: "Receita Bruta", isCurrency: true, higherIsBetter: true },
-      { label: "Ticket Médio", isCurrency: true, higherIsBetter: true },
-      { label: "Taxa de Conversão (%)", isCurrency: false, higherIsBetter: true },
+      { labelKey: "visits", isCurrency: false, higherIsBetter: true },
+      { labelKey: "signups", isCurrency: false, higherIsBetter: true },
+      { labelKey: "payments", isCurrency: false, higherIsBetter: true },
+      { labelKey: "grossRevenue", isCurrency: true, higherIsBetter: true },
+      { labelKey: "averageTicket", isCurrency: true, higherIsBetter: true },
+      { labelKey: "conversionRate", isCurrency: false, higherIsBetter: true },
     ],
     channels: [
-      { label: "Receita Total", isCurrency: true, higherIsBetter: true },
+      { labelKey: "totalRevenue", isCurrency: true, higherIsBetter: true },
     ],
     finance: [
-      { label: "Receita Bruta", isCurrency: true, higherIsBetter: true },
-      { label: "Lucro Líquido", isCurrency: true, higherIsBetter: true },
-      { label: "Custos Totais", isCurrency: true, higherIsBetter: false },
-      { label: "Margem (%)", isCurrency: false, higherIsBetter: true },
+      { labelKey: "grossRevenue", isCurrency: true, higherIsBetter: true },
+      { labelKey: "netProfit", isCurrency: true, higherIsBetter: true },
+      { labelKey: "totalCosts", isCurrency: true, higherIsBetter: false },
+      { labelKey: "marginPercent", isCurrency: false, higherIsBetter: true },
     ],
     pages: [
-      { label: "Receita Total", isCurrency: true, higherIsBetter: true },
+      { labelKey: "totalRevenue", isCurrency: true, higherIsBetter: true },
     ],
     recurrence: [
-      { label: "MRR", isCurrency: true, higherIsBetter: true },
-      { label: "ARR", isCurrency: true, higherIsBetter: true },
-      { label: "Assinaturas Ativas", isCurrency: false, higherIsBetter: true },
-      { label: "ARPU", isCurrency: true, higherIsBetter: true },
-      { label: "Churn Rate (%)", isCurrency: false, higherIsBetter: false },
-      { label: "LTV Estimado", isCurrency: true, higherIsBetter: true },
+      { labelKey: "mrr", isCurrency: true, higherIsBetter: true },
+      { labelKey: "arr", isCurrency: true, higherIsBetter: true },
+      { labelKey: "activeSubscriptions", isCurrency: false, higherIsBetter: true },
+      { labelKey: "arpu", isCurrency: true, higherIsBetter: true },
+      { labelKey: "churnRatePercent", isCurrency: false, higherIsBetter: false },
+      { labelKey: "estimatedLtv", isCurrency: true, higherIsBetter: true },
     ],
     costs: [
-      { label: "Custos Fixos", isCurrency: true, higherIsBetter: false },
-      { label: "Custos Variáveis", isCurrency: true, higherIsBetter: false },
-      { label: "Custo Total", isCurrency: true, higherIsBetter: false },
-      { label: "Margem (%)", isCurrency: false, higherIsBetter: true },
+      { labelKey: "fixedCosts", isCurrency: true, higherIsBetter: false },
+      { labelKey: "variableCosts", isCurrency: true, higherIsBetter: false },
+      { labelKey: "totalCost", isCurrency: true, higherIsBetter: false },
+      { labelKey: "marginPercent", isCurrency: false, higherIsBetter: true },
     ],
     events: [
-      { label: "Total de Eventos", isCurrency: false, higherIsBetter: true },
-      { label: "Pagamentos", isCurrency: false, higherIsBetter: true },
-      { label: "Cadastros", isCurrency: false, higherIsBetter: true },
-      { label: "Pageviews", isCurrency: false, higherIsBetter: true },
-      { label: "Checkouts Iniciados", isCurrency: false, higherIsBetter: true },
-      { label: "Edições", isCurrency: false, higherIsBetter: true },
+      { labelKey: "totalEvents", isCurrency: false, higherIsBetter: true },
+      { labelKey: "payments", isCurrency: false, higherIsBetter: true },
+      { labelKey: "signups", isCurrency: false, higherIsBetter: true },
+      { labelKey: "pageviews", isCurrency: false, higherIsBetter: true },
+      { labelKey: "checkoutsStarted", isCurrency: false, higherIsBetter: true },
+      { labelKey: "edits", isCurrency: false, higherIsBetter: true },
     ],
   };
 
@@ -340,7 +343,8 @@ function buildVariations(
   const keys = metricKeys[section] ?? [];
 
   return keys.map((key, i) => {
-    const def = defs[i] ?? { label: key, isCurrency: false, higherIsBetter: true };
+    const def = defs[i] ?? { labelKey: key, isCurrency: false, higherIsBetter: true };
+    const label = t(`comparison.metricLabels.${def.labelKey}`);
     const vA = metricsA[key] ?? 0;
     const vB = metricsB[key] ?? 0;
     const delta = vB === 0 ? (vA > 0 ? Infinity : 0) : ((vA - vB) / Math.abs(vB)) * 100;
@@ -348,7 +352,7 @@ function buildVariations(
     const varStr = calcVariation(vA, vB);
     const fmt = def.isCurrency ? formatBRL : (v: number) => v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
     return {
-      label: def.label,
+      label,
       valueA: vA,
       valueB: vB,
       formattedA: fmt(vA),
@@ -376,6 +380,7 @@ interface PeriodPickerProps {
 }
 
 function PeriodPicker({ label, filter, onChange }: PeriodPickerProps) {
+  const t = useTranslations("ai");
   const [showCustom, setShowCustom] = useState(!!(filter.start_date && filter.end_date));
   const activePeriod = !filter.start_date ? (filter.period ?? "30d") : null;
 
@@ -394,7 +399,7 @@ function PeriodPicker({ label, filter, onChange }: PeriodPickerProps) {
                 : "bg-zinc-800 text-zinc-400 hover:text-zinc-100",
             )}
           >
-            {opt.label}
+            {t(`comparison.periodPresets.${opt.key}`)}
           </button>
         ))}
         <button
@@ -405,7 +410,7 @@ function PeriodPicker({ label, filter, onChange }: PeriodPickerProps) {
           )}
         >
           <IconCalendar size={11} />
-          Datas
+          {t("comparison.dates")}
         </button>
       </div>
       {showCustom && (
@@ -516,26 +521,28 @@ function MetricVariationCard({ metric, labelA, labelB }: { metric: IMetricVariat
 }
 
 function ComparisonFindingCard({ finding }: { finding: IComparisonFinding }) {
+  const t = useTranslations("ai");
+
   const config = {
     positivo: {
       accent: "border-emerald-500/40 bg-emerald-950/20",
       left: "bg-emerald-500",
       badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-      label: "Positivo",
+      label: t("comparison.findingSeverity.positive"),
       icon: <IconCircleCheck size={13} className="text-emerald-400" />,
     },
     atencao: {
       accent: "border-amber-500/40 bg-amber-950/10",
       left: "bg-amber-500",
       badge: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-      label: "Atenção",
+      label: t("comparison.findingSeverity.warning"),
       icon: <IconInfoCircle size={13} className="text-amber-400" />,
     },
     critico: {
       accent: "border-red-500/40 bg-red-950/20",
       left: "bg-red-500",
       badge: "bg-red-500/15 text-red-400 border-red-500/30",
-      label: "Crítico",
+      label: t("comparison.findingSeverity.critical"),
       icon: <IconAlertTriangle size={13} className="text-red-400" />,
     },
   }[finding.severidade];
@@ -571,6 +578,7 @@ function ComparisonFindingCard({ finding }: { finding: IComparisonFinding }) {
 }
 
 function DiagnosisSection({ text }: { text: string }) {
+  const t = useTranslations("ai");
   const [open, setOpen] = useState(false);
 
   return (
@@ -581,10 +589,10 @@ function DiagnosisSection({ text }: { text: string }) {
       >
         <div className="flex items-center gap-2">
           {open ? <IconChevronDown size={14} className="text-zinc-500 shrink-0" /> : <IconChevronRight size={14} className="text-zinc-500 shrink-0" />}
-          <span className="text-sm font-semibold text-zinc-200">Diagnóstico</span>
+          <span className="text-sm font-semibold text-zinc-200">{t("comparison.diagnosis")}</span>
         </div>
         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md border bg-indigo-500/15 text-indigo-400 border-indigo-500/30 shrink-0">
-          Análise
+          {t("comparison.analysis")}
         </span>
       </button>
       {open && (
@@ -599,10 +607,12 @@ function DiagnosisSection({ text }: { text: string }) {
 }
 
 function ComparisonActionCard({ action }: { action: IComparisonAction }) {
+  const t = useTranslations("ai");
+
   const prazoConfig = {
-    imediato: { label: "Imediato", color: "text-red-400 bg-red-500/15 border-red-500/30" },
-    esta_semana: { label: "Esta semana", color: "text-amber-400 bg-amber-500/15 border-amber-500/30" },
-    este_mes: { label: "Este mês", color: "text-zinc-400 bg-zinc-500/15 border-zinc-500/30" },
+    imediato: { label: t("comparison.actionDeadline.immediate"), color: "text-red-400 bg-red-500/15 border-red-500/30" },
+    esta_semana: { label: t("comparison.actionDeadline.thisWeek"), color: "text-amber-400 bg-amber-500/15 border-amber-500/30" },
+    este_mes: { label: t("comparison.actionDeadline.thisMonth"), color: "text-zinc-400 bg-zinc-500/15 border-zinc-500/30" },
   }[action.prazo] ?? { label: action.prazo, color: "text-zinc-400 bg-zinc-500/15 border-zinc-500/30" };
 
   return (
@@ -621,7 +631,7 @@ function ComparisonActionCard({ action }: { action: IComparisonAction }) {
           </div>
           <p className="text-xs text-zinc-400 leading-relaxed mb-2">{action.acao}</p>
           <span className="text-[11px] font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md">
-            Impacto estimado: {action.impacto_estimado}
+            {t("comparison.estimatedImpact", { impact: action.impacto_estimado })}
           </span>
         </div>
       </div>
@@ -630,13 +640,14 @@ function ComparisonActionCard({ action }: { action: IComparisonAction }) {
 }
 
 const VEREDICTO_CONFIG = {
-  crescimento: { label: "Crescimento", color: "#10b981", bg: "bg-emerald-950/20 border-emerald-700/40" },
-  estabilidade: { label: "Estabilidade", color: "#6366f1", bg: "bg-indigo-950/20 border-indigo-700/40" },
-  declinio: { label: "Declínio", color: "#ef4444", bg: "bg-red-950/20 border-red-700/40" },
-  anomalia: { label: "Anomalia", color: "#f59e0b", bg: "bg-amber-950/20 border-amber-700/40" },
+  crescimento: { key: "growth", color: "#10b981", bg: "bg-emerald-950/20 border-emerald-700/40" },
+  estabilidade: { key: "stability", color: "#6366f1", bg: "bg-indigo-950/20 border-indigo-700/40" },
+  declinio: { key: "decline", color: "#ef4444", bg: "bg-red-950/20 border-red-700/40" },
+  anomalia: { key: "anomaly", color: "#f59e0b", bg: "bg-amber-950/20 border-amber-700/40" },
 };
 
 export function ComparisonContent() {
+  const t = useTranslations("ai");
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const slug = organization?.slug ?? "";
@@ -662,8 +673,8 @@ export function ComparisonContent() {
     setError(null);
     setIsLoading(true);
 
-    const la = getPeriodLabel(filterA);
-    const lb = getPeriodLabel(filterB);
+    const la = getPeriodLabel(filterA, t);
+    const lb = getPeriodLabel(filterB, t);
     setLabelA(la);
     setLabelB(lb);
 
@@ -673,10 +684,10 @@ export function ComparisonContent() {
         fetchAndFormatSection(orgId, section, filterB),
       ]);
 
-      const vars = buildVariations(section, sectionA.metrics, sectionB.metrics);
+      const vars = buildVariations(section, sectionA.metrics, sectionB.metrics, t);
       setVariations(vars);
 
-      const sectionLabel = ALL_SECTIONS.find((s) => s.key === section)?.label ?? section;
+      const sectionLabel = t(`comparison.sections.${section}`);
 
       const payload = {
         type: "comparison",
@@ -706,7 +717,7 @@ export function ComparisonContent() {
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({})) as { error?: string };
-        throw new Error(errBody.error ?? "Erro ao conectar com a IA");
+        throw new Error(errBody.error ?? t("comparison.error.connectionError"));
       }
 
       const parsed = (await res.json()) as IComparisonResult;
@@ -714,7 +725,7 @@ export function ComparisonContent() {
       setConfigCollapsed(true);
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== "AbortError") {
-        setError(err.message ?? "Erro desconhecido.");
+        setError(err.message ?? t("comparison.error.unknownError"));
       }
     } finally {
       setIsLoading(false);
@@ -731,7 +742,7 @@ export function ComparisonContent() {
           className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
         >
           <IconArrowLeft size={13} />
-          Análise com IA
+          {t("comparison.breadcrumb")}
         </Link>
         <span className="text-zinc-700">/</span>
         <div className="flex items-center gap-2">
@@ -739,8 +750,8 @@ export function ComparisonContent() {
             <IconTrendingUp size={14} className="text-emerald-400" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-zinc-100">Comparativo com IA</h1>
-            <p className="text-xs text-zinc-500">Compare dois períodos e obtenha diagnóstico estruturado</p>
+            <h1 className="text-lg font-bold text-zinc-100">{t("comparison.title")}</h1>
+            <p className="text-xs text-zinc-500">{t("comparison.subtitle")}</p>
           </div>
         </div>
       </div>
@@ -752,10 +763,10 @@ export function ComparisonContent() {
         >
           <div className="flex items-center gap-2">
             <IconBrain size={14} className="text-zinc-400" />
-            <span className="text-sm font-semibold text-zinc-200">Configuração</span>
+            <span className="text-sm font-semibold text-zinc-200">{t("comparison.configuration")}</span>
             {result && (
               <span className="text-[10px] font-semibold text-zinc-500 bg-zinc-800 px-1.5 py-0.5 rounded">
-                {ALL_SECTIONS.find((s) => s.key === section)?.label} · {labelA} vs {labelB}
+                {t(`comparison.sections.${section}`)} · {labelA} vs {labelB}
               </span>
             )}
           </div>
@@ -765,7 +776,7 @@ export function ComparisonContent() {
         {!configCollapsed && (
           <div className="px-5 pb-5 space-y-5 border-t border-zinc-800/60">
             <div className="pt-4">
-              <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Seção</p>
+              <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">{t("comparison.section")}</p>
               <div className="flex flex-wrap gap-1.5">
                 {ALL_SECTIONS.map((s) => (
                   <button
@@ -778,15 +789,15 @@ export function ComparisonContent() {
                         : "bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600",
                     )}
                   >
-                    {s.label}
+                    {t(`comparison.sections.${s.key}`)}
                   </button>
                 ))}
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl border border-zinc-800 bg-zinc-900/30">
-              <PeriodPicker label="Período A" filter={filterA} onChange={setFilterA} />
-              <PeriodPicker label="Período B" filter={filterB} onChange={setFilterB} />
+              <PeriodPicker label={t("comparison.periodA")} filter={filterA} onChange={setFilterA} />
+              <PeriodPicker label={t("comparison.periodB")} filter={filterB} onChange={setFilterB} />
             </div>
 
             <Button
@@ -795,7 +806,7 @@ export function ComparisonContent() {
               className="w-full bg-emerald-600 hover:bg-emerald-500 text-white gap-2"
             >
               <IconSparkles size={15} />
-              {isLoading ? "Comparando..." : "Comparar com IA"}
+              {isLoading ? t("comparison.comparing") : t("comparison.compareWithAi")}
             </Button>
           </div>
         )}
@@ -807,8 +818,8 @@ export function ComparisonContent() {
             <IconBrain size={28} className="text-emerald-400 animate-pulse" />
           </div>
           <div className="text-center">
-            <p className="text-sm font-semibold text-zinc-200">Comparando períodos...</p>
-            <p className="text-xs text-zinc-500 mt-1">A IA está analisando as variações e identificando padrões</p>
+            <p className="text-sm font-semibold text-zinc-200">{t("comparison.loading.title")}</p>
+            <p className="text-xs text-zinc-500 mt-1">{t("comparison.loading.subtitle")}</p>
           </div>
           <div className="flex gap-1">
             {[0, 1, 2].map((i) => (
@@ -822,7 +833,7 @@ export function ComparisonContent() {
         <div className="rounded-xl border border-red-800/40 bg-red-950/20 p-4 flex items-start gap-3">
           <IconAlertTriangle size={16} className="text-red-400 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-red-300">Erro na comparação</p>
+            <p className="text-sm font-semibold text-red-300">{t("comparison.error.title")}</p>
             <p className="text-xs text-red-400/80 mt-0.5">{error}</p>
           </div>
         </div>
@@ -831,7 +842,7 @@ export function ComparisonContent() {
       {variations.length > 0 && !isLoading && (
         <div className="space-y-3">
           <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-            Variação de Métricas — {labelA} vs {labelB}
+            {t("comparison.metricsVariation", { labelA, labelB })}
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {variations.map((v, i) => (
@@ -850,13 +861,13 @@ export function ComparisonContent() {
               </div>
               <div className="flex-1 space-y-2">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Veredicto</p>
+                  <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">{t("comparison.verdict")}</p>
                   {veredicto && (
                     <span
                       className="text-xs font-bold px-2 py-0.5 rounded-full"
                       style={{ color: veredicto.color, backgroundColor: `${veredicto.color}18`, border: `1px solid ${veredicto.color}30` }}
                     >
-                      {veredicto.label}
+                      {t(`comparison.verdictLabels.${veredicto.key}`)}
                     </span>
                   )}
                 </div>
@@ -868,7 +879,7 @@ export function ComparisonContent() {
           <div className="p-5 space-y-5">
             {result.achados.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Achados</p>
+                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">{t("comparison.findings")}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {result.achados.map((finding, i) => (
                     <ComparisonFindingCard key={i} finding={finding} />
@@ -883,7 +894,7 @@ export function ComparisonContent() {
 
             {result.plano.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Plano de Ação</p>
+                <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">{t("comparison.actionPlan")}</p>
                 <div className="space-y-3">
                   {result.plano.map((action, i) => (
                     <ComparisonActionCard key={i} action={action} />
@@ -901,14 +912,14 @@ export function ComparisonContent() {
             <IconTrendingUp size={24} className="text-zinc-600" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-zinc-400">Pronto para comparar</p>
+            <p className="text-sm font-semibold text-zinc-400">{t("comparison.readyToCompare.title")}</p>
             <p className="text-xs text-zinc-600 mt-1 max-w-xs">
-              Selecione a seção e os dois períodos acima, depois clique em &ldquo;Comparar com IA&rdquo;
+              {t("comparison.readyToCompare.description")}
             </p>
           </div>
           <div className="mt-2 text-xs text-zinc-600 space-y-1">
-            <p>A IA receberá valores em reais com variações pré-calculadas</p>
-            <p>e retornará análise estruturada com achados e plano de ação</p>
+            <p>{t("comparison.readyToCompare.hint1")}</p>
+            <p>{t("comparison.readyToCompare.hint2")}</p>
           </div>
         </div>
       )}
@@ -916,7 +927,7 @@ export function ComparisonContent() {
       <div className="flex items-center justify-center pt-2">
         <Link href={`/${slug}/ai`} className="flex items-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-400 transition-colors">
           <IconPlayerPlay size={11} />
-          Ir para Análise Completa
+          {t("comparison.goToFullAnalysis")}
         </Link>
       </div>
     </div>

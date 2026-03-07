@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
@@ -31,6 +32,7 @@ export function StepVerifyEvent({
   apiKey,
   onComplete,
 }: StepVerifyEventProps) {
+  const t = useTranslations("onboarding.stepVerifyEvent");
   const [hasFired, setHasFired] = useState(false);
   const [copiedCurl, setCopiedCurl] = useState(false);
 
@@ -40,7 +42,7 @@ export function StepVerifyEvent({
       const result = await checkEvents({ organizationId });
       if (result.count > 0 && !hasFired) {
         setHasFired(true);
-        toast.success("Primeiro evento detectado!");
+        toast.success(t("firstEventToast"));
       }
       return result;
     },
@@ -57,7 +59,7 @@ export function StepVerifyEvent({
   const copyCurl = () => {
     navigator.clipboard.writeText(curlCommand);
     setCopiedCurl(true);
-    toast.success("Copiado!");
+    toast.success(t("copiedToast"));
     setTimeout(() => setCopiedCurl(false), 2000);
   };
 
@@ -80,12 +82,12 @@ export function StepVerifyEvent({
         </div>
         <div>
           <h2 className="text-lg font-bold text-zinc-100">
-            {hasEvent ? "Evento detectado!" : "Verificar instalação"}
+            {hasEvent ? t("titleDetected") : t("titleWaiting")}
           </h2>
           <p className="text-xs text-zinc-500">
             {hasEvent
-              ? "O tracker está funcionando corretamente"
-              : "Aguardando o primeiro evento..."}
+              ? t("subtitleDetected")
+              : t("subtitleWaiting")}
           </p>
         </div>
       </div>
@@ -101,10 +103,10 @@ export function StepVerifyEvent({
             <div className="absolute inset-0 rounded-full border border-indigo-500/20 animate-ping" />
           </div>
           <p className="text-sm text-zinc-500 text-center">
-            Aguardando eventos dos últimos 5 minutos...
+            {t("waitingForEvents")}
           </p>
           <p className="text-xs text-zinc-600">
-            Atualiza automaticamente a cada 3 segundos
+            {t("autoRefresh")}
           </p>
         </div>
       ) : (
@@ -114,18 +116,18 @@ export function StepVerifyEvent({
               <IconCheck size={14} className="text-emerald-400" />
             </div>
             <p className="text-sm font-semibold text-emerald-300">
-              Tracker funcionando!
+              {t("trackerWorking")}
             </p>
           </div>
           {latest && (
             <div className="grid grid-cols-2 gap-2 text-xs">
               {[
-                { label: "evento", value: latest.eventType },
-                { label: "canal", value: latest.source ?? "," },
-                { label: "página", value: latest.landingPage ?? "," },
-                { label: "device", value: latest.device ?? "," },
+                { label: t("eventLabels.event"), value: latest.eventType },
+                { label: t("eventLabels.channel"), value: latest.source ?? "," },
+                { label: t("eventLabels.page"), value: latest.landingPage ?? "," },
+                { label: t("eventLabels.device"), value: latest.device ?? "," },
                 {
-                  label: "recebido",
+                  label: t("eventLabels.received"),
                   value: dayjs(latest.createdAt).fromNow(),
                 },
               ].map((item) => (
@@ -149,7 +151,7 @@ export function StepVerifyEvent({
       {!hasEvent && (
         <div className="space-y-2">
           <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-            Teste rápido com cURL
+            {t("curlTestTitle")}
           </p>
           <div className="rounded-lg border border-zinc-800 bg-zinc-950 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800 bg-zinc-900/60">
@@ -168,7 +170,7 @@ export function StepVerifyEvent({
                 ) : (
                   <IconCopy size={12} />
                 )}
-                Copiar
+                {t("copy")}
               </button>
             </div>
             <pre className="p-4 text-xs font-mono text-zinc-300 overflow-x-auto whitespace-pre leading-relaxed">
@@ -184,7 +186,7 @@ export function StepVerifyEvent({
           onClick={() => onComplete(false)}
           className="flex-1 h-10 text-zinc-500 hover:text-zinc-300 border border-zinc-800 text-sm"
         >
-          Pular, configurar depois
+          {t("skip")}
         </Button>
         <Button
           onClick={() => onComplete(true)}
@@ -196,7 +198,7 @@ export function StepVerifyEvent({
               : "bg-zinc-800 text-zinc-500 cursor-not-allowed",
           )}
         >
-          Continuar
+          {t("submit")}
           <IconArrowRight
             size={16}
             className="transition-transform group-hover:translate-x-0.5"

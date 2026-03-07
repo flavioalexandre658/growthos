@@ -15,6 +15,13 @@
       "when": 1772827818740,
       "tag": "0001_lucky_adam_destine",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772852981915,
+      "tag": "0002_dazzling_morlun",
+      "breakpoints": true
     }
   ]
 }

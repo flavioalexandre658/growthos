@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { IconCheck } from "@tabler/icons-react";
 import { GrowareLogo } from "@/components/groware-logo";
 import { cn } from "@/lib/utils";
@@ -13,14 +14,7 @@ import { StepTour } from "./step-tour";
 import type { IOrganization } from "@/interfaces/organization.interface";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
-const STEPS = [
-  { number: 1, label: "Organização" },
-  { number: 2, label: "Regional" },
-  { number: 3, label: "Funil" },
-  { number: 4, label: "API Key" },
-  { number: 5, label: "Verificar" },
-  { number: 6, label: "Dashboard" },
-];
+const STEP_KEYS = ["organization", "regional", "funnel", "apiKey", "verify", "dashboard"] as const;
 
 const LS_KEY = "groware_onboarding_step";
 
@@ -48,6 +42,7 @@ export function OnboardingWizard({
   existingOrg,
   existingApiKey,
 }: OnboardingWizardProps) {
+  const t = useTranslations("onboarding.wizard");
   const [currentStep, setCurrentStep] = useState(() =>
     calcInitialStep(existingOrg, existingApiKey)
   );
@@ -76,7 +71,7 @@ export function OnboardingWizard({
       <div className="flex items-center justify-between">
         <GrowareLogo size="sm" />
         <p className="text-xs text-zinc-600">
-          Olá,{" "}
+          {t("greeting")}{" "}
           <span className="text-zinc-400 font-semibold">
             {userName.split(" ")[0]}
           </span>
@@ -86,12 +81,13 @@ export function OnboardingWizard({
       <div className="relative">
         <div className="absolute left-0 right-0 top-4 -translate-y-1/2 h-px bg-zinc-800" />
         <div className="relative flex items-start justify-between">
-          {STEPS.map((step) => {
-            const isDone = currentStep > step.number;
-            const isActive = currentStep === step.number;
+          {STEP_KEYS.map((key, idx) => {
+            const number = idx + 1;
+            const isDone = currentStep > number;
+            const isActive = currentStep === number;
             return (
               <div
-                key={step.number}
+                key={key}
                 className="flex flex-col items-center gap-1.5 z-10"
               >
                 <div
@@ -104,7 +100,7 @@ export function OnboardingWizard({
                       : "bg-zinc-950 border-zinc-800 text-zinc-600"
                   )}
                 >
-                  {isDone ? <IconCheck size={14} /> : step.number}
+                  {isDone ? <IconCheck size={14} /> : number}
                 </div>
                 <span
                   className={cn(
@@ -116,7 +112,7 @@ export function OnboardingWizard({
                       : "text-zinc-700"
                   )}
                 >
-                  {step.label}
+                  {t(`steps.${key}`)}
                 </span>
               </div>
             );
@@ -192,7 +188,7 @@ export function OnboardingWizard({
       </div>
 
       <p className="text-center text-xs text-zinc-700">
-        Passo {currentStep} de {STEPS.length}
+        {t("stepProgress", { current: currentStep, total: STEP_KEYS.length })}
       </p>
 
     </div>

@@ -1,0 +1,16 @@
+{
+  "metricFilters": {
+    "title": "Filtros de métrica",
+    "clear": "Limpar",
+    "minPlaceholder": "Min",
+    "maxPlaceholder": "Max",
+    "clearAll": "Limpar tudo",
+    "cancel": "Cancelar",
+    "apply": "Aplicar"
+  },
+  "responsiveTable": {
+    "rowsPerPage": "Linhas por página",
+    "of": "de",
+    "noDataFound": "Nenhum dado encontrado"
+  }
+}

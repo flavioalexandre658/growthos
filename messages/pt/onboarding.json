@@ -1,0 +1,163 @@
+{
+  "onboarding": {
+    "wizard": {
+      "greeting": "Olá,",
+      "stepProgress": "Passo {current} de {total}",
+      "steps": {
+        "organization": "Organização",
+        "regional": "Regional",
+        "funnel": "Funil",
+        "apiKey": "API Key",
+        "verify": "Verificar",
+        "dashboard": "Dashboard"
+      }
+    },
+    "stepCreateOrg": {
+      "title": "Criar organização",
+      "subtitle": "Seus dados serão separados por organização",
+      "nameLabel": "Nome",
+      "namePlaceholder": "Ex: Minha Loja Online",
+      "slugLabel": "Slug (identificador único)",
+      "slugPlaceholder": "minha-loja",
+      "slugHint": "Identificador único:",
+      "submitting": "Criando...",
+      "submit": "Continuar",
+      "successToast": "Organização criada!",
+      "errorToast": "Erro ao criar organização.",
+      "validation": {
+        "nameMinLength": "Nome deve ter pelo menos 2 caracteres",
+        "slugMinLength": "Slug deve ter pelo menos 2 caracteres",
+        "slugPattern": "Apenas letras minúsculas, números e hífens"
+      }
+    },
+    "stepRegionalConfig": {
+      "title": "Configurações regionais",
+      "subtitle": "Detectamos suas preferências — confirme ou ajuste",
+      "detectedAutomatically": "Valores detectados automaticamente pelo navegador",
+      "localeLabel": "Localização",
+      "localeHint": "Define moeda, país e idioma automaticamente",
+      "currencyLabel": "Moeda base",
+      "aiLanguageLabel": "Idioma da IA",
+      "timezoneLabel": "Fuso horário",
+      "timezoneHint": "Define como \"hoje\" e \"esta semana\" são interpretados nos relatórios",
+      "summary": "Resumo",
+      "summaryCurrency": "Moeda:",
+      "summaryLocale": "Locale:",
+      "summaryAiLanguage": "Idioma IA:",
+      "summaryTimezone": "Timezone:",
+      "submitting": "Salvando...",
+      "submit": "Continuar",
+      "successToast": "Configurações regionais salvas!",
+      "errorToast": "Erro ao salvar configurações regionais."
+    },
+    "stepFunnelConfig": {
+      "title": "Configurar funil",
+      "subtitle": "Defina as etapas que você quer rastrear",
+      "presetsLabel": "Presets",
+      "stepsLabel": "Steps do funil",
+      "addStep": "Adicionar step",
+      "previewLabel": "Preview do funil",
+      "submitting": "Salvando...",
+      "submit": "Continuar",
+      "successToast": "Funil configurado!",
+      "errorToast": "Erro ao salvar funil",
+      "validationFillAll": "Preencha todos os campos dos steps",
+      "validationMinStep": "Adicione pelo menos 1 step ao funil",
+      "presets": {
+        "ecommerce": {
+          "label": "E-commerce",
+          "description": "pageview → signup → payment"
+        },
+        "saas": {
+          "label": "SaaS / Trial",
+          "description": "signup → trial → payment"
+        },
+        "saasRecurring": {
+          "label": "SaaS Recorrente",
+          "description": "signup → trial → payment → churn"
+        },
+        "simple": {
+          "label": "Simples",
+          "description": "signup → payment"
+        },
+        "custom": {
+          "label": "Custom",
+          "description": "Configure do zero"
+        }
+      },
+      "defaultStepLabels": {
+        "visits": "Visitas",
+        "signups": "Cadastros",
+        "purchases": "Compras",
+        "trials": "Trials",
+        "churn": "Churn"
+      }
+    },
+    "stepApiKey": {
+      "title": "API key + Instalação",
+      "subtitle": "Cole um script no seu site e os dados chegam automaticamente",
+      "yourApiKey": "Sua API key",
+      "generatingKey": "Gerando chave...",
+      "generateError": "Erro ao gerar key.",
+      "generateErrorToast": "Erro ao gerar API key. Tente novamente.",
+      "apiKeyCopiedToast": "API key copiada!",
+      "copied": "Copiado",
+      "copy": "Copiar",
+      "copiedToast": "Copiado!",
+      "keyWarning": "Esta key autentica todos os eventos de {orgName}. Não commite no Git — use variável de ambiente (NEXT_PUBLIC_GROWARE_KEY).",
+      "snippetHint": "Cole no <head> de qualquer página. O tracker captura UTMs, device, referrer e pageviews automaticamente.",
+      "trackFunnelTitle": "Como rastrear seu funil",
+      "stepsConfigured": "{count, plural, =1 {# etapa configurada} other {# etapas configuradas}}",
+      "noStepsConfigured": "Nenhuma etapa de funil configurada. Volte ao passo anterior para definir seu funil.",
+      "optionalEvent": {
+        "title": "Evento opcional: checkout_started",
+        "description": "Se o seu fluxo tem um checkout (modal, redirecionamento ou página separada), adicione este evento antes do purchase. Ele habilita a análise de abandono de checkout — quantos usuários chegaram até aqui mas não converteram. O tracker detecta o abandono automaticamente via beforeunload."
+      },
+      "submit": "Continuar — Verificar instalação"
+    },
+    "stepVerifyEvent": {
+      "titleDetected": "Evento detectado!",
+      "titleWaiting": "Verificar instalação",
+      "subtitleDetected": "O tracker está funcionando corretamente",
+      "subtitleWaiting": "Aguardando o primeiro evento...",
+      "firstEventToast": "Primeiro evento detectado!",
+      "waitingForEvents": "Aguardando eventos dos últimos 5 minutos...",
+      "autoRefresh": "Atualiza automaticamente a cada 3 segundos",
+      "trackerWorking": "Tracker funcionando!",
+      "eventLabels": {
+        "event": "evento",
+        "channel": "canal",
+        "page": "página",
+        "device": "device",
+        "received": "recebido"
+      },
+      "curlTestTitle": "Teste rápido com cURL",
+      "copy": "Copiar",
+      "copiedToast": "Copiado!",
+      "skip": "Pular, configurar depois",
+      "submit": "Continuar"
+    },
+    "stepTour": {
+      "verified": {
+        "title": "Tudo configurado, {firstName}!",
+        "subtitle": "Eventos chegando. Seu dashboard está pronto para uso.",
+        "submitting": "Entrando...",
+        "submit": "Ir para Visão Geral"
+      },
+      "unverified": {
+        "title": "Quase lá, {firstName}!",
+        "configComplete": "Configuração concluída",
+        "nextStep": "Próximo passo",
+        "nextStepDescription": "Instale o tracker no seu projeto e volte para ver seus dados. Use o prompt abaixo para integrar com IA em segundos.",
+        "copyPrompt": "Copiar prompt para IA",
+        "promptCopied": "Prompt copiado!",
+        "goBack": "Voltar e verificar instalação agora",
+        "submitting": "Entrando...",
+        "submit": "Ir para o Dashboard"
+      },
+      "welcomeToast": "Bem-vindo ao Groware!",
+      "errorToast": "Erro ao finalizar onboarding.",
+      "promptCopiedToast": "Prompt copiado!"
+    }
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { IconChevronRight, IconChevronDown } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { fmtCurrencyDecimal } from "@/utils/format";
@@ -56,6 +57,7 @@ export function SessionTimeline({
   sessionId,
   currentEventId,
 }: SessionTimelineProps) {
+  const t = useTranslations("sessionTimeline");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { organization } = useOrganization();
   const tz = organization?.timezone ?? "America/Sao_Paulo";
@@ -83,7 +85,7 @@ export function SessionTimeline({
   if (!data || data.length === 0) {
     return (
       <p className="mt-3 text-xs text-zinc-600 italic">
-        Nenhum evento encontrado nesta sessão.
+        {t("emptyState")}
       </p>
     );
   }
@@ -91,7 +93,7 @@ export function SessionTimeline({
   if (data.length === 1) {
     return (
       <p className="mt-3 text-xs text-zinc-600 italic">
-        Único evento nesta sessão.
+        {t("singleEvent")}
       </p>
     );
   }
@@ -99,7 +101,7 @@ export function SessionTimeline({
   return (
     <div className="mt-3">
       <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600 mb-2.5">
-        Sessão · {data.length} eventos
+        {t("title", { count: data.length })}
       </p>
       <ol className="relative">
         {data.map((event, index) => {
@@ -148,7 +150,7 @@ export function SessionTimeline({
                     </span>
                     {isCurrent && (
                       <span className="rounded border border-indigo-500/40 bg-indigo-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-400 shrink-0">
-                        atual
+                        {t("currentBadge")}
                       </span>
                     )}
                     {value && (

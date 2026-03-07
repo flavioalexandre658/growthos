@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -30,6 +31,8 @@ interface PLCardProps {
 }
 
 function PLCard({ label, value, icon: Icon, color, bgColor, subLabel, tooltip }: PLCardProps) {
+  const t = useTranslations("finance.profitLossCards");
+
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
@@ -43,7 +46,7 @@ function PLCard({ label, value, icon: Icon, color, bgColor, subLabel, tooltip }:
                 <button
                   type="button"
                   className="shrink-0 text-zinc-700 hover:text-zinc-400 transition-colors focus:outline-none"
-                  aria-label={`Informação sobre ${label}`}
+                  aria-label={t("infoAbout", { label })}
                 >
                   <IconInfoCircle size={11} />
                 </button>
@@ -85,6 +88,8 @@ interface ProfitLossCardsProps {
 }
 
 export function ProfitLossCards({ pl, isLoading }: ProfitLossCardsProps) {
+  const t = useTranslations("finance.profitLossCards");
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
@@ -95,58 +100,58 @@ export function ProfitLossCards({ pl, isLoading }: ProfitLossCardsProps) {
 
   const cards: PLCardProps[] = [
     {
-      label: "Receita Bruta",
+      label: t("grossRevenue"),
       value: fmtBRLDecimal((pl?.grossRevenueInCents ?? 0) / 100),
       icon: IconCurrencyDollar,
       color: "text-emerald-400",
       bgColor: "bg-emerald-600/20",
-      tooltip: "Total de pagamentos recebidos no período, antes de qualquer desconto ou custo. É a linha de topo do DRE.",
+      tooltip: t("grossRevenueTooltip"),
     },
     {
-      label: "Custos Variáveis",
+      label: t("variableCosts"),
       value: fmtBRLDecimal((pl?.totalVariableCostsInCents ?? 0) / 100),
       icon: IconReceipt,
       color: "text-orange-400",
       bgColor: "bg-orange-600/20",
-      subLabel: `${pl?.variableCostsBreakdown.length ?? 0} itens`,
-      tooltip: "Soma dos custos que variam com a receita — taxas de gateway, comissões, impostos sobre vendas. Configurados como % da receita bruta.",
+      subLabel: t("variableCostsSubLabel", { count: pl?.variableCostsBreakdown.length ?? 0 }),
+      tooltip: t("variableCostsTooltip"),
     },
     {
-      label: "Lucro Operacional",
+      label: t("operatingProfit"),
       value: fmtBRLDecimal((pl?.operatingProfitInCents ?? 0) / 100),
       icon: IconWallet,
       color: "text-cyan-400",
       bgColor: "bg-cyan-600/20",
-      subLabel: "Receita − Variáveis",
-      tooltip: "Receita Bruta menos os custos variáveis. Representa o que sobra antes de pagar as despesas fixas mensais.",
+      subLabel: t("operatingProfitSubLabel"),
+      tooltip: t("operatingProfitTooltip"),
     },
     {
-      label: "Custos Fixos",
+      label: t("fixedCosts"),
       value: fmtBRLDecimal((pl?.totalFixedCostsInCents ?? 0) / 100),
       icon: IconTrendingDown,
       color: "text-red-400",
       bgColor: "bg-red-600/20",
       subLabel: pl?.periodDays && pl.periodDays < 30
-        ? `${pl.fixedCostsBreakdown.length ?? 0} itens · rateado ${pl.periodDays}d`
-        : `${pl?.fixedCostsBreakdown.length ?? 0} itens`,
-      tooltip: "Despesas mensais independentes do volume de vendas. Quando o período é menor que 30 dias, o valor é rateado proporcionalmente.",
+        ? t("fixedCostsSubLabelProrated", { count: pl.fixedCostsBreakdown.length ?? 0, days: pl.periodDays })
+        : t("fixedCostsSubLabel", { count: pl?.fixedCostsBreakdown.length ?? 0 }),
+      tooltip: t("fixedCostsTooltip"),
     },
     {
-      label: "Lucro Líquido",
+      label: t("netProfit"),
       value: fmtBRLDecimal((pl?.netProfitInCents ?? 0) / 100),
       icon: (pl?.netProfitInCents ?? 0) >= 0 ? IconTrendingUp : IconTrendingDown,
       color: (pl?.netProfitInCents ?? 0) >= 0 ? "text-indigo-400" : "text-red-400",
       bgColor: (pl?.netProfitInCents ?? 0) >= 0 ? "bg-indigo-600/20" : "bg-red-600/20",
-      subLabel: "Receita − Variáveis − Fixos",
-      tooltip: "O que sobra de fato no caixa após deduzir todos os custos. Negativo significa que o negócio está gastando mais do que fatura.",
+      subLabel: t("netProfitSubLabel"),
+      tooltip: t("netProfitTooltip"),
     },
     {
-      label: "Margem Líquida",
+      label: t("netMargin"),
       value: `${pl?.marginPercent ?? 0}%`,
       icon: IconPercentage,
       color: (pl?.marginPercent ?? 0) >= 0 ? "text-amber-400" : "text-red-400",
       bgColor: (pl?.marginPercent ?? 0) >= 0 ? "bg-amber-600/20" : "bg-red-600/20",
-      tooltip: "Lucro Líquido dividido pela Receita Bruta, em percentual. Uma margem acima de 20% é considerada saudável para SaaS.",
+      tooltip: t("netMarginTooltip"),
     },
   ];
 

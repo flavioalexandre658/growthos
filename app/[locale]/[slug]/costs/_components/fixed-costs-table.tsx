@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { IconPlus, IconPencil, IconTrash, IconBuildingBank } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,13 +17,6 @@ import { useDeleteFixedCost } from "@/hooks/mutations/use-delete-fixed-cost";
 import { fmtBRLDecimal } from "@/utils/format";
 import type { IFixedCost, FixedCostFrequency } from "@/interfaces/cost.interface";
 import toast from "react-hot-toast";
-
-const FREQUENCY_LABELS: Record<FixedCostFrequency, string> = {
-  monthly: "Mensal",
-  quarterly: "Trimestral",
-  semiannual: "Semestral",
-  annual: "Anual",
-};
 
 const FREQUENCY_MONTHS: Record<FixedCostFrequency, number> = {
   monthly: 1,
@@ -41,31 +35,8 @@ interface FixedCostsTableProps {
   grossRevenueInCents?: number;
 }
 
-function EmptyState({ onAdd }: { onAdd: () => void }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-800/70 border border-zinc-700">
-        <IconBuildingBank size={20} className="text-zinc-500" />
-      </div>
-      <div>
-        <p className="text-sm font-medium text-zinc-300">Nenhum custo fixo ainda</p>
-        <p className="text-xs text-zinc-500 mt-1 max-w-xs">
-          Custos fixos são despesas constantes como servidor, salários e ferramentas.
-        </p>
-      </div>
-      <Button
-        size="sm"
-        onClick={onAdd}
-        className="bg-indigo-600 hover:bg-indigo-500 text-white h-8 gap-1.5 mt-1"
-      >
-        <IconPlus size={13} />
-        Adicionar primeiro custo
-      </Button>
-    </div>
-  );
-}
-
 export function FixedCostsTable({ organizationId, grossRevenueInCents }: FixedCostsTableProps) {
+  const t = useTranslations("finance.fixedCosts");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<IFixedCost | null>(null);
 
@@ -73,6 +44,13 @@ export function FixedCostsTable({ organizationId, grossRevenueInCents }: FixedCo
   const createMutation = useCreateFixedCost(organizationId);
   const updateMutation = useUpdateFixedCost(organizationId);
   const deleteMutation = useDeleteFixedCost(organizationId);
+
+  const frequencyLabels: Record<FixedCostFrequency, string> = {
+    monthly: t("frequency.monthly"),
+    quarterly: t("frequency.quarterly"),
+    semiannual: t("frequency.semiannual"),
+    annual: t("frequency.annual"),
+  };
 
   const handleOpenCreate = () => {
     setEditing(null);
@@ -93,23 +71,23 @@ export function FixedCostsTable({ organizationId, grossRevenueInCents }: FixedCo
   }) => {
     if (editing) {
       await updateMutation.mutateAsync({ id: editing.id, ...data });
-      toast.success("Custo fixo atualizado!");
+      toast.success(t("toastUpdated"));
     } else {
       await createMutation.mutateAsync({ organizationId, ...data, frequency: data.frequency ?? "monthly" });
-      toast.success("Custo fixo adicionado!");
+      toast.success(t("toastCreated"));
     }
     setDialogOpen(false);
   };
 
   const handleDelete = async (id: string) => {
     await deleteMutation.mutateAsync(id);
-    toast.success("Custo fixo removido!");
+    toast.success(t("toastDeleted"));
   };
 
   const columns: TableColumn<IFixedCost>[] = [
     {
       key: "name",
-      header: "Nome",
+      header: t("columnName"),
       mobilePrimary: true,
       render: (row) => (
         <div>
@@ -122,19 +100,19 @@ export function FixedCostsTable({ organizationId, grossRevenueInCents }: FixedCo
     },
     {
       key: "frequency",
-      header: "Frequência",
+      header: t("columnFrequency"),
       render: (row) => {
         const freq = (row.frequency as FixedCostFrequency) ?? "monthly";
         return (
           <Badge variant="outline" className="text-[10px] font-normal border-zinc-700 text-zinc-400">
-            {FREQUENCY_LABELS[freq]}
+            {frequencyLabels[freq]}
           </Badge>
         );
       },
     },
     {
       key: "amount",
-      header: "Valor",
+      header: t("columnValue"),
       align: "right",
       render: (row) => {
         const freq = (row.frequency as FixedCostFrequency) ?? "monthly";
@@ -149,15 +127,15 @@ export function FixedCostsTable({ organizationId, grossRevenueInCents }: FixedCo
               {fmtBRLDecimal(row.amountInCents / 100)}
             </span>
             <span className="text-zinc-600 text-[10px] ml-1">
-              /{FREQUENCY_LABELS[freq].toLowerCase()}
+              /{frequencyLabels[freq].toLowerCase()}
             </span>
             {freq !== "monthly" && (
               <p className="text-[10px] text-zinc-500 mt-0.5">
-                ≈ {fmtBRLDecimal(monthly / 100)}/mês
+                ≈ {fmtBRLDecimal(monthly / 100)}{t("perMonth")}
               </p>
             )}
             {impactPct && (
-              <p className="text-[10px] text-zinc-600 mt-0.5">{impactPct}% da receita</p>
+              <p className="text-[10px] text-zinc-600 mt-0.5">{t("ofRevenue", { percent: impactPct })}</p>
             )}
           </div>
         );
@@ -191,6 +169,28 @@ export function FixedCostsTable({ organizationId, grossRevenueInCents }: FixedCo
     },
   ];
 
+  const emptyState = (
+    <div className="flex flex-col items-center justify-center py-12 px-4 text-center gap-3">
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-800/70 border border-zinc-700">
+        <IconBuildingBank size={20} className="text-zinc-500" />
+      </div>
+      <div>
+        <p className="text-sm font-medium text-zinc-300">{t("emptyTitle")}</p>
+        <p className="text-xs text-zinc-500 mt-1 max-w-xs">
+          {t("emptyDescription")}
+        </p>
+      </div>
+      <Button
+        size="sm"
+        onClick={handleOpenCreate}
+        className="bg-indigo-600 hover:bg-indigo-500 text-white h-8 gap-1.5 mt-1"
+      >
+        <IconPlus size={13} />
+        {t("addFirst")}
+      </Button>
+    </div>
+  );
+
   return (
     <>
       <ResponsiveTable
@@ -199,13 +199,13 @@ export function FixedCostsTable({ organizationId, grossRevenueInCents }: FixedCo
         getRowKey={(row) => row.id}
         isLoading={isLoading}
         skeletonRows={4}
-        emptyMessage={<EmptyState onAdd={handleOpenCreate} />}
+        emptyMessage={emptyState}
         header={
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-bold text-zinc-100">Custos Fixos</h3>
+              <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
               <p className="text-xs text-zinc-500">
-                Despesas constantes — servidor, salário, ferramentas
+                {t("subtitle")}
               </p>
             </div>
             <Button
@@ -214,7 +214,7 @@ export function FixedCostsTable({ organizationId, grossRevenueInCents }: FixedCo
               className="bg-indigo-600 hover:bg-indigo-500 text-white h-8 gap-1.5"
             >
               <IconPlus size={14} />
-              <span className="hidden sm:inline">Adicionar</span>
+              <span className="hidden sm:inline">{t("add")}</span>
             </Button>
           </div>
         }

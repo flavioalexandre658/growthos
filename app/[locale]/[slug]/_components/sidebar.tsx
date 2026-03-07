@@ -49,6 +49,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useOrgHasData } from "@/hooks/queries/use-org-has-data";
 import { useBilling } from "@/hooks/queries/use-billing";
@@ -71,45 +72,45 @@ interface NavSection {
   items: NavItemDef[];
 }
 
-function buildNavSections(slug: string, hasData: boolean, hasAi: boolean): NavSection[] {
+function buildNavSections(slug: string, hasData: boolean, hasAi: boolean, t: (key: string) => string): NavSection[] {
   const sections: NavSection[] = [
     {
-      title: "Visão Geral",
+      title: t("sections.overview"),
       items: [
-        { href: `/${slug}`, label: "Dashboard", icon: IconLayoutDashboard, exact: true },
+        { href: `/${slug}`, label: t("nav.dashboard"), icon: IconLayoutDashboard, exact: true },
       ],
     },
     {
-      title: "Receita",
+      title: t("sections.revenue"),
       items: [
-        { href: `/${slug}/finance`, label: "Financeiro", icon: IconCurrencyDollar, exact: false },
-        { href: `/${slug}/costs`, label: "Custos", icon: IconCalculator, exact: false },
-        { href: `/${slug}/mrr`, label: "Recorrência", icon: IconRepeat, exact: false },
+        { href: `/${slug}/finance`, label: t("nav.finance"), icon: IconCurrencyDollar, exact: false },
+        { href: `/${slug}/costs`, label: t("nav.costs"), icon: IconCalculator, exact: false },
+        { href: `/${slug}/mrr`, label: t("nav.recurrence"), icon: IconRepeat, exact: false },
       ],
     },
     {
-      title: "Aquisição",
+      title: t("sections.acquisition"),
       items: [
-        { href: `/${slug}/channels`, label: "Canais", icon: IconBrandGoogle, exact: false },
-        { href: `/${slug}/pages`, label: "Páginas", icon: IconWorldWww, exact: false },
+        { href: `/${slug}/channels`, label: t("nav.channels"), icon: IconBrandGoogle, exact: false },
+        { href: `/${slug}/pages`, label: t("nav.pages"), icon: IconWorldWww, exact: false },
       ],
     },
     {
-      title: "Inteligência",
+      title: t("sections.intelligence"),
       items: [
-        { href: `/${slug}/ai`, label: "Análise com IA", icon: IconSparkles, exact: true, highlight: true, locked: !hasAi, lockBadge: "Starter" },
-        { href: `/${slug}/ai/comparativo`, label: "Comparativo", icon: IconTrendingUp, exact: false, highlight: false, locked: !hasAi, lockBadge: "Starter" },
+        { href: `/${slug}/ai`, label: t("nav.aiAnalysis"), icon: IconSparkles, exact: true, highlight: true, locked: !hasAi, lockBadge: t("lockBadge.starter") },
+        { href: `/${slug}/ai/comparativo`, label: t("nav.comparative"), icon: IconTrendingUp, exact: false, highlight: false, locked: !hasAi, lockBadge: t("lockBadge.starter") },
       ],
     },
   ];
 
   if (hasData) {
     sections.splice(3, 0, {
-      title: "Dados",
+      title: t("sections.data"),
       items: [
-        { href: `/${slug}/events`, label: "Eventos", icon: IconList, exact: true },
-        { href: `/${slug}/subscriptions`, label: "Assinaturas", icon: IconReceipt2, exact: false },
-        { href: `/${slug}/events/debug`, label: "Debug", icon: IconBug, exact: true },
+        { href: `/${slug}/events`, label: t("nav.events"), icon: IconList, exact: true },
+        { href: `/${slug}/subscriptions`, label: t("nav.subscriptions"), icon: IconReceipt2, exact: false },
+        { href: `/${slug}/events/debug`, label: t("nav.debug"), icon: IconBug, exact: true },
       ],
     });
   }
@@ -121,11 +122,11 @@ interface FooterNavSection {
   items: NavItemDef[];
 }
 
-function buildFooterNav(slug: string): FooterNavSection {
+function buildFooterNav(slug: string, t: (key: string) => string): FooterNavSection {
   return {
     items: [
-      { href: "/docs", label: "Documentação", icon: IconBook, exact: false },
-      { href: `/${slug}/settings/installation`, label: "Configurações", icon: IconSettings, exact: false, activePrefix: `/${slug}/settings` },
+      { href: "/docs", label: t("nav.docs"), icon: IconBook, exact: false },
+      { href: `/${slug}/settings/installation`, label: t("nav.settings"), icon: IconSettings, exact: false, activePrefix: `/${slug}/settings` },
     ],
   };
 }
@@ -157,6 +158,7 @@ function NavItem({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const t = useTranslations("sidebar");
   const isActive = activePrefix
     ? pathname.includes(activePrefix)
     : exact
@@ -175,7 +177,7 @@ function NavItem({
     return (
       <div
         className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium border border-transparent text-zinc-600 cursor-not-allowed opacity-50"
-        title={`Disponível no plano ${lockBadge}`}
+        title={t("lockBadge.availableOnPlan", { plan: lockBadge ?? "" })}
       >
         <Icon size={18} className="shrink-0 text-zinc-700" />
         {!collapsed && (
@@ -234,6 +236,7 @@ function OrgSwitcher({ slug, collapsed }: { slug: string; collapsed?: boolean })
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const t = useTranslations("sidebar");
 
   if (isLoading) return null;
 
@@ -255,13 +258,13 @@ function OrgSwitcher({ slug, collapsed }: { slug: string; collapsed?: boolean })
     <Command className="bg-transparent">
       {organizations.length > 3 && (
         <CommandInput
-          placeholder="Buscar organização..."
+          placeholder={t("orgSwitcher.searchPlaceholder")}
           className="border-zinc-800 text-xs text-zinc-200 placeholder:text-zinc-600"
         />
       )}
       <CommandList>
         <CommandEmpty className="py-4 text-xs text-zinc-500">
-          Nenhuma organização encontrada.
+          {t("orgSwitcher.noResults")}
         </CommandEmpty>
         <CommandGroup>
           {organizations.map((org) => (
@@ -288,14 +291,14 @@ function OrgSwitcher({ slug, collapsed }: { slug: string; collapsed?: boolean })
             className="cursor-pointer gap-2 rounded-md px-2 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800 aria-selected:bg-zinc-800"
           >
             <IconBuilding size={12} className="shrink-0" />
-            <span>Gerenciar organizações</span>
+            <span>{t("orgSwitcher.manageOrgs")}</span>
           </CommandItem>
           <CommandItem
             onSelect={() => { setOpen(false); router.push("/onboarding?new-org=1"); }}
             className="cursor-pointer gap-2 rounded-md px-2 py-1.5 text-xs text-zinc-400 hover:bg-zinc-800 aria-selected:bg-zinc-800"
           >
             <IconPlus size={12} className="shrink-0" />
-            <span>Nova organização</span>
+            <span>{t("orgSwitcher.newOrg")}</span>
           </CommandItem>
         </CommandGroup>
       </CommandList>
@@ -308,7 +311,7 @@ function OrgSwitcher({ slug, collapsed }: { slug: string; collapsed?: boolean })
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <button
-              title={organization?.name ?? "Trocar organização"}
+              title={organization?.name ?? t("orgSwitcher.switchOrg")}
               className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-xs font-bold text-zinc-300 hover:border-indigo-500/50 hover:bg-zinc-800 hover:text-indigo-400 transition-colors"
             >
               {initials}
@@ -336,7 +339,7 @@ function OrgSwitcher({ slug, collapsed }: { slug: string; collapsed?: boolean })
               {initials}
             </div>
             <span className="flex-1 truncate text-xs font-medium text-zinc-200">
-              {organization?.name ?? "Selecionar org"}
+              {organization?.name ?? t("orgSwitcher.selectOrg")}
             </span>
             <IconSelector size={12} className="shrink-0 text-zinc-600" />
           </button>
@@ -368,9 +371,10 @@ function SidebarContent({
   const { organization } = useOrganization();
   const { data: hasData } = useOrgHasData(organization?.id);
   const { data: billing } = useBilling();
+  const t = useTranslations("sidebar");
   const hasAi = billing?.plan.hasAiAnalysis ?? false;
-  const sections = buildNavSections(slug, hasData ?? true, hasAi);
-  const footerNav = buildFooterNav(slug);
+  const sections = buildNavSections(slug, hasData ?? true, hasAi, t);
+  const footerNav = buildFooterNav(slug, t);
 
   const navRef = useRef<HTMLElement>(null);
   const [showScrollFade, setShowScrollFade] = useState(true);
@@ -476,7 +480,7 @@ function SidebarContent({
           )}
         >
           <IconLogout size={18} className="shrink-0" />
-          {!collapsed && <span>Sair</span>}
+          {!collapsed && <span>{t("logout")}</span>}
         </button>
       </div>
     </div>
@@ -486,6 +490,7 @@ function SidebarContent({
 export function Sidebar({ slug }: { slug: string }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const t = useTranslations("sidebar");
 
   return (
     <>
@@ -511,7 +516,7 @@ export function Sidebar({ slug }: { slug: string }) {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-56 bg-zinc-950 border-zinc-800 [&>button:last-of-type]:hidden">
-            <SheetTitle className="sr-only">Menu de navegação</SheetTitle>
+            <SheetTitle className="sr-only">{t("mobileMenuTitle")}</SheetTitle>
             <SidebarContent slug={slug} onClose={() => setMobileOpen(false)} />
           </SheetContent>
         </Sheet>

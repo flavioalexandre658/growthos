@@ -1,0 +1,48 @@
+{
+  "orgCard": {
+    "revenuePerMonth": "receita/mês",
+    "visits": "visitas",
+    "payments": "pagamentos",
+    "noDataYet": "Sem dados ainda",
+    "installTracker": "instalar tracker →"
+  },
+  "emptyState": {
+    "title": "Nenhuma organização ainda",
+    "description": "Crie sua primeira organização para começar a coletar dados e acompanhar o crescimento do seu negócio.",
+    "createButton": "Criar organização"
+  },
+  "header": {
+    "plan": "Plano",
+    "signOut": "Sair"
+  },
+  "content": {
+    "title": "Suas organizações",
+    "subtitle": "Selecione uma organização para acessar o dashboard",
+    "newOrganization": "Nova organização",
+    "orgLimitTooltip": "Seu plano permite no máximo {maxOrgs} org(s)"
+  },
+  "billingBar": {
+    "plan": "Plano",
+    "revenue": "receita",
+    "orgs": "orgs",
+    "upgrade": "upgrade",
+    "details": "detalhes"
+  },
+  "createDialog": {
+    "title": "Nova organização",
+    "description": "Crie um workspace para um novo produto ou empresa.",
+    "nameLabel": "Nome",
+    "namePlaceholder": "Minha Empresa",
+    "nameMinError": "Nome deve ter pelo menos 2 caracteres",
+    "slugLabel": "Slug",
+    "slugPrefix": "org/",
+    "slugPlaceholder": "minha-empresa",
+    "slugMinError": "Slug deve ter pelo menos 2 caracteres",
+    "slugFormatError": "Slug deve conter apenas letras minúsculas, números e hífens",
+    "cancel": "Cancelar",
+    "creating": "Criando...",
+    "createButton": "Criar organização",
+    "successToast": "Organização \"{name}\" criada com sucesso!",
+    "errorToast": "Erro ao criar organização"
+  }
+}

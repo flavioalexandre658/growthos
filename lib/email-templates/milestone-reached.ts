@@ -1,4 +1,4 @@
-import { baseEmailLayout, ctaButton, divider } from "./base-layout";
+import { baseEmailLayout, ctaButton, divider, type Locale } from "./base-layout";
 
 export interface IMilestoneReachedEmailParams {
   orgName: string;
@@ -8,7 +8,33 @@ export interface IMilestoneReachedEmailParams {
   metricValue: string;
   shareUrl?: string;
   dashboardUrl: string;
+  locale?: Locale;
 }
+
+const translations = {
+  pt: {
+    badge: "MARCO ATINGIDO",
+    body: (orgName: string) =>
+      `<strong style="color:#d4d4d8;">${orgName}</strong> acaba de atingir um novo marco. Este é um momento incrível — você está construindo algo real.`,
+    shareTitle: "COMPARTILHE COM SUA AUDIÊNCIA",
+    shareBody: "Mostre seu progresso publicamente. Sua página pública está disponível para compartilhar.",
+    shareLink: "Ver página pública →",
+    cta: "Ver métricas no dashboard",
+    previewText: (orgName: string, milestone: string) =>
+      `${orgName} atingiu: ${milestone}`,
+  },
+  en: {
+    badge: "MILESTONE REACHED",
+    body: (orgName: string) =>
+      `<strong style="color:#d4d4d8;">${orgName}</strong> just reached a new milestone. This is an incredible moment — you're building something real.`,
+    shareTitle: "SHARE WITH YOUR AUDIENCE",
+    shareBody: "Show your progress publicly. Your public page is available to share.",
+    shareLink: "View public page →",
+    cta: "View metrics on dashboard",
+    previewText: (orgName: string, milestone: string) =>
+      `${orgName} reached: ${milestone}`,
+  },
+} as const;
 
 export function milestoneReachedEmail(params: IMilestoneReachedEmailParams): string {
   const {
@@ -20,10 +46,12 @@ export function milestoneReachedEmail(params: IMilestoneReachedEmailParams): str
     shareUrl,
     dashboardUrl,
   } = params;
+  const locale = params.locale ?? "pt";
+  const t = translations[locale];
 
   const content = `
     <p style="color:#6366f1; font-size:12px; font-weight:600; letter-spacing:0.8px; text-transform:uppercase; margin-bottom:20px;">
-      MARCO ATINGIDO
+      ${t.badge}
     </p>
 
     <div style="text-align:center; padding: 8px 0 24px;">
@@ -39,8 +67,7 @@ export function milestoneReachedEmail(params: IMilestoneReachedEmailParams): str
       </h1>
 
       <p style="color:#a1a1aa; font-size:14px; line-height:1.7; max-width:360px; margin:0 auto;">
-        <strong style="color:#d4d4d8;">${orgName}</strong> acaba de atingir um novo marco.
-        Este é um momento incrível — você está construindo algo real.
+        ${t.body(orgName)}
       </p>
     </div>
 
@@ -75,10 +102,10 @@ export function milestoneReachedEmail(params: IMilestoneReachedEmailParams): str
           padding:16px 20px;
         ">
           <p style="color:#52525b; font-size:12px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:8px;">
-            COMPARTILHE COM SUA AUDIÊNCIA
+            ${t.shareTitle}
           </p>
           <p style="color:#71717a; font-size:13px; line-height:1.6; margin:0 0 12px;">
-            Mostre seu progresso publicamente. Sua página pública está disponível para compartilhar.
+            ${t.shareBody}
           </p>
           <a href="${shareUrl}" style="
             display:inline-block;
@@ -90,17 +117,18 @@ export function milestoneReachedEmail(params: IMilestoneReachedEmailParams): str
             font-size:12px;
             font-weight:600;
             text-decoration:none;
-          ">Ver página pública →</a>
+          ">${t.shareLink}</a>
         </td>
       </tr>
     </table>
     ` : ""}
 
-    ${ctaButton("Ver métricas no dashboard", dashboardUrl)}
+    ${ctaButton(t.cta, dashboardUrl)}
   `;
 
   return baseEmailLayout(
     content,
-    `${orgName} atingiu: ${milestoneLabel}`
+    locale,
+    t.previewText(orgName, milestoneLabel)
   );
 }

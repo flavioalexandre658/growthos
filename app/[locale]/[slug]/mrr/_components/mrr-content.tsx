@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import { useTranslations } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { PeriodFilter } from "@/app/[locale]/[slug]/_components/period-filter";
 import { MrrKpiCards } from "./mrr-kpi-cards";
@@ -18,6 +19,7 @@ interface MrrContentProps {
 }
 
 export function MrrContent({ filter }: MrrContentProps) {
+  const t = useTranslations("mrr.content");
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
@@ -29,9 +31,9 @@ export function MrrContent({ filter }: MrrContentProps) {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-bold text-zinc-100">Recorrência</h1>
+          <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>
           <p className="text-xs text-zinc-500">
-            MRR, churn e evolução das assinaturas
+            {t("subtitle")}
           </p>
         </div>
         <Suspense>

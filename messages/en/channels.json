@@ -1,0 +1,19 @@
+{
+  "channels": {
+    "content": {
+      "title": "Acquisition Channels",
+      "subtitle": "Revenue, conversion and average ticket by channel",
+      "searchPlaceholder": "Search channel..."
+    },
+    "kpiStrip": {
+      "totalChannels": "Total Channels",
+      "withRevenue": "{count} with revenue",
+      "totalRevenue": "Total Revenue",
+      "inPeriod": "in period",
+      "leadChannel": "Lead Channel",
+      "highestRevenue": "highest revenue",
+      "concentration": "Concentration",
+      "top2Channels": "top 2 channels"
+    }
+  }
+}

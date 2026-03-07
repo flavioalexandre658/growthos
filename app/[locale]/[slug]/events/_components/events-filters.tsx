@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
+import { useTranslations } from "next-intl";
 import { IconSearch, IconX, IconFilter } from "@tabler/icons-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,8 @@ export function EventsFilters({
   onClear,
   hasActiveFilters,
 }: EventsFiltersProps) {
+  const t = useTranslations("eventsFilters");
+
   return (
     <div className="space-y-3">
       <div className="relative w-full">
@@ -83,7 +86,7 @@ export function EventsFilters({
           className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"
         />
         <Input
-          placeholder="Buscar session_id, customer_id, product_id ou nome do produto..."
+          placeholder={t("searchPlaceholder")}
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           className="pl-8 h-8 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-600 text-xs font-mono"
@@ -103,7 +106,7 @@ export function EventsFilters({
             className="h-8 gap-1.5 text-xs text-zinc-500 hover:text-zinc-200 border border-zinc-700/50"
           >
             <IconX size={12} />
-            Limpar
+            {t("clear")}
           </Button>
         )}
       </div>
@@ -112,7 +115,7 @@ export function EventsFilters({
         <div className="flex items-center gap-1.5 pt-0.5 shrink-0">
           <IconFilter size={12} className="text-zinc-600" />
           <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold">
-            Tipo
+            {t("typeLabel")}
           </span>
         </div>
         <div className="overflow-x-auto scrollbar-none -mx-1 px-1">
@@ -139,30 +142,30 @@ export function EventsFilters({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5">
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold shrink-0">
-            Cobrança
+            {t("billingLabel")}
           </span>
           <select
             value={selectedBillingType}
             onChange={(e) => onBillingType(e.target.value)}
             className="h-8 rounded-lg border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-300 focus:border-indigo-500 focus:outline-none"
           >
-            <option value="">Todos</option>
-            <option value="recurring">Assinatura</option>
-            <option value="one_time">Avulso</option>
+            <option value="">{t("billingAll")}</option>
+            <option value="recurring">{t("billingSubscription")}</option>
+            <option value="one_time">{t("billingOneTime")}</option>
           </select>
         </div>
 
         {distinctProviders.length > 0 && (
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold shrink-0">
-              Provider
+              {t("providerLabel")}
             </span>
             <select
               value={selectedProvider}
               onChange={(e) => onProvider(e.target.value)}
               className="h-8 rounded-lg border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-300 focus:border-indigo-500 focus:outline-none"
             >
-              <option value="">Todos</option>
+              <option value="">{t("providerAll")}</option>
               {distinctProviders.map((p) => (
                 <option key={p} value={p}>
                   {p}
@@ -175,14 +178,14 @@ export function EventsFilters({
         {distinctSources.length > 0 && (
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold shrink-0">
-              Canal
+              {t("channelLabel")}
             </span>
             <select
               value={selectedSource}
               onChange={(e) => onSource(e.target.value)}
               className="h-8 rounded-lg border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-300 focus:border-indigo-500 focus:outline-none"
             >
-              <option value="">Todos</option>
+              <option value="">{t("channelAll")}</option>
               {distinctSources.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -195,14 +198,14 @@ export function EventsFilters({
         {distinctDevices.length > 0 && (
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold shrink-0">
-              Device
+              {t("deviceLabel")}
             </span>
             <select
               value={selectedDevice}
               onChange={(e) => onDevice(e.target.value)}
               className="h-8 rounded-lg border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-300 focus:border-indigo-500 focus:outline-none"
             >
-              <option value="">Todos</option>
+              <option value="">{t("deviceAll")}</option>
               {distinctDevices.map((d) => (
                 <option key={d} value={d}>
                   {d}
@@ -214,12 +217,12 @@ export function EventsFilters({
 
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold shrink-0">
-            Valor
+            {t("valueLabel")}
           </span>
           <div className="flex items-center gap-1">
             <input
               type="number"
-              placeholder="Min"
+              placeholder={t("valuePlaceholderMin")}
               value={minValue}
               onChange={(e) => onMinValue(e.target.value)}
               className="h-8 w-20 rounded-lg border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-300 placeholder:text-zinc-700 focus:border-indigo-500 focus:outline-none"
@@ -227,7 +230,7 @@ export function EventsFilters({
             <span className="text-zinc-700 text-xs shrink-0">–</span>
             <input
               type="number"
-              placeholder="Max"
+              placeholder={t("valuePlaceholderMax")}
               value={maxValue}
               onChange={(e) => onMaxValue(e.target.value)}
               className="h-8 w-20 rounded-lg border border-zinc-700 bg-zinc-900 px-2 text-xs text-zinc-300 placeholder:text-zinc-700 focus:border-indigo-500 focus:outline-none"

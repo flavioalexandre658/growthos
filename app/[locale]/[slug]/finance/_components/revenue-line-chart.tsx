@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   Area,
   Line,
@@ -39,40 +40,39 @@ interface CustomTooltipProps {
   payload?: TooltipPayloadItem[];
 }
 
-const SERIES = [
-  { key: "gross", label: "Receita Bruta", color: "#22c55e" },
-  { key: "operating_profit", label: "Lucro Operacional", color: "#06b6d4" },
-  { key: "net_profit", label: "Lucro Líquido", color: "#a855f7" },
-];
-
 function CustomTooltip({ active, label, payload }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-zinc-700/80 bg-zinc-900/95 px-3.5 py-3 text-xs shadow-2xl min-w-[160px]">
       <p className="text-zinc-500 font-medium mb-2">{label}</p>
       <div className="space-y-1.5">
-        {SERIES.map(({ key, label: seriesLabel, color }) => {
-          const item = payload.find((p) => p.dataKey === key);
-          if (!item) return null;
-          return (
-            <div key={key} className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full shrink-0" style={{ background: color }} />
-                <span className="text-zinc-400">{seriesLabel}</span>
-              </div>
-              <span className="font-bold font-mono tabular-nums" style={{ color }}>
-                {fmtBRLDecimal(item.value)}
-              </span>
+        {payload.map((item) => (
+          <div key={item.dataKey} className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full shrink-0" style={{ background: item.color }} />
+              <span className="text-zinc-400">{item.name}</span>
             </div>
-          );
-        })}
+            <span className="font-bold font-mono tabular-nums" style={{ color: item.color }}>
+              {fmtBRLDecimal(item.value)}
+            </span>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
 
+const SERIES_CONFIG = [
+  { key: "gross", tKey: "grossRevenue", color: "#22c55e" },
+  { key: "operating_profit", tKey: "operatingProfit", color: "#06b6d4" },
+  { key: "net_profit", tKey: "netProfit", color: "#a855f7" },
+];
+
 export function RevenueLineChart({ data, pl, isLoading }: RevenueLineChartProps) {
+  const t = useTranslations("finance.revenueChart");
   const rows = data ?? [];
+
+  const series = SERIES_CONFIG.map((s) => ({ ...s, label: t(s.tKey) }));
 
   const totalGross = rows.reduce((sum, d) => sum + (d.revenue ?? 0), 0);
 
@@ -100,14 +100,14 @@ export function RevenueLineChart({ data, pl, isLoading }: RevenueLineChartProps)
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <h3 className="text-sm font-bold text-zinc-100">
-        Evolução Diária do Resultado
+        {t("title")}
       </h3>
       <p className="mt-0.5 text-xs text-zinc-500 mb-5">
-        Receita bruta, lucro operacional e lucro líquido no período selecionado
+        {t("subtitle")}
       </p>
 
       <div className="flex items-center gap-4 flex-wrap mb-4">
-        {SERIES.map(({ key, label, color }) => (
+        {series.map(({ key, label, color }) => (
           <div key={key} className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full" style={{ background: color }} />
             <span className="text-[11px] text-zinc-500">{label}</span>
@@ -144,7 +144,7 @@ export function RevenueLineChart({ data, pl, isLoading }: RevenueLineChartProps)
             <Area
               type="monotone"
               dataKey="gross"
-              name="Receita Bruta"
+              name={series[0].label}
               stroke="#22c55e"
               strokeWidth={2}
               fill="url(#grad-gross)"
@@ -154,7 +154,7 @@ export function RevenueLineChart({ data, pl, isLoading }: RevenueLineChartProps)
             <Line
               type="monotone"
               dataKey="operating_profit"
-              name="Lucro Operacional"
+              name={series[1].label}
               stroke="#06b6d4"
               strokeWidth={1.5}
               dot={false}
@@ -163,7 +163,7 @@ export function RevenueLineChart({ data, pl, isLoading }: RevenueLineChartProps)
             <Line
               type="monotone"
               dataKey="net_profit"
-              name="Lucro Líquido"
+              name={series[2].label}
               stroke="#a855f7"
               strokeWidth={1.5}
               dot={false}

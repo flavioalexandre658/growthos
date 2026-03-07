@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslations } from "next-intl";
 import { IconWorld, IconLoader2 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -35,6 +36,7 @@ export function RegionalSection({
   currentCountry,
   currentLanguage,
 }: RegionalSectionProps) {
+  const t = useTranslations("settings.regional");
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [timezone, setTimezone] = useState(currentTimezone);
@@ -72,9 +74,9 @@ export function RegionalSection({
         language,
       });
       await queryClient.invalidateQueries({ queryKey: getOrganizationsQueryKey() });
-      toast.success("Configurações regionais atualizadas!");
+      toast.success(t("successToast"));
     } catch {
-      toast.error("Erro ao salvar configurações regionais.");
+      toast.error(t("errorToast"));
     } finally {
       setSaving(false);
     }
@@ -85,9 +87,9 @@ export function RegionalSection({
       <div className="flex items-center gap-2">
         <IconWorld size={15} className="text-indigo-400" />
         <div>
-          <h3 className="text-sm font-bold text-zinc-100">Configurações Regionais</h3>
+          <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Define moeda base, timezone, locale e idioma da IA para toda a organização
+            {t("description")}
           </p>
         </div>
       </div>
@@ -95,7 +97,7 @@ export function RegionalSection({
       <div className="space-y-4">
         <div className="space-y-2">
           <Label className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
-            Localização
+            {t("localeLabel")}
           </Label>
           <select
             value={locale}
@@ -109,14 +111,14 @@ export function RegionalSection({
             ))}
           </select>
           <p className="text-xs text-zinc-600">
-            Altera moeda, país e idioma automaticamente
+            {t("localeHint")}
           </p>
         </div>
 
         <div className="flex flex-wrap gap-3">
           <div className="space-y-2 flex-1 min-w-[140px] sm:min-w-[180px]">
             <Label className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
-              Moeda base
+              {t("currencyLabel")}
             </Label>
             <select
               value={currency}
@@ -130,13 +132,13 @@ export function RegionalSection({
               ))}
             </select>
             <p className="text-xs text-zinc-600">
-              Todos os valores no dashboard são convertidos para esta moeda
+              {t("currencyHint")}
             </p>
           </div>
 
           <div className="space-y-2 flex-1 min-w-[140px] sm:min-w-[180px]">
             <Label className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
-              Idioma da IA
+              {t("aiLanguageLabel")}
             </Label>
             <select
               value={language}
@@ -154,7 +156,7 @@ export function RegionalSection({
 
         <div className="space-y-2">
           <Label className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
-            Fuso horário
+            {t("timezoneLabel")}
           </Label>
           <div className="flex flex-wrap items-center gap-3">
             <select
@@ -170,7 +172,7 @@ export function RegionalSection({
             </select>
           </div>
           <p className="text-xs text-zinc-600">
-            Define como &quot;hoje&quot; e filtros de data são interpretados nos relatórios
+            {t("timezoneHint")}
           </p>
         </div>
       </div>
@@ -183,7 +185,7 @@ export function RegionalSection({
           className="bg-indigo-600 hover:bg-indigo-500 text-white h-9 text-xs gap-2"
         >
           {saving && <IconLoader2 size={13} className="animate-spin" />}
-          {saving ? "Salvando..." : "Salvar"}
+          {saving ? t("saving") : t("save")}
         </Button>
       </div>
     </div>

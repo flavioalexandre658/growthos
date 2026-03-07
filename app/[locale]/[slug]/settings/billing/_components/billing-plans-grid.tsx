@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { PLANS_LIST, formatRevenueLimit } from "@/utils/plans";
 import type { PlanSlug } from "@/utils/plans";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ export function BillingPlansGrid({
   onSelectPlan,
   isLoading,
 }: BillingPlansGridProps) {
+  const t = useTranslations("settings.billing.plansGrid");
   const isBrl = currency === "brl";
   const isAnnual = billingInterval === "annual";
 
@@ -53,13 +55,13 @@ export function BillingPlansGrid({
             {plan.popular && (
               <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-indigo-600 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full">
                 <IconSparkles size={10} />
-                Popular
+                {t("popular")}
               </div>
             )}
 
             {isCurrent && (
               <div className="absolute -top-2.5 right-4 bg-zinc-700 text-zinc-200 text-[10px] font-bold uppercase tracking-wider px-3 py-0.5 rounded-full">
-                Atual
+                {t("current")}
               </div>
             )}
 
@@ -79,12 +81,12 @@ export function BillingPlansGrid({
             <div className="mb-1">
               <span className="text-3xl font-bold text-zinc-100 tracking-tight">{priceFormatted}</span>
               {!isFree && (
-                <span className="text-xs text-zinc-500 ml-1">/{isAnnual ? "mês (anual)" : "mês"}</span>
+                <span className="text-xs text-zinc-500 ml-1">/{isAnnual ? t("perMonthAnnual") : t("perMonth")}</span>
               )}
             </div>
 
             <p className="text-[11px] text-zinc-600 mb-5">
-              {isFree ? "Para sempre" : `Até ${revLimit} receita/mês`}
+              {isFree ? t("forever") : t("upToRevenue", { limit: revLimit })}
             </p>
 
             <div className="flex-1 space-y-2 mb-5">
@@ -117,7 +119,7 @@ export function BillingPlansGrid({
                 isLoading && "opacity-50 cursor-wait",
               )}
             >
-              {isCurrent ? "Plano atual" : isFree ? "Downgrade" : "Escolher plano"}
+              {isCurrent ? t("currentPlan") : isFree ? t("downgrade") : t("choosePlan")}
             </button>
           </div>
         );

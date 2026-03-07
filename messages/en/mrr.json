@@ -1,0 +1,153 @@
+{
+  "mrr": {
+    "content": {
+      "title": "Recurrence",
+      "subtitle": "MRR, churn and subscription evolution"
+    },
+    "kpiCards": {
+      "comparedToPreviousPeriod": "Compared to previous period",
+      "infoAbout": "Information about {label}",
+      "snapshotHeader": "Current Snapshot",
+      "snapshotMuted": "— independent of date filter",
+      "periodHeader": "Selected Period",
+      "periodMuted": "— changes with date filter",
+      "healthHeader": "Health",
+      "forecastHeader": "Forecast",
+      "mrr": {
+        "label": "MRR",
+        "subLabel": "Monthly recurring revenue",
+        "tooltip": "Monthly Recurring Revenue — sum of the normalized monthly value of all currently active subscriptions. Does not change with the date filter."
+      },
+      "arr": {
+        "label": "ARR",
+        "subLabel": "MRR × 12",
+        "tooltip": "Annual Recurring Revenue — annual projection of current recurring revenue. Calculated as MRR × 12."
+      },
+      "subscribers": {
+        "label": "Subscribers",
+        "subLabel": "Currently active",
+        "tooltip": "Total subscriptions with active or trial status at this moment. Current snapshot, not filtered by period."
+      },
+      "arpu": {
+        "label": "ARPU",
+        "subLabel": "Per subscriber/month",
+        "tooltip": "Average Revenue Per User — MRR divided by the number of active subscribers. Indicates the average value each customer generates per month."
+      },
+      "periodRevenue": {
+        "label": "Period Revenue",
+        "subLabel": "{count, plural, =1 {# purchase in period} other {# purchases in period}}",
+        "tooltip": "Sum of all payments received within the filtered period. Includes renewals and new subscriptions. This is the cash that actually came in."
+      },
+      "renewals": {
+        "label": "Renewals",
+        "subLabel": "{count} charges in period",
+        "tooltip": "Number of existing subscriptions (created before the period) that had a payment registered within the selected date filter."
+      },
+      "nrr": {
+        "label": "NRR",
+        "expansionExceedsChurn": "Expansion exceeds churn",
+        "churnExceedsExpansion": "Churn exceeds expansion",
+        "tooltip": "Net Revenue Retention — measures whether revenue from the existing base is growing. Above 100% means upgrades and expansion offset cancellations. Below 100% signals revenue loss."
+      },
+      "churnRate": {
+        "label": "Churn Rate",
+        "subLabel": "Canceled subscribers",
+        "tooltip": "Percentage of subscribers who canceled during the period relative to the active base. The lower, the healthier the retention."
+      },
+      "revenueChurn": {
+        "label": "Revenue Churn",
+        "subLabel": "Lost MRR",
+        "tooltip": "Percentage of MRR lost to cancellations in the period. Different from Churn Rate: a customer on an expensive plan canceling weighs more here."
+      },
+      "mrrGrowth": {
+        "label": "MRR Growth",
+        "subLabel": "Net MRR Growth Rate",
+        "tooltip": "Net MRR growth rate: (new MRR + expansion − churn − contraction) ÷ initial MRR. Positive = business growing."
+      },
+      "ltv": {
+        "label": "Est. LTV",
+        "subLabel": "Estimated lifetime value",
+        "tooltip": "Estimated Lifetime Value — average total value a subscriber generates throughout the relationship. Calculated as ARPU ÷ Churn Rate."
+      },
+      "forecast": {
+        "label": "Forecast next 30 days",
+        "infoAriaLabel": "Information about Forecast",
+        "tooltip": "Sum of the value of active subscriptions whose next billing date falls within the next 30 days. Useful for projecting short-term cash flow.",
+        "renewalsExpected": "{count, plural, =1 {# renewal expected} other {# renewals expected}}"
+      }
+    },
+    "subscriptionsTable": {
+      "title": "Subscriptions",
+      "totalCount": "{count} subscriptions total",
+      "emptyMessage": "No subscriptions found",
+      "allPlans": "All plans",
+      "nextBillingPrefix": "Next:",
+      "firstCharge": "1st charge",
+      "statusLabels": {
+        "active": "Active",
+        "trialing": "Trial",
+        "pastDue": "Past due",
+        "canceled": "Canceled"
+      },
+      "statusFilters": {
+        "active": "Active",
+        "all": "All",
+        "trialing": "Trial",
+        "pastDue": "Past due",
+        "canceled": "Canceled"
+      },
+      "intervalFilters": {
+        "all": "All",
+        "monthly": "Monthly",
+        "quarterly": "Quarterly",
+        "semiannual": "Semiannual",
+        "yearly": "Yearly",
+        "weekly": "Weekly"
+      },
+      "nextBillingFilters": {
+        "all": "All",
+        "today": "Today",
+        "7d": "7 days",
+        "30d": "30 days"
+      },
+      "columns": {
+        "customer": "Customer",
+        "plan": "Plan",
+        "value": "Value",
+        "ltvAccum": "Accum. LTV",
+        "renewals": "Renewals",
+        "nextBilling": "Next billing",
+        "status": "Status",
+        "since": "Since"
+      }
+    },
+    "movementChart": {
+      "title": "MRR Movement",
+      "subtitle": "New, Renewals, Upgrades, Churn and Contraction by period",
+      "emptyMessage": "No recurrence data in the period",
+      "legendNewMrr": "New MRR",
+      "legendRenewals": "Renewals",
+      "legendUpgrade": "Upgrade",
+      "legendChurn": "Churn",
+      "legendDowngrade": "Downgrade",
+      "legendNetMrr": "Net MRR"
+    },
+    "growthChart": {
+      "title": "MRR Evolution",
+      "subtitle": "Monthly recurring revenue growth in the period",
+      "emptyMessage": "No recurrence data in the period"
+    },
+    "subscriberFlow": {
+      "title": "Subscriber Flow",
+      "subtitle": "New and renewals → Active Base → Cancellations and past due in the period",
+      "emptyMessage": "No recurrence data",
+      "newSubscriptions": "New subscriptions",
+      "renewals": "Renewals",
+      "cancellations": "Cancellations",
+      "pastDue": "Past due",
+      "inputs": "Inputs",
+      "outputs": "Outputs",
+      "activeBase": "Active Base"
+    }
+  }
+}

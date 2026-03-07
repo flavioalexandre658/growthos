@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, Suspense, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { useLandingPages } from "@/hooks/queries/use-landing-pages";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useOrganization } from "@/components/providers/organization-provider";
@@ -22,20 +23,20 @@ import { cn } from "@/lib/utils";
 const EMPTY_PAGINATION = { page: 1, limit: 30, total: 0, total_pages: 0 };
 
 type PageType =
-  | "Produto"
-  | "Categoria"
-  | "Checkout"
-  | "Sistema"
-  | "Entrada"
-  | "Outras";
+  | "product"
+  | "category"
+  | "checkout"
+  | "system"
+  | "landing"
+  | "other";
 
-const PAGE_TYPE_LABELS: PageType[] = [
-  "Produto",
-  "Categoria",
-  "Checkout",
-  "Sistema",
-  "Entrada",
-  "Outras",
+const PAGE_TYPE_KEYS: PageType[] = [
+  "product",
+  "category",
+  "checkout",
+  "system",
+  "landing",
+  "other",
 ];
 
 function classifyPage(path: string): PageType {
@@ -45,19 +46,19 @@ function classifyPage(path: string): PageType {
     /\/(produto|product|produtos|products|p|item|items)\//i.test(p) ||
     /\/(produto|product|produtos|products|p|item)\/?$/.test(p)
   )
-    return "Produto";
+    return "product";
 
   if (
     /\/(categoria|category|categorias|categories|catalogo|catalog|colecao|collection|tag|tags)\//i.test(p) ||
     /\/(categoria|category|catalogo|catalog)\/?$/.test(p)
   )
-    return "Categoria";
+    return "category";
 
   if (
     /\/(checkout|carrinho|cart|pagamento|payment|pagar|pay|comprar|buy)\//i.test(p) ||
     /\/(checkout|carrinho|cart|pagamento|payment)\/?$/.test(p)
   )
-    return "Checkout";
+    return "checkout";
 
   if (
     /\/(conta|account|login|register|signup|sign-up|cadastro|perfil|profile|dashboard|painel|configuracoes|settings|obrigado|thank-you|thanks|sucesso|success|comprovante)\//i.test(
@@ -67,12 +68,12 @@ function classifyPage(path: string): PageType {
       p
     )
   )
-    return "Sistema";
+    return "system";
 
   const segments = p.split("/").filter(Boolean);
-  if (segments.length <= 1) return "Entrada";
+  if (segments.length <= 1) return "landing";
 
-  return "Outras";
+  return "other";
 }
 
 interface PageTypeDropdownProps {
@@ -81,6 +82,7 @@ interface PageTypeDropdownProps {
 }
 
 function PageTypeDropdown({ selected, onChange }: PageTypeDropdownProps) {
+  const t = useTranslations("pages.pageTypes");
   const [open, setOpen] = useState(false);
 
   const toggle = (type: PageType) => {
@@ -95,10 +97,10 @@ function PageTypeDropdown({ selected, onChange }: PageTypeDropdownProps) {
 
   const label =
     selected.size === 0
-      ? "Tipo de Página"
-      : selected.size === PAGE_TYPE_LABELS.length
-        ? "Todos os tipos"
-        : `${selected.size} tipo${selected.size > 1 ? "s" : ""}`;
+      ? t("label")
+      : selected.size === PAGE_TYPE_KEYS.length
+        ? t("allTypes")
+        : t("countTypes", { count: selected.size });
 
   return (
     <div className="relative">
@@ -106,7 +108,7 @@ function PageTypeDropdown({ selected, onChange }: PageTypeDropdownProps) {
         onClick={() => setOpen((v) => !v)}
         className={cn(
           "flex items-center gap-1.5 h-8 px-3 rounded-md border text-xs transition-colors",
-          selected.size > 0 && selected.size < PAGE_TYPE_LABELS.length
+          selected.size > 0 && selected.size < PAGE_TYPE_KEYS.length
             ? "border-indigo-600/50 bg-indigo-600/15 text-indigo-300"
             : "border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300 bg-zinc-900"
         )}
@@ -126,28 +128,28 @@ function PageTypeDropdown({ selected, onChange }: PageTypeDropdownProps) {
               className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
               onClick={() =>
                 onChange(
-                  selected.size === PAGE_TYPE_LABELS.length
+                  selected.size === PAGE_TYPE_KEYS.length
                     ? new Set()
-                    : new Set(PAGE_TYPE_LABELS)
+                    : new Set(PAGE_TYPE_KEYS)
                 )
               }
             >
               <span
                 className={cn(
                   "flex h-3.5 w-3.5 items-center justify-center rounded border transition-colors",
-                  selected.size === PAGE_TYPE_LABELS.length
+                  selected.size === PAGE_TYPE_KEYS.length
                     ? "border-indigo-500 bg-indigo-500"
                     : "border-zinc-600"
                 )}
               >
-                {selected.size === PAGE_TYPE_LABELS.length && (
+                {selected.size === PAGE_TYPE_KEYS.length && (
                   <IconCheck size={9} className="text-white" />
                 )}
               </span>
-              Todos
+              {t("all")}
             </button>
             <div className="my-1 border-t border-zinc-800" />
-            {PAGE_TYPE_LABELS.map((type) => (
+            {PAGE_TYPE_KEYS.map((type) => (
               <button
                 key={type}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
@@ -165,7 +167,7 @@ function PageTypeDropdown({ selected, onChange }: PageTypeDropdownProps) {
                     <IconCheck size={9} className="text-white" />
                   )}
                 </span>
-                {type}
+                {t(type)}
               </button>
             ))}
           </div>
@@ -180,6 +182,7 @@ interface PagesContentProps {
 }
 
 export function PagesContent({ filter }: PagesContentProps) {
+  const t = useTranslations("pages.content");
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
@@ -215,9 +218,9 @@ export function PagesContent({ filter }: PagesContentProps) {
     <div className="space-y-4">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-bold text-zinc-100">Páginas</h1>
+          <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>
           <p className="text-xs text-zinc-500">
-            Conversão e receita por página de entrada
+            {t("subtitle")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -247,7 +250,7 @@ export function PagesContent({ filter }: PagesContentProps) {
             className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"
           />
           <Input
-            placeholder="Buscar página..."
+            placeholder={t("searchPlaceholder")}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);

@@ -1,0 +1,103 @@
+{
+  "nav": {
+    "installation": "Installation",
+    "funnel": "Funnel",
+    "organization": "Organization",
+    "integrations": "Integrations",
+    "billing": "Plan & Usage",
+    "team": "Team",
+    "aiProfile": "AI Profile",
+    "regional": "Regional",
+    "notifications": "Notifications",
+    "publicPage": "Public Page"
+  },
+  "layout": {
+    "title": "Settings",
+    "subtitle": "Manage organization, integrations and preferences"
+  },
+  "wrapper": {
+    "notFound": "Organization not found."
+  },
+  "regional": {
+    "title": "Regional Settings",
+    "description": "Set base currency, timezone, locale and AI language for the entire organization",
+    "localeLabel": "Locale",
+    "localeHint": "Automatically changes currency, country and language",
+    "currencyLabel": "Base currency",
+    "currencyHint": "All dashboard values are converted to this currency",
+    "aiLanguageLabel": "AI Language",
+    "timezoneLabel": "Timezone",
+    "timezoneHint": "Defines how \"today\" and date filters are interpreted in reports",
+    "saving": "Saving...",
+    "save": "Save",
+    "successToast": "Regional settings updated!",
+    "errorToast": "Error saving regional settings."
+  },
+  "team": {
+    "title": "Team",
+    "description": "Manage who has access to this organization",
+    "invite": "Invite",
+    "cancel": "Cancel",
+    "inviteNewMember": "Invite new member",
+    "emailLabel": "Email",
+    "emailPlaceholder": "colleague@company.com",
+    "roleLabel": "Role",
+    "roleOwner": "Owner",
+    "roleAdmin": "Admin",
+    "roleViewer": "Viewer",
+    "sendInvite": "Send invite",
+    "membersTitle": "Members",
+    "you": "you",
+    "removeMember": "Remove member",
+    "pendingInvites": "Pending invites",
+    "expired": "Expired",
+    "expiresIn": "Expires {time}",
+    "noMembersOrInvites": "No members or invites found.",
+    "emailRequiredToast": "Please enter the invitee's email.",
+    "inviteSentToast": "Invite sent to {email}!",
+    "memberRemovedToast": "{name} removed from the organization.",
+    "defaultMemberName": "Member"
+  },
+  "aiPrompt": {
+    "title": "AI Prompt",
+    "description": "Paste in Cursor, Claude or ChatGPT — the AI reads your project and implements the integration automatically.",
+    "copied": "Copied!",
+    "copyPrompt": "Copy prompt",
+    "copiedToast": "Prompt copied! Paste in Cursor, Claude or ChatGPT."
+  },
+  "billing": {
+    "currentPlan": {
+      "label": "Current plan",
+      "freeForeverBrl": "Free forever",
+      "freeForeverUsd": "Free forever",
+      "openingPortal": "Opening...",
+      "manageSubscription": "Manage subscription",
+      "upgrade": "Upgrade →",
+      "revenueThisMonth": "Revenue this month",
+      "organizations": "Organizations",
+      "limit": "Limit",
+      "orgLimitReached": "Limit reached. Upgrade to create more organizations.",
+      "members": "Members",
+      "planIncludes": "Your {planName} plan includes Stripe and MRR/Recurring — connect your gateway to see where every dollar of your revenue comes from."
+    },
+    "plansGrid": {
+      "popular": "Popular",
+      "current": "Current",
+      "perMonthAnnual": "mo (annual)",
+      "perMonth": "mo",
+      "forever": "Forever",
+      "upToRevenue": "Up to {limit} revenue/mo",
+      "currentPlan": "Current plan",
+      "downgrade": "Downgrade",
+      "choosePlan": "Choose plan"
+    }
+  },
+  "integrations": {
+    "comingSoon": "Coming soon",
+    "availableFromStarter": "Available from Starter",
+    "starterPlus": "Starter+",
+    "asaasDescription": "Payments and billing in Brazil",
+    "kiwifyDescription": "Digital products and online courses",
+    "hotmartDescription": "Digital products platform"
+  }
+}

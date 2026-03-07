@@ -1,0 +1,38 @@
+{
+  "sections": {
+    "overview": "Visão Geral",
+    "revenue": "Receita",
+    "acquisition": "Aquisição",
+    "intelligence": "Inteligência",
+    "data": "Dados"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "finance": "Financeiro",
+    "costs": "Custos",
+    "recurrence": "Recorrência",
+    "channels": "Canais",
+    "pages": "Páginas",
+    "aiAnalysis": "Análise com IA",
+    "comparative": "Comparativo",
+    "events": "Eventos",
+    "subscriptions": "Assinaturas",
+    "debug": "Debug",
+    "docs": "Documentação",
+    "settings": "Configurações"
+  },
+  "lockBadge": {
+    "starter": "Starter",
+    "availableOnPlan": "Disponível no plano {plan}"
+  },
+  "orgSwitcher": {
+    "searchPlaceholder": "Buscar organização...",
+    "noResults": "Nenhuma organização encontrada.",
+    "manageOrgs": "Gerenciar organizações",
+    "newOrg": "Nova organização",
+    "switchOrg": "Trocar organização",
+    "selectOrg": "Selecionar org"
+  },
+  "logout": "Sair",
+  "mobileMenuTitle": "Menu de navegação"
+}

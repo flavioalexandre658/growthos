@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fmtBRLDecimal, fmtInt } from "@/utils/format";
 import type { IMrrOverview } from "@/interfaces/mrr.interface";
@@ -98,7 +99,14 @@ interface FlowLink {
   h: number;
 }
 
-function buildFlowNodes(data: IMrrOverview): { inputs: FlowNode[]; outputs: FlowNode[] } {
+interface FlowLabels {
+  newSubscriptions: string;
+  renewals: string;
+  cancellations: string;
+  pastDue: string;
+}
+
+function buildFlowNodes(data: IMrrOverview, labels: FlowLabels): { inputs: FlowNode[]; outputs: FlowNode[] } {
   const newCount = data.newSubscriptions ?? 0;
   const renewalCount = data.renewalSubscriptions ?? 0;
   const churnedCount = data.churnedSubscriptions ?? 0;
@@ -106,12 +114,12 @@ function buildFlowNodes(data: IMrrOverview): { inputs: FlowNode[]; outputs: Flow
 
   return {
     inputs: [
-      { key: "new", label: "Novas assinaturas", value: newCount, color: COLORS.new },
-      { key: "renewal", label: "Renovações", value: renewalCount, color: COLORS.renewal },
+      { key: "new", label: labels.newSubscriptions, value: newCount, color: COLORS.new },
+      { key: "renewal", label: labels.renewals, value: renewalCount, color: COLORS.renewal },
     ],
     outputs: [
-      { key: "canceled", label: "Cancelamentos", value: churnedCount, color: COLORS.canceled },
-      { key: "pastdue", label: "Inadimplentes", value: pastDue, color: COLORS.pastdue },
+      { key: "canceled", label: labels.cancellations, value: churnedCount, color: COLORS.canceled },
+      { key: "pastdue", label: labels.pastDue, value: pastDue, color: COLORS.pastdue },
     ],
   };
 }
@@ -130,13 +138,14 @@ function FlowNodeRow({ label, value, color }: { label: string; value: number; co
   );
 }
 
-function SubscriberFlowMobile({ data }: { data: IMrrOverview }) {
-  const { inputs, outputs } = buildFlowNodes(data);
+function SubscriberFlowMobile({ data, flowLabels }: { data: IMrrOverview; flowLabels: FlowLabels }) {
+  const t = useTranslations("mrr.subscriberFlow");
+  const { inputs, outputs } = buildFlowNodes(data, flowLabels);
 
   return (
     <div className="space-y-2">
       <div className="space-y-1">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 px-1">Entradas</p>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 px-1">{t("inputs")}</p>
         <div className="space-y-1">
           {inputs.map((node) => (
             <FlowNodeRow key={node.key} label={node.label} value={node.value} color={node.color} />
@@ -152,7 +161,7 @@ function SubscriberFlowMobile({ data }: { data: IMrrOverview }) {
         className="rounded-xl px-4 py-3 text-center"
         style={{ background: "rgba(99,102,241,0.08)", border: "1px solid rgba(99,102,241,0.20)" }}
       >
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500 mb-1">Base Ativa</p>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500 mb-1">{t("activeBase")}</p>
         <p className="text-3xl font-bold font-mono text-zinc-100">{fmtInt(data.activeSubscriptions)}</p>
         <p className="text-xs font-mono text-zinc-400 mt-0.5">{fmtBRLDecimal((data.mrr ?? 0) / 100)} MRR</p>
       </div>
@@ -162,7 +171,7 @@ function SubscriberFlowMobile({ data }: { data: IMrrOverview }) {
       </div>
 
       <div className="space-y-1">
-        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 px-1">Saídas</p>
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600 px-1">{t("outputs")}</p>
         <div className="space-y-1">
           {outputs.map((node) => (
             <FlowNodeRow key={node.key} label={node.label} value={node.value} color={node.color} />
@@ -173,7 +182,7 @@ function SubscriberFlowMobile({ data }: { data: IMrrOverview }) {
   );
 }
 
-function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
+function SubscriberSankeyInner({ data, flowLabels, activeBaseLabel }: { data: IMrrOverview; flowLabels: FlowLabels; activeBaseLabel: string }) {
   const [hovered, setHovered] = useState<string | null>(null);
 
   const xLeft = 100;
@@ -181,7 +190,7 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
   const xRight = W - 100;
 
   const { links, allNodes } = useMemo(() => {
-    const { inputs, outputs } = buildFlowNodes(data);
+    const { inputs, outputs } = buildFlowNodes(data, flowLabels);
 
     const allValues = [
       data.activeSubscriptions,
@@ -234,7 +243,7 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
       })),
       {
         key: "active",
-        label: "Base Ativa",
+        label: activeBaseLabel,
         value: data.activeSubscriptions,
         color: COLORS.active,
         side: "center" as const,
@@ -250,7 +259,7 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
     ];
 
     return { links: computedLinks, allNodes: nodes };
-  }, [data, xLeft, xCenter, xRight]);
+  }, [data, xLeft, xCenter, xRight, flowLabels, activeBaseLabel]);
 
 
   return (
@@ -409,7 +418,7 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
                 fontWeight="600"
                 letterSpacing="0.05em"
               >
-                BASE ATIVA
+                {activeBaseLabel.toUpperCase()}
               </text>
               <text
                 x={xCenter}
@@ -492,25 +501,34 @@ function SubscriberSankeyInner({ data }: { data: IMrrOverview }) {
 }
 
 export function SubscriberFlowSankey({ data, isLoading }: SubscriberFlowSankeyProps) {
+  const t = useTranslations("mrr.subscriberFlow");
+
+  const flowLabels: FlowLabels = {
+    newSubscriptions: t("newSubscriptions"),
+    renewals: t("renewals"),
+    cancellations: t("cancellations"),
+    pastDue: t("pastDue"),
+  };
+
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-      <h3 className="text-sm font-bold text-zinc-100">Fluxo de Assinantes</h3>
+      <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
       <p className="mt-0.5 text-xs text-zinc-500 mb-2">
-        Novas e renovações → Base Ativa → Cancelamentos e inadimplência no período
+        {t("subtitle")}
       </p>
       {isLoading ? (
         <Skeleton className="h-48 w-full rounded-lg bg-zinc-800" />
       ) : !data ? (
         <div className="flex items-center justify-center h-48 text-zinc-600 text-sm">
-          Sem dados de recorrência
+          {t("emptyMessage")}
         </div>
       ) : (
         <>
           <div className="md:hidden">
-            <SubscriberFlowMobile data={data} />
+            <SubscriberFlowMobile data={data} flowLabels={flowLabels} />
           </div>
           <div className="hidden md:block">
-            <SubscriberSankeyInner data={data} />
+            <SubscriberSankeyInner data={data} flowLabels={flowLabels} activeBaseLabel={t("activeBase")} />
           </div>
         </>
       )}

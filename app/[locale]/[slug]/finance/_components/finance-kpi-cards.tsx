@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { IFinancialData } from "@/interfaces/dashboard.interface";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -75,6 +76,7 @@ interface KpiCardProps {
 }
 
 function KpiCard({ label, value, previousLabel, subLabel, icon: Icon, color, bgColor, current, previous, hero, tooltip }: KpiCardProps) {
+  const t = useTranslations("finance.kpiCards");
   const hasPrev = previous !== undefined && previous > 0 && current !== undefined;
 
   const variationBadge = hasPrev && current !== undefined && previous !== undefined ? (
@@ -95,7 +97,7 @@ function KpiCard({ label, value, previousLabel, subLabel, icon: Icon, color, bgC
                   <button
                     type="button"
                     className="shrink-0 text-zinc-700 hover:text-zinc-400 transition-colors focus:outline-none"
-                    aria-label={`Informação sobre ${label}`}
+                    aria-label={t("infoAbout", { label })}
                   >
                     <IconInfoCircle size={11} />
                   </button>
@@ -122,7 +124,7 @@ function KpiCard({ label, value, previousLabel, subLabel, icon: Icon, color, bgC
       </div>
       {hasPrev && previousLabel && (
         <p className="text-[9px] sm:text-[10px] text-zinc-600 leading-tight truncate">
-          vs {previousLabel} anterior
+          {t("vsPreviousPrefix")} {previousLabel} {t("vsPreviousSuffix")}
         </p>
       )}
       {!hasPrev && subLabel && (
@@ -166,6 +168,8 @@ interface FinanceKpiCardsProps {
 }
 
 export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps) {
+  const t = useTranslations("finance.kpiCards");
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -205,11 +209,11 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
 
   return (
     <div className="space-y-3">
-      <BlockHeader label="Receita" />
+      <BlockHeader label={t("blocks.revenue")} />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard
           hero
-          label="Receita Bruta"
+          label={t("grossRevenue")}
           value={fmtBRLDecimal(gross / 100)}
           previousLabel={prevGross !== undefined ? fmtBRLDecimal(prevGross / 100) : undefined}
           icon={IconCurrencyDollar}
@@ -219,114 +223,114 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
           previous={prevGross}
         />
         <KpiCard
-          label="Recorrente"
+          label={t("recurring")}
           value={fmtBRLDecimal(recurring / 100)}
           previousLabel={prevRecurring !== undefined ? fmtBRLDecimal(prevRecurring / 100) : undefined}
-          subLabel={`${recurringPct}% do total`}
+          subLabel={t("percentOfTotal", { percent: recurringPct })}
           icon={IconRepeat}
           color="text-cyan-400"
           bgColor="bg-cyan-600/20"
           current={recurring}
           previous={prevRecurring}
-          tooltip="Receita proveniente de assinaturas e cobranças recorrentes no período."
+          tooltip={t("recurringTooltip")}
         />
         <KpiCard
-          label="Avulso"
+          label={t("oneTime")}
           value={fmtBRLDecimal(oneTime / 100)}
           previousLabel={prevOneTime !== undefined ? fmtBRLDecimal(prevOneTime / 100) : undefined}
-          subLabel={`${oneTimePct}% do total`}
+          subLabel={t("percentOfTotal", { percent: oneTimePct })}
           icon={IconShoppingBag}
           color="text-sky-400"
           bgColor="bg-sky-600/20"
           current={oneTime}
           previous={prevOneTime}
-          tooltip="Receita de vendas únicas, não ligadas a assinaturas."
+          tooltip={t("oneTimeTooltip")}
         />
         <KpiCard
-          label="Ticket Médio"
+          label={t("averageTicket")}
           value={fmtBRLDecimal((data?.averageTicketInCents ?? 0) / 100)}
           previousLabel={prevTicket !== undefined ? fmtBRLDecimal(prevTicket / 100) : undefined}
-          subLabel={`${data?.totalPurchases ?? 0} compras`}
+          subLabel={t("purchases", { count: data?.totalPurchases ?? 0 })}
           icon={IconReceipt}
           color="text-violet-400"
           bgColor="bg-violet-600/20"
           current={data?.averageTicketInCents ?? 0}
           previous={prevTicket}
-          tooltip="Valor médio por transação no período. Calculado como Receita Bruta ÷ número de pagamentos."
+          tooltip={t("averageTicketTooltip")}
         />
       </div>
 
-      <BlockHeader label="Custos" />
+      <BlockHeader label={t("blocks.costs")} />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <KpiCard
-          label="Descontos"
+          label={t("discounts")}
           value={fmtBRLDecimal((pl?.eventCostsInCents ?? 0) / 100)}
-          subLabel="cupons do período"
+          subLabel={t("discountsSubLabel")}
           icon={IconWallet}
           color="text-rose-400"
           bgColor="bg-rose-600/20"
-          tooltip="Valor total de cupons e descontos aplicados em pagamentos no período. Reduz a receita líquida."
+          tooltip={t("discountsTooltip")}
         />
         <KpiCard
-          label="Custos Variáveis"
+          label={t("variableCosts")}
           value={fmtBRLDecimal((pl?.totalVariableCostsInCents ?? 0) / 100)}
-          subLabel="% configurados sobre receita"
+          subLabel={t("variableCostsSubLabel")}
           icon={IconCalculator}
           color="text-orange-400"
           bgColor="bg-orange-600/20"
-          tooltip="Custos que crescem proporcionalmente à receita — como taxas de gateway, comissões e impostos. Calculados como percentual da receita bruta."
+          tooltip={t("variableCostsTooltip")}
         />
         <KpiCard
-          label="Custos Fixos"
+          label={t("fixedCosts")}
           value={fmtBRLDecimal((pl?.totalFixedCostsInCents ?? 0) / 100)}
-          subLabel={isSubMonth ? `rateado ${periodDays}d de 30` : "valor mensal"}
+          subLabel={isSubMonth ? t("fixedCostsSubLabelProrated", { days: periodDays }) : t("fixedCostsSubLabelMonthly")}
           icon={IconCalculator}
           color="text-red-400"
           bgColor="bg-red-600/20"
-          tooltip="Despesas mensais que não variam com a receita — como ferramentas, salários e aluguel. Rateadas proporcionalmente quando o período é menor que um mês."
+          tooltip={t("fixedCostsTooltip")}
         />
       </div>
 
-      <BlockHeader label="Resultado" />
+      <BlockHeader label={t("blocks.result")} />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <KpiCard
-          label="Lucro Operacional"
+          label={t("operatingProfit")}
           value={fmtBRLDecimal((pl?.operatingProfitInCents ?? 0) / 100)}
-          subLabel="receita − descontos − variáveis"
+          subLabel={t("operatingProfitSubLabel")}
           icon={IconTrendingUp}
           color={(pl?.operatingProfitInCents ?? 0) >= 0 ? "text-indigo-400" : "text-red-400"}
           bgColor={(pl?.operatingProfitInCents ?? 0) >= 0 ? "bg-indigo-600/20" : "bg-red-600/20"}
-          tooltip="Receita Bruta menos descontos e custos variáveis. Mostra a saúde operacional antes dos custos fixos."
+          tooltip={t("operatingProfitTooltip")}
         />
         <KpiCard
-          label="Lucro Líquido"
+          label={t("netProfit")}
           value={fmtBRLDecimal((pl?.netProfitInCents ?? 0) / 100)}
           previousLabel={prevNetProfit !== undefined ? fmtBRLDecimal(prevNetProfit / 100) : undefined}
-          subLabel="após todos os custos"
+          subLabel={t("netProfitSubLabel")}
           icon={IconChartPie}
           color={(pl?.netProfitInCents ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}
           bgColor={(pl?.netProfitInCents ?? 0) >= 0 ? "bg-emerald-600/20" : "bg-red-600/20"}
           current={pl?.netProfitInCents}
           previous={prevNetProfit}
-          tooltip="O que sobra depois de descontar todos os custos (variáveis + fixos + descontos) da receita bruta. É o lucro real do período."
+          tooltip={t("netProfitTooltip")}
         />
         <KpiCard
-          label="Margem Líquida"
+          label={t("netMargin")}
           value={`${(pl?.marginPercent ?? 0).toFixed(1)}%`}
           previousLabel={prevMargin !== undefined ? `${prevMargin.toFixed(1)}%` : undefined}
-          subLabel="lucro líquido / receita bruta"
+          subLabel={t("netMarginSubLabel")}
           icon={IconReceipt}
           color={(pl?.marginPercent ?? 0) >= 0 ? "text-amber-400" : "text-red-400"}
           bgColor={(pl?.marginPercent ?? 0) >= 0 ? "bg-amber-600/20" : "bg-red-600/20"}
           current={pl?.marginPercent}
           previous={prevMargin}
-          tooltip="Percentual da receita bruta que se converte em lucro líquido. Acima de 20% é saudável para SaaS."
+          tooltip={t("netMarginTooltip")}
         />
       </div>
 
       {lostRevenue > 0 && (
         <>
-          <BlockHeader label="Oportunidade" />
+          <BlockHeader label={t("blocks.opportunity")} />
           <div className="rounded-xl border border-rose-500/25 bg-rose-950/20 p-4 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex items-start gap-3 flex-1 min-w-0">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-600/20 border border-rose-500/20 mt-0.5">
@@ -340,12 +344,12 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
                   {prevLost !== undefined && prevLost > 0 && (
                     <VariationBadge current={lostRevenue} previous={prevLost} />
                   )}
-                  <span className="text-xs text-rose-400/80 font-semibold uppercase tracking-wider">em receita perdida</span>
+                  <span className="text-xs text-rose-400/80 font-semibold uppercase tracking-wider">{t("lostRevenue")}</span>
                 </div>
                 <p className="text-xs text-zinc-500 mt-0.5">
-                  {fmtInt(abandonedCount)} checkout{abandonedCount !== 1 ? "s" : ""} abandonado{abandonedCount !== 1 ? "s" : ""} no período
+                  {t("abandonedCheckouts", { count: abandonedCount })}
                   {prevLost !== undefined && prevLost > 0 && (
-                    <> · comparado a {fmtBRLDecimal(prevLost / 100)} no período anterior</>
+                    <> · {t("comparedToPrevious", { value: fmtBRLDecimal(prevLost / 100) })}</>
                   )}
                 </p>
               </div>
@@ -354,7 +358,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
               href={`/${slug}/events?event_types=checkout_abandoned`}
               className="flex items-center gap-1.5 shrink-0 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-medium text-rose-300 hover:bg-rose-500/20 transition-colors"
             >
-              Ver análise de abandono
+              {t("viewAbandonmentAnalysis")}
               <IconArrowRight size={13} />
             </Link>
           </div>

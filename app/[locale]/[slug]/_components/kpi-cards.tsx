@@ -25,6 +25,7 @@ import {
   IconInfoCircle,
 } from "@tabler/icons-react";
 import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
+import { useTranslations } from "next-intl";
 
 const STEP_ICON_MAP: Record<string, React.ElementType> = {
   pageview: IconEye,
@@ -58,6 +59,7 @@ function computeVariation(current: number, previous: number) {
 }
 
 function KpiCard({ label, value, previousLabel, icon: Icon, color, bgColor, current, previous, tooltip }: KpiCardProps) {
+  const t = useTranslations("dashboard.kpi");
   const hasPrev = previous !== undefined && previous > 0 && current !== undefined;
   const variation = hasPrev ? computeVariation(current!, previous!) : null;
 
@@ -95,7 +97,7 @@ function KpiCard({ label, value, previousLabel, icon: Icon, color, bgColor, curr
                   <button
                     type="button"
                     className="shrink-0 text-zinc-700 hover:text-zinc-400 transition-colors focus:outline-none"
-                    aria-label={`Informação sobre ${label}`}
+                    aria-label={t("infoAbout", { label })}
                   >
                     <IconInfoCircle size={11} />
                   </button>
@@ -122,11 +124,11 @@ function KpiCard({ label, value, previousLabel, icon: Icon, color, bgColor, curr
 
       {hasPrev && previousLabel && (
         <p className="text-[9px] sm:text-[10px] text-zinc-600 leading-tight truncate">
-          vs {previousLabel} anterior
+          {t("vsPrevious", { previousLabel })}
         </p>
       )}
       {!hasPrev && (
-        <p className="text-[9px] sm:text-[10px] text-zinc-700 leading-tight">Sem dados anteriores</p>
+        <p className="text-[9px] sm:text-[10px] text-zinc-700 leading-tight">{t("noPreviousData")}</p>
       )}
     </div>
   );
@@ -155,6 +157,7 @@ interface KpiCardsProps {
 }
 
 export function KpiCards({ data, isLoading, hiddenKeys }: KpiCardsProps) {
+  const t = useTranslations("dashboard.kpi");
   const allStepKeys = (data?.steps ?? [])
     .filter((s) => s.key !== "pageview")
     .map((s) => s.key);
@@ -197,7 +200,7 @@ export function KpiCards({ data, isLoading, hiddenKeys }: KpiCardsProps) {
   const prevRevenue = data?.previousRevenue;
   const metricCards: KpiCardProps[] = [
     {
-      label: "Receita",
+      label: t("revenue"),
       value: fmtBRLDecimal((data?.revenue ?? 0) / 100),
       previousLabel: prevRevenue !== undefined ? fmtBRLDecimal(prevRevenue / 100) : undefined,
       icon: IconCurrencyDollar,
@@ -207,12 +210,12 @@ export function KpiCards({ data, isLoading, hiddenKeys }: KpiCardsProps) {
       previous: prevRevenue,
     },
     {
-      label: "Ticket Médio",
+      label: t("averageTicket"),
       value: data?.ticketMedio ?? "R$ 0,00",
       icon: IconReceipt,
       color: "text-amber-400",
       bgColor: "bg-amber-600/20",
-      tooltip: "Valor médio por pagamento. Receita ÷ número de pagamentos no período.",
+      tooltip: t("averageTicketTooltip"),
     },
   ];
 
@@ -220,7 +223,7 @@ export function KpiCards({ data, isLoading, hiddenKeys }: KpiCardsProps) {
     (data?.checkoutAbandoned ?? 0) > 0
       ? [
           {
-            label: "Abandonos",
+            label: t("abandoned"),
             value: fmtInt(data?.checkoutAbandoned ?? 0),
             icon: IconShoppingCartX,
             color: "text-rose-400",

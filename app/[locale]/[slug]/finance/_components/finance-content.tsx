@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useFinancial } from "@/hooks/queries/use-financial";
 import { useDaily } from "@/hooks/queries/use-daily";
 import { useOrganization } from "@/components/providers/organization-provider";
@@ -16,47 +17,24 @@ import {
   IconChevronDown,
   IconChevronUp,
 } from "@tabler/icons-react";
-import { useState } from "react";
 
 interface FinanceContentProps {
   filter: IDateFilter;
   slug: string;
 }
 
-const PL_STEPS = [
-  {
-    label: "Receita Bruta",
-    desc: "Total bruto de pagamentos confirmados no período.",
-  },
-  {
-    label: "− Descontos",
-    desc: "Cupons e descontos enviados via campo discount no evento de pagamento.",
-    positive: false,
-  },
-  {
-    label: "− Custos Variáveis",
-    desc: "Percentuais configurados na plataforma (impostos, comissões etc.) aplicados sobre a receita.",
-    positive: false,
-  },
-  {
-    label: "= Lucro Operacional",
-    desc: "Resultado após descontos e custos variáveis configurados.",
-    highlight: true,
-  },
-  {
-    label: "− Custos Fixos",
-    desc: "Valores mensais fixos configurados na plataforma, rateados proporcionalmente ao período.",
-    positive: false,
-  },
-  {
-    label: "= Lucro Líquido",
-    desc: "O que de fato sobrou após todos os custos deduzidos.",
-    highlight: true,
-  },
-  { label: "Margem Líquida", desc: "Lucro Líquido ÷ Receita Bruta × 100." },
-];
+const PL_STEP_KEYS = [
+  { key: "grossRevenue" },
+  { key: "discounts", positive: false },
+  { key: "variableCosts", positive: false },
+  { key: "operatingProfit", highlight: true },
+  { key: "fixedCosts", positive: false },
+  { key: "netProfit", highlight: true },
+  { key: "netMargin" },
+] as const;
 
 export function FinanceContent({ filter, slug }: FinanceContentProps) {
+  const t = useTranslations("finance.financeContent");
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const [showExplanation, setShowExplanation] = useState(false);
@@ -74,13 +52,20 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
   const periodDays = financial?.periodDays ?? 30;
   const isSubMonth = periodDays < 30;
 
+  const plSteps = PL_STEP_KEYS.map((step) => ({
+    label: t(`plSteps.${step.key}.label`),
+    desc: t(`plSteps.${step.key}.desc`),
+    positive: "positive" in step ? step.positive : undefined,
+    highlight: "highlight" in step ? step.highlight : undefined,
+  }));
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-lg font-bold text-zinc-100">Financeiro</h1>
+          <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>
           <p className="text-xs text-zinc-500">
-            Receita, custos, resultado e oportunidades do período
+            {t("subtitle")}
           </p>
         </div>
         <Suspense>
@@ -95,10 +80,7 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
             className="text-amber-400 mt-0.5 shrink-0"
           />
           <p className="text-xs text-amber-300">
-            Custos fixos estão sendo rateados proporcionalmente ao período
-            selecionado ({periodDays} dia{periodDays !== 1 ? "s" : ""} de 30).
-            Para visualizar o P&L completo mensal, selecione um período de 30
-            dias.
+            {t("fixedCostsWarning", { days: periodDays })}
           </p>
         </div>
       )}
@@ -111,8 +93,8 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <FinanceBreakdownTable
-          title="Receita por Método de Pagamento"
-          subtitle="Distribuição do faturamento por forma de pagamento"
+          title={t("revenueByPaymentMethod")}
+          subtitle={t("revenueByPaymentMethodSubtitle")}
           rows={
             financial?.byPaymentMethod.map((r) => ({
               name: r.method,
@@ -124,8 +106,8 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
           isLoading={financialLoading}
         />
         <FinanceBreakdownTable
-          title="Receita por Categoria"
-          subtitle="Distribuição do faturamento por categoria de produto"
+          title={t("revenueByCategory")}
+          subtitle={t("revenueByCategorySubtitle")}
           rows={
             financial?.byCategory.map((r) => ({
               name: r.category,
@@ -148,7 +130,7 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
           <div className="flex items-center gap-2">
             <IconInfoCircle size={15} className="text-zinc-500" />
             <span className="text-sm font-medium text-zinc-300">
-              Como funciona o P&L
+              {t("howPlWorks")}
             </span>
           </div>
           {showExplanation ? (
@@ -161,11 +143,10 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
         {showExplanation && (
           <div className="px-5 pb-5 space-y-3 border-t border-zinc-800">
             <p className="text-xs text-zinc-500 pt-4">
-              O P&L calcula o resultado financeiro real do negócio a partir dos
-              eventos de pagamento coletados.
+              {t("plDescription")}
             </p>
             <div className="space-y-2">
-              {PL_STEPS.map((step) => (
+              {plSteps.map((step) => (
                 <div
                   key={step.label}
                   className={`flex gap-3 rounded-lg px-3 py-2.5 ${step.highlight ? "bg-zinc-800/50 border border-zinc-700/50" : ""}`}
@@ -183,13 +164,11 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
             </div>
             <div className="rounded-lg bg-zinc-800/50 border border-zinc-700/50 px-3 py-2.5 space-y-1">
               <p className="text-xs font-semibold text-zinc-400">
-                Sobre custos variáveis segmentados
+                {t("aboutSegmentedVariableCosts")}
               </p>
               <p className="text-xs text-zinc-500">
-                Cada custo variável pode ser configurado para incidir apenas
-                sobre a receita de um método de pagamento específico ou tipo de
-                cobrança. Configure seus custos em{" "}
-                <strong className="text-zinc-400">Custos</strong>.
+                {t("segmentedVariableCostsDescription")}{" "}
+                <strong className="text-zinc-400">{t("costsLink")}</strong>.
               </p>
             </div>
           </div>

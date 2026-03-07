@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   IconCode,
   IconWorld,
@@ -19,25 +20,25 @@ import { cn } from "@/lib/utils";
 
 export interface SettingsSection {
   id: string;
-  label: string;
+  labelKey: string;
   icon: React.ReactNode;
 }
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
-  { id: "installation", label: "Instalação", icon: <IconCode size={14} /> },
-  { id: "funnel", label: "Funil", icon: <IconFilter size={14} /> },
+  { id: "installation", labelKey: "installation", icon: <IconCode size={14} /> },
+  { id: "funnel", labelKey: "funnel", icon: <IconFilter size={14} /> },
   {
     id: "organization",
-    label: "Organização",
+    labelKey: "organization",
     icon: <IconBuilding size={14} />,
   },
-  { id: "integrations", label: "Integrações", icon: <IconPlug size={14} /> },
-  { id: "billing", label: "Plano & Uso", icon: <IconCreditCard size={14} /> },
-  { id: "team", label: "Equipe", icon: <IconUsers size={14} /> },
-  { id: "ai-profile", label: "Perfil IA", icon: <IconBrain size={14} /> },
-  { id: "regional", label: "Regional", icon: <IconWorld size={14} /> },
-  { id: "notifications", label: "Notificações", icon: <IconBell size={14} /> },
-  { id: "public-page", label: "Pág. Pública", icon: <IconShare size={14} /> },
+  { id: "integrations", labelKey: "integrations", icon: <IconPlug size={14} /> },
+  { id: "billing", labelKey: "billing", icon: <IconCreditCard size={14} /> },
+  { id: "team", labelKey: "team", icon: <IconUsers size={14} /> },
+  { id: "ai-profile", labelKey: "aiProfile", icon: <IconBrain size={14} /> },
+  { id: "regional", labelKey: "regional", icon: <IconWorld size={14} /> },
+  { id: "notifications", labelKey: "notifications", icon: <IconBell size={14} /> },
+  { id: "public-page", labelKey: "publicPage", icon: <IconShare size={14} /> },
 ];
 
 interface SettingsNavProps {
@@ -45,6 +46,7 @@ interface SettingsNavProps {
 }
 
 export function SettingsNav({ slug }: SettingsNavProps) {
+  const t = useTranslations("settings.nav");
   const pathname = usePathname();
 
   const isActive = (id: string) =>
@@ -74,7 +76,7 @@ export function SettingsNav({ slug }: SettingsNavProps) {
               >
                 {section.icon}
               </span>
-              <span className="flex-1">{section.label}</span>
+              <span className="flex-1">{t(section.labelKey)}</span>
             </Link>
           );
         })}
@@ -101,7 +103,7 @@ export function SettingsNav({ slug }: SettingsNavProps) {
                   >
                     {section.icon}
                   </span>
-                  {section.label}
+                  {t(section.labelKey)}
                 </Link>
               );
             })}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { Skeleton } from "./skeleton";
@@ -69,13 +70,14 @@ function PaginationBar({
   onPageChange: (p: number) => void;
   onPageSizeChange: (s: number) => void;
 }) {
+  const t = useTranslations("commonUi.responsiveTable");
   const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
   const end = Math.min(page * pageSize, total);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-800 px-4 py-3">
       <div className="flex items-center gap-2">
-        <span className="text-xs text-zinc-500">Linhas por página</span>
+        <span className="text-xs text-zinc-500">{t("rowsPerPage")}</span>
         <Select
           value={String(pageSize)}
           onValueChange={(v) => {
@@ -102,7 +104,7 @@ function PaginationBar({
 
       <div className="flex items-center gap-3">
         <span className="text-xs text-zinc-500">
-          {start}–{end} de {total}
+          {start}–{end} {t("of")} {total}
         </span>
         <div className="flex gap-1">
           <Button
@@ -135,12 +137,14 @@ export function ResponsiveTable<T>({
   getRowKey,
   isLoading = false,
   skeletonRows = 8,
-  emptyMessage = <span>Nenhum dado encontrado</span>,
+  emptyMessage,
   header,
   serverPagination,
   initialPageSize = 25,
   pageSizeOptions = DEFAULT_PAGE_SIZES,
 }: ResponsiveTableProps<T>) {
+  const t = useTranslations("commonUi.responsiveTable");
+  const resolvedEmptyMessage = emptyMessage ?? <span>{t("noDataFound")}</span>;
   const [clientPage, setClientPage] = useState(1);
   const [clientPageSize, setClientPageSize] = useState(initialPageSize);
 
@@ -242,7 +246,7 @@ export function ResponsiveTable<T>({
                     colSpan={columns.length}
                     className="px-4 py-12 text-center text-sm text-zinc-500"
                   >
-                    {emptyMessage}
+                    {resolvedEmptyMessage}
                   </td>
                 </tr>
               )
@@ -284,7 +288,7 @@ export function ResponsiveTable<T>({
           : rows.length === 0
           ? (
             <div className="py-12 text-center text-sm text-zinc-500">
-              {emptyMessage}
+              {resolvedEmptyMessage}
             </div>
           )
           : rows.map((row) => (

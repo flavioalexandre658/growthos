@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,16 +13,6 @@ import { Label } from "@/components/ui/label";
 import { createOrganization } from "@/actions/organizations/create-organization.action";
 import { cn } from "@/lib/utils";
 import type { IOrganization } from "@/interfaces/organization.interface";
-
-const schema = z.object({
-  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  slug: z
-    .string()
-    .min(2, "Slug deve ter pelo menos 2 caracteres")
-    .regex(/^[a-z0-9-]+$/, "Apenas letras minúsculas, números e hífens"),
-});
-
-type FormData = z.infer<typeof schema>;
 
 function toSlug(value: string): string {
   return value
@@ -39,9 +30,20 @@ interface StepCreateOrgProps {
 }
 
 export function StepCreateOrg({ onComplete }: StepCreateOrgProps) {
+  const t = useTranslations("onboarding.stepCreateOrg");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [slugEdited, setSlugEdited] = useState(false);
+
+  const schema = z.object({
+    name: z.string().min(2, t("validation.nameMinLength")),
+    slug: z
+      .string()
+      .min(2, t("validation.slugMinLength"))
+      .regex(/^[a-z0-9-]+$/, t("validation.slugPattern")),
+  });
+
+  type FormData = z.infer<typeof schema>;
 
   const {
     register,
@@ -68,10 +70,10 @@ export function StepCreateOrg({ onComplete }: StepCreateOrgProps) {
     setErrorMessage(null);
     try {
       const org = await createOrganization(data);
-      toast.success("Organização criada!");
+      toast.success(t("successToast"));
       onComplete(org as IOrganization);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Erro ao criar organização.";
+      const msg = err instanceof Error ? err.message : t("errorToast");
       setErrorMessage(msg);
       toast.error(msg);
     } finally {
@@ -91,10 +93,10 @@ export function StepCreateOrg({ onComplete }: StepCreateOrgProps) {
           </div>
           <div>
             <h2 className="text-lg font-bold text-zinc-100">
-              Criar organização
+              {t("title")}
             </h2>
             <p className="text-xs text-zinc-500">
-              Seus dados serão separados por organização
+              {t("subtitle")}
             </p>
           </div>
         </div>
@@ -103,11 +105,11 @@ export function StepCreateOrg({ onComplete }: StepCreateOrgProps) {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="space-y-2">
           <Label className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">
-            Nome
+            {t("nameLabel")}
           </Label>
           <Input
             type="text"
-            placeholder="Ex: Minha Loja Online"
+            placeholder={t("namePlaceholder")}
             className={cn(inputClass, errors.name && "border-red-500/50")}
             {...register("name")}
           />
@@ -118,7 +120,7 @@ export function StepCreateOrg({ onComplete }: StepCreateOrgProps) {
 
         <div className="space-y-2">
           <Label className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">
-            Slug (identificador único)
+            {t("slugLabel")}
           </Label>
           <div className={cn(
             "flex items-stretch rounded-lg border overflow-hidden",
@@ -129,7 +131,7 @@ export function StepCreateOrg({ onComplete }: StepCreateOrgProps) {
             </span>
             <Input
               type="text"
-              placeholder="minha-loja"
+              placeholder={t("slugPlaceholder")}
               className={cn(
                 "font-mono border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0",
                 inputClass
@@ -143,7 +145,7 @@ export function StepCreateOrg({ onComplete }: StepCreateOrgProps) {
             <p className="text-xs text-red-400">{errors.slug.message}</p>
           ) : slugValue ? (
             <p className="text-xs text-zinc-600">
-              Identificador único:{" "}
+              {t("slugHint")}{" "}
               <code className="text-indigo-400 font-mono">{slugValue}</code>
             </p>
           ) : null}
@@ -163,11 +165,11 @@ export function StepCreateOrg({ onComplete }: StepCreateOrgProps) {
           {isLoading ? (
             <>
               <IconLoader2 size={16} className="animate-spin" />
-              Criando...
+              {t("submitting")}
             </>
           ) : (
             <>
-              Continuar
+              {t("submit")}
               <IconArrowRight
                 size={16}
                 className="transition-transform group-hover:translate-x-0.5"

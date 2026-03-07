@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -27,13 +28,6 @@ import type {
   SortDirection,
 } from "@/interfaces/mrr.interface";
 
-const STATUS_LABELS: Record<string, string> = {
-  active: "Ativo",
-  trialing: "Trial",
-  past_due: "Em atraso",
-  canceled: "Cancelado",
-};
-
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   active: "default",
   trialing: "secondary",
@@ -41,35 +35,12 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline" | "des
   canceled: "outline",
 };
 
-const STATUS_FILTERS: { label: string; value: SubscriptionStatusFilter }[] = [
-  { label: "Ativo", value: "active" },
-  { label: "Todos", value: "all" },
-  { label: "Trial", value: "trialing" },
-  { label: "Em atraso", value: "past_due" },
-  { label: "Cancelado", value: "canceled" },
-];
-
-const INTERVAL_FILTERS: { label: string; value: BillingIntervalFilter }[] = [
-  { label: "Todos", value: "all" },
-  { label: "Mensal", value: "monthly" },
-  { label: "Trimestral", value: "quarterly" },
-  { label: "Semestral", value: "semiannual" },
-  { label: "Anual", value: "yearly" },
-  { label: "Semanal", value: "weekly" },
-];
-
-const NEXT_BILLING_FILTERS: { label: string; value: NextBillingFilter }[] = [
-  { label: "Todos", value: "all" },
-  { label: "Hoje", value: "today" },
-  { label: "7 dias", value: "7d" },
-  { label: "30 dias", value: "30d" },
-];
-
 interface ActiveSubscriptionsTableProps {
   organizationId: string;
 }
 
 export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptionsTableProps) {
+  const t = useTranslations("mrr.subscriptionsTable");
   const { organization } = useOrganization();
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
   const [page, setPage] = useState(1);
@@ -121,10 +92,41 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
     [sortField]
   );
 
+  const STATUS_LABELS: Record<string, string> = {
+    active: t("statusLabels.active"),
+    trialing: t("statusLabels.trialing"),
+    past_due: t("statusLabels.pastDue"),
+    canceled: t("statusLabels.canceled"),
+  };
+
+  const STATUS_FILTERS: { label: string; value: SubscriptionStatusFilter }[] = [
+    { label: t("statusFilters.active"), value: "active" },
+    { label: t("statusFilters.all"), value: "all" },
+    { label: t("statusFilters.trialing"), value: "trialing" },
+    { label: t("statusFilters.pastDue"), value: "past_due" },
+    { label: t("statusFilters.canceled"), value: "canceled" },
+  ];
+
+  const INTERVAL_FILTERS: { label: string; value: BillingIntervalFilter }[] = [
+    { label: t("intervalFilters.all"), value: "all" },
+    { label: t("intervalFilters.monthly"), value: "monthly" },
+    { label: t("intervalFilters.quarterly"), value: "quarterly" },
+    { label: t("intervalFilters.semiannual"), value: "semiannual" },
+    { label: t("intervalFilters.yearly"), value: "yearly" },
+    { label: t("intervalFilters.weekly"), value: "weekly" },
+  ];
+
+  const NEXT_BILLING_FILTERS: { label: string; value: NextBillingFilter }[] = [
+    { label: t("nextBillingFilters.all"), value: "all" },
+    { label: t("nextBillingFilters.today"), value: "today" },
+    { label: t("nextBillingFilters.7d"), value: "7d" },
+    { label: t("nextBillingFilters.30d"), value: "30d" },
+  ];
+
   const columns: TableColumn<IActiveSubscription>[] = [
     {
       key: "customerId",
-      header: "Cliente",
+      header: t("columns.customer"),
       mobilePrimary: true,
       render: (row) => (
         <span className="font-mono text-xs text-zinc-400">{row.customerId.slice(0, 16)}…</span>
@@ -148,7 +150,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
     },
     {
       key: "planName",
-      header: "Plano",
+      header: t("columns.plan"),
       mobileHide: true,
       render: (row) => (
         <div className="min-w-0">
@@ -161,7 +163,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
     },
     {
       key: "value",
-      header: "Valor",
+      header: t("columns.value"),
       align: "right",
       mobileHide: true,
       sortKey: "value",
@@ -187,7 +189,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
     },
     {
       key: "ltv",
-      header: "LTV Acum.",
+      header: t("columns.ltvAccum"),
       align: "right",
       mobileHide: true,
       sortKey: "ltv",
@@ -202,7 +204,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
     },
     {
       key: "renewals",
-      header: "Renovações",
+      header: t("columns.renewals"),
       align: "right",
       sortKey: "renewals",
       onSort: handleSort,
@@ -212,7 +214,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
         if (row.renewalCount === 0) {
           return (
             <span className="text-[10px] font-medium text-zinc-500 bg-zinc-800/60 rounded-full px-2 py-0.5">
-              1ª cobrança
+              {t("firstCharge")}
             </span>
           );
         }
@@ -228,7 +230,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
     },
     {
       key: "nextBilling",
-      header: "Próx. cobrança",
+      header: t("columns.nextBilling"),
       sortKey: "nextBilling",
       onSort: handleSort,
       currentSortKey: sortField,
@@ -243,7 +245,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
     },
     {
       key: "status",
-      header: "Status",
+      header: t("columns.status"),
       render: (row) => (
         <Badge variant={STATUS_VARIANTS[row.status] ?? "outline"} className="text-[10px]">
           {STATUS_LABELS[row.status] ?? row.status}
@@ -252,7 +254,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
     },
     {
       key: "startedAt",
-      header: "Desde",
+      header: t("columns.since"),
       mobileHide: true,
       sortKey: "startedAt",
       onSort: handleSort,
@@ -296,11 +298,11 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
             }}
           >
             <SelectTrigger className="h-7 w-48 bg-zinc-900 border-zinc-700 text-zinc-300 text-xs">
-              <SelectValue placeholder="Todos os planos" />
+              <SelectValue placeholder={t("allPlans")} />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-700">
               <SelectItem value="all" className="text-zinc-300 focus:bg-zinc-800 text-xs">
-                Todos os planos
+                {t("allPlans")}
               </SelectItem>
               {availablePlans.map((p) => (
                 <SelectItem
@@ -333,7 +335,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
         </div>
 
         <div className="flex items-center gap-1">
-          <span className="text-[10px] text-zinc-600 mr-0.5">Próx:</span>
+          <span className="text-[10px] text-zinc-600 mr-0.5">{t("nextBillingPrefix")}</span>
           {NEXT_BILLING_FILTERS.map((f) => (
             <button
               key={f.value}
@@ -359,7 +361,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
       getRowKey={(row) => row.subscriptionId}
       isLoading={isLoading}
       skeletonRows={5}
-      emptyMessage="Nenhuma assinatura encontrada"
+      emptyMessage={t("emptyMessage")}
       serverPagination={
         data
           ? {
@@ -376,9 +378,9 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h3 className="text-sm font-bold text-zinc-100">Assinaturas</h3>
+              <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
               <p className="text-xs text-zinc-500">
-                {data?.pagination.total ?? 0} assinaturas no total
+                {t("totalCount", { count: data?.pagination.total ?? 0 })}
               </p>
             </div>
           </div>

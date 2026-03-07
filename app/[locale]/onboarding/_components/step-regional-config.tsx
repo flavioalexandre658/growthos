@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { IconLoader2, IconArrowRight, IconWorld } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -24,6 +25,7 @@ const selectClass =
   "h-11 w-full rounded-lg border border-zinc-800 bg-zinc-900/50 px-3 text-sm text-zinc-100 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500";
 
 export function StepRegionalConfig({ organizationId, onComplete }: StepRegionalConfigProps) {
+  const t = useTranslations("onboarding.stepRegionalConfig");
   const [isLoading, setIsLoading] = useState(false);
   const [timezone, setTimezone] = useState("America/Sao_Paulo");
   const [currency, setCurrency] = useState("BRL");
@@ -64,10 +66,10 @@ export function StepRegionalConfig({ organizationId, onComplete }: StepRegionalC
         country,
         language,
       });
-      toast.success("Configurações regionais salvas!");
+      toast.success(t("successToast"));
       onComplete();
     } catch {
-      toast.error("Erro ao salvar configurações regionais.");
+      toast.error(t("errorToast"));
     } finally {
       setIsLoading(false);
     }
@@ -81,9 +83,9 @@ export function StepRegionalConfig({ organizationId, onComplete }: StepRegionalC
             <IconWorld size={18} className="text-indigo-400" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-zinc-100">Configurações regionais</h2>
+            <h2 className="text-lg font-bold text-zinc-100">{t("title")}</h2>
             <p className="text-xs text-zinc-500">
-              Detectamos suas preferências — confirme ou ajuste
+              {t("subtitle")}
             </p>
           </div>
         </div>
@@ -92,7 +94,7 @@ export function StepRegionalConfig({ organizationId, onComplete }: StepRegionalC
           <div className="flex items-center gap-2 rounded-lg border border-indigo-600/20 bg-indigo-600/10 px-3 py-2">
             <div className="h-1.5 w-1.5 rounded-full bg-indigo-400" />
             <p className="text-xs text-indigo-300">
-              Valores detectados automaticamente pelo navegador
+              {t("detectedAutomatically")}
             </p>
           </div>
         )}
@@ -101,7 +103,7 @@ export function StepRegionalConfig({ organizationId, onComplete }: StepRegionalC
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">
-            Localização
+            {t("localeLabel")}
           </Label>
           <select
             value={locale}
@@ -115,14 +117,14 @@ export function StepRegionalConfig({ organizationId, onComplete }: StepRegionalC
             ))}
           </select>
           <p className="text-xs text-zinc-600">
-            Define moeda, país e idioma automaticamente
+            {t("localeHint")}
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-2">
             <Label className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">
-              Moeda base
+              {t("currencyLabel")}
             </Label>
             <select
               value={currency}
@@ -139,7 +141,7 @@ export function StepRegionalConfig({ organizationId, onComplete }: StepRegionalC
 
           <div className="space-y-2">
             <Label className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">
-              Idioma da IA
+              {t("aiLanguageLabel")}
             </Label>
             <select
               value={language}
@@ -157,7 +159,7 @@ export function StepRegionalConfig({ organizationId, onComplete }: StepRegionalC
 
         <div className="space-y-2">
           <Label className="text-zinc-400 text-xs uppercase tracking-wider font-semibold">
-            Fuso horário
+            {t("timezoneLabel")}
           </Label>
           <select
             value={timezone}
@@ -171,19 +173,19 @@ export function StepRegionalConfig({ organizationId, onComplete }: StepRegionalC
             ))}
           </select>
           <p className="text-xs text-zinc-600">
-            Define como &quot;hoje&quot; e &quot;esta semana&quot; são interpretados nos relatórios
+            {t("timezoneHint")}
           </p>
         </div>
 
         <div className={cn(
           "rounded-lg border border-zinc-800 bg-zinc-900/30 px-4 py-3 space-y-1"
         )}>
-          <p className="text-xs font-semibold text-zinc-400">Resumo</p>
+          <p className="text-xs font-semibold text-zinc-400">{t("summary")}</p>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-zinc-500">
-            <span>Moeda: <span className="text-zinc-300 font-mono">{currency}</span></span>
-            <span>Locale: <span className="text-zinc-300 font-mono">{locale}</span></span>
-            <span>Idioma IA: <span className="text-zinc-300 font-mono">{language}</span></span>
-            <span>Timezone: <span className="text-zinc-300 font-mono truncate">{timezone}</span></span>
+            <span>{t("summaryCurrency")} <span className="text-zinc-300 font-mono">{currency}</span></span>
+            <span>{t("summaryLocale")} <span className="text-zinc-300 font-mono">{locale}</span></span>
+            <span>{t("summaryAiLanguage")} <span className="text-zinc-300 font-mono">{language}</span></span>
+            <span>{t("summaryTimezone")} <span className="text-zinc-300 font-mono truncate">{timezone}</span></span>
           </div>
         </div>
 
@@ -195,11 +197,11 @@ export function StepRegionalConfig({ organizationId, onComplete }: StepRegionalC
           {isLoading ? (
             <>
               <IconLoader2 size={16} className="animate-spin" />
-              Salvando...
+              {t("submitting")}
             </>
           ) : (
             <>
-              Continuar
+              {t("submit")}
               <IconArrowRight
                 size={16}
                 className="transition-transform group-hover:translate-x-0.5"

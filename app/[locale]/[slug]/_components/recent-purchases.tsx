@@ -7,6 +7,7 @@ import { fmtBRLDecimal } from "@/utils/format";
 import { IconArrowRight } from "@tabler/icons-react";
 import dayjs from "@/utils/dayjs";
 import type { IRecentPurchase } from "@/interfaces/dashboard.interface";
+import { useTranslations } from "next-intl";
 
 interface RecentPurchasesProps {
   purchases: IRecentPurchase[];
@@ -14,6 +15,7 @@ interface RecentPurchasesProps {
 }
 
 export function RecentPurchases({ purchases, isLoading }: RecentPurchasesProps) {
+  const t = useTranslations("dashboard.recentPurchases");
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ?? "";
 
@@ -21,14 +23,14 @@ export function RecentPurchases({ purchases, isLoading }: RecentPurchasesProps) 
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-bold text-zinc-100">Últimas Compras</h3>
-          <p className="text-[11px] text-zinc-500 mt-0.5">Transações recentes</p>
+          <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
+          <p className="text-[11px] text-zinc-500 mt-0.5">{t("subtitle")}</p>
         </div>
         <Link
           href={`/${slug}/events?event_types=purchase`}
           className="flex items-center gap-1 text-[11px] text-zinc-500 hover:text-indigo-400 transition-colors"
         >
-          Ver todos
+          {t("viewAll")}
           <IconArrowRight size={11} />
         </Link>
       </div>
@@ -41,7 +43,7 @@ export function RecentPurchases({ purchases, isLoading }: RecentPurchasesProps) 
         </div>
       ) : purchases.length === 0 ? (
         <p className="text-xs text-zinc-700 py-4 text-center">
-          Nenhuma compra encontrada
+          {t("noPurchases")}
         </p>
       ) : (
         <div className="space-y-1">

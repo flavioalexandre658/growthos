@@ -1,6 +1,22 @@
-export function baseEmailLayout(content: string, previewText?: string): string {
+export type Locale = "pt" | "en";
+
+const layoutTranslations = {
+  pt: {
+    footerTitle: "Groware · Plataforma de Growth Analytics",
+    footerDisclaimer: "Você está recebendo este email porque possui uma conta no Groware.",
+  },
+  en: {
+    footerTitle: "Groware · Growth Analytics Platform",
+    footerDisclaimer: "You are receiving this email because you have a Groware account.",
+  },
+} as const;
+
+export function baseEmailLayout(content: string, locale: Locale, previewText?: string): string {
+  const t = layoutTranslations[locale];
+  const htmlLang = locale === "pt" ? "pt-BR" : "en";
+
   return `<!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="${htmlLang}">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -18,7 +34,6 @@ export function baseEmailLayout(content: string, previewText?: string): string {
   <table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; margin:0 auto;">
     <tr>
       <td>
-        <!-- Header -->
         <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
           <tr>
             <td style="padding: 0 0 20px 0;">
@@ -62,7 +77,6 @@ export function baseEmailLayout(content: string, previewText?: string): string {
           </tr>
         </table>
 
-        <!-- Card -->
         <table width="100%" cellpadding="0" cellspacing="0" style="
           background-color: #18181b;
           border: 1px solid #27272a;
@@ -76,15 +90,14 @@ export function baseEmailLayout(content: string, previewText?: string): string {
           </tr>
         </table>
 
-        <!-- Footer -->
         <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 28px;">
           <tr>
             <td style="text-align:center;">
               <p style="color:#52525b; font-size:12px; line-height:1.6;">
-                Groware · Plataforma de Growth Analytics
+                ${t.footerTitle}
               </p>
               <p style="color:#3f3f46; font-size:11px; margin-top:4px;">
-                Você está recebendo este email porque possui uma conta no Groware.
+                ${t.footerDisclaimer}
               </p>
             </td>
           </tr>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { IconChevronRight, IconChevronDown } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { fmtCurrencyDecimal } from "@/utils/format";
@@ -51,7 +52,12 @@ interface SessionGroup {
   events: ICustomerEvent[];
 }
 
-function groupBySession(events: ICustomerEvent[], tz: string): SessionGroup[] {
+function groupBySession(
+  events: ICustomerEvent[],
+  tz: string,
+  formatSessionLabel: (date: string) => string,
+  noSessionLabel: string
+): SessionGroup[] {
   const groups: SessionGroup[] = [];
   const seen = new Map<string, SessionGroup>();
 
@@ -60,8 +66,8 @@ function groupBySession(events: ICustomerEvent[], tz: string): SessionGroup[] {
     if (!seen.has(key)) {
       const firstEvent = event;
       const label = event.sessionId
-        ? `Sessão de ${formatDate(firstEvent.createdAt, tz, "DD/MM HH:mm")}`
-        : "Sem sessão";
+        ? formatSessionLabel(formatDate(firstEvent.createdAt, tz, "DD/MM HH:mm"))
+        : noSessionLabel;
       const group: SessionGroup = { sessionId: event.sessionId, label, events: [] };
       seen.set(key, group);
       groups.push(group);
@@ -83,6 +89,7 @@ export function CustomerTimeline({
   customerId,
   currentEventId,
 }: CustomerTimelineProps) {
+  const t = useTranslations("customerTimeline");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { organization } = useOrganization();
   const tz = organization?.timezone ?? "America/Sao_Paulo";
@@ -112,17 +119,26 @@ export function CustomerTimeline({
   if (!data || data.length === 0) {
     return (
       <p className="mt-3 text-xs text-zinc-600 italic">
-        Nenhum evento encontrado para este cliente.
+        {t("emptyState")}
       </p>
     );
   }
 
-  const groups = groupBySession(data, tz);
+  const groups = groupBySession(
+    data,
+    tz,
+    (date) => t("sessionOf", { date }),
+    t("noSession")
+  );
 
   return (
     <div className="mt-3">
       <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600 mb-2.5">
-        Funil do cliente · {data.length} eventos · {groups.length} {groups.length === 1 ? "sessão" : "sessões"}
+        {t("title", {
+          eventCount: data.length,
+          sessionCount: groups.length,
+          sessionLabel: groups.length === 1 ? t("sessionLabel") : t("sessionsLabel"),
+        })}
       </p>
       <div className="space-y-4">
         {groups.map((group, groupIndex) => (
@@ -132,7 +148,7 @@ export function CustomerTimeline({
                 {group.label}
               </span>
               <span className="flex-1 h-px bg-violet-800/20" />
-              <span className="text-[9px] text-zinc-700">{group.events.length} ev.</span>
+              <span className="text-[9px] text-zinc-700">{t("eventsCount", { count: group.events.length })}</span>
             </div>
             <ol className="relative ml-1">
               {group.events.map((event, index) => {
@@ -173,7 +189,7 @@ export function CustomerTimeline({
                           </span>
                           {isCurrent && (
                             <span className="rounded border border-violet-500/40 bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-violet-400 shrink-0">
-                              atual
+                              {t("currentBadge")}
                             </span>
                           )}
                           {value && (

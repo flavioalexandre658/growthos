@@ -2,6 +2,7 @@
 
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   IconSparkles,
   IconRefresh,
@@ -133,26 +134,28 @@ function ScoreGauge({ score, label }: { score: number; label: string }) {
 }
 
 function FindingCard({ finding }: { finding: IAnalysisFinding }) {
+  const t = useTranslations("ai");
+
   const config = {
     critical: {
       accent: "border-red-500/40 bg-red-950/20",
       left: "bg-red-500",
       badge: "bg-red-500/15 text-red-400 border-red-500/30",
-      label: "Crítico",
+      label: t("severity.critical"),
       icon: <IconAlertTriangle size={13} className="text-red-400" />,
     },
     warning: {
       accent: "border-amber-500/40 bg-amber-950/10",
       left: "bg-amber-500",
       badge: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-      label: "Atenção",
+      label: t("severity.warning"),
       icon: <IconInfoCircle size={13} className="text-amber-400" />,
     },
     good: {
       accent: "border-emerald-500/40 bg-emerald-950/10",
       left: "bg-emerald-500",
       badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-      label: "Bom",
+      label: t("severity.good"),
       icon: <IconCircleCheck size={13} className="text-emerald-400" />,
     },
   }[finding.severity];
@@ -183,12 +186,13 @@ function FindingCard({ finding }: { finding: IAnalysisFinding }) {
 }
 
 function DiagnosisItem({ diagnosis }: { diagnosis: IAnalysisDiagnosis }) {
+  const t = useTranslations("ai");
   const [open, setOpen] = useState(false);
 
   const config = {
-    critical: { color: "text-red-400", bg: "bg-red-500/15 border-red-500/30", label: "Crítico" },
-    warning: { color: "text-amber-400", bg: "bg-amber-500/15 border-amber-500/30", label: "Atenção" },
-    info: { color: "text-indigo-400", bg: "bg-indigo-500/15 border-indigo-500/30", label: "Info" },
+    critical: { color: "text-red-400", bg: "bg-red-500/15 border-red-500/30", label: t("severity.critical") },
+    warning: { color: "text-amber-400", bg: "bg-amber-500/15 border-amber-500/30", label: t("severity.warning") },
+    info: { color: "text-indigo-400", bg: "bg-indigo-500/15 border-indigo-500/30", label: t("severity.info") },
   }[diagnosis.severity];
 
   return (
@@ -233,10 +237,12 @@ function ActionCard({
   done: boolean;
   onToggle: () => void;
 }) {
+  const t = useTranslations("ai");
+
   const roiConfig = {
-    alto: { label: "ROI Alto", color: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" },
-    medio: { label: "ROI Médio", color: "text-amber-400 bg-amber-500/15 border-amber-500/30" },
-    baixo: { label: "ROI Baixo", color: "text-zinc-400 bg-zinc-500/15 border-zinc-500/30" },
+    alto: { label: t("roi.high"), color: "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" },
+    medio: { label: t("roi.medium"), color: "text-amber-400 bg-amber-500/15 border-amber-500/30" },
+    baixo: { label: t("roi.low"), color: "text-zinc-400 bg-zinc-500/15 border-zinc-500/30" },
   }[action.roi];
 
   return (
@@ -271,7 +277,7 @@ function ActionCard({
           <p className="text-xs text-zinc-400 leading-relaxed mb-2">{action.description}</p>
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-[11px] font-semibold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md">
-              Impacto estimado: {action.impact}
+              {t("results.estimatedImpact", { impact: action.impact })}
             </span>
             <Button
               size="sm"
@@ -287,12 +293,12 @@ function ActionCard({
               {done ? (
                 <>
                   <IconRefresh size={11} />
-                  Desfazer
+                  {t("results.undo")}
                 </>
               ) : (
                 <>
                   <IconCheck size={11} />
-                  Marcar como feito
+                  {t("results.markAsDone")}
                 </>
               )}
             </Button>
@@ -310,6 +316,8 @@ function HistoryItem({
   entry: IAnalysisHistoryEntry;
   onRestore: (result: IAnalysisResult) => void;
 }) {
+  const t = useTranslations("ai");
+
   const scoreColor =
     entry.score >= 70 ? "text-emerald-400 bg-emerald-500/15 border-emerald-500/30" :
     entry.score >= 40 ? "text-amber-400 bg-amber-500/15 border-amber-500/30" :
@@ -330,13 +338,13 @@ function HistoryItem({
         <p className="text-[11px] text-zinc-400 truncate">{entry.summary}</p>
         <div className="flex gap-2 mt-1">
           {entry.findingsCounts.critical > 0 && (
-            <span className="text-[10px] text-red-400">{entry.findingsCounts.critical} crítico</span>
+            <span className="text-[10px] text-red-400">{t("history.criticalCount", { count: entry.findingsCounts.critical })}</span>
           )}
           {entry.findingsCounts.warning > 0 && (
-            <span className="text-[10px] text-amber-400">{entry.findingsCounts.warning} atenção</span>
+            <span className="text-[10px] text-amber-400">{t("history.warningCount", { count: entry.findingsCounts.warning })}</span>
           )}
           {entry.findingsCounts.good > 0 && (
-            <span className="text-[10px] text-emerald-400">{entry.findingsCounts.good} bom</span>
+            <span className="text-[10px] text-emerald-400">{t("history.goodCount", { count: entry.findingsCounts.good })}</span>
           )}
         </div>
       </div>
@@ -346,7 +354,7 @@ function HistoryItem({
         onClick={() => onRestore(entry.result)}
         className="h-7 text-[11px] px-2 text-zinc-400 hover:text-zinc-100 shrink-0"
       >
-        Ver
+        {t("results.view")}
       </Button>
     </div>
   );
@@ -363,6 +371,7 @@ function AnalysisResults({
   onRerun: () => void;
   isRunning: boolean;
 }) {
+  const t = useTranslations("ai");
   const [doneActions, setDoneActions] = useState<Record<string, string>>(() =>
     loadDoneActions(orgId),
   );
@@ -393,7 +402,7 @@ function AnalysisResults({
         <div className="flex items-center justify-between p-4 border-b border-zinc-800">
           <div className="flex items-center gap-2">
             <IconSparkles size={15} className="text-indigo-400" />
-            <span className="text-sm font-bold text-zinc-100">Resultado da Análise</span>
+            <span className="text-sm font-bold text-zinc-100">{t("results.title")}</span>
           </div>
           <Button
             size="sm"
@@ -403,7 +412,7 @@ function AnalysisResults({
             className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 h-7 gap-1.5 text-xs"
           >
             <IconRefresh size={12} />
-            Refazer
+            {t("results.redo")}
           </Button>
         </div>
 
@@ -414,7 +423,7 @@ function AnalysisResults({
             </div>
             <div>
               <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">
-                Resumo Executivo
+                {t("results.executiveSummary")}
               </p>
               <p className="text-sm text-zinc-200 leading-relaxed">{result.summary}</p>
             </div>
@@ -423,7 +432,7 @@ function AnalysisResults({
           {result.findings.length > 0 && (
             <div className="mb-5">
               <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">
-                Achados
+                {t("results.findings")}
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[...critical, ...warning, ...good].map((finding, i) => (
@@ -436,7 +445,7 @@ function AnalysisResults({
           {result.diagnoses.length > 0 && (
             <div className="mb-5">
               <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">
-                Diagnóstico
+                {t("results.diagnosis")}
               </p>
               <div className="space-y-2">
                 {result.diagnoses.map((diag, i) => (
@@ -449,7 +458,7 @@ function AnalysisResults({
           {result.actions.length > 0 && (
             <div>
               <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">
-                Plano de Ação
+                {t("results.actionPlan")}
               </p>
               <div className="space-y-3">
                 {result.actions.map((action, i) => (
@@ -470,6 +479,7 @@ function AnalysisResults({
 }
 
 export function AiContent() {
+  const t = useTranslations("ai");
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
@@ -604,7 +614,7 @@ export function AiContent() {
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
-        throw new Error((errBody as { error?: string }).error ?? "Erro ao conectar com a IA");
+        throw new Error((errBody as { error?: string }).error ?? t("content.error.connectionError"));
       }
 
       const parsed = (await res.json()) as IAnalysisResult;
@@ -632,7 +642,7 @@ export function AiContent() {
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name !== "AbortError") {
-        setError(err.message ?? "Erro desconhecido ao obter análise.");
+        setError(err.message ?? t("content.error.unknownError"));
       }
     } finally {
       setIsRunning(false);
@@ -649,9 +659,9 @@ export function AiContent() {
             <IconBrain size={16} className="text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-zinc-100">Análise com IA</h1>
+            <h1 className="text-lg font-bold text-zinc-100">{t("content.title")}</h1>
             <p className="text-xs text-zinc-500">
-              Insights inteligentes sobre performance, custos e oportunidades
+              {t("content.subtitle")}
             </p>
           </div>
         </div>
@@ -667,14 +677,14 @@ export function AiContent() {
             <IconChartBar size={20} className="text-indigo-400" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-zinc-100">Análise Completa</p>
+            <p className="text-sm font-semibold text-zinc-100">{t("content.fullAnalysis.title")}</p>
             <p className="mt-0.5 text-xs text-zinc-500">
-              P&L, funil, canais, produtos e oportunidades de melhoria
+              {t("content.fullAnalysis.description")}
             </p>
           </div>
           <div className="flex items-center gap-1.5 text-xs font-semibold text-indigo-400">
             <IconPlayerPlay size={12} />
-            {isRunning ? "Analisando..." : "Executar"}
+            {isRunning ? t("content.fullAnalysis.running") : t("content.fullAnalysis.execute")}
           </div>
         </button>
 
@@ -686,14 +696,14 @@ export function AiContent() {
             <IconTrendingUp size={20} className="text-emerald-400" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-zinc-100">Comparar Períodos</p>
+            <p className="text-sm font-semibold text-zinc-100">{t("content.comparePeriods.title")}</p>
             <p className="mt-0.5 text-xs text-zinc-500">
-              Compare métricas entre dois períodos distintos
+              {t("content.comparePeriods.description")}
             </p>
           </div>
           <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
             <IconPlayerPlay size={12} />
-            Comparar
+            {t("content.comparePeriods.cta")}
           </div>
         </Link>
 
@@ -702,9 +712,9 @@ export function AiContent() {
             <IconSparkles size={20} className="text-zinc-600" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-zinc-500">Em Breve</p>
+            <p className="text-sm font-semibold text-zinc-500">{t("content.comingSoon.title")}</p>
             <p className="mt-0.5 text-xs text-zinc-600">
-              Previsões, alertas automáticos e relatórios agendados
+              {t("content.comingSoon.description")}
             </p>
           </div>
         </div>
@@ -723,9 +733,9 @@ export function AiContent() {
             <IconBrain size={28} className="text-indigo-400 animate-pulse" />
           </div>
           <div className="text-center">
-            <p className="text-sm font-semibold text-zinc-200">Analisando seus dados...</p>
+            <p className="text-sm font-semibold text-zinc-200">{t("content.analyzing.title")}</p>
             <p className="text-xs text-zinc-500 mt-1">
-              A IA está processando P&L, funil, canais e produtos
+              {t("content.analyzing.subtitle")}
             </p>
           </div>
           <div className="flex gap-1">
@@ -744,7 +754,7 @@ export function AiContent() {
         <div className="rounded-xl border border-red-800/40 bg-red-950/20 p-4 flex items-start gap-3">
           <IconAlertTriangle size={16} className="text-red-400 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-red-300">Erro na análise</p>
+            <p className="text-sm font-semibold text-red-300">{t("content.error.title")}</p>
             <p className="text-xs text-red-400/80 mt-0.5">{error}</p>
           </div>
         </div>
@@ -768,7 +778,7 @@ export function AiContent() {
             <div className="flex items-center gap-2">
               <IconHistory size={14} className="text-zinc-500" />
               <span className="text-xs font-semibold text-zinc-400">
-                Histórico de Análises ({history.length})
+                {t("history.title", { count: history.length })}
               </span>
             </div>
             {showHistory ? (

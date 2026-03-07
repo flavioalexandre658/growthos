@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   ResponsiveContainer,
   BarChart,
@@ -74,6 +75,7 @@ function CustomTooltip({
 }
 
 export function MrrMovementChart({ data, isLoading }: MrrMovementChartProps) {
+  const t = useTranslations("mrr.movementChart");
   const chartData = (data ?? []).map((d) => ({
     ...d,
     label: formatDateLabel(d.date),
@@ -83,15 +85,15 @@ export function MrrMovementChart({ data, isLoading }: MrrMovementChartProps) {
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-      <h3 className="text-sm font-bold text-zinc-100">Movimentação do MRR</h3>
+      <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
       <p className="mt-0.5 text-xs text-zinc-500 mb-4">
-        Novos, Renovações, Upgrades, Churn e Contração por período
+        {t("subtitle")}
       </p>
       {isLoading ? (
         <Skeleton className="h-56 w-full rounded-lg bg-zinc-800" />
       ) : chartData.length === 0 ? (
         <div className="flex items-center justify-center h-56 text-zinc-600 text-sm">
-          Sem dados de recorrência no período
+          {t("emptyMessage")}
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={260}>
@@ -117,12 +119,12 @@ export function MrrMovementChart({ data, isLoading }: MrrMovementChartProps) {
             />
             <ReferenceLine y={0} stroke="#3f3f46" strokeWidth={1.5} />
 
-            <Bar dataKey="newMrr" name="Novo MRR" fill="#22c55e" fillOpacity={0.9} stackId="positive" radius={[3, 3, 0, 0]} />
-            <Bar dataKey="renewalMrr" name="Renovações" fill="#84cc16" fillOpacity={0.85} stackId="positive" />
-            <Bar dataKey="expansionMrr" name="Upgrade" fill="#06b6d4" fillOpacity={0.85} stackId="positive" />
-            <Bar dataKey="churnedMrr" name="Churn" fill="#ef4444" fillOpacity={0.85} stackId="negative" radius={[0, 0, 3, 3]} />
-            <Bar dataKey="contractionMrr" name="Downgrade" fill="#f97316" fillOpacity={0.85} stackId="negative" />
-            <Bar dataKey="netMrr" name="MRR Líquido" fill="#6366f1" fillOpacity={0} stackId="net" radius={[3, 3, 3, 3]} />
+            <Bar dataKey="newMrr" name={t("legendNewMrr")} fill="#22c55e" fillOpacity={0.9} stackId="positive" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="renewalMrr" name={t("legendRenewals")} fill="#84cc16" fillOpacity={0.85} stackId="positive" />
+            <Bar dataKey="expansionMrr" name={t("legendUpgrade")} fill="#06b6d4" fillOpacity={0.85} stackId="positive" />
+            <Bar dataKey="churnedMrr" name={t("legendChurn")} fill="#ef4444" fillOpacity={0.85} stackId="negative" radius={[0, 0, 3, 3]} />
+            <Bar dataKey="contractionMrr" name={t("legendDowngrade")} fill="#f97316" fillOpacity={0.85} stackId="negative" />
+            <Bar dataKey="netMrr" name={t("legendNetMrr")} fill="#6366f1" fillOpacity={0} stackId="net" radius={[3, 3, 3, 3]} />
           </BarChart>
         </ResponsiveContainer>
       )}
