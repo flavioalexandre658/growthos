@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq, and, sql } from "drizzle-orm";
 import { createHash } from "crypto";
 import { db } from "@/db";
-import { apiKeys, events, subscriptions, organizations, pageviewAggregates, users, usageMonthly } from "@/db/schema";
+import { apiKeys, events, subscriptions, organizations, pageviewAggregates, usageMonthly } from "@/db/schema";
 import { resolveExchangeRate as resolveRate } from "@/utils/resolve-exchange-rate";
 import { checkRateLimit } from "@/utils/rate-limiter";
 import { insertPayment } from "@/utils/insert-payment";
