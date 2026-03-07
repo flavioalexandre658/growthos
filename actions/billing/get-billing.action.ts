@@ -1,7 +1,7 @@
 "use server";
 
 import { getServerSession } from "next-auth";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, inArray } from "drizzle-orm";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
 import { users, usageMonthly, organizations, orgMembers } from "@/db/schema";
@@ -69,7 +69,7 @@ export async function getBilling(): Promise<IBillingData | null> {
     const orgRows = await db
       .select({ id: organizations.id, name: organizations.name })
       .from(organizations)
-      .where(sql`${organizations.id} = ANY(${orgIds})`);
+      .where(inArray(organizations.id, orgIds));
 
     for (const o of orgRows) {
       orgNames[o.id] = o.name;

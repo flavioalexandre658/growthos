@@ -18,5 +18,8 @@ export function isFinancialEventType(eventType: string): boolean {
 type InsertPaymentData = typeof payments.$inferInsert;
 
 export async function insertPayment(data: InsertPaymentData): Promise<void> {
-  await db.insert(payments).values(data).onConflictDoNothing();
+  await db
+    .insert(payments)
+    .values(data)
+    .onConflictDoNothing({ target: [payments.organizationId, payments.eventHash] });
 }

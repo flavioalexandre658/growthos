@@ -6,15 +6,17 @@ async function backfillOrgOwnership() {
   console.log("Backfilling org ownership...\n");
 
   const allOrgs = await db.select().from(organizations);
-  const allUsers = await db.select({ id: users.id, email: users.email }).from(users).limit(1);
+  const allUsers = await db.select({ id: users.id, email: users.email }).from(users).orderBy(users.createdAt);
 
   if (allUsers.length === 0) {
     console.log("No users found, skipping.");
     return;
   }
 
-  const defaultUser = allUsers[0];
-  console.log(`Default user: ${defaultUser.email} (${defaultUser.id})\n`);
+  const defaultUser = allUsers[allUsers.length - 1];
+  console.log("All users found:");
+  for (const u of allUsers) console.log(`  ${u.email} → ${u.id}`);
+  console.log(`\nDefault owner (most recent): ${defaultUser.email} (${defaultUser.id})\n`);
 
   let updatedOrgs = 0;
   let addedMembers = 0;

@@ -59,6 +59,7 @@ interface NavItemDef {
   icon: React.ElementType;
   exact: boolean;
   highlight?: boolean;
+  activePrefix?: string;
 }
 
 interface NavSection {
@@ -120,7 +121,7 @@ function buildFooterNav(slug: string): FooterNavSection {
   return {
     items: [
       { href: "/docs", label: "Documentação", icon: IconBook, exact: false },
-      { href: `/${slug}/settings`, label: "Configurações", icon: IconSettings, exact: false },
+      { href: `/${slug}/settings/installation`, label: "Configurações", icon: IconSettings, exact: false, activePrefix: `/${slug}/settings` },
     ],
   };
 }
@@ -134,6 +135,7 @@ function NavItem({
   exact,
   collapsed,
   highlight,
+  activePrefix,
   onClick,
 }: {
   href: string;
@@ -142,11 +144,16 @@ function NavItem({
   exact: boolean;
   collapsed?: boolean;
   highlight?: boolean;
+  activePrefix?: string;
   onClick?: () => void;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isActive = exact ? pathname === href : pathname.startsWith(href);
+  const isActive = activePrefix
+    ? pathname.includes(activePrefix)
+    : exact
+      ? pathname === href
+      : pathname.startsWith(href);
 
   const forwarded = new URLSearchParams();
   for (const key of DATE_PARAMS) {
@@ -208,8 +215,11 @@ function OrgSwitcher({ slug, collapsed }: { slug: string; collapsed?: boolean })
 
   const handleSwitch = (newSlug: string) => {
     try { localStorage.setItem(STORAGE_KEY, newSlug); } catch {}
-    const subPath = pathname.replace(`/${slug}`, "") || "";
-    router.push(`/${newSlug}${subPath}`);
+    const segments = pathname.split("/");
+    const locale = segments[1];
+    const slugIdx = segments.indexOf(slug);
+    const afterSlug = slugIdx !== -1 ? segments.slice(slugIdx + 1).join("/") : "";
+    router.push(`/${locale}/${newSlug}${afterSlug ? `/${afterSlug}` : ""}`);
     setOpen(false);
   };
 

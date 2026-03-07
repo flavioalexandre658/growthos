@@ -24,20 +24,20 @@ export interface SettingsSection {
 }
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
-  { id: "billing", label: "Plano & Uso", icon: <IconCreditCard size={14} /> },
   { id: "installation", label: "Instalação", icon: <IconCode size={14} /> },
-  { id: "integrations", label: "Integrações", icon: <IconPlug size={14} /> },
-  { id: "regional", label: "Regional", icon: <IconWorld size={14} /> },
   { id: "funnel", label: "Funil", icon: <IconFilter size={14} /> },
-  { id: "ai-profile", label: "Perfil IA", icon: <IconBrain size={14} /> },
-  { id: "notifications", label: "Notificações", icon: <IconBell size={14} /> },
-  { id: "public-page", label: "Pág. Pública", icon: <IconShare size={14} /> },
-  { id: "team", label: "Equipe", icon: <IconUsers size={14} /> },
   {
     id: "organization",
     label: "Organização",
     icon: <IconBuilding size={14} />,
   },
+  { id: "integrations", label: "Integrações", icon: <IconPlug size={14} /> },
+  { id: "billing", label: "Plano & Uso", icon: <IconCreditCard size={14} /> },
+  { id: "team", label: "Equipe", icon: <IconUsers size={14} /> },
+  { id: "ai-profile", label: "Perfil IA", icon: <IconBrain size={14} /> },
+  { id: "regional", label: "Regional", icon: <IconWorld size={14} /> },
+  { id: "notifications", label: "Notificações", icon: <IconBell size={14} /> },
+  { id: "public-page", label: "Pág. Pública", icon: <IconShare size={14} /> },
 ];
 
 interface SettingsNavProps {
@@ -48,8 +48,7 @@ export function SettingsNav({ slug }: SettingsNavProps) {
   const pathname = usePathname();
 
   const isActive = (id: string) =>
-    pathname === `/${slug}/settings/${id}` ||
-    pathname.startsWith(`/${slug}/settings/${id}/`);
+    pathname.includes(`/${slug}/settings/${id}`);
 
   return (
     <>

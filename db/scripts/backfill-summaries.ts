@@ -19,7 +19,7 @@ const PAYMENT_EVENT_TYPES = [
   "subscription_changed",
 ];
 
-const BATCH_SIZE = 1000;
+const BATCH_SIZE = 50;
 
 async function backfillPayments() {
   console.log("\n[1/5] Backfilling payments from events...");
