@@ -9,6 +9,7 @@ import { VariableCostsTable } from "./variable-costs-table";
 import { CostsImpactCards } from "./costs-impact-cards";
 import { CostCompositionChart } from "./cost-composition-chart";
 import { useCostsSummary } from "@/hooks/queries/use-costs-summary";
+import { InlineBanner } from "@/components/ui/welcome-state";
 
 function CostsPageSkeleton() {
   return (
@@ -55,10 +56,17 @@ function CostsPageSkeleton() {
 
 export function CostsContent() {
   const t = useTranslations("finance.costsContent");
+  const tTour = useTranslations("tour.welcome.costs");
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
   const { data: summary, isLoading: summaryLoading } = useCostsSummary(orgId);
+
+  const hasNoCosts =
+    !summaryLoading &&
+    summary !== undefined &&
+    (summary?.totalFixedCostsInCents ?? 0) === 0 &&
+    (summary?.totalVariableCostsInCents ?? 0) === 0;
 
   if (!orgId) {
     return <CostsPageSkeleton />;
@@ -74,6 +82,14 @@ export function CostsContent() {
       </div>
 
       <CostsImpactCards data={summary} isLoading={summaryLoading} />
+
+      {hasNoCosts && !summaryLoading && (
+        <InlineBanner
+          description={tTour("ctaLabel")}
+          ctaLabel={t("fixedCostsTab")}
+          ctaHref="#"
+        />
+      )}
 
       <CostCompositionChart data={summary} isLoading={summaryLoading} />
 

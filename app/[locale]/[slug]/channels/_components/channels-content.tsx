@@ -11,7 +11,8 @@ import { ChannelsTreemap } from "./channels-treemap";
 import { ChannelsKpiStrip } from "./channels-kpi-strip";
 import { ChannelsTable } from "./channels-table";
 import { Input } from "@/components/ui/input";
-import { IconSearch } from "@tabler/icons-react";
+import { IconSearch, IconBrandGoogle } from "@tabler/icons-react";
+import { WelcomeState } from "@/components/ui/welcome-state";
 
 const EMPTY_PAGINATION = { page: 1, limit: 30, total: 0, total_pages: 0 };
 
@@ -21,8 +22,10 @@ interface ChannelsContentProps {
 
 export function ChannelsContent({ filter }: ChannelsContentProps) {
   const t = useTranslations("channels.content");
+  const tTour = useTranslations("tour.welcome.channels");
   const { organization } = useOrganization();
   const orgId = organization?.id;
+  const slug = organization?.slug ?? "";
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 400);
@@ -46,6 +49,8 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
   const pagination = resp?.pagination ?? EMPTY_PAGINATION;
   const stepMeta = resp?.stepMeta ?? [];
 
+  const hasNoData = !isLoading && resp !== undefined && channelsData.length === 0;
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -54,43 +59,58 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
           <p className="text-xs text-zinc-500">{t("subtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <IconSearch
-              size={14}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"
-            />
-            <Input
-              placeholder={t("searchPlaceholder")}
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="pl-8 h-8 w-44 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-600 text-sm"
-            />
-          </div>
+          {!hasNoData && (
+            <div className="relative">
+              <IconSearch
+                size={14}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"
+              />
+              <Input
+                placeholder={t("searchPlaceholder")}
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="pl-8 h-8 w-44 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-600 text-sm"
+              />
+            </div>
+          )}
           <Suspense>
             <PeriodFilter filter={filter} />
           </Suspense>
         </div>
       </div>
 
-      <ChannelsKpiStrip data={resp} isLoading={isLoading} />
+      {hasNoData ? (
+        <WelcomeState
+          icon={IconBrandGoogle}
+          title={tTour("title")}
+          description={tTour("description")}
+          ctaLabel={tTour("cta")}
+          ctaHref={`/${slug}/settings/installation`}
+          className="min-h-[320px]"
+        />
+      ) : (
+        <>
+          <ChannelsKpiStrip data={resp} isLoading={isLoading} />
 
-      <ChannelsTreemap data={channelsData} isLoading={isLoading} />
+          <ChannelsTreemap data={channelsData} isLoading={isLoading} />
 
-      <ChannelsTable
-        data={channelsData}
-        stepMeta={stepMeta}
-        pagination={pagination}
-        isLoading={isLoading}
-        orderBy={orderBy}
-        orderDir={orderDir}
-        onOrderBy={(k) => { setOrderBy(k); setPage(1); }}
-        onOrderDir={setOrderDir}
-        onPageChange={setPage}
-        onPageSizeChange={(s) => { setLimit(s); setPage(1); }}
-      />
+          <ChannelsTable
+            data={channelsData}
+            stepMeta={stepMeta}
+            pagination={pagination}
+            isLoading={isLoading}
+            orderBy={orderBy}
+            orderDir={orderDir}
+            onOrderBy={(k) => { setOrderBy(k); setPage(1); }}
+            onOrderDir={setOrderDir}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => { setLimit(s); setPage(1); }}
+          />
+        </>
+      )}
     </div>
   );
 }

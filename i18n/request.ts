@@ -21,6 +21,7 @@ const MESSAGE_FILES = [
   "pages",
   "onboarding",
   "subscriptions",
+  "tour",
 ] as const;
 
 export default getRequestConfig(async ({ requestLocale }) => {

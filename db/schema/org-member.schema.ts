@@ -1,6 +1,7 @@
-import { pgTable, uuid, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, timestamp, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 import { organizations } from "./organization.schema";
 import { users } from "./user.schema";
+import type { ITourState } from "@/interfaces/tour.interface";
 
 export type OrgMemberRole = "owner" | "admin" | "viewer";
 
@@ -20,6 +21,7 @@ export const orgMembers = pgTable(
       .$type<OrgMemberRole>(),
     invitedAt: timestamp("invited_at").notNull().defaultNow(),
     acceptedAt: timestamp("accepted_at"),
+    tourState: jsonb("tour_state").$type<ITourState>(),
   },
   (table) => [
     uniqueIndex("org_members_org_user_idx").on(

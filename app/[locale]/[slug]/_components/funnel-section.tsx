@@ -76,7 +76,7 @@ function FunnelMobile({ steps, allStepKeys }: SankeyFunnelProps) {
         const color = getStepColor(step.key, allStepKeys).hex;
         const pct = maxValue > 0 ? (step.value / maxValue) * 100 : 0;
         const globalRate =
-          maxValue > 0 ? ((step.value / steps[0].value) * 100).toFixed(0) : "0";
+          steps[0].value > 0 ? ((step.value / steps[0].value) * 100).toFixed(0) : "—";
 
         return (
           <div key={step.key}>
@@ -88,7 +88,7 @@ function FunnelMobile({ steps, allStepKeys }: SankeyFunnelProps) {
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-[10px] text-zinc-500 font-mono">
-                      {i === 0 ? "100%" : `${globalRate}%`}
+                      {i === 0 ? "100%" : globalRate === "—" ? "—" : `${globalRate}%`}
                     </span>
                     <span
                       className="min-w-[44px] text-center text-sm font-bold font-mono rounded-full px-2.5 py-0.5"

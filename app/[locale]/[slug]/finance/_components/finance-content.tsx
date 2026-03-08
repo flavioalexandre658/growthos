@@ -16,7 +16,10 @@ import {
   IconInfoCircle,
   IconChevronDown,
   IconChevronUp,
+  IconCurrencyDollar,
 } from "@tabler/icons-react";
+import { WelcomeState } from "@/components/ui/welcome-state";
+import { InlineBanner } from "@/components/ui/welcome-state";
 
 interface FinanceContentProps {
   filter: IDateFilter;
@@ -35,6 +38,7 @@ const PL_STEP_KEYS = [
 
 export function FinanceContent({ filter, slug }: FinanceContentProps) {
   const t = useTranslations("finance.financeContent");
+  const tTour = useTranslations("tour.welcome.finance");
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const [showExplanation, setShowExplanation] = useState(false);
@@ -51,6 +55,15 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
   const pl = financial?.pl ?? null;
   const periodDays = financial?.periodDays ?? 30;
   const isSubMonth = periodDays < 30;
+
+  const hasNoPayments =
+    !financialLoading &&
+    financial !== undefined &&
+    (financial?.grossRevenueInCents ?? 0) === 0;
+
+  const hasCostsConfigured =
+    pl !== null &&
+    ((pl.totalFixedCostsInCents ?? 0) > 0 || (pl.totalVariableCostsInCents ?? 0) > 0);
 
   const plSteps = PL_STEP_KEYS.map((step) => ({
     label: t(`plSteps.${step.key}.label`),
@@ -73,107 +86,128 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
         </Suspense>
       </div>
 
-      {pl && isSubMonth && pl.totalFixedCostsInCents > 0 && (
-        <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
-          <IconAlertTriangle
-            size={15}
-            className="text-amber-400 mt-0.5 shrink-0"
-          />
-          <p className="text-xs text-amber-300">
-            {t("fixedCostsWarning", { days: periodDays })}
-          </p>
-        </div>
-      )}
-
-      <FinanceKpiCards data={financial} isLoading={financialLoading} slug={slug} />
-
-      <ProfitLossWaterfall pl={pl} isLoading={financialLoading} />
-
-      <RevenueLineChart data={dailyResult?.rows} pl={pl} isLoading={dailyLoading} />
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <FinanceBreakdownTable
-          title={t("revenueByPaymentMethod")}
-          subtitle={t("revenueByPaymentMethodSubtitle")}
-          rows={
-            financial?.byPaymentMethod.map((r) => ({
-              name: r.method,
-              payments: r.purchases,
-              revenue: r.revenue,
-              percentage: r.percentage,
-            })) ?? []
-          }
-          isLoading={financialLoading}
+      {hasNoPayments ? (
+        <WelcomeState
+          icon={IconCurrencyDollar}
+          title={tTour("noPaymentsTitle")}
+          description={tTour("noPaymentsDescription")}
+          ctaLabel={tTour("cta")}
+          ctaHref={`/${slug}/settings/integrations`}
+          className="min-h-[320px]"
         />
-        <FinanceBreakdownTable
-          title={t("revenueByCategory")}
-          subtitle={t("revenueByCategorySubtitle")}
-          rows={
-            financial?.byCategory.map((r) => ({
-              name: r.category,
-              payments: r.purchases,
-              revenue: r.revenue,
-              percentage: r.percentage,
-              marginPercentage: r.marginPercentage,
-            })) ?? []
-          }
-          isLoading={financialLoading}
-          showMargin
-        />
-      </div>
-
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 overflow-hidden">
-        <button
-          onClick={() => setShowExplanation((v) => !v)}
-          className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-zinc-800/30 transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <IconInfoCircle size={15} className="text-zinc-500" />
-            <span className="text-sm font-medium text-zinc-300">
-              {t("howPlWorks")}
-            </span>
-          </div>
-          {showExplanation ? (
-            <IconChevronUp size={14} className="text-zinc-500" />
-          ) : (
-            <IconChevronDown size={14} className="text-zinc-500" />
+      ) : (
+        <>
+          {pl && isSubMonth && pl.totalFixedCostsInCents > 0 && (
+            <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+              <IconAlertTriangle
+                size={15}
+                className="text-amber-400 mt-0.5 shrink-0"
+              />
+              <p className="text-xs text-amber-300">
+                {t("fixedCostsWarning", { days: periodDays })}
+              </p>
+            </div>
           )}
-        </button>
 
-        {showExplanation && (
-          <div className="px-5 pb-5 space-y-3 border-t border-zinc-800">
-            <p className="text-xs text-zinc-500 pt-4">
-              {t("plDescription")}
-            </p>
-            <div className="space-y-2">
-              {plSteps.map((step) => (
-                <div
-                  key={step.label}
-                  className={`flex gap-3 rounded-lg px-3 py-2.5 ${step.highlight ? "bg-zinc-800/50 border border-zinc-700/50" : ""}`}
-                >
-                  <div className="min-w-[160px]">
-                    <span
-                      className={`text-xs font-semibold font-mono ${step.positive === false ? "text-red-400" : step.highlight ? "text-indigo-300" : "text-zinc-300"}`}
-                    >
-                      {step.label}
-                    </span>
-                  </div>
-                  <span className="text-xs text-zinc-500">{step.desc}</span>
-                </div>
-              ))}
-            </div>
-            <div className="rounded-lg bg-zinc-800/50 border border-zinc-700/50 px-3 py-2.5 space-y-1">
-              <p className="text-xs font-semibold text-zinc-400">
-                {t("aboutSegmentedVariableCosts")}
-              </p>
-              <p className="text-xs text-zinc-500">
-                {t("segmentedVariableCostsDescription")}{" "}
-                <strong className="text-zinc-400">{t("costsLink")}</strong>.
-              </p>
-            </div>
+          {!hasCostsConfigured && !financialLoading && (
+            <InlineBanner
+              description={tTour("noCostsBanner")}
+              ctaLabel={tTour("noCostsCta")}
+              ctaHref={`/${slug}/costs`}
+            />
+          )}
+
+          <FinanceKpiCards data={financial} isLoading={financialLoading} slug={slug} />
+
+          <ProfitLossWaterfall pl={pl} isLoading={financialLoading} />
+
+          <RevenueLineChart data={dailyResult?.rows} pl={pl} isLoading={dailyLoading} />
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <FinanceBreakdownTable
+              title={t("revenueByPaymentMethod")}
+              subtitle={t("revenueByPaymentMethodSubtitle")}
+              rows={
+                financial?.byPaymentMethod.map((r) => ({
+                  name: r.method,
+                  payments: r.purchases,
+                  revenue: r.revenue,
+                  percentage: r.percentage,
+                })) ?? []
+              }
+              isLoading={financialLoading}
+            />
+            <FinanceBreakdownTable
+              title={t("revenueByCategory")}
+              subtitle={t("revenueByCategorySubtitle")}
+              rows={
+                financial?.byCategory.map((r) => ({
+                  name: r.category,
+                  payments: r.purchases,
+                  revenue: r.revenue,
+                  percentage: r.percentage,
+                  marginPercentage: r.marginPercentage,
+                })) ?? []
+              }
+              isLoading={financialLoading}
+              showMargin
+            />
           </div>
-        )}
-      </div>
+
+          <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 overflow-hidden">
+            <button
+              onClick={() => setShowExplanation((v) => !v)}
+              className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-zinc-800/30 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <IconInfoCircle size={15} className="text-zinc-500" />
+                <span className="text-sm font-medium text-zinc-300">
+                  {t("howPlWorks")}
+                </span>
+              </div>
+              {showExplanation ? (
+                <IconChevronUp size={14} className="text-zinc-500" />
+              ) : (
+                <IconChevronDown size={14} className="text-zinc-500" />
+              )}
+            </button>
+
+            {showExplanation && (
+              <div className="px-5 pb-5 space-y-3 border-t border-zinc-800">
+                <p className="text-xs text-zinc-500 pt-4">
+                  {t("plDescription")}
+                </p>
+                <div className="space-y-2">
+                  {plSteps.map((step) => (
+                    <div
+                      key={step.label}
+                      className={`flex gap-3 rounded-lg px-3 py-2.5 ${step.highlight ? "bg-zinc-800/50 border border-zinc-700/50" : ""}`}
+                    >
+                      <div className="min-w-[160px]">
+                        <span
+                          className={`text-xs font-semibold font-mono ${step.positive === false ? "text-red-400" : step.highlight ? "text-indigo-300" : "text-zinc-300"}`}
+                        >
+                          {step.label}
+                        </span>
+                      </div>
+                      <span className="text-xs text-zinc-500">{step.desc}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="rounded-lg bg-zinc-800/50 border border-zinc-700/50 px-3 py-2.5 space-y-1">
+                  <p className="text-xs font-semibold text-zinc-400">
+                    {t("aboutSegmentedVariableCosts")}
+                  </p>
+                  <p className="text-xs text-zinc-500">
+                    {t("segmentedVariableCostsDescription")}{" "}
+                    <strong className="text-zinc-400">{t("costsLink")}</strong>.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

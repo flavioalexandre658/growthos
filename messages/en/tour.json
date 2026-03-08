@@ -1,0 +1,82 @@
+{
+  "tour": {
+    "checklist": {
+      "title": "Getting started",
+      "progress": "{completed} of {total} completed",
+      "celebration": "All set!",
+      "dismiss": "Dismiss",
+      "items": {
+        "gateway": {
+          "label": "Connect payment gateway",
+          "description": "Import your financial history in minutes",
+          "cta": "Connect now"
+        },
+        "tracker": {
+          "label": "Install tracker.js",
+          "description": "Track acquisition channels and funnel",
+          "cta": "View instructions"
+        },
+        "funnelEvent": {
+          "label": "Receive first funnel event",
+          "description": "Confirms that tracking is working"
+        },
+        "costs": {
+          "label": "Configure costs",
+          "description": "Complete your P&L with real costs",
+          "cta": "Add costs"
+        },
+        "ai": {
+          "label": "Explore AI Analysis",
+          "description": "Insights based on your data",
+          "cta": "Explore"
+        }
+      }
+    },
+    "welcome": {
+      "dashboard": {
+        "title": "Your dashboard is ready",
+        "description": "Connect a gateway or install tracker.js to see your data here.",
+        "ctaGateway": "Connect gateway",
+        "ctaTracker": "Install tracker.js",
+        "noDataSubtitle": "Connect a gateway or install the tracker to see your data"
+      },
+      "mrr": {
+        "title": "Recurring revenue module",
+        "description": "The recurring revenue module will be automatically activated when your first subscription is detected. Connect your Stripe or Asaas to import existing subscriptions.",
+        "cta": "Connect gateway"
+      },
+      "channels": {
+        "title": "Where does your revenue come from?",
+        "description": "Install tracker.js with UTMs to see where your revenue comes from. Without UTMs, everything appears as \"Direct\".",
+        "cta": "Install tracker.js"
+      },
+      "finance": {
+        "noPaymentsTitle": "No payments yet",
+        "noPaymentsDescription": "Connect a payment gateway to import your financial history.",
+        "cta": "Connect gateway",
+        "noCostsBanner": "Configure costs in Settings → Costs to see your real profit.",
+        "noCostsCta": "Configure costs"
+      },
+      "costs": {
+        "ctaLabel": "Add your first cost to complete your income statement"
+      },
+      "pages": {
+        "title": "Which pages convert the most?",
+        "description": "Install tracker.js to see which landing pages generate the most revenue and conversions.",
+        "cta": "Install tracker.js"
+      }
+    },
+    "stepTour": {
+      "twoPaths": {
+        "title": "How do you want to start?",
+        "subtitle": "Choose the fastest path to see your data",
+        "gatewayLabel": "Connect gateway",
+        "gatewayDescription": "See your financial data in 2 minutes",
+        "gatewayBadge": "Fastest",
+        "trackerLabel": "Install tracker.js",
+        "trackerDescription": "Track acquisition channels and funnel",
+        "skipLabel": "Go straight to the dashboard"
+      }
+    }
+  }
+}

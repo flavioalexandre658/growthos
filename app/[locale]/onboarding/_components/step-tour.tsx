@@ -7,13 +7,13 @@ import toast from "react-hot-toast";
 import {
   IconLayoutDashboard,
   IconLoader2,
-  IconRocket,
   IconCheck,
   IconArrowRight,
   IconBolt,
   IconArrowBack,
+  IconCreditCard,
+  IconCode,
 } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
 import { completeOnboarding } from "@/actions/auth/complete-onboarding.action";
 import { buildPrompt } from "@/app/[locale]/[slug]/settings/_components/ai-prompt-section";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
@@ -40,7 +40,8 @@ export function StepTour({
   onGoBack,
 }: StepTourProps) {
   const t = useTranslations("onboarding.stepTour");
-  const [isLoading, setIsLoading] = useState(false);
+  const tTour = useTranslations("tour.stepTour.twoPaths");
+  const [isLoading, setIsLoading] = useState<"gateway" | "tracker" | "dashboard" | null>(null);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const { update } = useSession();
 
@@ -49,23 +50,29 @@ export function StepTour({
   const funnelLabel = funnelSteps
     .filter((s) => !s.hidden)
     .map((s) => s.label)
-    .join(" → ");
+    .join(" \u2192 ");
 
   const baseUrl =
     typeof window !== "undefined"
       ? window.location.origin
       : "https://groware.io";
 
-  const handleFinish = async () => {
-    setIsLoading(true);
+  const handleFinish = async (destination: "gateway" | "tracker" | "dashboard") => {
+    setIsLoading(destination);
     try {
       await completeOnboarding();
       await update({ onboardingCompleted: true });
       toast.success(t("welcomeToast"));
-      window.location.href = slug ? `/${slug}` : "/organizations";
+      if (destination === "gateway") {
+        window.location.href = slug ? `/${slug}/settings/integrations` : "/organizations";
+      } else if (destination === "tracker") {
+        window.location.href = slug ? `/${slug}/settings/installation` : "/organizations";
+      } else {
+        window.location.href = slug ? `/${slug}` : "/organizations";
+      }
     } catch {
       toast.error(t("errorToast"));
-      setIsLoading(false);
+      setIsLoading(null);
     }
   };
 
@@ -83,6 +90,69 @@ export function StepTour({
     toast.success(t("promptCopiedToast"));
     setTimeout(() => setCopiedPrompt(false), 2500);
   };
+
+  const TwoPathsCTA = () => (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold text-zinc-400 text-center">{tTour("title")}</p>
+      <p className="text-[11px] text-zinc-600 text-center mb-3">{tTour("subtitle")}</p>
+
+      <button
+        onClick={() => handleFinish("gateway")}
+        disabled={isLoading !== null}
+        className="flex w-full items-center gap-3 rounded-xl border border-indigo-700/50 bg-indigo-950/40 hover:bg-indigo-950/70 hover:border-indigo-600/60 px-4 py-3 transition-all disabled:opacity-60 group"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600/20 ring-1 ring-inset ring-indigo-600/30">
+          {isLoading === "gateway" ? (
+            <IconLoader2 size={16} className="animate-spin text-indigo-400" />
+          ) : (
+            <IconCreditCard size={16} className="text-indigo-400" />
+          )}
+        </div>
+        <div className="flex-1 text-left">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-zinc-100">{tTour("gatewayLabel")}</span>
+            <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-bold text-emerald-400 ring-1 ring-inset ring-emerald-500/30">
+              {tTour("gatewayBadge")}
+            </span>
+          </div>
+          <p className="text-[11px] text-zinc-500 mt-0.5">{tTour("gatewayDescription")}</p>
+        </div>
+        <IconArrowRight size={14} className="shrink-0 text-zinc-600 group-hover:text-indigo-400 transition-colors" />
+      </button>
+
+      <button
+        onClick={() => handleFinish("tracker")}
+        disabled={isLoading !== null}
+        className="flex w-full items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900/40 hover:bg-zinc-800/60 hover:border-zinc-700 px-4 py-3 transition-all disabled:opacity-60 group"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-800 ring-1 ring-inset ring-zinc-700">
+          {isLoading === "tracker" ? (
+            <IconLoader2 size={16} className="animate-spin text-zinc-400" />
+          ) : (
+            <IconCode size={16} className="text-zinc-400" />
+          )}
+        </div>
+        <div className="flex-1 text-left">
+          <span className="text-sm font-semibold text-zinc-200">{tTour("trackerLabel")}</span>
+          <p className="text-[11px] text-zinc-500 mt-0.5">{tTour("trackerDescription")}</p>
+        </div>
+        <IconArrowRight size={14} className="shrink-0 text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+      </button>
+
+      <button
+        onClick={() => handleFinish("dashboard")}
+        disabled={isLoading !== null}
+        className="flex w-full items-center justify-center gap-1.5 text-xs text-zinc-600 hover:text-zinc-400 transition-colors py-2 disabled:opacity-40"
+      >
+        {isLoading === "dashboard" ? (
+          <IconLoader2 size={12} className="animate-spin" />
+        ) : (
+          <IconLayoutDashboard size={12} />
+        )}
+        {tTour("skipLabel")}
+      </button>
+    </div>
+  );
 
   if (verified) {
     return (
@@ -111,27 +181,7 @@ export function StepTour({
           </div>
         </div>
 
-        <Button
-          onClick={handleFinish}
-          disabled={isLoading}
-          className="w-full h-12 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-bold gap-2 group text-sm shadow-lg shadow-emerald-500/20 transition-all duration-200"
-        >
-          {isLoading ? (
-            <>
-              <IconLoader2 size={16} className="animate-spin" />
-              {t("verified.submitting")}
-            </>
-          ) : (
-            <>
-              <IconRocket
-                size={16}
-                className="transition-transform group-hover:-translate-y-0.5"
-              />
-              {t("verified.submit")}
-              <IconArrowRight size={15} className="ml-auto opacity-60 group-hover:translate-x-0.5 transition-transform" />
-            </>
-          )}
-        </Button>
+        <TwoPathsCTA />
       </div>
     );
   }
@@ -200,23 +250,7 @@ export function StepTour({
         </div>
       </div>
 
-      <Button
-        onClick={handleFinish}
-        disabled={isLoading}
-        className="w-full h-11 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 font-semibold gap-2 group text-sm transition-all duration-200"
-      >
-        {isLoading ? (
-          <>
-            <IconLoader2 size={16} className="animate-spin" />
-            {t("unverified.submitting")}
-          </>
-        ) : (
-          <>
-            <IconLayoutDashboard size={15} />
-            {t("unverified.submit")}
-          </>
-        )}
-      </Button>
+      <TwoPathsCTA />
     </div>
   );
 }

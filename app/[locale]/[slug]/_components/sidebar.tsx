@@ -54,6 +54,7 @@ import { useTranslations } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useOrgHasData } from "@/hooks/queries/use-org-has-data";
 import { useBilling } from "@/hooks/queries/use-billing";
+import { SetupChecklist } from "./setup-checklist";
 
 const STORAGE_KEY = "groware_active_org";
 
@@ -460,6 +461,8 @@ function SidebarContent({
           </div>
         )}
       </div>
+
+      <SetupChecklist slug={slug} organizationId={organization?.id} collapsed={collapsed} />
 
       <div
         className={cn(

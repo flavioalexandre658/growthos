@@ -17,8 +17,9 @@ import { PagesKpiStrip } from "./pages-kpi-strip";
 import { PagesScatterPlot } from "./pages-scatter-plot";
 import { PagesTopCards } from "./pages-top-cards";
 import { Input } from "@/components/ui/input";
-import { IconSearch, IconChevronDown, IconCheck } from "@tabler/icons-react";
+import { IconSearch, IconChevronDown, IconCheck, IconWorldWww } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
+import { WelcomeState } from "@/components/ui/welcome-state";
 
 const EMPTY_PAGINATION = { page: 1, limit: 30, total: 0, total_pages: 0 };
 
@@ -183,8 +184,10 @@ interface PagesContentProps {
 
 export function PagesContent({ filter }: PagesContentProps) {
   const t = useTranslations("pages.content");
+  const tTour = useTranslations("tour.welcome.pages");
   const { organization } = useOrganization();
   const orgId = organization?.id;
+  const slug = organization?.slug ?? "";
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 400);
@@ -209,6 +212,8 @@ export function PagesContent({ filter }: PagesContentProps) {
   const pagination = resp?.pagination ?? EMPTY_PAGINATION;
   const stepMeta = resp?.stepMeta ?? [];
 
+  const hasNoData = !isLoading && resp !== undefined && allData.length === 0;
+
   const filteredData = useMemo<ILandingPageData[]>(() => {
     if (pageTypes.size === 0) return allData;
     return allData.filter((lp) => pageTypes.has(classifyPage(lp.page)));
@@ -230,70 +235,83 @@ export function PagesContent({ filter }: PagesContentProps) {
         </div>
       </div>
 
-      <PagesKpiStrip data={resp} isLoading={isLoading} />
+      {hasNoData ? (
+        <WelcomeState
+          icon={IconWorldWww}
+          title={tTour("title")}
+          description={tTour("description")}
+          ctaLabel={tTour("cta")}
+          ctaHref={`/${slug}/settings/installation`}
+          className="min-h-[320px]"
+        />
+      ) : (
+        <>
+          <PagesKpiStrip data={resp} isLoading={isLoading} />
 
-      <PagesScatterPlot
-        data={resp?.scatterData}
-        isLoading={isLoading}
-      />
-
-      <PagesTopCards
-        data={allData}
-        stepMeta={stepMeta}
-        isLoading={isLoading}
-      />
-
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[140px] max-w-xs">
-          <IconSearch
-            size={14}
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"
+          <PagesScatterPlot
+            data={resp?.scatterData}
+            isLoading={isLoading}
           />
-          <Input
-            placeholder={t("searchPlaceholder")}
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
+
+          <PagesTopCards
+            data={allData}
+            stepMeta={stepMeta}
+            isLoading={isLoading}
+          />
+
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[140px] max-w-xs">
+              <IconSearch
+                size={14}
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-500"
+              />
+              <Input
+                placeholder={t("searchPlaceholder")}
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
+                className="pl-8 h-8 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-600 text-sm"
+              />
+            </div>
+            <PageTypeDropdown
+              selected={pageTypes}
+              onChange={(t) => {
+                setPageTypes(t);
+                setPage(1);
+              }}
+            />
+          </div>
+
+          <PagesTable
+            data={filteredData}
+            stepMeta={stepMeta}
+            pagination={
+              pageTypes.size > 0
+                ? {
+                    ...pagination,
+                    total: filteredData.length,
+                    total_pages: Math.ceil(filteredData.length / limit),
+                  }
+                : pagination
+            }
+            isLoading={isLoading}
+            orderBy={orderBy}
+            orderDir={orderDir}
+            onOrderBy={(k) => {
+              setOrderBy(k);
               setPage(1);
             }}
-            className="pl-8 h-8 bg-zinc-900 border-zinc-700 text-zinc-200 placeholder:text-zinc-600 text-sm"
+            onOrderDir={setOrderDir}
+            onPageChange={setPage}
+            onPageSizeChange={(s) => {
+              setLimit(s);
+              setPage(1);
+            }}
           />
-        </div>
-        <PageTypeDropdown
-          selected={pageTypes}
-          onChange={(t) => {
-            setPageTypes(t);
-            setPage(1);
-          }}
-        />
-      </div>
-
-      <PagesTable
-        data={filteredData}
-        stepMeta={stepMeta}
-        pagination={
-          pageTypes.size > 0
-            ? {
-                ...pagination,
-                total: filteredData.length,
-                total_pages: Math.ceil(filteredData.length / limit),
-              }
-            : pagination
-        }
-        isLoading={isLoading}
-        orderBy={orderBy}
-        orderDir={orderDir}
-        onOrderBy={(k) => {
-          setOrderBy(k);
-          setPage(1);
-        }}
-        onOrderDir={setOrderDir}
-        onPageChange={setPage}
-        onPageSizeChange={(s) => {
-          setLimit(s);
-          setPage(1);
-        }}
-      />
+        </>
+      )}
     </div>
   );
 }

@@ -128,7 +128,7 @@ function KpiCard({ label, value, previousLabel, icon: Icon, color, bgColor, curr
         </p>
       )}
       {!hasPrev && (
-        <p className="text-[9px] sm:text-[10px] text-zinc-700 leading-tight">{t("noPreviousData")}</p>
+        <p className="text-[9px] sm:text-[10px] text-zinc-700 leading-tight">—</p>
       )}
     </div>
   );

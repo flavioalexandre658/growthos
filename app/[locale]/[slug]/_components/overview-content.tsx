@@ -19,9 +19,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { IconEye, IconEyeOff } from "@tabler/icons-react";
+import { IconEye, IconEyeOff, IconCreditCard, IconCode, IconX } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 interface StepOption {
   eventType: string;
@@ -127,8 +128,10 @@ interface OverviewContentProps {
 
 export function OverviewContent({ filter }: OverviewContentProps) {
   const t = useTranslations("dashboard.overview");
+  const tTour = useTranslations("tour.welcome.dashboard");
   const { organization } = useOrganization();
   const orgId = organization?.id;
+  const slug = organization?.slug ?? "";
 
   const initialHiddenKeys = new Set(
     (organization?.funnelSteps ?? [])
@@ -158,6 +161,20 @@ export function OverviewContent({ filter }: OverviewContentProps) {
 
   const stepMeta = funnel?.steps.map((s) => ({ key: s.key, label: s.label })) ?? [];
 
+  const [bannerDismissed, setBannerDismissed] = useState(() => {
+    try {
+      return localStorage.getItem("groware_dashboard_banner_dismissed") === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const hasNoData =
+    !funnelLoading &&
+    funnel !== undefined &&
+    (funnel?.steps ?? []).every((s) => s.value === 0) &&
+    (!funnel?.revenue || funnel.revenue === 0);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -178,6 +195,39 @@ export function OverviewContent({ filter }: OverviewContentProps) {
           </Suspense>
         </div>
       </div>
+
+      {hasNoData && !bannerDismissed && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/40 px-4 py-3 relative">
+          <p className="flex-1 text-xs text-zinc-500 leading-relaxed pr-6 sm:pr-0">
+            {tTour("noDataSubtitle")}
+          </p>
+          <div className="flex items-center gap-2 shrink-0">
+            <Link
+              href={`/${slug}/settings/integrations`}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600/20 px-3 py-1.5 text-[11px] font-semibold text-indigo-300 ring-1 ring-inset ring-indigo-600/30 hover:bg-indigo-600/30 transition-colors"
+            >
+              <IconCreditCard size={12} />
+              {tTour("ctaGateway")}
+            </Link>
+            <Link
+              href={`/${slug}/settings/installation`}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800/60 px-3 py-1.5 text-[11px] font-semibold text-zinc-400 ring-1 ring-inset ring-zinc-700/40 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
+            >
+              <IconCode size={12} />
+              {tTour("ctaTracker")}
+            </Link>
+          </div>
+          <button
+            onClick={() => {
+              setBannerDismissed(true);
+              try { localStorage.setItem("groware_dashboard_banner_dismissed", "1"); } catch {}
+            }}
+            className="absolute top-2.5 right-2.5 flex h-5 w-5 items-center justify-center rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
+          >
+            <IconX size={12} />
+          </button>
+        </div>
+      )}
 
       <KpiCards data={funnel} isLoading={funnelLoading} hiddenKeys={hiddenKeys} />
 

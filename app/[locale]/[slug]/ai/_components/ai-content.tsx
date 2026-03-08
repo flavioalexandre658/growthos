@@ -30,6 +30,8 @@ import { useTopProducts } from "@/hooks/queries/use-top-products";
 import { useChannels } from "@/hooks/queries/use-channels";
 import { buildProfitAndLoss } from "@/utils/build-pl";
 import { cn } from "@/lib/utils";
+import { useTourProgress } from "@/hooks/queries/use-tour-progress";
+import { useUpdateTourState } from "@/hooks/mutations/use-update-tour-state";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/pt-br";
@@ -485,6 +487,9 @@ export function AiContent() {
   const { organization } = useOrganization();
   const orgId = organization?.id;
 
+  const { data: tourProgress } = useTourProgress(orgId);
+  const { mutate: updateTourState } = useUpdateTourState(orgId);
+
   const { data: funnel, isPending: funnelLoading } = useFunnel(orgId, DEFAULT_FILTER);
   const { data: fixedCosts, isPending: fixedLoading } = useFixedCosts(orgId);
   const { data: variableCosts, isPending: varLoading } = useVariableCosts(orgId);
@@ -504,6 +509,12 @@ export function AiContent() {
       setHistory(loadHistory(orgId));
     }
   }, [orgId]);
+
+  useEffect(() => {
+    if (orgId && tourProgress && !tourProgress.aiExplored) {
+      updateTourState({ aiPageVisited: true });
+    }
+  }, [orgId, tourProgress, updateTourState]);
 
   const isDataLoading = funnelLoading || fixedLoading || varLoading || segmentsLoading;
 

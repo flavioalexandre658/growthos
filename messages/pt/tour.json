@@ -1,0 +1,82 @@
+{
+  "tour": {
+    "checklist": {
+      "title": "Primeiros passos",
+      "progress": "{completed} de {total} concluídos",
+      "celebration": "Tudo configurado!",
+      "dismiss": "Fechar",
+      "items": {
+        "gateway": {
+          "label": "Conectar gateway de pagamento",
+          "description": "Importe seu histórico financeiro em minutos",
+          "cta": "Conectar agora"
+        },
+        "tracker": {
+          "label": "Instalar tracker.js",
+          "description": "Rastreie canais de aquisição e funil",
+          "cta": "Ver instruções"
+        },
+        "funnelEvent": {
+          "label": "Receber primeiro evento do funil",
+          "description": "Confirma que o tracking está funcionando"
+        },
+        "costs": {
+          "label": "Configurar custos",
+          "description": "Complete seu P&L com custos reais",
+          "cta": "Adicionar custos"
+        },
+        "ai": {
+          "label": "Explorar Análise com IA",
+          "description": "Insights baseados nos seus dados",
+          "cta": "Explorar"
+        }
+      }
+    },
+    "welcome": {
+      "dashboard": {
+        "title": "Seu dashboard está pronto",
+        "description": "Conecte um gateway ou instale o tracker.js para ver seus dados aqui.",
+        "ctaGateway": "Conectar gateway",
+        "ctaTracker": "Instalar tracker.js",
+        "noDataSubtitle": "Conecte um gateway ou instale o tracker para ver seus dados"
+      },
+      "mrr": {
+        "title": "Módulo de recorrência",
+        "description": "O módulo de recorrência será ativado automaticamente quando sua primeira assinatura for detectada. Conecte seu Stripe ou Asaas para importar assinaturas existentes.",
+        "cta": "Conectar gateway"
+      },
+      "channels": {
+        "title": "De onde vem sua receita?",
+        "description": "Instale o tracker.js com UTMs para ver de onde vem sua receita. Sem UTMs, tudo aparece como \"Direto\".",
+        "cta": "Instalar tracker.js"
+      },
+      "finance": {
+        "noPaymentsTitle": "Nenhum pagamento ainda",
+        "noPaymentsDescription": "Conecte um gateway de pagamento para importar seu histórico financeiro.",
+        "cta": "Conectar gateway",
+        "noCostsBanner": "Configure custos em Configurações → Custos para ver seu lucro real.",
+        "noCostsCta": "Configurar custos"
+      },
+      "costs": {
+        "ctaLabel": "Adicione seu primeiro custo para completar seu demonstrativo"
+      },
+      "pages": {
+        "title": "Quais páginas convertem mais?",
+        "description": "Instale o tracker.js para ver quais landing pages geram mais receita e conversões.",
+        "cta": "Instalar tracker.js"
+      }
+    },
+    "stepTour": {
+      "twoPaths": {
+        "title": "Como quer começar?",
+        "subtitle": "Escolha o caminho mais rápido para ver seus dados",
+        "gatewayLabel": "Conectar gateway",
+        "gatewayDescription": "Veja seus dados financeiros em 2 minutos",
+        "gatewayBadge": "Mais rápido",
+        "trackerLabel": "Instalar tracker.js",
+        "trackerDescription": "Rastreie canais de aquisição e funil",
+        "skipLabel": "Ir direto para o dashboard"
+      }
+    }
+  }
+}
