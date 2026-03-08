@@ -5,6 +5,10 @@
       "progress": "{completed} of {total} completed",
       "celebration": "All set!",
       "dismiss": "Dismiss",
+      "mobileBanner": {
+        "next": "Next: {step}",
+        "viewAll": "View all"
+      },
       "items": {
         "gateway": {
           "label": "Connect payment gateway",

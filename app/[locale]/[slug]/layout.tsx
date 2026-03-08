@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { getOrganizationBySlug } from "@/actions/organizations/get-organization-by-slug.action";
 import { Sidebar } from "./_components/sidebar";
+import { MobileChecklistBanner } from "./_components/mobile-checklist-banner";
 
 interface OrgLayoutProps {
   children: React.ReactNode;
@@ -24,7 +25,10 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
     <div className="flex min-h-screen bg-zinc-950">
       <Sidebar slug={slug} />
       <main className="flex-1 min-w-0 md:overflow-auto">
-        <div className="pt-14 md:pt-0">{children}</div>
+        <div className="pt-14 md:pt-0">
+          <MobileChecklistBanner slug={slug} />
+          {children}
+        </div>
       </main>
     </div>
   );

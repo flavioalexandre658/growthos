@@ -10,58 +10,15 @@ import {
   IconChevronUp,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
+import { CHECKLIST_ITEMS } from "@/lib/checklist-items";
 import { useTourProgress } from "@/hooks/queries/use-tour-progress";
 import { useUpdateTourState } from "@/hooks/mutations/use-update-tour-state";
-import type { ITourProgress } from "@/interfaces/tour.interface";
 
 interface SetupChecklistProps {
   slug: string;
   organizationId: string | undefined;
   collapsed?: boolean;
 }
-
-interface ChecklistItem {
-  id: keyof Pick<
-    ITourProgress,
-    "gatewayConnected" | "trackerInstalled" | "funnelEventReceived" | "costsConfigured" | "aiExplored"
-  >;
-  labelKey: string;
-  ctaKey?: string;
-  href?: string;
-  auto?: boolean;
-}
-
-const ITEMS: ChecklistItem[] = [
-  {
-    id: "gatewayConnected",
-    labelKey: "items.gateway.label",
-    ctaKey: "items.gateway.cta",
-    href: "settings/integrations",
-  },
-  {
-    id: "trackerInstalled",
-    labelKey: "items.tracker.label",
-    ctaKey: "items.tracker.cta",
-    href: "settings/installation",
-  },
-  {
-    id: "funnelEventReceived",
-    labelKey: "items.funnelEvent.label",
-    auto: true,
-  },
-  {
-    id: "costsConfigured",
-    labelKey: "items.costs.label",
-    ctaKey: "items.costs.cta",
-    href: "costs",
-  },
-  {
-    id: "aiExplored",
-    labelKey: "items.ai.label",
-    ctaKey: "items.ai.cta",
-    href: "ai",
-  },
-];
 
 function CelebrationBurst() {
   return (
@@ -137,7 +94,7 @@ export function SetupChecklist({ slug, organizationId, collapsed }: SetupCheckli
     );
   }
 
-  const nextItemIndex = ITEMS.findIndex((item) => !progress[item.id]);
+  const nextItemIndex = CHECKLIST_ITEMS.findIndex((item) => !progress[item.id]);
 
   return (
     <div className="mx-3 mb-2 rounded-xl border border-zinc-800 bg-zinc-900/60">
@@ -188,7 +145,7 @@ export function SetupChecklist({ slug, organizationId, collapsed }: SetupCheckli
 
       {expanded && (
         <div className="px-2 py-1.5 space-y-px">
-          {ITEMS.map((item, index) => {
+          {CHECKLIST_ITEMS.map((item, index) => {
             const isDone = progress[item.id];
             const isNext = index === nextItemIndex;
 
