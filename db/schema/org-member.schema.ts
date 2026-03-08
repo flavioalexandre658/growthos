@@ -2,6 +2,7 @@ import { pgTable, uuid, text, timestamp, uniqueIndex, jsonb } from "drizzle-orm/
 import { organizations } from "./organization.schema";
 import { users } from "./user.schema";
 import type { ITourState } from "@/interfaces/tour.interface";
+import type { IEmailSequenceState } from "@/interfaces/email-sequence.interface";
 
 export type OrgMemberRole = "owner" | "admin" | "viewer";
 
@@ -22,6 +23,7 @@ export const orgMembers = pgTable(
     invitedAt: timestamp("invited_at").notNull().defaultNow(),
     acceptedAt: timestamp("accepted_at"),
     tourState: jsonb("tour_state").$type<ITourState>(),
+    emailSequenceState: jsonb("email_sequence_state").$type<IEmailSequenceState>(),
   },
   (table) => [
     uniqueIndex("org_members_org_user_idx").on(

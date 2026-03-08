@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { getOrganizationBySlug } from "@/actions/organizations/get-organization-by-slug.action";
+import { updateLastActivity } from "@/actions/emails/update-last-activity.action";
 import { Sidebar } from "./_components/sidebar";
 import { MobileChecklistBanner } from "./_components/mobile-checklist-banner";
 
@@ -20,6 +21,8 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
 
   const org = await getOrganizationBySlug(slug);
   if (!org) redirect("/organizations");
+
+  void updateLastActivity(org.id);
 
   return (
     <div className="flex min-h-screen bg-zinc-950">

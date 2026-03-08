@@ -1,5 +1,7 @@
 export type Locale = "pt" | "en";
 
+const EMAIL_APP_URL = process.env.NEXTAUTH_URL ?? "https://app.groware.io";
+
 const layoutTranslations = {
   pt: {
     footerTitle: "Groware · Plataforma de Growth Analytics",
@@ -37,42 +39,7 @@ export function baseEmailLayout(content: string, locale: Locale, previewText?: s
         <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
           <tr>
             <td style="padding: 0 0 20px 0;">
-              <table cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="vertical-align:middle;">
-                    <table cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="
-                          background: linear-gradient(135deg, #111118, #0c0c14);
-                          border: 1px solid rgba(255,255,255,0.07);
-                          border-radius: 9px;
-                          width: 32px;
-                          height: 32px;
-                          text-align: center;
-                          vertical-align: middle;
-                        ">
-                          <span style="display:block; line-height:32px;">
-                            <svg width="18" height="18" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle; margin-top:7px;">
-                              <path d="M 19 74  L 40 46  L 57 57  L 79 22" stroke="url(#em-mark)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                              <path d="M 67 19  L 81 22  L 78 36" stroke="url(#em-mark)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                              <defs>
-                                <linearGradient id="em-mark" x1="18" y1="75" x2="82" y2="20" gradientUnits="userSpaceOnUse">
-                                  <stop offset="0%" stop-color="#4338ca"/>
-                                  <stop offset="50%" stop-color="#6366f1"/>
-                                  <stop offset="100%" stop-color="#a5b4fc"/>
-                                </linearGradient>
-                              </defs>
-                            </svg>
-                          </span>
-                        </td>
-                        <td style="padding-left:9px; vertical-align:middle;">
-                          <span style="color:#fafafa; font-size:16px; font-weight:600; letter-spacing:-0.04em; line-height:1;">grow<span style="color:#818cf8;">are</span></span>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
+              <img src="${EMAIL_APP_URL}/assets/images/logo-256.png" width="40" height="40" alt="Groware" style="display:block;" />
             </td>
           </tr>
         </table>
@@ -175,4 +142,46 @@ export function metricRow(label: string, value: string): string {
       </table>
     </td>
   </tr>`;
+}
+
+const unsubscribeTranslations = {
+  pt: {
+    text: "Não quer mais receber esses emails?",
+    link: "Cancelar inscrição",
+  },
+  en: {
+    text: "Don't want to receive these emails anymore?",
+    link: "Unsubscribe",
+  },
+} as const;
+
+export function unsubscribeFooter(unsubscribeUrl: string, locale: Locale): string {
+  const t = unsubscribeTranslations[locale];
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;">
+    <tr>
+      <td style="text-align:center;">
+        <p style="color:#3f3f46; font-size:11px; line-height:1.6;">
+          ${t.text}
+          <a href="${unsubscribeUrl}" style="color:#52525b; text-decoration:underline;">${t.link}</a>
+        </p>
+      </td>
+    </tr>
+  </table>`;
+}
+
+const founderSignoffTranslations = {
+  pt: { title: "Fundador, Groware" },
+  en: { title: "Founder, Groware" },
+} as const;
+
+export function founderSignoff(locale: Locale): string {
+  const t = founderSignoffTranslations[locale];
+  return `<table cellpadding="0" cellspacing="0" style="margin-top:28px;">
+    <tr>
+      <td style="color:#a1a1aa; font-size:13px; line-height:1.8;">
+        Flavio Alexandre<br />
+        <span style="color:#71717a;">${t.title}</span>
+      </td>
+    </tr>
+  </table>`;
 }

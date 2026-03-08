@@ -13,16 +13,20 @@ export interface ISendEmailParams {
   subject: string;
   html: string;
   text?: string;
+  from?: string;
+  replyTo?: string;
 }
 
 export async function sendEmail(params: ISendEmailParams): Promise<void> {
   const toAddresses = Array.isArray(params.to) ? params.to : [params.to];
+  const fromAddress = params.from ?? process.env.AWS_SES_FROM_EMAIL ?? "noreply@groware.io";
 
   const command = new SendEmailCommand({
-    Source: process.env.AWS_SES_FROM_EMAIL ?? "noreply@groware.io",
+    Source: fromAddress,
     Destination: {
       ToAddresses: toAddresses,
     },
+    ReplyToAddresses: params.replyTo ? [params.replyTo] : undefined,
     Message: {
       Subject: {
         Data: params.subject,
