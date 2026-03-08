@@ -105,6 +105,7 @@ function renderEmailHtml(emailId: string, data: IEmailDynamicData, userId: strin
     return sequenceGatewayOnlyEmail({
       emailId: emailId as GatewayOnlyEmailId,
       userName: data.userName,
+      orgName: data.orgName,
       revenueFormatted: data.revenueFormatted,
       trackerUrl: buildSettingsUrl(),
       unsubscribeUrl,
@@ -116,6 +117,7 @@ function renderEmailHtml(emailId: string, data: IEmailDynamicData, userId: strin
     return sequenceTrackerOnlyEmail({
       emailId: emailId as TrackerOnlyEmailId,
       userName: data.userName,
+      orgName: data.orgName,
       totalPageviews: data.totalPageviews,
       totalSignups: data.totalSignups,
       gatewayUrl: buildSettingsUrl(),
@@ -128,6 +130,7 @@ function renderEmailHtml(emailId: string, data: IEmailDynamicData, userId: strin
     return sequenceInactiveEmail({
       emailId: emailId as InactiveEmailId,
       userName: data.userName,
+      orgName: data.orgName,
       dashboardUrl,
       comparativeUrl: buildComparativeUrl(),
       significantChange: data.significantChange,
@@ -143,6 +146,7 @@ function renderEmailHtml(emailId: string, data: IEmailDynamicData, userId: strin
     return sequenceFreeActiveEmail({
       emailId: emailId as FreeActiveEmailId,
       userName: data.userName,
+      orgName: data.orgName,
       plansUrl: buildPlansUrl(),
       upgradeUrl: buildPlansUrl(),
       accessCount: data.accessCount,

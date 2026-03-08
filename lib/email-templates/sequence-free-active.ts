@@ -9,6 +9,7 @@ export type FreeActiveEmailId =
 export interface ISequenceFreeActiveEmailParams {
   emailId: FreeActiveEmailId;
   userName: string;
+  orgName: string;
   plansUrl: string;
   upgradeUrl: string;
   accessCount?: number;
@@ -130,15 +131,16 @@ const translations = {
 export function sequenceFreeActiveEmail(
   params: ISequenceFreeActiveEmailParams,
 ): string {
-  const { emailId, userName, plansUrl, upgradeUrl, accessCount = 0, limitedResource = "", unsubscribeUrl } = params;
+  const { emailId, userName, orgName, plansUrl, upgradeUrl, accessCount = 0, limitedResource = "", unsubscribeUrl } = params;
   const locale = params.locale ?? "pt";
 
   if (emailId === "free_active_14d") {
     const t = translations[locale].free_active_14d;
     const content = `
-      <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:20px; line-height:1.5;">
+      <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:4px; line-height:1.5;">
         ${t.greeting(userName)}
       </p>
+      <p style="color:#52525b; font-size:12px; margin-bottom:20px;">${orgName}</p>
       <p style="color:#a1a1aa; font-size:14px; line-height:1.8; margin-bottom:0;">
         ${t.body(accessCount)}
       </p>
@@ -170,9 +172,10 @@ export function sequenceFreeActiveEmail(
   if (emailId === "free_active_21d") {
     const t = translations[locale].free_active_21d;
     const content = `
-      <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:20px; line-height:1.5;">
+      <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:4px; line-height:1.5;">
         ${t.greeting(userName)}
       </p>
+      <p style="color:#52525b; font-size:12px; margin-bottom:20px;">${orgName}</p>
       <p style="color:#a1a1aa; font-size:14px; line-height:1.8; margin-bottom:0;">
         ${t.body()}
       </p>
@@ -190,9 +193,10 @@ export function sequenceFreeActiveEmail(
   if (emailId === "free_active_limit_reached") {
     const t = translations[locale].free_active_limit_reached;
     const content = `
-      <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:20px; line-height:1.5;">
+      <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:4px; line-height:1.5;">
         ${t.greeting(userName)}
       </p>
+      <p style="color:#52525b; font-size:12px; margin-bottom:20px;">${orgName}</p>
       <p style="color:#a1a1aa; font-size:14px; line-height:1.8; margin-bottom:0;">
         ${t.body(limitedResource)}
       </p>
@@ -221,9 +225,10 @@ export function sequenceFreeActiveEmail(
 
   const t = translations[locale].free_active_30d;
   const content = `
-    <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:20px; line-height:1.5;">
+    <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:4px; line-height:1.5;">
       ${t.greeting(userName)}
     </p>
+    <p style="color:#52525b; font-size:12px; margin-bottom:20px;">${orgName}</p>
     <p style="color:#a1a1aa; font-size:14px; line-height:1.8; margin-bottom:0;">
       ${t.body()}
     </p>

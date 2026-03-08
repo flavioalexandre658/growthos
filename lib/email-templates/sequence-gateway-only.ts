@@ -8,6 +8,7 @@ export type GatewayOnlyEmailId =
 export interface ISequenceGatewayOnlyEmailParams {
   emailId: GatewayOnlyEmailId;
   userName: string;
+  orgName: string;
   revenueFormatted?: string;
   trackerUrl: string;
   unsubscribeUrl: string;
@@ -88,7 +89,7 @@ const translations = {
 export function sequenceGatewayOnlyEmail(
   params: ISequenceGatewayOnlyEmailParams,
 ): string {
-  const { emailId, userName, revenueFormatted = "R$ 0,00", trackerUrl, unsubscribeUrl } = params;
+  const { emailId, userName, orgName, revenueFormatted = "R$ 0,00", trackerUrl, unsubscribeUrl } = params;
   const locale = params.locale ?? "pt";
   const t = translations[locale][emailId];
 
@@ -98,9 +99,10 @@ export function sequenceGatewayOnlyEmail(
       : translations[locale][emailId].body();
 
   const content = `
-    <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:20px; line-height:1.5;">
+    <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:4px; line-height:1.5;">
       ${t.greeting(userName)}
     </p>
+    <p style="color:#52525b; font-size:12px; margin-bottom:20px;">${orgName}</p>
 
     <p style="color:#a1a1aa; font-size:14px; line-height:1.8; margin-bottom:0;">
       ${bodyText}

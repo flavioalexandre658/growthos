@@ -83,6 +83,7 @@ function renderTestHtml(emailId: string, locale: Locale): string | null {
     return sequenceGatewayOnlyEmail({
       emailId: emailId as GatewayOnlyEmailId,
       userName: "Flavio",
+      orgName: "Groware Demo",
       revenueFormatted: "R$ 4.230,00",
       trackerUrl: settingsUrl,
       unsubscribeUrl,
@@ -94,6 +95,7 @@ function renderTestHtml(emailId: string, locale: Locale): string | null {
     return sequenceTrackerOnlyEmail({
       emailId: emailId as TrackerOnlyEmailId,
       userName: "Flavio",
+      orgName: "Groware Demo",
       totalPageviews: 1847,
       totalSignups: 63,
       gatewayUrl: settingsUrl,
@@ -106,6 +108,7 @@ function renderTestHtml(emailId: string, locale: Locale): string | null {
     return sequenceInactiveEmail({
       emailId: emailId as InactiveEmailId,
       userName: "Flavio",
+      orgName: "Groware Demo",
       dashboardUrl,
       comparativeUrl: `${APP_URL}/dashboard/comparative`,
       significantChange: "Seu MRR cresceu 12% nas últimas duas semanas",
@@ -121,6 +124,7 @@ function renderTestHtml(emailId: string, locale: Locale): string | null {
     return sequenceFreeActiveEmail({
       emailId: emailId as FreeActiveEmailId,
       userName: "Flavio",
+      orgName: "Groware Demo",
       plansUrl: `${APP_URL}/settings/billing`,
       upgradeUrl: `${APP_URL}/settings/billing`,
       accessCount: 22,

@@ -39,7 +39,7 @@ export function baseEmailLayout(content: string, locale: Locale, previewText?: s
         <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
           <tr>
             <td style="padding: 0 0 20px 0;">
-              <img src="${EMAIL_APP_URL}/assets/images/logo-256.png" width="40" height="40" alt="Groware" style="display:block;" />
+              <img src="${EMAIL_APP_URL}/assets/images/logo-256.png" width="140" alt="Groware" style="display:block;height:auto;" />
             </td>
           </tr>
         </table>

@@ -5,6 +5,7 @@ export type TrackerOnlyEmailId = "tracker_only_48h" | "tracker_only_5d";
 export interface ISequenceTrackerOnlyEmailParams {
   emailId: TrackerOnlyEmailId;
   userName: string;
+  orgName: string;
   totalPageviews?: number;
   totalSignups?: number;
   gatewayUrl: string;
@@ -72,15 +73,16 @@ const translations = {
 export function sequenceTrackerOnlyEmail(
   params: ISequenceTrackerOnlyEmailParams,
 ): string {
-  const { emailId, userName, totalPageviews = 0, totalSignups = 0, gatewayUrl, unsubscribeUrl } = params;
+  const { emailId, userName, orgName, totalPageviews = 0, totalSignups = 0, gatewayUrl, unsubscribeUrl } = params;
   const locale = params.locale ?? "pt";
 
   if (emailId === "tracker_only_48h") {
     const t = translations[locale].tracker_only_48h;
     const content = `
-      <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:20px; line-height:1.5;">
+      <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:4px; line-height:1.5;">
         ${t.greeting(userName)}
       </p>
+      <p style="color:#52525b; font-size:12px; margin-bottom:20px;">${orgName}</p>
       <p style="color:#a1a1aa; font-size:14px; line-height:1.8; margin-bottom:0;">
         ${t.body(totalPageviews, totalSignups)}
       </p>
@@ -100,9 +102,10 @@ export function sequenceTrackerOnlyEmail(
 
   const t = translations[locale].tracker_only_5d;
   const content = `
-    <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:20px; line-height:1.5;">
+    <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:4px; line-height:1.5;">
       ${t.greeting(userName)}
     </p>
+    <p style="color:#52525b; font-size:12px; margin-bottom:20px;">${orgName}</p>
     <p style="color:#a1a1aa; font-size:14px; line-height:1.8; margin-bottom:0;">
       ${t.body()}
     </p>

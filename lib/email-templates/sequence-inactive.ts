@@ -5,6 +5,7 @@ export type InactiveEmailId = "inactive_14d" | "inactive_21d" | "inactive_30d";
 export interface ISequenceInactiveEmailParams {
   emailId: InactiveEmailId;
   userName: string;
+  orgName: string;
   dashboardUrl: string;
   comparativeUrl: string;
   significantChange?: string;
@@ -90,6 +91,7 @@ export function sequenceInactiveEmail(
   const {
     emailId,
     userName,
+    orgName,
     dashboardUrl,
     comparativeUrl,
     significantChange,
@@ -104,9 +106,10 @@ export function sequenceInactiveEmail(
     const t = translations[locale].inactive_14d;
     const change = significantChange ?? t.defaultChange;
     const content = `
-      <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:20px; line-height:1.5;">
+      <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:4px; line-height:1.5;">
         ${t.greeting(userName)}
       </p>
+      <p style="color:#52525b; font-size:12px; margin-bottom:20px;">${orgName}</p>
       <p style="color:#a1a1aa; font-size:14px; line-height:1.8; margin-bottom:0;">
         ${t.body(change)}
       </p>
@@ -124,9 +127,10 @@ export function sequenceInactiveEmail(
   if (emailId === "inactive_21d") {
     const t = translations[locale].inactive_21d;
     const content = `
-      <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:20px; line-height:1.5;">
+      <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:4px; line-height:1.5;">
         ${t.greeting(userName)}
       </p>
+      <p style="color:#52525b; font-size:12px; margin-bottom:20px;">${orgName}</p>
       <p style="color:#a1a1aa; font-size:14px; line-height:1.8; margin-bottom:0;">
         ${t.body(periodRevenue, newSubscribers, churnRate)}
       </p>
@@ -143,9 +147,10 @@ export function sequenceInactiveEmail(
 
   const t = translations[locale].inactive_30d;
   const content = `
-    <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:20px; line-height:1.5;">
+    <p style="color:#fafafa; font-size:16px; font-weight:500; margin-bottom:4px; line-height:1.5;">
       ${t.greeting(userName)}
     </p>
+    <p style="color:#52525b; font-size:12px; margin-bottom:20px;">${orgName}</p>
     <p style="color:#a1a1aa; font-size:14px; line-height:1.8; margin-bottom:0;">
       ${t.body()}
     </p>
