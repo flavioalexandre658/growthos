@@ -83,9 +83,18 @@ export function CreateOrgDialog({
 
   const onSubmit = async (data: FormData) => {
     try {
-      const org = await createOrganization(data);
-      toast.success(t("successToast", { name: org.name }));
-      onSuccess(org as IOrganization);
+      const result = await createOrganization(data);
+      if ("error" in result && result.error) {
+        if (result.error.includes("slug")) {
+          form.setError("slug", { message: result.error });
+        } else {
+          toast.error(result.error);
+        }
+        return;
+      }
+      if (!result.data) return;
+      toast.success(t("successToast", { name: result.data.name }));
+      onSuccess(result.data as IOrganization);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : t("errorToast");

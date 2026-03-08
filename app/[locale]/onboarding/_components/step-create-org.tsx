@@ -50,6 +50,7 @@ export function StepCreateOrg({ onComplete }: StepCreateOrgProps) {
     handleSubmit,
     watch,
     setValue,
+    setError,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -69,9 +70,16 @@ export function StepCreateOrg({ onComplete }: StepCreateOrgProps) {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const org = await createOrganization(data);
+      const result = await createOrganization(data);
+    if ("error" in result && result.error) {
+        setErrorMessage(result.error);
+        if (result.error.includes("slug")) {
+          setError("slug", { message: result.error });
+        }
+        return;
+      }
       toast.success(t("successToast"));
-      onComplete(org as IOrganization);
+      onComplete(result.data as IOrganization);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t("errorToast");
       setErrorMessage(msg);

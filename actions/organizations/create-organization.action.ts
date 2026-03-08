@@ -39,9 +39,9 @@ export async function createOrganization(input: z.infer<typeof schema>) {
     const ownedCount = Number(countRow?.count ?? 0);
 
     if (ownedCount >= plan.maxOrgs) {
-      throw new Error(
-        `Seu plano ${plan.name} permite no máximo ${plan.maxOrgs} organização(ões). Faça upgrade para criar mais.`,
-      );
+      return {
+        error: `Seu plano ${plan.name} permite no máximo ${plan.maxOrgs} organização(ões). Faça upgrade para criar mais.`,
+      } as const;
     }
   }
 
@@ -52,7 +52,7 @@ export async function createOrganization(input: z.infer<typeof schema>) {
     .limit(1);
 
   if (existing) {
-    throw new Error("Este slug já está em uso. Escolha outro.");
+    return { error: "Este slug já está em uso. Escolha outro." } as const;
   }
 
   const [org] = await db
@@ -71,5 +71,5 @@ export async function createOrganization(input: z.infer<typeof schema>) {
     acceptedAt: new Date(),
   });
 
-  return org;
+  return { data: org } as const;
 }
