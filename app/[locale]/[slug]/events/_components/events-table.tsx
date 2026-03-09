@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
@@ -22,6 +23,7 @@ import {
   IconRepeat,
   IconRoute,
   IconUserSearch,
+  IconUser,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -189,12 +191,14 @@ function EventCard({
   event,
   organizationId,
   timezone,
+  slug,
   isSelected,
   onToggle,
 }: {
   event: IEvent;
   organizationId: string;
   timezone: string;
+  slug: string;
   isSelected: boolean;
   onToggle: (id: string) => void;
 }) {
@@ -286,6 +290,23 @@ function EventCard({
             )}
             {event.device && <span className="text-zinc-600 font-mono">{event.device}</span>}
           </div>
+          {event.customerId && (
+            <Link
+              href={`/${slug}/customers/${event.customerId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 mt-1 group/cust"
+            >
+              <div className={cn(
+                "h-5 w-5 rounded-full flex items-center justify-center shrink-0 text-[9px] font-semibold",
+                event.customerName ? "bg-violet-500/15 text-violet-400" : "bg-zinc-800 text-zinc-600"
+              )}>
+                {event.customerName ? event.customerName.charAt(0).toUpperCase() : <IconUser size={10} />}
+              </div>
+              <span className="text-[11px] text-zinc-500 truncate max-w-[180px] group-hover/cust:text-violet-400 transition-colors">
+                {event.customerName ?? event.customerId.slice(0, 20) + "…"}
+              </span>
+            </Link>
+          )}
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {details && (
@@ -324,12 +345,14 @@ function EventRow({
   event,
   organizationId,
   timezone,
+  slug,
   isSelected,
   onToggle,
 }: {
   event: IEvent;
   organizationId: string;
   timezone: string;
+  slug: string;
   isSelected: boolean;
   onToggle: (id: string) => void;
 }) {
@@ -426,6 +449,29 @@ function EventRow({
             <span className="text-xs text-zinc-700">—</span>
           )}
         </td>
+        <td className="px-3 py-2.5 max-w-[160px]">
+          {event.customerId ? (
+            <Link
+              href={`/${slug}/customers/${event.customerId}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-2 group/cust min-w-0"
+            >
+              <div className={cn(
+                "h-6 w-6 rounded-full flex items-center justify-center shrink-0 text-[10px] font-semibold",
+                event.customerName ? "bg-violet-500/15 text-violet-400" : "bg-zinc-800 text-zinc-600"
+              )}>
+                {event.customerName ? event.customerName.charAt(0).toUpperCase() : <IconUser size={11} />}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-zinc-300 truncate group-hover/cust:text-violet-300 transition-colors">
+                  {event.customerName ?? <span className="font-mono text-zinc-600">{event.customerId.slice(0, 10)}…</span>}
+                </p>
+              </div>
+            </Link>
+          ) : (
+            <span className="text-xs text-zinc-700">—</span>
+          )}
+        </td>
         <td className="px-3 py-2.5">
           <span className="text-xs text-zinc-400">
             {event.source ?? <span className="text-zinc-700">—</span>}
@@ -473,7 +519,7 @@ function EventRow({
       </tr>
       {expanded && details && (
         <tr className="border-b border-zinc-800/60 bg-zinc-950/60">
-          <td colSpan={8} className="px-4 py-3">
+          <td colSpan={9} className="px-4 py-3">
             <div className="pl-5">
               <EventDetailGrid event={event} organizationId={organizationId} />
             </div>
@@ -504,6 +550,7 @@ export function EventsTable({
   const t = useTranslations("events.eventsTable");
   const { organization } = useOrganization();
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
+  const slug = organization?.slug ?? "";
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
   const batchDeleteMutation = useDeleteEventsBatch();
@@ -693,6 +740,9 @@ export function EventsTable({
                 {t("columnValue")}
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                {t("columnCustomer")}
+              </th>
+              <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
                 {t("columnChannel")}
               </th>
               <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
@@ -711,7 +761,7 @@ export function EventsTable({
             {isLoading ? (
               Array.from({ length: 10 }).map((_, i) => (
                 <tr key={i} className="border-b border-zinc-800/40">
-                  {Array.from({ length: 8 }).map((_, j) => (
+                  {Array.from({ length: 9 }).map((_, j) => (
                     <td key={j} className="px-3 py-3">
                       <Skeleton className="h-4 w-full rounded bg-zinc-800" />
                     </td>
@@ -720,7 +770,7 @@ export function EventsTable({
               ))
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-sm text-zinc-600">
+                <td colSpan={9} className="px-4 py-12 text-center text-sm text-zinc-600">
                   {t("emptyState")}
                 </td>
               </tr>
@@ -731,6 +781,7 @@ export function EventsTable({
                   event={event}
                   organizationId={organizationId}
                   timezone={timezone}
+                  slug={slug}
                   isSelected={selectedIds.has(event.id)}
                   onToggle={toggleSelect}
                 />
@@ -779,6 +830,7 @@ export function EventsTable({
                 event={event}
                 organizationId={organizationId}
                 timezone={timezone}
+                slug={slug}
                 isSelected={selectedIds.has(event.id)}
                 onToggle={toggleSelect}
               />

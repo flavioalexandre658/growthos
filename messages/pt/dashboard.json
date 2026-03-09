@@ -82,6 +82,15 @@
       "customDesktop": "Custom",
       "dates": "Datas",
       "clearRange": "Limpar intervalo"
+    },
+    "topCustomers": {
+      "title": "Top Clientes",
+      "subtitle": "Clientes com maior LTV",
+      "viewAll": "Ver todos",
+      "ltv": "LTV",
+      "payments": "Pagamentos",
+      "noPayments": "Sem pagamentos",
+      "empty": "Nenhum cliente encontrado"
     }
   }
 }

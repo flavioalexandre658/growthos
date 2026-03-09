@@ -82,6 +82,15 @@
       "customDesktop": "Custom",
       "dates": "Dates",
       "clearRange": "Clear range"
+    },
+    "topCustomers": {
+      "title": "Top Customers",
+      "subtitle": "Customers with highest LTV",
+      "viewAll": "View all",
+      "ltv": "LTV",
+      "payments": "Payments",
+      "noPayments": "No payments",
+      "empty": "No customers found"
     }
   }
 }

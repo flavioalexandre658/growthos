@@ -8,11 +8,13 @@ import {
   IconChevronRight,
   IconChevronDown,
   IconChevronUp,
+  IconX,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { CHECKLIST_ITEMS } from "@/lib/checklist-items";
 import { useTourProgress } from "@/hooks/queries/use-tour-progress";
 import { useUpdateTourState } from "@/hooks/mutations/use-update-tour-state";
+import { useBilling } from "@/hooks/queries/use-billing";
 
 interface SetupChecklistProps {
   slug: string;
@@ -48,8 +50,21 @@ export function SetupChecklist({ slug, organizationId, collapsed }: SetupCheckli
   const router = useRouter();
   const { data: progress, isLoading } = useTourProgress(organizationId);
   const { mutate: updateTourState } = useUpdateTourState(organizationId);
+  const { data: billing } = useBilling();
+  const hasAi = billing?.plan.hasAiAnalysis ?? false;
+
+  const visibleItems = CHECKLIST_ITEMS.filter((item) => {
+    if (item.id === "aiExplored" && !hasAi) return false;
+    return true;
+  });
   const [celebrating, setCelebrating] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem("groware_checklist_dismissed") === "1";
+    } catch {
+      return false;
+    }
+  });
   const [expanded, setExpanded] = useState(() => {
     try {
       return localStorage.getItem("groware_checklist_collapsed") !== "1";
@@ -58,21 +73,32 @@ export function SetupChecklist({ slug, organizationId, collapsed }: SetupCheckli
     }
   });
 
+  const handleDismiss = () => {
+    try { localStorage.setItem("groware_checklist_dismissed", "1"); } catch {}
+    updateTourState({ checklistDismissedAt: new Date().toISOString() });
+    setDismissed(true);
+  };
+
   useEffect(() => {
-    if (progress?.allComplete && !progress.checklistDismissed && !celebrating && !dismissed) {
+    if (!progress || progress.checklistDismissed || celebrating || dismissed) return;
+    const visibleDone = visibleItems.filter((item) => progress[item.id]).length;
+    if (visibleDone === visibleItems.length && visibleItems.length > 0) {
       setCelebrating(true);
       const timer = setTimeout(() => {
-        updateTourState({ checklistDismissedAt: new Date().toISOString() });
-        setDismissed(true);
+        handleDismiss();
       }, 2500);
       return () => clearTimeout(timer);
     }
-  }, [progress?.allComplete, progress?.checklistDismissed, celebrating, dismissed, updateTourState]);
+  }, [progress, celebrating, dismissed, visibleItems]);
 
   if (isLoading || !progress || progress.checklistDismissed || dismissed) return null;
 
+  const visibleCompletedCount = visibleItems.filter((item) => progress[item.id]).length;
+  const visibleTotalCount = visibleItems.length;
+  const visibleAllComplete = visibleCompletedCount === visibleTotalCount;
+
   if (collapsed) {
-    const pending = progress.totalCount - progress.completedCount;
+    const pending = visibleTotalCount - visibleCompletedCount;
     if (pending === 0) return null;
     return (
       <div className="flex justify-center py-2">
@@ -83,9 +109,16 @@ export function SetupChecklist({ slug, organizationId, collapsed }: SetupCheckli
     );
   }
 
-  if (celebrating) {
+  if (celebrating || visibleAllComplete) {
     return (
-      <div className="mx-3 mb-2 rounded-xl border border-emerald-500/30 bg-emerald-950/30 px-3 py-2">
+      <div className="mx-3 mb-2 rounded-xl border border-emerald-500/30 bg-emerald-950/30 px-3 py-2 relative">
+        <button
+          type="button"
+          onClick={handleDismiss}
+          className="absolute top-2 right-2 p-0.5 text-emerald-700 hover:text-emerald-400 transition-colors"
+        >
+          <IconX size={11} />
+        </button>
         <CelebrationBurst />
         <p className="text-center text-xs font-semibold text-emerald-400 mt-1">
           {t("celebration")}
@@ -94,7 +127,7 @@ export function SetupChecklist({ slug, organizationId, collapsed }: SetupCheckli
     );
   }
 
-  const nextItemIndex = CHECKLIST_ITEMS.findIndex((item) => !progress[item.id]);
+  const nextItemIndex = visibleItems.findIndex((item) => !progress[item.id]);
 
   return (
     <div className="mx-3 mb-2 rounded-xl border border-zinc-800 bg-zinc-900/60">
@@ -113,13 +146,13 @@ export function SetupChecklist({ slug, organizationId, collapsed }: SetupCheckli
             {t("title")}
             {!expanded && (
               <span className="ml-1 text-[10px] font-normal text-zinc-600">
-                · {progress.completedCount}/{progress.totalCount}
+                · {visibleCompletedCount}/{visibleTotalCount}
               </span>
             )}
           </p>
           {expanded && (
             <p className="text-[10px] text-zinc-600 mt-0.5 leading-none">
-              {t("progress", { completed: progress.completedCount, total: progress.totalCount })}
+              {t("progress", { completed: visibleCompletedCount, total: visibleTotalCount })}
             </p>
           )}
         </div>
@@ -137,7 +170,7 @@ export function SetupChecklist({ slug, organizationId, collapsed }: SetupCheckli
           <div className="h-1 rounded-full bg-zinc-800 overflow-hidden">
             <div
               className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-indigo-400 transition-all duration-500"
-              style={{ width: `${(progress.completedCount / progress.totalCount) * 100}%` }}
+              style={{ width: `${(visibleCompletedCount / visibleTotalCount) * 100}%` }}
             />
           </div>
         </div>
@@ -145,7 +178,7 @@ export function SetupChecklist({ slug, organizationId, collapsed }: SetupCheckli
 
       {expanded && (
         <div className="px-2 py-1.5 space-y-px">
-          {CHECKLIST_ITEMS.map((item, index) => {
+          {visibleItems.map((item, index) => {
             const isDone = progress[item.id];
             const isNext = index === nextItemIndex;
 

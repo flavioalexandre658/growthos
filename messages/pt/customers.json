@@ -43,8 +43,10 @@
       "thresholdShort": "dias"
     },
     "topCustomers": {
-      "title": "Top Clientes por LTV",
+      "title": "Top Clientes",
       "subtitle": "Seus clientes mais valiosos, ranqueados por receita gerada",
+      "subtitlePayments": "Clientes com maior número de compras",
+      "subtitleLastSeen": "Clientes ordenados por última visita",
       "rank": "Rank",
       "ltv": "LTV Total",
       "payments": "Pagamentos",
@@ -60,8 +62,10 @@
       "subtitle": "Clientes agrupados por mês de primeiro acesso",
       "month": "Mês",
       "total": "Total",
-      "active": "Ativos",
+      "active": "Assinantes",
       "churned": "Churnados",
+      "subscriber": "Assinante",
+      "buyer": "Comprador",
       "revenue": "Receita",
       "expand": "Ver clientes",
       "collapse": "Fechar",

@@ -43,8 +43,10 @@
       "thresholdShort": "days"
     },
     "topCustomers": {
-      "title": "Top Customers by LTV",
+      "title": "Top Customers",
       "subtitle": "Your most valuable customers, ranked by revenue generated",
+      "subtitlePayments": "Customers with the most purchases",
+      "subtitleLastSeen": "Customers sorted by last visit",
       "rank": "Rank",
       "ltv": "Total LTV",
       "payments": "Payments",
@@ -60,8 +62,10 @@
       "subtitle": "Customers grouped by their first-seen month",
       "month": "Month",
       "total": "Total",
-      "active": "Active",
+      "active": "Subscribers",
       "churned": "Churned",
+      "subscriber": "Subscriber",
+      "buyer": "Buyer",
       "revenue": "Revenue",
       "expand": "View customers",
       "collapse": "Close",

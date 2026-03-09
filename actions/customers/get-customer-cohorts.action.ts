@@ -9,7 +9,8 @@ import { eq, and, inArray, sum, sql } from "drizzle-orm";
 export interface ICohortMonth {
   month: string;
   totalCustomers: number;
-  activeCount: number;
+  subscriberCount: number;
+  buyerCount: number;
   churnedCount: number;
   totalLtvInCents: number;
 }
@@ -18,7 +19,7 @@ export interface ICohortCustomer {
   customerId: string;
   name: string | null;
   email: string | null;
-  isActive: boolean;
+  status: "subscriber" | "buyer" | "churned";
   ltvInCents: number;
 }
 
@@ -51,7 +52,10 @@ export async function getCustomerCohorts(
   }
 
   const allCohortCustomers = await db
-    .select({ customerId: customers.customerId, month: sql<string>`TO_CHAR(DATE_TRUNC('month', ${customers.firstSeenAt}), 'YYYY-MM')` })
+    .select({
+      customerId: customers.customerId,
+      month: sql<string>`TO_CHAR(DATE_TRUNC('month', ${customers.firstSeenAt}), 'YYYY-MM')`,
+    })
     .from(customers)
     .where(eq(customers.organizationId, organizationId));
 
@@ -100,16 +104,25 @@ export async function getCustomerCohorts(
 
   const activeSet = new Set(activeRows.map((r) => r.customerId));
   const ltvMap = new Map(revenueRows.map((r) => [r.customerId, Number(r.ltv ?? 0)]));
+  const paidSet = new Set(revenueRows.filter((r) => Number(r.ltv ?? 0) > 0).map((r) => r.customerId));
+
+  const getStatus = (id: string): "subscriber" | "buyer" | "churned" => {
+    if (activeSet.has(id)) return "subscriber";
+    if (paidSet.has(id)) return "buyer";
+    return "churned";
+  };
 
   const cohorts: ICohortMonth[] = cohortRows.map((row) => {
     const ids = customerIdsByMonth.get(row.month) ?? [];
-    const activeCount = ids.filter((id) => activeSet.has(id)).length;
-    const churnedCount = ids.length - activeCount;
+    const subscriberCount = ids.filter((id) => activeSet.has(id)).length;
+    const buyerCount = ids.filter((id) => !activeSet.has(id) && paidSet.has(id)).length;
+    const churnedCount = ids.length - subscriberCount - buyerCount;
     const totalLtvInCents = ids.reduce((acc, id) => acc + (ltvMap.get(id) ?? 0), 0);
     return {
       month: row.month,
       totalCustomers: Number(row.totalCustomers),
-      activeCount,
+      subscriberCount,
+      buyerCount,
       churnedCount,
       totalLtvInCents,
     };
@@ -134,7 +147,7 @@ export async function getCustomerCohorts(
         customerId: c.customerId,
         name: c.name,
         email: c.email,
-        isActive: activeSet.has(c.customerId),
+        status: getStatus(c.customerId),
         ltvInCents: ltvMap.get(c.customerId) ?? 0,
       }));
     }

@@ -42,6 +42,8 @@
   var FAILED_TTL_MS = 7 * 24 * 60 * 60 * 1000;
   var FAILED_MAX_ATTEMPTS = 3;
 
+  var currentCustomer = null;
+
   var script =
     document.currentScript ||
     (function () {
@@ -296,12 +298,26 @@
   }
 
   function getStoredCustomer() {
+    if (currentCustomer) return currentCustomer;
     try {
       var raw = sessionStorage.getItem(CUSTOMER_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (_) {
-      return null;
-    }
+      if (raw) {
+        currentCustomer = JSON.parse(raw);
+        return currentCustomer;
+      }
+    } catch (_) {}
+    try {
+      var lsRaw = localStorage.getItem(CUSTOMER_KEY);
+      if (lsRaw) {
+        var parsed = JSON.parse(lsRaw);
+        if (parsed._ts && Date.now() - parsed._ts < 86400000) {
+          currentCustomer = parsed;
+          return currentCustomer;
+        }
+        localStorage.removeItem(CUSTOMER_KEY);
+      }
+    } catch (_) {}
+    return null;
   }
 
   function getAutoContext() {
@@ -681,8 +697,11 @@
           customer_name: data.name || null,
           customer_email: data.email || null,
           customer_phone: data.phone || null,
+          _ts: Date.now(),
         };
-        sessionStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer));
+        currentCustomer = customer;
+        try { sessionStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer)); } catch (_) {}
+        try { localStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer)); } catch (_) {}
         track("identify", {
           customer_id: customerId,
           customer_name: data.name || null,
@@ -693,7 +712,9 @@
     },
     reset: function () {
       try {
-        sessionStorage.removeItem(CUSTOMER_KEY);
+        currentCustomer = null;
+        try { sessionStorage.removeItem(CUSTOMER_KEY); } catch (_) {}
+        try { localStorage.removeItem(CUSTOMER_KEY); } catch (_) {}
       } catch (_) {}
     },
     clearDedupe: clearDedup,

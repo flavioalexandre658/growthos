@@ -14,6 +14,7 @@ import { PeriodFilter } from "./period-filter";
 import { SourceChart } from "./source-chart";
 import { TopProducts } from "./top-products";
 import { DashboardAlerts } from "./dashboard-alerts";
+import { TopCustomersCard } from "./top-customers-card";
 import {
   Popover,
   PopoverContent,
@@ -250,6 +251,10 @@ export function OverviewContent({ filter }: OverviewContentProps) {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <TopProducts data={topProducts} isLoading={topProductsLoading} />
         <DashboardAlerts data={funnel} isLoading={funnelLoading} />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <TopCustomersCard />
       </div>
     </div>
   );

@@ -17,6 +17,7 @@
     "eventsTable": {
       "columnType": "Tipo",
       "columnValue": "Valor",
+      "columnCustomer": "Cliente",
       "columnChannel": "Canal",
       "columnProduct": "Produto",
       "columnDevice": "Device",

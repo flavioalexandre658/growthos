@@ -42,8 +42,22 @@ export function TopCustomersRanking() {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h2 className="text-sm font-bold text-zinc-100">{t("topCustomers.title")}</h2>
-          <p className="text-xs text-zinc-500 mt-0.5">{t("topCustomers.subtitle")}</p>
+          <h2 className="text-sm font-bold text-zinc-100">
+            {t("topCustomers.title")}
+            {" "}
+            <span className="font-normal text-zinc-500">
+              {sortBy === "ltv" && `· ${t("topCustomers.sortLtv")}`}
+              {sortBy === "payments" && `· ${t("topCustomers.sortPayments")}`}
+              {sortBy === "lastSeen" && `· ${t("topCustomers.sortLastSeen")}`}
+            </span>
+          </h2>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            {sortBy === "payments"
+              ? t("topCustomers.subtitlePayments")
+              : sortBy === "lastSeen"
+                ? t("topCustomers.subtitleLastSeen")
+                : t("topCustomers.subtitle")}
+          </p>
         </div>
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as TopCustomerSortBy)}>
           <SelectTrigger className="h-8 w-44 bg-zinc-900 border-zinc-700 text-zinc-300 text-xs">
@@ -115,12 +129,16 @@ export function TopCustomersRanking() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-zinc-100">
-                      {customer.name ?? <span className="text-zinc-500 italic">{t("empty.title")}</span>}
+                      {customer.name ?? customer.email ?? (
+                        <span className="font-mono text-zinc-600 text-[11px]">{customer.customerId.slice(0, 16)}…</span>
+                      )}
                     </p>
                     <p className="text-[11px] text-zinc-500 truncate">
-                      {customer.email ?? (
-                        <span className="font-mono text-zinc-700">{customer.customerId.slice(0, 20)}…</span>
-                      )}
+                      {customer.name && customer.email
+                        ? customer.email
+                        : customer.name
+                          ? <span className="font-mono text-zinc-700">{customer.customerId.slice(0, 20)}…</span>
+                          : null}
                     </p>
                   </div>
                 </div>

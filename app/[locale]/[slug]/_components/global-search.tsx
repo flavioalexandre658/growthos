@@ -112,7 +112,7 @@ export function GlobalSearch({ collapsed }: GlobalSearchProps) {
         )}
       </button>
 
-      <CommandDialog open={open} onOpenChange={handleOpenChange}>
+      <CommandDialog open={open} onOpenChange={handleOpenChange} shouldFilter={false}>
         <CommandInput
           placeholder={t("placeholder")}
           value={query}

@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
 import { customers, payments, events } from "@/db/schema";
-import { eq, and, inArray, sum, count, desc, asc, sql } from "drizzle-orm";
+import { eq, and, isNotNull, sum, count, desc, sql } from "drizzle-orm";
 
 export type TopCustomerSortBy = "ltv" | "payments" | "lastSeen";
 
@@ -21,6 +21,7 @@ export interface ITopCustomer {
   firstSource: string | null;
   firstCampaign: string | null;
   firstMedium: string | null;
+  rank?: number;
 }
 
 export async function getTopCustomers(
@@ -35,51 +36,40 @@ export async function getTopCustomers(
 
   const PURCHASE_TYPES = ["purchase", "renewal"];
 
-  const revenueRows = await db
+  const customerRows = await db
     .select({
-      customerId: payments.customerId,
-      ltvInCents: sum(payments.baseGrossValueInCents),
-      paymentsCount: count(),
+      customerId: customers.customerId,
+      name: customers.name,
+      email: customers.email,
+      country: customers.country,
+      city: customers.city,
+      lastSeenAt: customers.lastSeenAt,
+      firstSeenAt: customers.firstSeenAt,
     })
-    .from(payments)
-    .where(
-      and(
-        eq(payments.organizationId, organizationId),
-        inArray(payments.eventType, PURCHASE_TYPES)
-      )
-    )
-    .groupBy(payments.customerId)
-    .orderBy(
-      sortBy === "payments"
-        ? desc(count())
-        : desc(sum(payments.baseGrossValueInCents))
-    )
-    .limit(limit);
+    .from(customers)
+    .where(eq(customers.organizationId, organizationId));
 
-  const customerIds = revenueRows
-    .map((r) => r.customerId)
-    .filter(Boolean) as string[];
+  if (customerRows.length === 0) return [];
 
-  if (customerIds.length === 0) return [];
+  const customerIds = customerRows.map((c) => c.customerId);
 
-  const [customerRows, firstEventRows] = await Promise.all([
+  const [revenueRows, firstEventRows] = await Promise.all([
     db
       .select({
-        customerId: customers.customerId,
-        name: customers.name,
-        email: customers.email,
-        country: customers.country,
-        city: customers.city,
-        lastSeenAt: customers.lastSeenAt,
-        firstSeenAt: customers.firstSeenAt,
+        customerId: payments.customerId,
+        ltvInCents: sum(payments.baseGrossValueInCents),
+        paymentsCount: count(),
       })
-      .from(customers)
+      .from(payments)
       .where(
         and(
-          eq(customers.organizationId, organizationId),
-          sql`${customers.customerId} = ANY(${sql.raw(`ARRAY[${customerIds.map((id) => `'${id.replace(/'/g, "''")}'`).join(",")}]`)})`,
+          eq(payments.organizationId, organizationId),
+          isNotNull(payments.customerId),
+          sql`${payments.eventType} = ANY(${sql.raw(`ARRAY['purchase','renewal']`)}::text[])`,
+          sql`${payments.customerId} = ANY(${sql.raw(`ARRAY[${customerIds.map((id) => `'${id.replace(/'/g, "''")}'`).join(",")}]`)})`
         )
-      ),
+      )
+      .groupBy(payments.customerId),
 
     db
       .select({
@@ -92,40 +82,43 @@ export async function getTopCustomers(
       .where(
         and(
           eq(events.organizationId, organizationId),
-          sql`${events.customerId} = ANY(${sql.raw(`ARRAY[${customerIds.map((id) => `'${id.replace(/'/g, "''")}'`).join(",")}]`)})`,
+          isNotNull(events.customerId),
+          sql`${events.customerId} = ANY(${sql.raw(`ARRAY[${customerIds.map((id) => `'${id.replace(/'/g, "''")}'`).join(",")}]`)})`
         )
       )
       .groupBy(events.customerId),
   ]);
 
-  const customerMap = new Map(customerRows.map((c) => [c.customerId, c]));
+  const revenueMap = new Map(revenueRows.map((r) => [r.customerId, r]));
   const eventMap = new Map(firstEventRows.map((e) => [e.customerId, e]));
 
-  const result: ITopCustomer[] = revenueRows
-    .filter((r) => r.customerId && customerMap.has(r.customerId!))
-    .map((r, idx) => {
-      const c = customerMap.get(r.customerId!)!;
-      const e = eventMap.get(r.customerId!);
-      return {
-        customerId: r.customerId!,
-        name: c.name,
-        email: c.email,
-        country: c.country,
-        city: c.city,
-        lastSeenAt: c.lastSeenAt,
-        firstSeenAt: c.firstSeenAt,
-        ltvInCents: Number(r.ltvInCents ?? 0),
-        paymentsCount: Number(r.paymentsCount ?? 0),
-        firstSource: e?.source ?? null,
-        firstCampaign: e?.campaign ?? null,
-        firstMedium: e?.medium ?? null,
-        rank: idx + 1,
-      };
-    });
+  const result: ITopCustomer[] = customerRows.map((c) => {
+    const rev = revenueMap.get(c.customerId);
+    const ev = eventMap.get(c.customerId);
+    return {
+      customerId: c.customerId,
+      name: c.name,
+      email: c.email,
+      country: c.country,
+      city: c.city,
+      lastSeenAt: c.lastSeenAt,
+      firstSeenAt: c.firstSeenAt,
+      ltvInCents: Number(rev?.ltvInCents ?? 0),
+      paymentsCount: Number(rev?.paymentsCount ?? 0),
+      firstSource: ev?.source ?? null,
+      firstCampaign: ev?.campaign ?? null,
+      firstMedium: ev?.medium ?? null,
+    };
+  });
 
   if (sortBy === "lastSeen") {
     result.sort((a, b) => b.lastSeenAt.getTime() - a.lastSeenAt.getTime());
+  } else if (sortBy === "payments") {
+    result.sort((a, b) => b.paymentsCount - a.paymentsCount);
+  } else {
+    result.sort((a, b) => b.ltvInCents - a.ltvInCents);
   }
 
-  return result;
+  return result.slice(0, limit).map((c, idx) => ({ ...c, rank: idx + 1 }));
 }
+
