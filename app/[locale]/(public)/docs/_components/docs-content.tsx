@@ -134,24 +134,45 @@ const session = await stripe.checkout.sessions.create({
   mode: 'subscription', // ou 'payment' para compra avulsa
   line_items: [{ price: priceId, quantity: 1 }],
 
-  // Metadata na session (capturado pelo webhook checkout.session.completed)
+  // Metadata na session (checkout.session.completed)
   metadata: {
     groware_customer_id: user.id,
   },
 
-  // OBRIGATÓRIO para assinaturas: propagar para subscription e invoices
-  // Sem isso, invoices e charges têm metadata vazio e o sync histórico
-  // não consegue recuperar o customer_id — fica com cus_xxx do Stripe
+  // mode: 'subscription' — propagar para subscription e invoices
+  // Sem isso, renovações e webhooks de invoice ficam com cus_xxx
   subscription_data: {
     metadata: {
       groware_customer_id: user.id,
     },
   },
 
-  // Para mode: 'payment' (compra avulsa), usar em vez de subscription_data:
-  // payment_intent_data: {
-  //   metadata: { groware_customer_id: user.id },
-  // },
+  // mode: 'payment' — propagar para o PaymentIntent
+  // Sem isso, payment_intent.succeeded chega com metadata vazio
+  payment_intent_data: {
+    metadata: {
+      groware_customer_id: user.id,
+    },
+  },
+})`;
+
+const STRIPE_CUSTOMER_METADATA_CODE = `// Definindo metadata no Customer do Stripe (safety net definitivo)
+// Resolve automaticamente: renovações, portal billing, upgrades, payment intents manuais
+// Mesmo eventos sem payment_intent_data.metadata vão conseguir o customer_id
+
+const customer = await stripe.customers.create({
+  email: user.email,
+  name: user.name ?? undefined,
+  metadata: {
+    groware_customer_id: user.id,  // ← mesmo ID do tracker.js
+  },
+})
+
+// Para clientes já existentes:
+await stripe.customers.update(stripeCustomerId, {
+  metadata: {
+    groware_customer_id: user.id,
+  },
 })`;
 
 const ASAAS_EXTERNAL_REF_CODE = `// Passando customer_id no externalReference do Asaas
@@ -1008,6 +1029,31 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
               A Restricted Key é somente leitura — o Groware nunca modifica dados na sua conta Stripe.
               Ela é armazenada criptografada (AES-256-GCM) e nunca é exposta no frontend.
             </Callout>
+
+            <SubSection title="Passando customer_id no metadata">
+              <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+                Para o Groware conseguir ligar cada pagamento ao histórico de navegação do cliente
+                (UTMs, landing page, canal de aquisição), você precisa propagar o{" "}
+                <Mono>groware_customer_id</Mono> nos metadados dos objetos Stripe.
+                Use o mesmo ID passado no <Mono>Groware.identify()</Mono>.
+              </p>
+              <CodeBlock code={STRIPE_METADATA_CODE} lang="ts" title="Backend — criando sessão do Stripe" />
+            </SubSection>
+
+            <SubSection title="Definindo metadata no Customer do Stripe">
+              <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+                O Groware usa o metadata do Customer do Stripe como <strong className="text-zinc-300">safety net</strong>:
+                se um evento chegar com metadata vazio (renovações automáticas, portal billing, upgrades),
+                o Groware busca o <Mono>groware_customer_id</Mono> diretamente no Customer.
+                Isso garante que <strong className="text-zinc-300">nenhum pagamento fique com cus_xxx</strong> como identificador.
+              </p>
+              <CodeBlock code={STRIPE_CUSTOMER_METADATA_CODE} lang="ts" title="Backend — criando ou atualizando Customer no Stripe" />
+              <Callout type="info">
+                Com <Mono>metadata.groware_customer_id</Mono> no Customer, renovações de assinatura,
+                pagamentos pelo portal e qualquer PaymentIntent criado para esse customer são resolvidos
+                automaticamente — sem nenhuma mudança adicional no seu código de checkout.
+              </Callout>
+            </SubSection>
           </TabsContent>
 
           {/* INTEGRAÇÃO — ASAAS */}
@@ -1153,18 +1199,70 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             <SubSection title="Passando customer_id no Stripe Checkout">
               <p className="text-sm text-zinc-400 leading-relaxed mb-4">
                 Para que o Groware consiga fazer o lookup, passe o <Mono>customer_id</Mono> no{" "}
-                <Mono>metadata</Mono> da sessão do Stripe. Use o mesmo hash anônimo que você passa no tracker.js.
+                <Mono>metadata</Mono> da sessão do Stripe. Use o mesmo ID que você passa no tracker.js.
               </p>
               <CodeBlock code={STRIPE_METADATA_CODE} lang="ts" title="Backend — criando sessão do Stripe" />
               <Callout type="warn">
-                <strong>O metadata da session NÃO propaga para invoices automaticamente.</strong>
+                <strong>Passe em todos os 3 níveis.</strong>
                 <br />
-                O Stripe cria cada objeto com seu próprio metadata. Para assinaturas (mode: &apos;subscription&apos;),
-                você DEVE passar também <Mono>subscription_data.metadata</Mono> — caso contrário,
-                o sync histórico e os webhooks de invoice não conseguem recuperar o <Mono>groware_customer_id</Mono>
-                e o customer aparece como <Mono>cus_xxx</Mono> no dashboard.
+                O Stripe não propaga metadata automaticamente entre objetos.
+                Para assinaturas (mode: &apos;subscription&apos;), use também <Mono>subscription_data.metadata</Mono>.
                 Para compras avulsas (mode: &apos;payment&apos;), use <Mono>payment_intent_data.metadata</Mono>.
+                Sem isso, renovações e webhooks de invoice chegam com metadata vazio e ficam com <Mono>cus_xxx</Mono>.
               </Callout>
+            </SubSection>
+
+            <SubSection title="Resolução de customer_id — 4 camadas">
+              <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+                O Groware tenta recuperar o <Mono>groware_customer_id</Mono> nesta ordem para cada evento Stripe recebido:
+              </p>
+              <div className="space-y-2 mb-4">
+                {[
+                  ["1. Metadata do objeto", "payment_intent.metadata, invoice.metadata, subscription.metadata, charge.metadata", "Zero chamadas à API. O caminho mais rápido — exige que você passe o metadata no objeto correto."],
+                  ["2. Metadata da Checkout Session", "stripe.checkout.sessions.list({ payment_intent })", "1 chamada à API. Resolve payment_intent.succeeded quando payment_intent_data.metadata não foi usado no checkout."],
+                  ["3. Metadata do Customer", "stripe.customers.retrieve(cus_xxx)", "1 chamada à API. Safety net definitivo para renovações, portal billing, upgrades e PIs manuais."],
+                  ["4. Fallback", "cus_xxx (ID interno do Stripe)", "Usado apenas quando nenhuma das 3 camadas tem groware_customer_id. O pagamento ainda é registrado, mas fica desvinculado do histórico de navegação."],
+                ].map(([tier, source, desc]) => (
+                  <div key={tier} className="rounded-lg border border-zinc-800/60 px-4 py-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-[10px] font-mono font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded">{tier}</span>
+                      <code className="font-mono text-[11px] text-zinc-400">{source}</code>
+                    </div>
+                    <p className="text-xs text-zinc-500">{desc}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="overflow-x-auto rounded-lg border border-zinc-800/60">
+                <div className="min-w-[580px]">
+                  <div className="grid grid-cols-3 text-[11px] font-medium text-zinc-500 uppercase tracking-wider px-4 py-2.5 bg-zinc-900/60 border-b border-zinc-800/60">
+                    <span>Evento Stripe</span>
+                    <span>Camadas usadas</span>
+                    <span>Como garantir</span>
+                  </div>
+                  {[
+                    ["payment_intent.succeeded (checkout)", "1 → 2 → 3 → 4", "payment_intent_data.metadata"],
+                    ["checkout.session.completed", "1 → 3 → 4", "session.metadata"],
+                    ["invoice.payment_succeeded (renewal)", "1 → 3 → 4", "subscription_data.metadata ou customer.metadata"],
+                    ["customer.subscription.*", "1 → 3 → 4", "subscription_data.metadata ou customer.metadata"],
+                    ["charge.refunded", "1 → 3 → 4", "customer.metadata"],
+                  ].map(([event, tiers, how]) => (
+                    <div key={event} className="grid grid-cols-3 text-sm px-4 py-2.5 border-b border-zinc-800/40 last:border-0">
+                      <code className="font-mono text-xs text-indigo-400">{event}</code>
+                      <span className="text-xs text-zinc-400">{tiers}</span>
+                      <code className="font-mono text-[11px] text-zinc-500">{how}</code>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </SubSection>
+
+            <SubSection title="Definindo metadata no Customer (recomendado)">
+              <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+                A forma mais robusta de garantir que <strong className="text-zinc-300">todos</strong> os eventos fiquem vinculados
+                é definir <Mono>groware_customer_id</Mono> no Customer do Stripe ao criá-lo.
+                Isso cobre automaticamente renovações, portal billing, upgrades e qualquer PaymentIntent futuro.
+              </p>
+              <CodeBlock code={STRIPE_CUSTOMER_METADATA_CODE} lang="ts" title="Backend — criando Customer no Stripe" />
             </SubSection>
 
             <SubSection title="Instrução mínima para integração completa">

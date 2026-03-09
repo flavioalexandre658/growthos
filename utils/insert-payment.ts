@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import { payments } from "@/db/schema";
+import { sql } from "drizzle-orm";
 
 export const FINANCIAL_EVENT_TYPES = [
   "purchase",
@@ -37,7 +38,7 @@ export async function insertPayment(data: InsertPaymentData): Promise<void> {
         billingReason: data.billingReason,
         billingInterval: data.billingInterval,
         subscriptionId: data.subscriptionId,
-        customerId: data.customerId,
+        customerId: sql`CASE WHEN ${data.customerId ?? null} IS NOT NULL AND ${data.customerId ?? null} NOT LIKE 'cus_%' THEN ${data.customerId ?? null} WHEN ${payments.customerId} IS NOT NULL AND ${payments.customerId} NOT LIKE 'cus_%' THEN ${payments.customerId} ELSE COALESCE(${data.customerId ?? null}, ${payments.customerId}) END`,
         source: data.source,
         medium: data.medium,
         campaign: data.campaign,
