@@ -3,9 +3,8 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
-import { integrations, events, subscriptions, organizations } from "@/db/schema";
+import { integrations, events, payments, subscriptions, organizations } from "@/db/schema";
 import { decrypt } from "@/lib/crypto";
-import { hashAnonymous } from "@/lib/hash";
 import { eq, and } from "drizzle-orm";
 import {
   asaasEventHash,
@@ -15,6 +14,7 @@ import {
 } from "@/utils/asaas-helpers";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
+import { insertPayment } from "@/utils/insert-payment";
 import type { BillingInterval } from "@/utils/billing";
 
 const ASAAS_BASE_URL = "https://api.asaas.com/v3";
@@ -152,6 +152,15 @@ export async function syncAsaasHistory(
       ),
     );
 
+  await db
+    .delete(payments)
+    .where(
+      and(
+        eq(payments.organizationId, organizationId),
+        eq(payments.provider, "asaas"),
+      ),
+    );
+
   let subscriptionsSynced = 0;
   let paymentsSynced = 0;
   let oneTimePurchasesSynced = 0;
@@ -159,8 +168,7 @@ export async function syncAsaasHistory(
 
   try {
     for await (const sub of paginateAsaas<AsaasSubscription>("/subscriptions", apiKey)) {
-      const rawCustomerId = sub.externalReference ?? sub.customer;
-      const hashedCustomerId = hashAnonymous(rawCustomerId);
+      const customerId = sub.externalReference ?? sub.customer;
       const billingInterval = mapAsaasBillingInterval(sub.cycle);
       subIntervalMap.set(sub.id, billingInterval);
 
@@ -177,7 +185,7 @@ export async function syncAsaasHistory(
         .values({
           organizationId,
           subscriptionId: sub.id,
-          customerId: hashedCustomerId,
+          customerId,
           planId: sub.id,
           planName: sub.description ?? sub.id,
           status: mapAsaasSubscriptionStatus(sub.status),
@@ -209,9 +217,8 @@ export async function syncAsaasHistory(
     )) {
       if (!payment.value) continue;
 
-      const rawCustomerId = payment.externalReference ?? payment.customer;
-      const hashedCustomerId = hashAnonymous(rawCustomerId);
-      const acq = await lookupAcquisitionContext(organizationId, hashedCustomerId);
+      const customerId = payment.externalReference ?? payment.customer;
+      const acq = await lookupAcquisitionContext(organizationId, customerId);
 
       const isRecurring = !!payment.subscription;
       const billingInterval = isRecurring
@@ -235,6 +242,7 @@ export async function syncAsaasHistory(
       );
 
       const paymentMethod = mapAsaasBillingType(payment.billingType);
+      const eventHash = asaasEventHash(organizationId, payment.id);
 
       await db
         .insert(events)
@@ -251,10 +259,10 @@ export async function syncAsaasHistory(
           billingReason,
           billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
           subscriptionId: payment.subscription,
-          customerId: hashedCustomerId,
+          customerId,
           paymentMethod,
           provider: "asaas",
-          eventHash: asaasEventHash(organizationId, payment.id),
+          eventHash,
           createdAt: paidAt,
           source: acq?.source ?? null,
           medium: acq?.medium ?? null,
@@ -280,6 +288,33 @@ export async function syncAsaasHistory(
             createdAt: paidAt,
           },
         });
+
+      await insertPayment({
+        organizationId,
+        eventType,
+        grossValueInCents,
+        currency: "BRL",
+        baseCurrency,
+        exchangeRate,
+        baseGrossValueInCents: baseValueInCents,
+        baseNetValueInCents: Math.round(netValueInCents * exchangeRate),
+        billingType: isRecurring ? "recurring" : "one_time",
+        billingReason,
+        billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
+        subscriptionId: payment.subscription,
+        customerId,
+        paymentMethod,
+        provider: "asaas",
+        eventHash,
+        createdAt: paidAt,
+        source: acq?.source ?? null,
+        medium: acq?.medium ?? null,
+        campaign: acq?.campaign ?? null,
+        content: acq?.content ?? null,
+        landingPage: acq?.landingPage ?? null,
+        entryPage: acq?.entryPage ?? null,
+        sessionId: acq?.sessionId ?? null,
+      });
 
       if (isRecurring) {
         paymentsSynced++;

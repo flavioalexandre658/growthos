@@ -4,13 +4,13 @@ import Stripe from "stripe";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
-import { integrations, events, subscriptions, organizations } from "@/db/schema";
+import { integrations, events, payments, subscriptions, organizations } from "@/db/schema";
 import { decrypt } from "@/lib/crypto";
-import { hashAnonymous } from "@/lib/hash";
 import { eq, and } from "drizzle-orm";
 import { extractSubscriptionIdFromInvoice, mapBillingInterval, stripeEventHash } from "@/utils/stripe-helpers";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
+import { insertPayment } from "@/utils/insert-payment";
 import type { BillingInterval } from "@/utils/billing";
 
 function mapStripeStatus(
@@ -53,6 +53,11 @@ async function computeBaseValue(
   };
 }
 
+function extractMetaCustomerId(metadata: Record<string, string> | null | undefined): string | null {
+  if (!metadata) return null;
+  return metadata.growthos_customer_id ?? metadata.groware_customer_id ?? null;
+}
+
 export async function syncStripeHistory(
   organizationId: string,
   integrationId: string,
@@ -90,6 +95,15 @@ export async function syncStripeHistory(
       ),
     );
 
+  await db
+    .delete(payments)
+    .where(
+      and(
+        eq(payments.organizationId, organizationId),
+        eq(payments.provider, "stripe"),
+      ),
+    );
+
   let subscriptionsSynced = 0;
   let invoicesSynced = 0;
   let oneTimePurchasesSynced = 0;
@@ -97,7 +111,10 @@ export async function syncStripeHistory(
 
   try {
     for await (const sub of stripe.subscriptions.list({ limit: 100, status: "all" })) {
-      const customerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+      const rawCustomerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+      const metaCustomerId = extractMetaCustomerId(sub.metadata as Record<string, string> | null);
+      const customerId = metaCustomerId ?? rawCustomerId;
+
       const item = sub.items.data[0];
       const interval = item?.price.recurring?.interval ?? "month";
       const intervalCount = item?.price.recurring?.interval_count ?? 1;
@@ -119,7 +136,7 @@ export async function syncStripeHistory(
         .values({
           organizationId,
           subscriptionId: sub.id,
-          customerId: hashAnonymous(customerId),
+          customerId,
           planId: item?.price.id ?? "unknown",
           planName: item?.price.nickname ?? item?.price.id ?? "Plano",
           status: mapStripeStatus(sub.status),
@@ -152,10 +169,12 @@ export async function syncStripeHistory(
 
       const rawCustomerId =
         typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
-      const hashedCustomerId = rawCustomerId ? hashAnonymous(rawCustomerId) : undefined;
-      const acq = hashedCustomerId
-        ? await lookupAcquisitionContext(organizationId, hashedCustomerId)
-        : null;
+      const metaCustomerId = extractMetaCustomerId(
+        invoice.metadata as Record<string, string> | null,
+      );
+      const customerId = metaCustomerId ?? rawCustomerId;
+
+      const acq = customerId ? await lookupAcquisitionContext(organizationId, customerId) : null;
 
       const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
       const isRecurring = !!subscriptionId;
@@ -175,6 +194,8 @@ export async function syncStripeHistory(
         invoice.amount_paid,
       );
 
+      const eventHash = stripeEventHash(organizationId, invoice.id);
+
       await db
         .insert(events)
         .values({
@@ -189,10 +210,10 @@ export async function syncStripeHistory(
           billingReason,
           billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
           subscriptionId,
-          customerId: hashedCustomerId,
+          customerId: customerId || undefined,
           paymentMethod: "credit_card",
           provider: "stripe",
-          eventHash: stripeEventHash(organizationId, invoice.id),
+          eventHash,
           createdAt: new Date(paidAt * 1000),
           source: acq?.source ?? null,
           medium: acq?.medium ?? null,
@@ -217,6 +238,32 @@ export async function syncStripeHistory(
             createdAt: new Date(paidAt * 1000),
           },
         });
+
+      await insertPayment({
+        organizationId,
+        eventType,
+        grossValueInCents: invoice.amount_paid,
+        currency: eventCurrency,
+        baseCurrency,
+        exchangeRate,
+        baseGrossValueInCents: baseValueInCents,
+        billingType: isRecurring ? "recurring" : "one_time",
+        billingReason,
+        billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
+        subscriptionId,
+        customerId: customerId || undefined,
+        paymentMethod: "credit_card",
+        provider: "stripe",
+        eventHash,
+        createdAt: new Date(paidAt * 1000),
+        source: acq?.source ?? null,
+        medium: acq?.medium ?? null,
+        campaign: acq?.campaign ?? null,
+        content: acq?.content ?? null,
+        landingPage: acq?.landingPage ?? null,
+        entryPage: acq?.entryPage ?? null,
+        sessionId: acq?.sessionId ?? null,
+      });
 
       if (isRecurring) {
         invoicesSynced++;
@@ -250,10 +297,12 @@ export async function syncStripeHistory(
 
       const rawCustomerId =
         typeof charge.customer === "string" ? charge.customer : charge.customer?.id ?? null;
-      const hashedCustomerId = rawCustomerId ? hashAnonymous(rawCustomerId) : null;
-      const acq = hashedCustomerId
-        ? await lookupAcquisitionContext(organizationId, hashedCustomerId)
-        : null;
+      const metaCustomerId = extractMetaCustomerId(
+        charge.metadata as Record<string, string> | null,
+      );
+      const customerId = metaCustomerId ?? rawCustomerId;
+
+      const acq = customerId ? await lookupAcquisitionContext(organizationId, customerId) : null;
 
       const pm = charge.payment_method_details?.type ?? "credit_card";
       const eventCurrency = charge.currency.toUpperCase();
@@ -263,6 +312,8 @@ export async function syncStripeHistory(
         orgCurrency,
         charge.amount,
       );
+
+      const eventHash = stripeEventHash(organizationId, charge.id);
 
       await db
         .insert(events)
@@ -278,10 +329,10 @@ export async function syncStripeHistory(
           billingReason: null,
           billingInterval: null,
           subscriptionId: null,
-          customerId: hashedCustomerId ?? undefined,
+          customerId: customerId ?? undefined,
           paymentMethod: pm,
           provider: "stripe",
-          eventHash: stripeEventHash(organizationId, charge.id),
+          eventHash,
           createdAt: new Date(charge.created * 1000),
           source: acq?.source ?? null,
           medium: acq?.medium ?? null,
@@ -301,6 +352,32 @@ export async function syncStripeHistory(
             createdAt: new Date(charge.created * 1000),
           },
         });
+
+      await insertPayment({
+        organizationId,
+        eventType: "purchase",
+        grossValueInCents: charge.amount,
+        currency: eventCurrency,
+        baseCurrency,
+        exchangeRate,
+        baseGrossValueInCents: baseValueInCents,
+        billingType: "one_time",
+        billingReason: null,
+        billingInterval: null,
+        subscriptionId: null,
+        customerId: customerId ?? undefined,
+        paymentMethod: pm,
+        provider: "stripe",
+        eventHash,
+        createdAt: new Date(charge.created * 1000),
+        source: acq?.source ?? null,
+        medium: acq?.medium ?? null,
+        campaign: acq?.campaign ?? null,
+        content: acq?.content ?? null,
+        landingPage: acq?.landingPage ?? null,
+        entryPage: acq?.entryPage ?? null,
+        sessionId: acq?.sessionId ?? null,
+      });
 
       oneTimePurchasesSynced++;
     }

@@ -92,16 +92,16 @@ function buildEventExample(step: IFunnelStepConfig, currency: string): string | 
   }
 
   const examples: Record<string, string> = {
-    purchase: `window.Groware.track('purchase', {\n  dedupe: invoice.id,           // REQUIRED: unique transaction ID\n  gross_value: 150.00,          // required\n  currency: '${currency}',           // always required\n  customer_id: hashAnonymous(user.id), // REQUIRED — 400 if missing\n  discount: 10.00,              // optional: applied discount\n  payment_method: 'pix',        // pix | credit_card | boleto\n  product_id: 'produto-001',    // optional but recommended\n  category: 'principal',        // optional\n  customer_type: 'new',         // new | returning\n})`,
-    signup: `window.Groware.track('signup', {\n  dedupe: true,                 // 1 signup per session (24h)\n  customer_id: hashAnonymous(user.id), // REQUIRED — 400 if missing\n  customer_type: 'new',         // new | returning\n  // auto context: source, medium, device, landing_page\n})`,
-    trial_started: `window.Groware.track('trial_started', {\n  dedupe: true,                 // 1 trial per session (24h)\n  customer_id: hashAnonymous(user.id), // REQUIRED — 400 if missing\n  plan_id: 'plano-pro',\n  plan_name: 'Pro Mensal',\n  // auto context: source, medium, device\n})`,
-    checkout_started: `window.Groware.track('checkout_started', {\n  gross_value: 89.00,\n  currency: '${currency}',\n  product_id: 'produto-001',\n  customer_id: hashAnonymous(user.id),\n  // abandonment auto-detected on beforeunload\n})`,
+    purchase: `window.Groware.track('purchase', {\n  dedupe: invoice.id,           // REQUIRED: unique transaction ID\n  gross_value: 150.00,          // required\n  currency: '${currency}',           // always required\n  customer_id: user.id,         // REQUIRED — 400 if missing\n  discount: 10.00,              // optional: applied discount\n  payment_method: 'pix',        // pix | credit_card | boleto\n  product_id: 'produto-001',    // optional but recommended\n  category: 'principal',        // optional\n  customer_type: 'new',         // new | returning\n})`,
+    signup: `window.Groware.track('signup', {\n  dedupe: true,                 // 1 signup per session (24h)\n  customer_id: user.id,         // REQUIRED — 400 if missing\n  customer_type: 'new',         // new | returning\n  // auto context: source, medium, device, landing_page\n})`,
+    trial_started: `window.Groware.track('trial_started', {\n  dedupe: true,                 // 1 trial per session (24h)\n  customer_id: user.id,         // REQUIRED — 400 if missing\n  plan_id: 'plano-pro',\n  plan_name: 'Pro Mensal',\n  // auto context: source, medium, device\n})`,
+    checkout_started: `window.Groware.track('checkout_started', {\n  gross_value: 89.00,\n  currency: '${currency}',\n  product_id: 'produto-001',\n  customer_id: user.id,\n  // abandonment auto-detected on beforeunload\n})`,
     checkout_abandoned: `window.Groware.track('checkout_abandoned', {\n  gross_value: 89.00,\n  currency: '${currency}',\n  product_id: 'produto-001',\n  reason: 'exit',  // exit | payment_failed | timeout\n})`,
   };
 
   if (examples[t]) return examples[t];
 
-  return `window.Groware.track('${t}', {\n  product_id: /* resource ID */,\n  customer_id: hashAnonymous(user.id), // NEVER email or CPF\n})`;
+  return `window.Groware.track('${t}', {\n  product_id: /* resource ID */,\n  customer_id: user.id, // NEVER email or CPF\n})`;
 }
 
 export function StepApiKey({

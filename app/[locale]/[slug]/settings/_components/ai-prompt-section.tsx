@@ -44,7 +44,7 @@ function buildEventExample(
   product_name: product.name,      // opcional
   category: product.category,      // opcional
   customer_type: 'new',            // opcional — new | returning
-  customer_id: hashAnonymous(user.id), // opcional — NUNCA email ou CPF
+  customer_id: user.id, // opcional — NUNCA email ou CPF
 })`;
   }
 
@@ -54,7 +54,7 @@ function buildEventExample(
   currency: '${currency}',
   product_id: product.id,
   product_name: product.name,
-  customer_id: hashAnonymous(user.id),
+  customer_id: user.id,
 })`;
   }
 
@@ -63,7 +63,7 @@ function buildEventExample(
   gross_value: 89.00,
   currency: '${currency}',
   reason: 'exit',                  // exit | payment_failed | timeout
-  customer_id: hashAnonymous(user.id),
+  customer_id: user.id,
 })`;
   }
 
@@ -71,7 +71,7 @@ function buildEventExample(
     return `window.Groware.track('signup', {
   dedupe: true,                    // 1 cadastro por sessão (24h)
   customer_type: 'new',            // new | returning
-  customer_id: hashAnonymous(user.id), // NUNCA email ou CPF
+  customer_id: user.id, // NUNCA email ou CPF
 })`;
   }
 
@@ -80,7 +80,7 @@ function buildEventExample(
   dedupe: true,                    // 1 trial por sessão (24h)
   plan_id: plan.id,
   plan_name: plan.name,
-  customer_id: hashAnonymous(user.id),
+  customer_id: user.id,
 })`;
   }
 
@@ -116,7 +116,7 @@ function buildEventExample(
   gross_value: /* valor em ${currency} */,
   currency: '${currency}',
   product_id: product.id,
-  customer_id: hashAnonymous(user.id),
+  customer_id: user.id,
 })`;
   }
 
@@ -124,13 +124,13 @@ function buildEventExample(
     return `window.Groware.track('${eventType}', {
   subscription_id: subscription.id,
   currency: '${currency}',
-  customer_id: hashAnonymous(user.id),
+  customer_id: user.id,
 })`;
   }
 
   return `window.Groware.track('${eventType}', {
   product_id: /* ID do recurso envolvido */,
-  customer_id: hashAnonymous(user.id),
+  customer_id: user.id,
 })`;
 }
 
@@ -179,7 +179,7 @@ window.Groware.track('checkout_started', {
   gross_value: 89.00,
   currency: '${currency}',
   product_id: product.id,
-  customer_id: hashAnonymous(user.id),
+  customer_id: user.id,
 })
 
 O tracker detecta automaticamente o abandono (beforeunload após checkout_started)
@@ -208,7 +208,7 @@ await fetch('${baseUrl}/api/track', {
     billing_interval: 'monthly',   // monthly | yearly | weekly
     subscription_id: subscription.id,
     plan_id: subscription.planId,
-    customer_id: hashAnonymous(subscription.customerId),
+    customer_id: subscription.customerId,
   }),
 })
 
@@ -270,29 +270,16 @@ ${eventExamples}
 ${checkoutStartedSection}
 ${serverSideSection}
 ════════════════════════════════════════════
-UTILITÁRIO — HASH ANÔNIMO PARA customer_id
+VARIÁVEL DE AMBIENTE
 ════════════════════════════════════════════
-Crie este arquivo e use em todos os eventos com customer_id:
-
-// lib/hash-anonymous.ts
-import { createHash } from 'crypto'
-
-export function hashAnonymous(id: string): string {
-  return createHash('sha256')
-    .update(id + (process.env.GROWARE_HASH_SALT ?? 'groware'))
-    .digest('hex')
-    .slice(0, 32)
-}
-
 // .env.local
-GROWARE_HASH_SALT=uma_string_aleatoria_secreta
 GROWARE_API_KEY=${apiKey}
 
 ════════════════════════════════════════════
 REGRAS OBRIGATÓRIAS
 ════════════════════════════════════════════
 1. NUNCA enviar email, CPF, nome ou qualquer PII em customer_id
-   → Sempre use hashAnonymous(user.id) ou hashAnonymous(user.email)
+   → Use sempre o ID interno do usuário (UUID ou string opaca) — NUNCA dados pessoais
 2. customer_id é OBRIGATÓRIO em eventos financeiros e lifecycle
    (purchase, signup, trial_started, subscription_canceled, subscription_changed)
    → O servidor retorna HTTP 400 se customer_id estiver ausente nesses eventos

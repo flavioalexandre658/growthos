@@ -76,35 +76,19 @@ O `customer_id` é o único campo que precisa ser consistente entre o tracker.js
 O customer_id passado no tracker.js deve ser o mesmo
 passado nos metadados do checkout do gateway.
 
-Ambos devem ser o hash anônimo do ID do usuário no sistema do cliente.
-```
-
-### Geração do hash
-
-```typescript
-// lib/hash.ts
-import { createHash } from "crypto";
-
-export function hashAnonymous(id: string): string {
-  return createHash("sha256")
-    .update(id + process.env.CUSTOMER_HASH_SALT!)
-    .digest("hex")
-    .slice(0, 32);
-}
-
-// Uso
-hashAnonymous(user.id); // → "a3f8c2d1e4b5..."
+Use o ID raw do usuário no sistema do cliente (UUID ou string de identificação única).
+Não é necessário aplicar hash — IDs internos de usuário não contêm dados pessoais sensíveis.
 ```
 
 ### No tracker.js (browser)
 
 ```javascript
 window.Groware.track("signup", {
-  customer_id: hashAnonymous(user.id), // ← hash do ID interno
+  customer_id: user.id, // ← ID interno do usuário (UUID)
 });
 
 window.Groware.track("checkout_started", {
-  customer_id: hashAnonymous(user.id),
+  customer_id: user.id,
   gross_value: 79.9,
   currency: "BRL",
 });
@@ -113,16 +97,22 @@ window.Groware.track("checkout_started", {
 ### No checkout do gateway (backend)
 
 ```typescript
-// Stripe
+// Stripe — passar no metadata da Checkout Session
 stripe.checkout.sessions.create({
   metadata: {
-    groware_customer_id: hashAnonymous(user.id), // ← mesmo hash
+    growthos_customer_id: user.id, // ← mesmo ID do tracker
+  },
+  // Opcional: propagar para o PaymentIntent também
+  payment_intent_data: {
+    metadata: {
+      growthos_customer_id: user.id,
+    },
   },
 });
 
-// Asaas (futuramente)
+// Asaas — usar externalReference
 asaas.payments.create({
-  externalReference: hashAnonymous(user.id), // ← mesmo hash
+  externalReference: user.id, // ← mesmo ID do tracker
 });
 
 // Kiwify, Hotmart, etc.
@@ -244,7 +234,7 @@ export async function connectProvider(
 >     dedupe_id: 'purchase:' + payment.id,
 >     gross_value: payment.amount,
 >     currency: 'BRL',
->     customer_id: hashAnonymous(payment.customerId),
+>     customer_id: payment.customerId,
 >   }),
 > })
 > ```
@@ -476,7 +466,7 @@ utils/
 ├── acquisition-lookup.ts            ✅ lookup reverso na events table
 ├── insert-payment.ts                ✅ upsert payment com dedup
 ├── crypto.ts → lib/crypto.ts        ✅ encrypt/decrypt AES-256-GCM
-└── hash.ts → lib/hash.ts            ✅ hashAnonymous(id)
+└── hash.ts → lib/hash.ts            ✅ crypto utils
 
 hooks/mutations/
 ├── use-connect-stripe.ts            ✅
@@ -555,21 +545,25 @@ O cliente deve passar nos metadados do checkout de qualquer gateway:
 
 | Campo                  | Obrigatório | Descrição                                         |
 | ---------------------- | ----------- | ------------------------------------------------- |
-| `groware_customer_id` | **Sim**     | Hash anônimo do ID do usuário — chave da linkagem |
+| `growthos_customer_id` | **Sim**     | ID do usuário no sistema do cliente — chave da linkagem |
 
 Com só esse campo, o Groware resolve o contexto de aquisição via lookup reverso na events table.
 
 ### Por provider
 
 ```typescript
-// Stripe
+// Stripe — metadata na Checkout Session
 stripe.checkout.sessions.create({
-  metadata: { groware_customer_id: hashAnonymous(user.id) },
+  metadata: { growthos_customer_id: user.id },
+  // Opcional: propagar também para o PaymentIntent
+  payment_intent_data: {
+    metadata: { growthos_customer_id: user.id },
+  },
 });
 
-// Asaas (futuramente)
+// Asaas — externalReference
 asaas.payments.create({
-  externalReference: hashAnonymous(user.id),
+  externalReference: user.id,
 });
 
 // Kiwify (futuramente)
@@ -588,20 +582,20 @@ asaas.payments.create({
    events table: pageview · source: google · campaign: black-friday · session: s_abc
 
 2. Usuário cria conta
-   events table: signup · customer_id: hash_xyz · source: google
+   events table: signup · customer_id: user_uuid · source: google
 
 3. Usuário clica em "Assinar"
-   events table: checkout_started · customer_id: hash_xyz · gross_value: 79.90
+   events table: checkout_started · customer_id: user_uuid · gross_value: 79.90
 
 4. Backend cria checkout no Stripe com metadata:
-   { groware_customer_id: "hash_xyz" }
+   { growthos_customer_id: "user_uuid" }
 
 5. Usuário paga no Stripe
 
 6. Stripe dispara webhook → Groware recebe
 
 7. Groware:
-   a. Extrai customer_id: "hash_xyz" do metadata
+   a. Extrai customer_id: "user_uuid" do metadata
    b. Busca contexto na events table (lookup reverso)
    c. Encontra: source: google · campaign: black-friday · landing: /pricing
    d. Salva evento payment com contexto completo
@@ -611,7 +605,7 @@ asaas.payments.create({
 
 9. Mês seguinte — renovação automática via webhook:
    source: null ← correto, renovação não tem canal
-   customer_id: hash_xyz ← LTV acumulado atualizado ✅
+   customer_id: user_uuid ← LTV acumulado atualizado ✅
 ```
 
 ---
@@ -621,10 +615,6 @@ asaas.payments.create({
 ```bash
 # Criptografia das credenciais dos clientes
 ENCRYPTION_KEY=64_chars_hex_gerado_com_node_crypto
-
-# Salt para hash anônimo dos customer_ids
-# NUNCA alterar após ter dados em produção
-CUSTOMER_HASH_SALT=outro_valor_secreto_diferente
 
 # Desenvolvimento local
 STRIPE_WEBHOOK_SECRET=whsec_xxx  # gerado pelo stripe listen
@@ -718,12 +708,12 @@ function mapAsaasBillingInterval(cycle: string): BillingInterval {
 
 ### 8. externalReference — customer_id
 
-No Asaas, o campo `externalReference` é onde o cliente passa o `groware_customer_id` (equivalente ao `metadata.groware_customer_id` do Stripe):
+No Asaas, o campo `externalReference` é onde o cliente passa o `growthos_customer_id` (equivalente ao `metadata.growthos_customer_id` do Stripe):
 
 ```typescript
 // Cliente cria pagamento/assinatura no Asaas
 asaas.payments.create({
-  externalReference: hashAnonymous(user.id), // ← mesmo hash do tracker.js
+  externalReference: user.id, // ← mesmo ID do tracker.js
 });
 ```
 

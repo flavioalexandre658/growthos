@@ -21,5 +21,37 @@ export async function insertPayment(data: InsertPaymentData): Promise<void> {
   await db
     .insert(payments)
     .values(data)
-    .onConflictDoNothing({ target: [payments.organizationId, payments.eventHash] });
+    .onConflictDoUpdate({
+      target: [payments.organizationId, payments.eventHash],
+      set: {
+        eventType: data.eventType,
+        grossValueInCents: data.grossValueInCents,
+        baseGrossValueInCents: data.baseGrossValueInCents,
+        baseNetValueInCents: data.baseNetValueInCents,
+        discountInCents: data.discountInCents,
+        currency: data.currency,
+        baseCurrency: data.baseCurrency,
+        exchangeRate: data.exchangeRate,
+        paymentMethod: data.paymentMethod,
+        billingType: data.billingType,
+        billingReason: data.billingReason,
+        billingInterval: data.billingInterval,
+        subscriptionId: data.subscriptionId,
+        customerId: data.customerId,
+        source: data.source,
+        medium: data.medium,
+        campaign: data.campaign,
+        content: data.content,
+        landingPage: data.landingPage,
+        entryPage: data.entryPage,
+        referrer: data.referrer,
+        device: data.device,
+        sessionId: data.sessionId,
+        productId: data.productId,
+        productName: data.productName,
+        category: data.category,
+        metadata: data.metadata,
+        createdAt: data.createdAt,
+      },
+    });
 }

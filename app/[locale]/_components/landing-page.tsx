@@ -446,10 +446,7 @@ function CodeSection() {
       parts: [
         { c: "text-indigo-400", t: "  customer_id" },
         { c: "text-zinc-500", t: ": " },
-        { c: "text-amber-400", t: "hashAnonymous" },
-        { c: "text-zinc-500", t: "(" },
         { c: "text-indigo-300", t: "user.id" },
-        { c: "text-zinc-500", t: ")" },
       ],
     },
     { ln: "8", parts: [{ c: "text-zinc-500", t: "})" }] },
@@ -508,10 +505,7 @@ function CodeSection() {
       parts: [
         { c: "text-indigo-400", t: "    customer_id" },
         { c: "text-zinc-500", t: ": " },
-        { c: "text-amber-400", t: "hashAnonymous" },
-        { c: "text-zinc-500", t: "(" },
         { c: "text-indigo-300", t: "user.id" },
-        { c: "text-zinc-500", t: ")" },
       ],
     },
     { ln: "17", parts: [{ c: "text-zinc-500", t: "  })" }] },

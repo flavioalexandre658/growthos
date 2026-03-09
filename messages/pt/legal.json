@@ -8,7 +8,7 @@
       {
         "title": "1. Informações que coletamos",
         "content": "O Groware coleta informações necessárias para fornecer o serviço de analytics. Isso inclui dados de eventos enviados pelo seu script (tracker.js), dados de pagamento sincronizados via integrações com gateways, e informações da sua conta (nome, e-mail, organização).",
-        "extra": "Os dados de eventos são processados de forma anonimizada por padrão. Recomendamos utilizar a função hashAnonymous() para anonimizar identificadores de clientes antes de enviá-los ao Groware."
+        "extra": "Os dados de eventos são processados com identificadores de clientes que nunca devem conter dados pessoais (nome, e-mail, CPF). Sempre use IDs internos opacos (ex: UUID) como customer_id."
       },
       {
         "title": "2. Como usamos seus dados",

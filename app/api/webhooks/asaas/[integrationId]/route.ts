@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { integrations, events, subscriptions, organizations } from "@/db/schema";
 import { decrypt } from "@/lib/crypto";
-import { hashAnonymous } from "@/lib/hash";
 import { eq } from "drizzle-orm";
 import {
   asaasEventHash,
@@ -163,9 +162,8 @@ async function handleAsaasEvent(orgId: string, body: AsaasWebhookBody) {
 }
 
 async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload) {
-  const rawCustomerId = payment.externalReference ?? payment.customer;
-  const hashedCustomerId = hashAnonymous(rawCustomerId);
-  const acq = await lookupAcquisitionContext(orgId, hashedCustomerId);
+  const customerId = payment.externalReference ?? payment.customer;
+  const acq = await lookupAcquisitionContext(orgId, customerId);
 
   const isRecurring = !!payment.subscription;
   const orgCurrency = await getOrgCurrency(orgId);
@@ -210,7 +208,7 @@ async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload
       billingReason,
       billingInterval,
       subscriptionId: payment.subscription,
-      customerId: hashedCustomerId,
+      customerId,
       paymentMethod,
       provider: "asaas",
       eventHash,
@@ -253,7 +251,7 @@ async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload
     billingReason,
     billingInterval,
     subscriptionId: payment.subscription,
-    customerId: hashedCustomerId,
+    customerId,
     paymentMethod,
     provider: "asaas",
     eventHash,
@@ -265,7 +263,14 @@ async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload
     landingPage: acq?.landingPage ?? null,
     entryPage: acq?.entryPage ?? null,
     sessionId: acq?.sessionId ?? null,
-  }).catch(() => {});
+  }).catch((err) => {
+    console.error("[asaas-webhook] insertPayment failed", {
+      orgId,
+      eventType,
+      eventHash,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
 
   if (isRecurring) {
     await db
@@ -278,8 +283,7 @@ async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload
 async function handlePaymentRefunded(orgId: string, payment: AsaasPaymentPayload) {
   if (!payment.value) return;
 
-  const rawCustomerId = payment.externalReference ?? payment.customer;
-  const hashedCustomerId = hashAnonymous(rawCustomerId);
+  const customerId = payment.externalReference ?? payment.customer;
 
   const orgCurrency = await getOrgCurrency(orgId);
   const grossValueInCents = Math.round(payment.value * 100);
@@ -301,7 +305,7 @@ async function handlePaymentRefunded(orgId: string, payment: AsaasPaymentPayload
       exchangeRate,
       baseGrossValueInCents: -baseGrossValueInCents,
       billingType: "one_time",
-      customerId: hashedCustomerId,
+      customerId,
       provider: "asaas",
       eventHash,
       metadata: { paymentId: payment.id },
@@ -327,12 +331,19 @@ async function handlePaymentRefunded(orgId: string, payment: AsaasPaymentPayload
     exchangeRate,
     baseGrossValueInCents: -baseGrossValueInCents,
     billingType: "one_time",
-    customerId: hashedCustomerId,
+    customerId,
     provider: "asaas",
     eventHash,
     metadata: { paymentId: payment.id },
     createdAt: new Date(),
-  }).catch(() => {});
+  }).catch((err) => {
+    console.error("[asaas-webhook] insertPayment failed", {
+      orgId,
+      eventType: "refund",
+      eventHash,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
 }
 
 async function handlePaymentOverdue(orgId: string, payment: AsaasPaymentPayload) {
@@ -348,8 +359,7 @@ async function handleSubscriptionCreated(
   orgId: string,
   sub: AsaasSubscriptionPayload,
 ) {
-  const rawCustomerId = sub.externalReference ?? sub.customer;
-  const hashedCustomerId = hashAnonymous(rawCustomerId);
+  const customerId = sub.externalReference ?? sub.customer;
   const billingInterval = mapAsaasBillingInterval(sub.cycle);
 
   const valueInCents = Math.round(sub.value * 100);
@@ -365,7 +375,7 @@ async function handleSubscriptionCreated(
     .values({
       organizationId: orgId,
       subscriptionId: sub.id,
-      customerId: hashedCustomerId,
+      customerId,
       planId: sub.id,
       planName: sub.description ?? sub.id,
       status: "active",
@@ -403,8 +413,7 @@ async function handleSubscriptionUpdated(
 
   if (!existing || existing.valueInCents === newValueInCents) return;
 
-  const rawCustomerId = sub.externalReference ?? sub.customer;
-  const hashedCustomerId = hashAnonymous(rawCustomerId);
+  const customerId = sub.externalReference ?? sub.customer;
   const billingInterval = mapAsaasBillingInterval(sub.cycle);
 
   const orgCurrency = await getOrgCurrency(orgId);
@@ -429,7 +438,7 @@ async function handleSubscriptionUpdated(
       billingType: "recurring",
       billingInterval,
       subscriptionId: sub.id,
-      customerId: hashedCustomerId,
+      customerId,
       provider: "asaas",
       metadata: { previousValue: existing.valueInCents, newValue: newValueInCents },
       eventHash,
@@ -448,12 +457,19 @@ async function handleSubscriptionUpdated(
     billingType: "recurring",
     billingInterval,
     subscriptionId: sub.id,
-    customerId: hashedCustomerId,
+    customerId,
     provider: "asaas",
     metadata: { previousValue: existing.valueInCents, newValue: newValueInCents },
     eventHash,
     createdAt: new Date(),
-  }).catch(() => {});
+  }).catch((err) => {
+    console.error("[asaas-webhook] insertPayment failed", {
+      orgId,
+      eventType: "subscription_changed",
+      eventHash,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
 
   await db
     .update(subscriptions)
@@ -472,8 +488,7 @@ async function handleSubscriptionCanceled(
   sub: AsaasSubscriptionPayload,
   webhookEvent: string,
 ) {
-  const rawCustomerId = sub.externalReference ?? sub.customer;
-  const hashedCustomerId = hashAnonymous(rawCustomerId);
+  const customerId = sub.externalReference ?? sub.customer;
   const billingInterval = mapAsaasBillingInterval(sub.cycle);
 
   const valueInCents = Math.round(sub.value * 100);
@@ -499,7 +514,7 @@ async function handleSubscriptionCanceled(
       billingType: "recurring",
       billingInterval,
       subscriptionId: sub.id,
-      customerId: hashedCustomerId,
+      customerId,
       provider: "asaas",
       eventHash,
       createdAt: new Date(),
@@ -517,11 +532,18 @@ async function handleSubscriptionCanceled(
     billingType: "recurring",
     billingInterval,
     subscriptionId: sub.id,
-    customerId: hashedCustomerId,
+    customerId,
     provider: "asaas",
     eventHash,
     createdAt: new Date(),
-  }).catch(() => {});
+  }).catch((err) => {
+    console.error("[asaas-webhook] insertPayment failed", {
+      orgId,
+      eventType: "subscription_canceled",
+      eventHash,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
 
   await db
     .update(subscriptions)

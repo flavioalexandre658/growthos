@@ -8,7 +8,7 @@
       {
         "title": "1. Information we collect",
         "content": "Groware collects information necessary to provide the analytics service. This includes event data sent by your script (tracker.js), payment data synced via gateway integrations, and your account information (name, email, organization).",
-        "extra": "Event data is processed anonymously by default. We recommend using the hashAnonymous() function to anonymize customer identifiers before sending them to Groware."
+        "extra": "Event data is processed with customer identifiers that should never contain personal data (name, email, CPF/SSN). Always use opaque internal IDs (e.g., UUID) as the customer_id."
       },
       {
         "title": "2. How we use your data",
