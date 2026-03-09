@@ -58,6 +58,8 @@
         "noPaymentsTitle": "Nenhum pagamento ainda",
         "noPaymentsDescription": "Conecte um gateway de pagamento para importar seu histórico financeiro.",
         "cta": "Conectar gateway",
+        "noDataPeriodTitle": "Sem dados no período",
+        "noDataPeriodDescription": "Não há pagamentos registrados no período selecionado. Tente um intervalo de datas diferente.",
         "noCostsBanner": "Configure custos em Configurações → Custos para ver seu lucro real.",
         "noCostsCta": "Configurar custos"
       },

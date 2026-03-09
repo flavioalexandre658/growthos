@@ -671,7 +671,12 @@ Com só esse campo, o Groware resolve o contexto de aquisição via lookup rever
 // Stripe — metadata na Checkout Session
 stripe.checkout.sessions.create({
   metadata: { growthos_customer_id: user.id },
-  // Opcional: propagar também para o PaymentIntent
+  // OBRIGATÓRIO para assinaturas: propagar para subscription e invoices
+  // Sem isso, o sync histórico lê metadata vazio nas invoices e cai no fallback cus_xxx
+  subscription_data: {
+    metadata: { growthos_customer_id: user.id },
+  },
+  // Para mode: 'payment' (compra avulsa):
   payment_intent_data: {
     metadata: { growthos_customer_id: user.id },
   },

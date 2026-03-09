@@ -21,6 +21,7 @@ import {
   IconX,
   IconArrowRight,
   IconMenu,
+  IconCreditCard,
 } from "@tabler/icons-react";
 import { CodeBlock } from "./code-block";
 import { EventCard } from "./event-card";
@@ -73,6 +74,7 @@ const NAV_GROUPS = [
     items: [
       { value: "integration-overview", label: "Visão geral", icon: IconPlugConnected },
       { value: "integration-stripe", label: "Stripe", icon: IconBrandStripe },
+      { value: "integration-asaas", label: "Asaas", icon: IconCreditCard },
       { value: "integration-together", label: "Usando os dois juntos" },
     ],
   },
@@ -129,12 +131,47 @@ const DEDUP_CODE = `// ── Client-side: localStorage com TTL de 24h ───
 
 const STRIPE_METADATA_CODE = `// Passando customer_id nos metadados do Stripe Checkout
 const session = await stripe.checkout.sessions.create({
-  mode: 'subscription',
+  mode: 'subscription', // ou 'payment' para compra avulsa
   line_items: [{ price: priceId, quantity: 1 }],
+
+  // Metadata na session (capturado pelo webhook checkout.session.completed)
   metadata: {
     groware_customer_id: user.id,
   },
-  // ...
+
+  // OBRIGATÓRIO para assinaturas: propagar para subscription e invoices
+  // Sem isso, invoices e charges têm metadata vazio e o sync histórico
+  // não consegue recuperar o customer_id — fica com cus_xxx do Stripe
+  subscription_data: {
+    metadata: {
+      groware_customer_id: user.id,
+    },
+  },
+
+  // Para mode: 'payment' (compra avulsa), usar em vez de subscription_data:
+  // payment_intent_data: {
+  //   metadata: { groware_customer_id: user.id },
+  // },
+})`;
+
+const ASAAS_EXTERNAL_REF_CODE = `// Passando customer_id no externalReference do Asaas
+// Ao criar um pagamento avulso
+const payment = await asaas.post('/v3/payments', {
+  customer: asaasCustomerId,
+  value: 89.90,
+  billingType: 'CREDIT_CARD',
+  dueDate: '2026-04-01',
+  externalReference: user.id,  // ← mesmo ID usado no tracker.js
+})
+
+// Ao criar uma assinatura
+const subscription = await asaas.post('/v3/subscriptions', {
+  customer: asaasCustomerId,
+  value: 89.90,
+  cycle: 'MONTHLY',
+  billingType: 'CREDIT_CARD',
+  nextDueDate: '2026-04-01',
+  externalReference: user.id,  // ← bridge para atribuição de canal
 })`;
 
 const STRIPE_TOGETHER_FLOW = `// 1 — Usuário chega via Google Ads
@@ -773,7 +810,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
               Existem dois modos de enviar dados para o Groware. Você pode usar os dois ao mesmo tempo ou só um — mas precisa entender o que cada um cobre.
             </p>
 
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-3 gap-4">
               <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center shrink-0">
@@ -847,14 +884,52 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   </div>
                 </div>
               </div>
+
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center shrink-0">
+                    <IconCreditCard size={13} className="text-emerald-400" />
+                  </div>
+                  <p className="text-sm font-semibold text-zinc-200">Asaas</p>
+                  <span className="ml-auto text-[10px] font-mono border border-zinc-700 text-zinc-500 px-1.5 py-px rounded">automático</span>
+                </div>
+                <div className="space-y-1.5">
+                  {[
+                    "Todo o histórico de pagamentos",
+                    "Assinaturas — criação, renovação",
+                    "Upgrade e cancelamento",
+                    "Pagamentos avulsos (boleto, PIX, cartão)",
+                    "Inadimplência e reembolsos",
+                    "Zero código adicional",
+                  ].map((item) => (
+                    <p key={item} className="flex items-center gap-2 text-xs text-zinc-400">
+                      <IconCheck size={11} className="text-green-500 shrink-0" />
+                      {item}
+                    </p>
+                  ))}
+                  <div className="pt-1 border-t border-zinc-800/60 space-y-1.5 mt-2">
+                    {[
+                      "Pageviews e navegação do site",
+                      "De onde vieram os clientes (UTMs)",
+                      "Gateways que não sejam Asaas",
+                    ].map((item) => (
+                      <p key={item} className="flex items-center gap-2 text-xs text-zinc-600">
+                        <IconX size={11} className="text-zinc-600 shrink-0" />
+                        {item}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <Callout type="warn">
-              <strong>Ponto crítico — conectou o Stripe, não dispare mais eventos de purchase manualmente.</strong>
+              <strong>Ponto crítico — conectou Stripe ou Asaas, não dispare mais eventos de purchase manualmente para esses gateways.</strong>
               <br />
-              O webhook do Stripe e o tracker.js registrariam o mesmo pagamento duas vezes.
+              O webhook e o tracker.js registrariam o mesmo pagamento duas vezes.
               O Groware detecta a origem pelo campo <code className="font-mono text-xs bg-zinc-800/60 px-1 rounded">provider</code>:{" "}
-              <code className="font-mono text-xs bg-zinc-800/60 px-1 rounded">provider: &quot;stripe&quot;</code> (webhook) vs{" "}
+              <code className="font-mono text-xs bg-zinc-800/60 px-1 rounded">provider: &quot;stripe&quot;</code> ou{" "}
+              <code className="font-mono text-xs bg-zinc-800/60 px-1 rounded">provider: &quot;asaas&quot;</code> (webhook) vs{" "}
               <code className="font-mono text-xs bg-zinc-800/60 px-1 rounded">provider: null</code> (tracker.js).
             </Callout>
           </TabsContent>
@@ -935,6 +1010,130 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             </Callout>
           </TabsContent>
 
+          {/* INTEGRAÇÃO — ASAAS */}
+          <TabsContent value="integration-asaas" className="mt-0 space-y-6">
+            <SectionHeader title="Integração Asaas" badge="automático" />
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Conecte sua conta do Asaas com uma API Key. O Groware importa o histórico completo e passa a receber eventos em tempo real via webhook — sem nenhuma linha de código adicional nos seus handlers de pagamento.
+            </p>
+
+            <SubSection title="Como conectar — passo a passo">
+              <div className="space-y-2">
+                {[
+                  ["1. Obter a API Key", "Asaas → Configurações → Integrações → API Key. A chave começa com $aact_..."],
+                  ["2. Conectar no Groware", "Configurações → Integrações → Asaas. Cole a API Key e clique em Conectar."],
+                  ["3. Importar histórico", "Após conectar, clique em Importar histórico para trazer assinaturas e pagamentos anteriores."],
+                  ["4. Configurar webhook no Asaas", "Asaas → Configurações → Integrações → Webhooks → Adicionar endpoint. Cole a URL gerada pelo Groware e defina um Access Token (string qualquer que só você sabe)."],
+                  ["5. Salvar o Access Token no Groware", "Na tela de integração, cole o mesmo Access Token no campo Webhook Token e salve. O Groware usa esse token para validar que os webhooks vêm do Asaas."],
+                ].map(([title, desc]) => (
+                  <div key={title} className="flex gap-3 rounded-lg border border-zinc-800/60 px-4 py-3">
+                    <IconArrowRight size={13} className="text-emerald-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-zinc-200">{title}</p>
+                      <p className="text-xs text-zinc-500 mt-0.5">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SubSection>
+
+            <SubSection title="Eventos configurar no Asaas">
+              <p className="text-sm text-zinc-400 leading-relaxed mb-3">
+                Ao criar o endpoint no Asaas, selecione os seguintes eventos:
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "PAYMENT_RECEIVED",
+                  "PAYMENT_CONFIRMED",
+                  "PAYMENT_REFUNDED",
+                  "PAYMENT_OVERDUE",
+                  "SUBSCRIPTION_CREATED",
+                  "SUBSCRIPTION_UPDATED",
+                  "SUBSCRIPTION_DELETED",
+                  "SUBSCRIPTION_INACTIVATED",
+                ].map((ev) => (
+                  <code key={ev} className="font-mono text-[11px] bg-zinc-800/80 border border-zinc-700/50 px-2 py-1 rounded text-emerald-400">
+                    {ev}
+                  </code>
+                ))}
+              </div>
+            </SubSection>
+
+            <SubSection title="Eventos capturados via webhook">
+              <div className="overflow-x-auto rounded-lg border border-zinc-800/60">
+                <div className="min-w-[520px]">
+                  <div className="grid grid-cols-3 text-[11px] font-medium text-zinc-500 uppercase tracking-wider px-4 py-2.5 bg-zinc-900/60 border-b border-zinc-800/60">
+                    <span>Evento Asaas</span>
+                    <span>Tipo no Groware</span>
+                    <span>Dashboard afetado</span>
+                  </div>
+                  {[
+                    ["PAYMENT_RECEIVED / PAYMENT_CONFIRMED", "purchase", "Financeiro"],
+                    ["PAYMENT_REFUNDED", "refund", "Financeiro (P&L)"],
+                    ["PAYMENT_OVERDUE", "status: past_due", "Recorrência (Inadimplência)"],
+                    ["SUBSCRIPTION_CREATED", "subscriptions table", "Recorrência"],
+                    ["SUBSCRIPTION_UPDATED", "subscription_changed", "Recorrência (MRR)"],
+                    ["SUBSCRIPTION_DELETED / SUBSCRIPTION_INACTIVATED", "subscription_canceled", "Recorrência (Churn)"],
+                  ].map(([event, type, dash]) => (
+                    <div key={event} className="grid grid-cols-3 text-sm px-4 py-2.5 border-b border-zinc-800/40 last:border-0">
+                      <code className="font-mono text-xs text-emerald-400">{event}</code>
+                      <span className="text-xs text-zinc-400">{type}</span>
+                      <span className="text-xs text-zinc-500">{dash}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </SubSection>
+
+            <SubSection title="Passando externalReference para atribuição">
+              <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+                O <Mono>externalReference</Mono> é o equivalente Asaas do{" "}
+                <Mono>metadata.groware_customer_id</Mono> do Stripe. Passe o{" "}
+                <Mono>user.id</Mono> aqui para o Groware conseguir ligar o pagamento ao histórico
+                de navegação capturado pelo tracker.js — canal de aquisição, UTMs, landing page.
+              </p>
+              <CodeBlock code={ASAAS_EXTERNAL_REF_CODE} lang="ts" title="Backend — criando pagamento ou assinatura" />
+              <Callout type="warn">
+                <strong>Sem externalReference o vínculo não acontece.</strong>
+                <br />
+                Se o campo estiver vazio ou ausente, o Groware registra o pagamento com o ID interno do Asaas como customer_id.
+                O pagamento ainda é contabilizado na receita, mas aparece sem canal de aquisição, UTM ou landing page.
+              </Callout>
+            </SubSection>
+
+            <SubSection title="O que NÃO é coberto pelo Asaas">
+              <div className="space-y-1.5">
+                {[
+                  "Pageviews e cliques no site — use o tracker.js",
+                  "Origem do cliente (UTMs, referrer, landing page) — use o tracker.js",
+                  "Eventos do funil antes do pagamento — use o tracker.js",
+                  "Gateways de pagamento que não sejam Asaas — use o tracker.js",
+                ].map((item) => (
+                  <p key={item} className="flex items-center gap-2 text-xs text-zinc-500">
+                    <IconX size={11} className="text-zinc-600 shrink-0" />
+                    {item}
+                  </p>
+                ))}
+              </div>
+            </SubSection>
+
+            <Callout type="warn">
+              <strong>Conectou o Asaas — não dispare mais eventos de purchase manualmente para pagamentos Asaas.</strong>
+              <br />
+              O webhook e o tracker.js registrariam o mesmo pagamento duas vezes.
+              O Groware detecta a origem pelo campo{" "}
+              <Mono>provider</Mono>:{" "}
+              <Mono>provider: &quot;asaas&quot;</Mono> (webhook) vs{" "}
+              <Mono>provider: null</Mono> (tracker.js).
+            </Callout>
+
+            <Callout type="info">
+              A API Key é armazenada criptografada (AES-256-GCM) e nunca é exposta no frontend.
+              O Groware a usa apenas para buscar dados de clientes via <Mono>GET /v3/customers/&#123;id&#125;</Mono>
+              durante webhooks e sincronização histórica.
+            </Callout>
+          </TabsContent>
+
           {/* INTEGRAÇÃO — USANDO OS DOIS JUNTOS */}
           <TabsContent value="integration-together" className="mt-0 space-y-6">
             <SectionHeader title="Usando os dois juntos" badge="cenário ideal" />
@@ -957,6 +1156,15 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 <Mono>metadata</Mono> da sessão do Stripe. Use o mesmo hash anônimo que você passa no tracker.js.
               </p>
               <CodeBlock code={STRIPE_METADATA_CODE} lang="ts" title="Backend — criando sessão do Stripe" />
+              <Callout type="warn">
+                <strong>O metadata da session NÃO propaga para invoices automaticamente.</strong>
+                <br />
+                O Stripe cria cada objeto com seu próprio metadata. Para assinaturas (mode: &apos;subscription&apos;),
+                você DEVE passar também <Mono>subscription_data.metadata</Mono> — caso contrário,
+                o sync histórico e os webhooks de invoice não conseguem recuperar o <Mono>groware_customer_id</Mono>
+                e o customer aparece como <Mono>cus_xxx</Mono> no dashboard.
+                Para compras avulsas (mode: &apos;payment&apos;), use <Mono>payment_intent_data.metadata</Mono>.
+              </Callout>
             </SubSection>
 
             <SubSection title="Instrução mínima para integração completa">

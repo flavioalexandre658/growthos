@@ -329,7 +329,7 @@ function buildChecklist(result: IDebugResult, orgName: string, t: ReturnType<typ
     },
     {
       icon: IconCode,
-      label: t("checkTrackerFound"),
+      label: result.detectedViaEvents ? t("checkTrackerFoundViaEvents") : t("checkTrackerFound"),
       detail: result.scriptSrc ?? undefined,
       status: result.trackerFound
         ? "ok"
@@ -809,7 +809,9 @@ export function DebugContent() {
                       <div key={i} className="rounded-lg border border-amber-900/30 bg-amber-950/20 p-3">
                         <div className="flex items-start gap-2">
                           <IconAlertTriangle size={13} className="text-amber-400 shrink-0 mt-0.5" />
-                          <p className="text-xs text-amber-300">{w}</p>
+                          <p className="text-xs text-amber-300">
+                            {w === "trackerDetectedViaEvents" ? t("warningTrackerClientSide") : w}
+                          </p>
                         </div>
                       </div>
                     ))}

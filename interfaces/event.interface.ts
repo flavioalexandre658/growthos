@@ -94,6 +94,7 @@ export interface IDebugResult {
   pageAccessible: boolean;
   httpStatus: number | null;
   trackerFound: boolean;
+  detectedViaEvents: boolean;
   scriptSrc: string | null;
   apiKeyFound: boolean;
   apiKeyValue: string | null;

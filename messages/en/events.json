@@ -154,7 +154,9 @@
       "historyWarnings": "· {count} warning(s)",
       "historyRerun": "Retest",
       "testEventSuccess": "Test event received in {elapsed}s",
-      "testEventError": "Error sending test event"
+      "testEventError": "Error sending test event",
+      "checkTrackerFoundViaEvents": "Tracker detected via recent events",
+      "warningTrackerClientSide": "The tracker was not found in the page's static HTML. It was detected because events are arriving in the database within the last 24 hours. This is expected when the tracker is loaded via Next.js <Script> (client-side) or another bundler that injects the script after the initial render."
     }
   }
 }

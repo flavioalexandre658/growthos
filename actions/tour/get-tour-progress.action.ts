@@ -3,7 +3,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
-import { integrations, events, fixedCosts, variableCosts, orgMembers, organizations } from "@/db/schema";
+import { integrations, events, fixedCosts, variableCosts, orgMembers, organizations, pageviewAggregates } from "@/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import type { ITourProgress } from "@/interfaces/tour.interface";
 
@@ -42,14 +42,9 @@ export async function getTourProgress(organizationId: string): Promise<ITourProg
       )
       .limit(1),
     db
-      .select({ id: events.id })
-      .from(events)
-      .where(
-        and(
-          eq(events.organizationId, organizationId),
-          eq(events.eventType, "pageview"),
-        ),
-      )
+      .select({ id: pageviewAggregates.id })
+      .from(pageviewAggregates)
+      .where(eq(pageviewAggregates.organizationId, organizationId))
       .limit(1),
     funnelEventTypes.length > 0
       ? db

@@ -58,6 +58,8 @@
         "noPaymentsTitle": "No payments yet",
         "noPaymentsDescription": "Connect a payment gateway to import your financial history.",
         "cta": "Connect gateway",
+        "noDataPeriodTitle": "No data in this period",
+        "noDataPeriodDescription": "There are no payments recorded for the selected period. Try a different date range.",
         "noCostsBanner": "Configure costs in Settings → Costs to see your real profit.",
         "noCostsCta": "Configure costs"
       },

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useFinancial } from "@/hooks/queries/use-financial";
 import { useDaily } from "@/hooks/queries/use-daily";
 import { useOrganization } from "@/components/providers/organization-provider";
+import { useIntegrations } from "@/hooks/queries/use-integrations";
 import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { PeriodFilter } from "@/app/[locale]/[slug]/_components/period-filter";
 import { FinanceKpiCards } from "./finance-kpi-cards";
@@ -17,6 +18,7 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconCurrencyDollar,
+  IconCalendarOff,
 } from "@tabler/icons-react";
 import { WelcomeState } from "@/components/ui/welcome-state";
 import { InlineBanner } from "@/components/ui/welcome-state";
@@ -42,6 +44,9 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const [showExplanation, setShowExplanation] = useState(false);
+
+  const { data: integrations, isPending: integrationsLoading } = useIntegrations(orgId ?? "");
+  const hasActiveIntegration = !integrationsLoading && (integrations ?? []).some((i) => i.status === "active");
 
   const { data: financial, isPending: financialLoading } = useFinancial(
     orgId,
@@ -86,13 +91,20 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
         </Suspense>
       </div>
 
-      {hasNoPayments ? (
+      {hasNoPayments && !hasActiveIntegration ? (
         <WelcomeState
           icon={IconCurrencyDollar}
           title={tTour("noPaymentsTitle")}
           description={tTour("noPaymentsDescription")}
           ctaLabel={tTour("cta")}
           ctaHref={`/${slug}/settings/integrations`}
+          className="min-h-[320px]"
+        />
+      ) : hasNoPayments && hasActiveIntegration ? (
+        <WelcomeState
+          icon={IconCalendarOff}
+          title={tTour("noDataPeriodTitle")}
+          description={tTour("noDataPeriodDescription")}
           className="min-h-[320px]"
         />
       ) : (
