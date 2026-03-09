@@ -22,9 +22,8 @@ interface CustomerDetailContentProps {
   customerId: string;
 }
 
-function AcquisitionCard({ summary, t }: {
+function AcquisitionCard({ summary }: {
   summary: ICustomerSummary;
-  t: ReturnType<typeof useTranslations>;
 }) {
   const ta = useTranslations("customers.detail.acquisition");
   const { organization } = useOrganization();
@@ -241,7 +240,7 @@ export function CustomerDetailContent({ customerId }: CustomerDetailContentProps
                 </div>
               )}
             </div>
-            <AcquisitionCard summary={summary} t={t} />
+            <AcquisitionCard summary={summary} />
           </>
         ) : null}
       </div>
