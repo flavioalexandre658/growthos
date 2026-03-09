@@ -52,7 +52,10 @@
       "stepGrew": "{label} cresceu {pct}% vs período anterior",
       "stepGrewDescription": "De {from} para {to} — etapa com melhor desempenho",
       "allGood": "Tudo dentro do esperado",
-      "allGoodDescription": "Nenhuma anomalia detectada no período. Métricas estáveis."
+      "allGoodDescription": "Nenhuma anomalia detectada no período. Métricas estáveis.",
+      "atRiskCustomers": "{count} cliente{plural} em risco de churn",
+      "atRiskCustomersDescription": "{names} — inativos há 30+ dias com assinatura ativa",
+      "viewAtRisk": "Ver clientes em risco"
     },
     "overview": {
       "title": "Visão Geral",

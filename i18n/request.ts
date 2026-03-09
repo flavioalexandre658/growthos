@@ -22,6 +22,7 @@ const MESSAGE_FILES = [
   "onboarding",
   "subscriptions",
   "tour",
+  "customers",
 ] as const;
 
 export default getRequestConfig(async ({ requestLocale }) => {

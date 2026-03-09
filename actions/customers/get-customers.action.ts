@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
 import { customers } from "@/db/schema";
-import { eq, and, desc, asc, count } from "drizzle-orm";
+import { eq, and, desc, asc, count, or, ilike } from "drizzle-orm";
 import type { ICustomer, ICustomerListParams, ICustomerListResult } from "@/interfaces/customer.interface";
 
 export async function getCustomers(
@@ -24,6 +24,17 @@ export async function getCustomers(
 
   if (params.country) {
     conditions.push(eq(customers.country, params.country));
+  }
+
+  if (params.search) {
+    const term = `%${params.search}%`;
+    conditions.push(
+      or(
+        ilike(customers.name, term),
+        ilike(customers.email, term),
+        ilike(customers.customerId, term),
+      )!,
+    );
   }
 
   const baseWhere = and(...conditions);

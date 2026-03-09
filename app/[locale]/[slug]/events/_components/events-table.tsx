@@ -120,7 +120,12 @@ function EventDetailGrid({
               customer_id
             </span>
             <div className="flex items-center gap-0 flex-1 min-w-0 justify-end">
-              <span className="text-xs font-mono text-zinc-300 truncate" title={event.customerId}>
+              {event.customerName && (
+                <span className="text-xs font-medium text-zinc-300 truncate mr-2 max-w-[120px]">
+                  {event.customerName}
+                </span>
+              )}
+              <span className="text-xs font-mono text-zinc-500 truncate" title={event.customerId}>
                 {event.customerId}
               </span>
               <CopyButton value={event.customerId} />

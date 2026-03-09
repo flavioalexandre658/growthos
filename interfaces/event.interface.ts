@@ -20,6 +20,7 @@ export interface IEvent {
   category: string | null;
   device: string | null;
   customerId: string | null;
+  customerName: string | null;
   sessionId: string | null;
   landingPage: string | null;
   paymentMethod: string | null;
@@ -66,6 +67,7 @@ export interface ISessionEvent {
   campaign: string | null;
   device: string | null;
   customerId: string | null;
+  customerName: string | null;
   category: string | null;
   paymentMethod: string | null;
   eventHash: string | null;

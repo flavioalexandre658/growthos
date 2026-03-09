@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, inArray, or, ilike, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { events, payments, organizations } from "@/db/schema";
+import { events, payments, organizations, customers } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import type { IEventParams, IEventsResult } from "@/interfaces/event.interface";
 
@@ -224,8 +224,7 @@ export async function getEvents(
 
   const eventsHashes = new Set(eventsRows.map((r) => r.eventHash).filter(Boolean));
 
-  const mergedRows = [
-    ...eventsRows.map((r) => ({
+  const eventsRows_mapped = eventsRows.map((r) => ({
       id: r.id,
       eventType: r.eventType,
       grossValueInCents: r.grossValueInCents,
@@ -245,6 +244,7 @@ export async function getEvents(
       category: r.category,
       device: r.device,
       customerId: r.customerId,
+      customerName: null as string | null,
       sessionId: r.sessionId,
       landingPage: r.landingPage,
       paymentMethod: r.paymentMethod,
@@ -252,8 +252,9 @@ export async function getEvents(
       eventHash: r.eventHash ?? null,
       possibleDuplicate: Number(r.dupCount) > 1,
       isRetry: Boolean(r.isRetry),
-    })),
-    ...paymentsRows
+    }));
+
+  const paymentsRows_mapped = paymentsRows
       .filter((r) => !eventsHashes.has(r.eventHash))
       .map((r) => ({
         id: r.id,
@@ -275,6 +276,7 @@ export async function getEvents(
         category: r.category,
         device: r.device,
         customerId: r.customerId,
+        customerName: null as string | null,
         sessionId: r.sessionId,
         landingPage: r.landingPage,
         paymentMethod: r.paymentMethod,
@@ -282,14 +284,34 @@ export async function getEvents(
         eventHash: r.eventHash ?? null,
         possibleDuplicate: false,
         isRetry: false,
-      })),
-  ]
+      }));
+
+  const mergedRows = [...eventsRows_mapped, ...paymentsRows_mapped]
     .sort((a, b) =>
       params.order_dir === "ASC"
         ? a.createdAt.getTime() - b.createdAt.getTime()
         : b.createdAt.getTime() - a.createdAt.getTime()
     )
     .slice(0, limit);
+
+  const uniqueCustomerIds = [
+    ...new Set(mergedRows.map((r) => r.customerId).filter(Boolean) as string[]),
+  ];
+  if (uniqueCustomerIds.length > 0) {
+    const customerRows = await db
+      .select({ customerId: customers.customerId, name: customers.name })
+      .from(customers)
+      .where(
+        and(
+          eq(customers.organizationId, organizationId),
+          inArray(customers.customerId, uniqueCustomerIds)
+        )
+      );
+    const customerMap = new Map(customerRows.map((c) => [c.customerId, c.name]));
+    for (const row of mergedRows) {
+      if (row.customerId) row.customerName = customerMap.get(row.customerId) ?? null;
+    }
+  }
 
   const eventsTotal = Number(eventsTotalRow[0]?.count ?? 0);
   const paymentsTotal = Number(paymentsTotalRow[0]?.count ?? 0);

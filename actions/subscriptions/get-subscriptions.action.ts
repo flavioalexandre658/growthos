@@ -2,9 +2,9 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { eq, and, gte, lte, ilike, or, sql } from "drizzle-orm";
+import { eq, and, gte, lte, ilike, or, sql, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { subscriptions, organizations } from "@/db/schema";
+import { subscriptions, organizations, customers } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import type { ISubscriptionParams, ISubscriptionsResult } from "@/interfaces/subscription.interface";
 
@@ -101,6 +101,44 @@ export async function getSubscriptions(
 
   const total = Number(totalRow[0]?.count ?? 0);
 
+  const mappedRows = rows.map((s) => ({
+    id: s.id,
+    subscriptionId: s.subscriptionId,
+    customerId: s.customerId,
+    customerName: null as string | null,
+    customerEmail: null as string | null,
+    planId: s.planId,
+    planName: s.planName,
+    status: s.status,
+    valueInCents: s.valueInCents,
+    currency: s.currency,
+    billingInterval: s.billingInterval,
+    startedAt: s.startedAt,
+    canceledAt: s.canceledAt,
+    createdAt: s.createdAt,
+  }));
+
+  const uniqueCustomerIds = [...new Set(mappedRows.map((r) => r.customerId).filter(Boolean))];
+  if (uniqueCustomerIds.length > 0) {
+    const customerRows = await db
+      .select({ customerId: customers.customerId, name: customers.name, email: customers.email })
+      .from(customers)
+      .where(
+        and(
+          eq(customers.organizationId, organizationId),
+          inArray(customers.customerId, uniqueCustomerIds)
+        )
+      );
+    const customerMap = new Map(customerRows.map((c) => [c.customerId, c]));
+    for (const item of mappedRows) {
+      const match = customerMap.get(item.customerId);
+      if (match) {
+        item.customerName = match.name;
+        item.customerEmail = match.email;
+      }
+    }
+  }
+
   const [planRows, intervalRows] = await Promise.all([
     db
       .selectDistinct({
@@ -118,20 +156,7 @@ export async function getSubscriptions(
   ]);
 
   return {
-    data: rows.map((s) => ({
-      id: s.id,
-      subscriptionId: s.subscriptionId,
-      customerId: s.customerId,
-      planId: s.planId,
-      planName: s.planName,
-      status: s.status,
-      valueInCents: s.valueInCents,
-      currency: s.currency,
-      billingInterval: s.billingInterval,
-      startedAt: s.startedAt,
-      canceledAt: s.canceledAt,
-      createdAt: s.createdAt,
-    })),
+    data: mappedRows,
     pagination: {
       page,
       limit,

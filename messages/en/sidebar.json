@@ -18,6 +18,7 @@
       "comparative": "Comparative",
       "events": "Events",
       "subscriptions": "Subscriptions",
+      "customers": "Customers",
       "debug": "Debug",
       "docs": "Documentation",
       "settings": "Settings"
@@ -35,6 +36,13 @@
       "selectOrg": "Select org"
     },
     "logout": "Log out",
-    "mobileMenuTitle": "Navigation menu"
+    "mobileMenuTitle": "Navigation menu",
+    "globalSearch": {
+      "placeholder": "Search customers by name, email or ID...",
+      "noResults": "No customers found.",
+      "customers": "Customers",
+      "trigger": "Search customer...",
+      "shortcut": "⌘K"
+    }
   }
 }

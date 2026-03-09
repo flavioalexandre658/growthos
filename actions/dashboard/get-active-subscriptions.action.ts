@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, inArray, or } from "drizzle-orm";
 import { db } from "@/db";
-import { subscriptions } from "@/db/schema";
+import { subscriptions, customers } from "@/db/schema";
 import dayjs from "@/utils/dayjs";
 import { normalizeToMonthly } from "@/utils/billing";
 import type {
@@ -144,6 +144,8 @@ export async function getActiveSubscriptions(
     return {
       subscriptionId: s.subscriptionId,
       customerId: s.customerId,
+      customerName: null as string | null,
+      customerEmail: null as string | null,
       planName: s.planName,
       planId: s.planId,
       valueInCents: s.valueInCents,
@@ -193,6 +195,32 @@ export async function getActiveSubscriptions(
 
   const total = filtered.length;
   const paginated = filtered.slice(offset, offset + limit);
+
+  const uniqueCustomerIds = [...new Set(paginated.map((s) => s.customerId).filter(Boolean))];
+  if (uniqueCustomerIds.length > 0) {
+    const customerRows = await db
+      .select({
+        customerId: customers.customerId,
+        name: customers.name,
+        email: customers.email,
+      })
+      .from(customers)
+      .where(
+        and(
+          eq(customers.organizationId, organizationId),
+          inArray(customers.customerId, uniqueCustomerIds)
+        )
+      );
+
+    const customerMap = new Map(customerRows.map((c) => [c.customerId, c]));
+    for (const item of paginated) {
+      const match = customerMap.get(item.customerId);
+      if (match) {
+        item.customerName = match.name;
+        item.customerEmail = match.email;
+      }
+    }
+  }
 
   return {
     data: paginated,

@@ -1,0 +1,129 @@
+{
+  "customers": {
+    "title": "Clientes",
+    "subtitle": "Gerencie e analise seus clientes",
+    "search": "Buscar por nome, e-mail ou ID...",
+    "allCountries": "Todos os países",
+    "sortBy": "Ordenar por",
+    "sortOptions": {
+      "lastSeenAt": "Última visita",
+      "firstSeenAt": "Primeira visita",
+      "name": "Nome",
+      "email": "E-mail"
+    },
+    "tabs": {
+      "all": "Todos",
+      "atRisk": "Em Risco",
+      "topCustomers": "Top Clientes",
+      "cohorts": "Cohorts",
+      "expansion": "Upgrade"
+    },
+    "table": {
+      "customer": "Cliente",
+      "customerId": "ID do Cliente",
+      "location": "Localização",
+      "firstSeen": "Primeiro acesso",
+      "lastSeen": "Último acesso"
+    },
+    "empty": {
+      "title": "Nenhum cliente encontrado",
+      "description": "Os clientes aparecem aqui quando identificados pelo Groware tracker.",
+      "noResults": "Nenhum resultado para a busca realizada."
+    },
+    "atRisk": {
+      "title": "Clientes em Risco de Churn",
+      "subtitle": "Assinantes ativos que não interagiram nos últimos {days} dias",
+      "daysInactive": "{days}d inativo",
+      "empty": "Nenhum cliente em risco no momento.",
+      "plan": "Plano",
+      "value": "Valor/mês",
+      "lastSeen": "Último acesso",
+      "daysLabel": "Dias inativo",
+      "threshold": "Limite de dias",
+      "thresholdShort": "dias"
+    },
+    "topCustomers": {
+      "title": "Top Clientes por LTV",
+      "subtitle": "Seus clientes mais valiosos, ranqueados por receita gerada",
+      "rank": "Rank",
+      "ltv": "LTV Total",
+      "payments": "Pagamentos",
+      "source": "Canal de Aquisição",
+      "empty": "Nenhum dado de pagamento encontrado.",
+      "sortBy": "Ordenar por",
+      "sortLtv": "LTV",
+      "sortPayments": "Nº de Pagamentos",
+      "sortLastSeen": "Última visita"
+    },
+    "cohorts": {
+      "title": "Cohorts de Clientes",
+      "subtitle": "Clientes agrupados por mês de primeiro acesso",
+      "month": "Mês",
+      "total": "Total",
+      "active": "Ativos",
+      "churned": "Churnados",
+      "revenue": "Receita",
+      "expand": "Ver clientes",
+      "collapse": "Fechar",
+      "empty": "Nenhum dado de cohort disponível.",
+      "activeRate": "Retenção",
+      "expandedTitle": "Clientes do cohort {month}"
+    },
+    "expansion": {
+      "title": "Candidatos a Upgrade",
+      "subtitle": "Clientes com LTV alto no plano atual há mais de {months} meses",
+      "tenure": "{months} meses",
+      "tenureLabel": "Tempo no plano",
+      "ltv": "LTV",
+      "plan": "Plano atual",
+      "suggestUpgrade": "Contatar",
+      "empty": "Nenhum candidato encontrado com os critérios atuais.",
+      "minLtv": "LTV mínimo",
+      "minTenure": "Tempo mínimo"
+    },
+    "detail": {
+      "backToList": "Voltar para Clientes",
+      "unknownCustomer": "Cliente desconhecido",
+      "customerSince": "Cliente desde",
+      "lastSeen": "Última visita",
+      "noPhone": "Sem telefone",
+      "noEmail": "Sem e-mail",
+      "noLocation": "Localização desconhecida",
+      "kpi": {
+        "ltv": "LTV Total",
+        "payments": "Pagamentos",
+        "subscription": "Assinatura",
+        "customerSince": "Cliente desde"
+      },
+      "subscription": {
+        "title": "Assinatura Ativa",
+        "noSubscription": "Sem assinatura ativa",
+        "plan": "Plano",
+        "value": "Valor",
+        "interval": "Ciclo",
+        "status": "Status",
+        "since": "Início"
+      },
+      "acquisition": {
+        "title": "Aquisição",
+        "source": "Fonte",
+        "medium": "Meio",
+        "campaign": "Campanha",
+        "landingPage": "Landing Page",
+        "device": "Dispositivo",
+        "firstEventAt": "Primeiro evento",
+        "noData": "Sem dados de aquisição"
+      },
+      "timeline": {
+        "title": "Histórico de Eventos"
+      }
+    },
+    "intervals": {
+      "monthly": "Mensal",
+      "quarterly": "Trimestral",
+      "semiannual": "Semestral",
+      "yearly": "Anual",
+      "weekly": "Semanal"
+    }
+  }
+}

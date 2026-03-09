@@ -1,0 +1,129 @@
+{
+  "customers": {
+    "title": "Customers",
+    "subtitle": "Manage and analyze your customers",
+    "search": "Search by name, email or ID...",
+    "allCountries": "All countries",
+    "sortBy": "Sort by",
+    "sortOptions": {
+      "lastSeenAt": "Last seen",
+      "firstSeenAt": "First seen",
+      "name": "Name",
+      "email": "Email"
+    },
+    "tabs": {
+      "all": "All",
+      "atRisk": "At Risk",
+      "topCustomers": "Top Customers",
+      "cohorts": "Cohorts",
+      "expansion": "Upgrade"
+    },
+    "table": {
+      "customer": "Customer",
+      "customerId": "Customer ID",
+      "location": "Location",
+      "firstSeen": "First seen",
+      "lastSeen": "Last seen"
+    },
+    "empty": {
+      "title": "No customers found",
+      "description": "Customers appear here when identified by the Groware tracker.",
+      "noResults": "No results for the current search."
+    },
+    "atRisk": {
+      "title": "Customers at Risk of Churn",
+      "subtitle": "Active subscribers with no activity in the last {days} days",
+      "daysInactive": "{days}d inactive",
+      "empty": "No at-risk customers at this time.",
+      "plan": "Plan",
+      "value": "Value/mo",
+      "lastSeen": "Last seen",
+      "daysLabel": "Days inactive",
+      "threshold": "Days threshold",
+      "thresholdShort": "days"
+    },
+    "topCustomers": {
+      "title": "Top Customers by LTV",
+      "subtitle": "Your most valuable customers, ranked by revenue generated",
+      "rank": "Rank",
+      "ltv": "Total LTV",
+      "payments": "Payments",
+      "source": "Acquisition Channel",
+      "empty": "No payment data found.",
+      "sortBy": "Sort by",
+      "sortLtv": "LTV",
+      "sortPayments": "Payment Count",
+      "sortLastSeen": "Last seen"
+    },
+    "cohorts": {
+      "title": "Customer Cohorts",
+      "subtitle": "Customers grouped by their first-seen month",
+      "month": "Month",
+      "total": "Total",
+      "active": "Active",
+      "churned": "Churned",
+      "revenue": "Revenue",
+      "expand": "View customers",
+      "collapse": "Close",
+      "empty": "No cohort data available.",
+      "activeRate": "Retention",
+      "expandedTitle": "Customers from cohort {month}"
+    },
+    "expansion": {
+      "title": "Upgrade Candidates",
+      "subtitle": "High-LTV customers on current plan for more than {months} months",
+      "tenure": "{months} months",
+      "tenureLabel": "Time on plan",
+      "ltv": "LTV",
+      "plan": "Current plan",
+      "suggestUpgrade": "Contact",
+      "empty": "No candidates found with current criteria.",
+      "minLtv": "Min LTV",
+      "minTenure": "Min tenure"
+    },
+    "detail": {
+      "backToList": "Back to Customers",
+      "unknownCustomer": "Unknown customer",
+      "customerSince": "Customer since",
+      "lastSeen": "Last seen",
+      "noPhone": "No phone",
+      "noEmail": "No email",
+      "noLocation": "Unknown location",
+      "kpi": {
+        "ltv": "Total LTV",
+        "payments": "Payments",
+        "subscription": "Subscription",
+        "customerSince": "Customer since"
+      },
+      "subscription": {
+        "title": "Active Subscription",
+        "noSubscription": "No active subscription",
+        "plan": "Plan",
+        "value": "Value",
+        "interval": "Cycle",
+        "status": "Status",
+        "since": "Since"
+      },
+      "acquisition": {
+        "title": "Acquisition",
+        "source": "Source",
+        "medium": "Medium",
+        "campaign": "Campaign",
+        "landingPage": "Landing Page",
+        "device": "Device",
+        "firstEventAt": "First event",
+        "noData": "No acquisition data"
+      },
+      "timeline": {
+        "title": "Event History"
+      }
+    },
+    "intervals": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "semiannual": "Semiannual",
+      "yearly": "Yearly",
+      "weekly": "Weekly"
+    }
+  }
+}

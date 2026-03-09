@@ -4,6 +4,8 @@ export interface ISubscriptionListItem {
   id: string;
   subscriptionId: string;
   customerId: string;
+  customerName: string | null;
+  customerEmail: string | null;
   planId: string;
   planName: string;
   status: string;

@@ -59,6 +59,8 @@ export type SortDirection = "asc" | "desc";
 export interface IActiveSubscription {
   subscriptionId: string;
   customerId: string;
+  customerName: string | null;
+  customerEmail: string | null;
   planName: string;
   planId: string;
   valueInCents: number;

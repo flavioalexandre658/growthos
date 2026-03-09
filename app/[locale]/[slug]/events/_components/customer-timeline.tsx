@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { IconChevronRight, IconChevronDown } from "@tabler/icons-react";
+import { IconChevronRight, IconChevronDown, IconUser, IconExternalLink } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { fmtCurrencyDecimal } from "@/utils/format";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -93,7 +94,10 @@ export function CustomerTimeline({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { organization } = useOrganization();
   const tz = organization?.timezone ?? "America/Sao_Paulo";
+  const slug = organization?.slug ?? "";
   const { data, isLoading } = useCustomerEvents(organizationId, customerId);
+
+  const customerName = data?.[0]?.customerName ?? null;
 
   if (isLoading) {
     return (
@@ -133,6 +137,28 @@ export function CustomerTimeline({
 
   return (
     <div className="mt-3">
+      {(customerName || customerId) && (
+        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-zinc-800/40">
+          <div className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 bg-violet-500/10 text-violet-400 text-xs font-semibold">
+            {customerName ? customerName.charAt(0).toUpperCase() : <IconUser size={13} />}
+          </div>
+          <div className="flex-1 min-w-0">
+            {customerName && (
+              <p className="text-xs font-semibold text-zinc-200 truncate">{customerName}</p>
+            )}
+            <p className="text-[10px] font-mono text-zinc-600 truncate">{customerId}</p>
+          </div>
+          {slug && (
+            <Link
+              href={`/${slug}/customers/${customerId}`}
+              className="shrink-0 p-1 rounded text-zinc-700 hover:text-violet-400 transition-colors"
+              title="Ver perfil do cliente"
+            >
+              <IconExternalLink size={12} />
+            </Link>
+          )}
+        </div>
+      )}
       <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600 mb-2.5">
         {t("title", {
           eventCount: data.length,

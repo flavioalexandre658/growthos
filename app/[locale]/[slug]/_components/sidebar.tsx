@@ -30,6 +30,7 @@ import {
   IconBug,
   IconReceipt2,
   IconLock,
+  IconUsers,
 } from "@tabler/icons-react";
 import { GrowareIcon } from "@/components/groware-icon";
 import { GrowareLogo } from "@/components/groware-logo";
@@ -55,6 +56,7 @@ import { useOrganization } from "@/components/providers/organization-provider";
 import { useOrgHasData } from "@/hooks/queries/use-org-has-data";
 import { useBilling } from "@/hooks/queries/use-billing";
 import { SetupChecklist } from "./setup-checklist";
+import { GlobalSearch } from "./global-search";
 
 const STORAGE_KEY = "groware_active_org";
 
@@ -111,6 +113,7 @@ function buildNavSections(slug: string, hasData: boolean, hasAi: boolean, t: (ke
       title: t("sections.data"),
       items: [
         { href: `/${slug}/events`, label: t("nav.events"), icon: IconList, exact: true },
+        { href: `/${slug}/customers`, label: t("nav.customers"), icon: IconUsers, exact: false },
         { href: `/${slug}/subscriptions`, label: t("nav.subscriptions"), icon: IconReceipt2, exact: false },
         { href: `/${slug}/events/debug`, label: t("nav.debug"), icon: IconBug, exact: true },
       ],
@@ -433,6 +436,10 @@ function SidebarContent({
       </div>
 
       <OrgSwitcher slug={slug} collapsed={collapsed} />
+
+      <div className="px-3 pb-1">
+        <GlobalSearch collapsed={collapsed} />
+      </div>
 
       <div className="relative flex-1 min-h-0">
         <nav ref={navRef} className="h-full space-y-0.5 overflow-y-auto px-3 py-1">

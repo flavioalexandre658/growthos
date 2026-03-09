@@ -88,8 +88,10 @@ export async function getSessionEvents(
   const eventHashes = new Set(eventsRows.map((r) => r.eventHash).filter(Boolean));
 
   const merged: ISessionEvent[] = [
-    ...eventsRows,
-    ...paymentsRows.filter((r) => !eventHashes.has(r.eventHash)),
+    ...eventsRows.map((r) => ({ ...r, customerName: null as string | null })),
+    ...paymentsRows
+      .filter((r) => !eventHashes.has(r.eventHash))
+      .map((r) => ({ ...r, customerName: null as string | null })),
   ].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).slice(0, 50);
 
   return merged;

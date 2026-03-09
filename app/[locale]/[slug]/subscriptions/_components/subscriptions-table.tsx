@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -159,7 +160,7 @@ function SubscriptionCard({ item, timezone, t }: { item: ISubscriptionListItem; 
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
             <span className="text-zinc-600 font-mono truncate max-w-[160px]">
-              {item.customerId}
+              {item.customerName ?? item.customerId}
             </span>
             <span className="text-zinc-600">
               {billingIntervals[item.billingInterval] ?? item.billingInterval}
@@ -188,7 +189,7 @@ function SubscriptionCard({ item, timezone, t }: { item: ISubscriptionListItem; 
   );
 }
 
-function SubscriptionRow({ item, timezone, t, dayjsLocale }: { item: ISubscriptionListItem; timezone: string; t: ReturnType<typeof useTranslations>; dayjsLocale: string }) {
+function SubscriptionRow({ item, timezone, t, dayjsLocale, slug }: { item: ISubscriptionListItem; timezone: string; t: ReturnType<typeof useTranslations>; dayjsLocale: string; slug: string }) {
   const [expanded, setExpanded] = useState(false);
 
   const billingIntervals: Record<string, string> = {
@@ -222,9 +223,18 @@ function SubscriptionRow({ item, timezone, t, dayjsLocale }: { item: ISubscripti
                 <IconChevronRight size={13} />
               )}
             </button>
-            <span className="text-xs text-zinc-400 font-mono truncate max-w-[160px]">
-              {item.customerId}
-            </span>
+            <Link
+              href={`/${slug}/customers/${item.customerId}`}
+              className="flex flex-col min-w-0 group/link"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <span className="text-xs font-medium text-zinc-300 truncate max-w-[160px] group-hover/link:text-violet-400 transition-colors">
+                {item.customerName ?? <span className="font-mono text-zinc-500">{item.customerId.slice(0, 16)}…</span>}
+              </span>
+              {item.customerEmail && (
+                <span className="text-[10px] text-zinc-600 truncate max-w-[160px]">{item.customerEmail}</span>
+              )}
+            </Link>
           </div>
         </td>
         <td className="px-3 py-2.5 max-w-[180px]">
@@ -305,6 +315,7 @@ export function SubscriptionsTable({
   const dayjsLocale = locale === "pt" ? "pt-br" : locale;
   const { organization } = useOrganization();
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
+  const slug = organization?.slug ?? "";
   const paginationStart =
     pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
   const paginationEnd = Math.min(
@@ -419,7 +430,7 @@ export function SubscriptionsTable({
                 </td>
               </tr>
             ) : (
-              data.map((item) => <SubscriptionRow key={item.id} item={item} timezone={timezone} t={t} dayjsLocale={dayjsLocale} />)
+              data.map((item) => <SubscriptionRow key={item.id} item={item} timezone={timezone} t={t} dayjsLocale={dayjsLocale} slug={slug} />)
             )}
           </tbody>
         </table>

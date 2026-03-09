@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -43,6 +44,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
   const t = useTranslations("mrr.subscriptionsTable");
   const { organization } = useOrganization();
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
+  const slug = organization?.slug ?? "";
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<SubscriptionStatusFilter>("active");
   const [planId, setPlanId] = useState<string | undefined>();
@@ -129,13 +131,29 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
       header: t("columns.customer"),
       mobilePrimary: true,
       render: (row) => (
-        <span className="font-mono text-xs text-zinc-400">{row.customerId.slice(0, 16)}…</span>
+        <Link
+          href={`/${slug}/customers/${row.customerId}`}
+          className="group/link flex flex-col min-w-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="text-sm font-medium text-zinc-200 truncate group-hover/link:text-violet-400 transition-colors">
+            {row.customerName ?? <span className="font-mono text-xs text-zinc-400">{row.customerId.slice(0, 16)}…</span>}
+          </span>
+          {row.customerName && (
+            <span className="text-[10px] font-mono text-zinc-600 truncate">{row.customerId.slice(0, 16)}…</span>
+          )}
+          {row.customerEmail && (
+            <span className="text-[10px] text-zinc-500 truncate">{row.customerEmail}</span>
+          )}
+        </Link>
       ),
       mobileRender: (row) => (
         <div className="flex items-start justify-between gap-2 min-w-0">
           <div className="min-w-0">
             <p className="text-sm font-medium text-zinc-200 truncate">{row.planName}</p>
-            <p className="text-[10px] text-zinc-500 font-mono truncate">{row.customerId.slice(0, 20)}…</p>
+            <p className="text-[10px] text-zinc-500 truncate">
+              {row.customerName ?? <span className="font-mono text-zinc-600">{row.customerId.slice(0, 20)}…</span>}
+            </p>
           </div>
           <div className="shrink-0 text-right">
             <p className="font-mono text-sm font-bold text-emerald-400">

@@ -12,9 +12,12 @@ import {
   IconArrowNarrowRight,
   IconBulb,
   IconCircleCheckFilled,
+  IconUserExclamation,
 } from "@tabler/icons-react";
 import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
 import { useTranslations } from "next-intl";
+import { useOrganization } from "@/components/providers/organization-provider";
+import { useAtRiskCustomersCount } from "@/hooks/queries/use-at-risk-customers";
 
 interface Alert {
   id: string;
@@ -38,7 +41,18 @@ const TYPE_STYLES = {
   info:    { bg: "bg-indigo-950/40", border: "border-indigo-900/40", icon: "text-indigo-400", title: "text-indigo-300"  },
 };
 
-function buildAlerts(data: IGenericFunnelData, slug: string, t: (key: string, values?: Record<string, string | number | Date>) => string): Alert[] {
+interface AtRiskData {
+  count: number;
+  totalValueInCents: number;
+  topCustomers: { name: string | null; email: string | null }[];
+}
+
+function buildAlerts(
+  data: IGenericFunnelData,
+  slug: string,
+  t: (key: string, values?: Record<string, string | number | Date>) => string,
+  atRisk?: AtRiskData
+): Alert[] {
   const alerts: Alert[] = [];
 
   const prevMap = new Map(
@@ -140,12 +154,32 @@ function buildAlerts(data: IGenericFunnelData, slug: string, t: (key: string, va
     });
   }
 
+  if (atRisk && atRisk.count > 0) {
+    const names = atRisk.topCustomers
+      .map((c) => c.name ?? c.email ?? "—")
+      .join(", ");
+    const plural = atRisk.count > 1 ? "s" : "";
+    alerts.unshift({
+      id: "at-risk-customers",
+      type: "danger",
+      icon: IconUserExclamation,
+      title: t("atRiskCustomers", { count: atRisk.count, plural }),
+      description: t("atRiskCustomersDescription", { names }),
+      linkHref: `/${slug}/customers?tab=atRisk`,
+      linkLabel: t("viewAtRisk"),
+    });
+  }
+
   return alerts;
 }
 
 export function DashboardAlerts({ data, isLoading }: DashboardAlertsProps) {
   const t = useTranslations("dashboard.alerts");
   const { slug } = useParams<{ slug: string }>();
+  const { organization } = useOrganization();
+  const orgId = organization?.id ?? "";
+
+  const { data: atRiskData } = useAtRiskCustomersCount(orgId);
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 flex flex-col gap-4">
@@ -171,7 +205,7 @@ export function DashboardAlerts({ data, isLoading }: DashboardAlertsProps) {
         </div>
       ) : (
         <div className="space-y-2.5">
-          {buildAlerts(data, slug, t).map((alert) => {
+          {buildAlerts(data, slug, t, atRiskData ?? undefined).map((alert) => {
             const styles = TYPE_STYLES[alert.type];
             const Icon = alert.icon;
             return (

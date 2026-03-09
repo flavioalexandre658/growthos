@@ -18,6 +18,7 @@
       "comparative": "Comparativo",
       "events": "Eventos",
       "subscriptions": "Assinaturas",
+      "customers": "Clientes",
       "debug": "Debug",
       "docs": "Documentação",
       "settings": "Configurações"
@@ -35,6 +36,13 @@
       "selectOrg": "Selecionar org"
     },
     "logout": "Sair",
-    "mobileMenuTitle": "Menu de navegação"
+    "mobileMenuTitle": "Menu de navegação",
+    "globalSearch": {
+      "placeholder": "Buscar clientes por nome, e-mail ou ID...",
+      "noResults": "Nenhum cliente encontrado.",
+      "customers": "Clientes",
+      "trigger": "Buscar cliente...",
+      "shortcut": "⌘K"
+    }
   }
 }

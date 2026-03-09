@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { eq, and, asc, ne } from "drizzle-orm";
 import { db } from "@/db";
-import { events, payments } from "@/db/schema";
+import { events, payments, customers } from "@/db/schema";
 import type { ICustomerEvent } from "@/interfaces/event.interface";
 
 const PAYMENT_EVENT_TYPES = [
@@ -90,9 +90,27 @@ export async function getCustomerEvents(
   const eventHashes = new Set(eventsRows.map((r) => r.eventHash).filter(Boolean));
 
   const merged: ICustomerEvent[] = [
-    ...eventsRows,
-    ...paymentsRows.filter((r) => !eventHashes.has(r.eventHash)),
+    ...eventsRows.map((r) => ({ ...r, customerName: null as string | null })),
+    ...paymentsRows
+      .filter((r) => !eventHashes.has(r.eventHash))
+      .map((r) => ({ ...r, customerName: null as string | null })),
   ].sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).slice(0, 100);
+
+  const [customerRow] = await db
+    .select({ name: customers.name })
+    .from(customers)
+    .where(
+      and(
+        eq(customers.organizationId, organizationId),
+        eq(customers.customerId, customerId)
+      )
+    )
+    .limit(1);
+
+  const customerName = customerRow?.name ?? null;
+  for (const row of merged) {
+    row.customerName = customerName;
+  }
 
   return merged;
 }
