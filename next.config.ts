@@ -22,6 +22,24 @@ const nextConfig: NextConfig = {
         },
       ],
     },
+    {
+      source: "/tracker.min.js",
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "public, max-age=3600, stale-while-revalidate=86400",
+        },
+      ],
+    },
+    {
+      source: "/tracker.min.js.map",
+      headers: [
+        {
+          key: "Cache-Control",
+          value: "public, max-age=3600, stale-while-revalidate=86400",
+        },
+      ],
+    },
   ],
 };
 

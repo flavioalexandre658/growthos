@@ -18,7 +18,7 @@ export function isFinancialEventType(eventType: string): boolean {
 
 type InsertPaymentData = typeof payments.$inferInsert;
 
-export async function insertPayment(data: InsertPaymentData): Promise<void> {
+async function executeInsert(data: InsertPaymentData): Promise<void> {
   await db
     .insert(payments)
     .values(data)
@@ -55,4 +55,13 @@ export async function insertPayment(data: InsertPaymentData): Promise<void> {
         createdAt: data.createdAt,
       },
     });
+}
+
+export async function insertPayment(data: InsertPaymentData): Promise<void> {
+  try {
+    await executeInsert(data);
+  } catch (firstError) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await executeInsert(data);
+  }
 }

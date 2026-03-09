@@ -664,7 +664,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (PAYMENT_EVENT_TYPES.has(eventType)) {
-    insertPayment({
+    await insertPayment({
       organizationId: apiKey.organizationId,
       eventType,
       currency: eventCurrency,

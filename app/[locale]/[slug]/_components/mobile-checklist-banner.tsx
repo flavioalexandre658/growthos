@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { CHECKLIST_ITEMS } from "@/lib/checklist-items";
 import { useTourProgress } from "@/hooks/queries/use-tour-progress";
 import { useUpdateTourState } from "@/hooks/mutations/use-update-tour-state";
+import { useBilling } from "@/hooks/queries/use-billing";
 import {
   Drawer,
   DrawerContent,
@@ -27,12 +28,32 @@ export function MobileChecklistBanner({ slug }: MobileChecklistBannerProps) {
   const router = useRouter();
   const { data: progress, isLoading } = useTourProgress(organizationId);
   const { mutate: updateTourState } = useUpdateTourState(organizationId);
+  const { data: billing } = useBilling();
+  const hasAi = billing?.plan.hasAiAnalysis ?? false;
+
+  const visibleItems = CHECKLIST_ITEMS.filter((item) => {
+    if (item.id === "aiExplored" && !hasAi) return false;
+    return true;
+  });
+
   const [open, setOpen] = useState(false);
   const [celebrating, setCelebrating] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      return localStorage.getItem("groware_checklist_dismissed") === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const visibleCompletedCount = progress
+    ? visibleItems.filter((item) => progress[item.id]).length
+    : 0;
+  const visibleTotalCount = visibleItems.length;
 
   useEffect(() => {
-    if (progress?.allComplete && !progress.checklistDismissed && !celebrating && !dismissed) {
+    if (!progress || progress.checklistDismissed || celebrating || dismissed) return;
+    if (visibleCompletedCount === visibleTotalCount && visibleTotalCount > 0) {
       setCelebrating(true);
       const timer = setTimeout(() => {
         updateTourState({ checklistDismissedAt: new Date().toISOString() });
@@ -40,12 +61,12 @@ export function MobileChecklistBanner({ slug }: MobileChecklistBannerProps) {
       }, 2500);
       return () => clearTimeout(timer);
     }
-  }, [progress?.allComplete, progress?.checklistDismissed, celebrating, dismissed, updateTourState]);
+  }, [progress, celebrating, dismissed, visibleCompletedCount, visibleTotalCount, updateTourState]);
 
   if (isLoading || !progress || progress.checklistDismissed || dismissed) return null;
 
-  const nextItemIndex = CHECKLIST_ITEMS.findIndex((item) => !progress[item.id]);
-  const nextItem = nextItemIndex >= 0 ? CHECKLIST_ITEMS[nextItemIndex] : null;
+  const nextItemIndex = visibleItems.findIndex((item) => !progress[item.id]);
+  const nextItem = nextItemIndex >= 0 ? visibleItems[nextItemIndex] : null;
 
   const handleCta = (href: string) => {
     setOpen(false);
@@ -64,7 +85,7 @@ export function MobileChecklistBanner({ slug }: MobileChecklistBannerProps) {
               {t("title")}
             </span>
             <span className="text-[11px] text-zinc-600">
-              · {progress.completedCount}/{progress.totalCount}
+              · {visibleCompletedCount}/{visibleTotalCount}
             </span>
           </div>
           {nextItem && (
@@ -98,19 +119,19 @@ export function MobileChecklistBanner({ slug }: MobileChecklistBannerProps) {
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-semibold text-zinc-200">{t("title")}</p>
                 <p className="text-xs text-zinc-500">
-                  {t("progress", { completed: progress.completedCount, total: progress.totalCount })}
+                  {t("progress", { completed: visibleCompletedCount, total: visibleTotalCount })}
                 </p>
               </div>
               <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-indigo-600 to-indigo-400 transition-all duration-500"
-                  style={{ width: `${(progress.completedCount / progress.totalCount) * 100}%` }}
+                  style={{ width: `${(visibleCompletedCount / visibleTotalCount) * 100}%` }}
                 />
               </div>
             </div>
 
             <div className="overflow-y-auto px-3 py-3 space-y-1 pb-8">
-              {CHECKLIST_ITEMS.map((item, index) => {
+              {visibleItems.map((item, index) => {
                 const isDone = progress[item.id];
                 const isNext = index === nextItemIndex;
 

@@ -266,7 +266,7 @@ async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload
       },
     });
 
-  insertPayment({
+  await insertPayment({
     organizationId: orgId,
     eventType,
     grossValueInCents,
@@ -368,7 +368,7 @@ async function handlePaymentRefunded(orgId: string, payment: AsaasPaymentPayload
       },
     });
 
-  insertPayment({
+  await insertPayment({
     organizationId: orgId,
     eventType: "refund",
     grossValueInCents: -grossValueInCents,
@@ -529,7 +529,7 @@ async function handleSubscriptionUpdated(
     })
     .onConflictDoNothing();
 
-  insertPayment({
+  await insertPayment({
     organizationId: orgId,
     eventType: "subscription_changed",
     grossValueInCents: newValueInCents,
@@ -622,7 +622,7 @@ async function handleSubscriptionCanceled(
     })
     .onConflictDoNothing();
 
-  insertPayment({
+  await insertPayment({
     organizationId: orgId,
     eventType: "subscription_canceled",
     grossValueInCents: valueInCents,

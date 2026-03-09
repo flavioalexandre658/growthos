@@ -252,7 +252,7 @@ async function handleCheckoutSessionCompleted(
       },
     });
 
-  insertPayment({
+  await insertPayment({
     organizationId: orgId,
     eventType: "purchase",
     grossValueInCents: session.amount_total,
@@ -380,7 +380,7 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventTi
       },
     });
 
-  insertPayment({
+  await insertPayment({
     organizationId: orgId,
     eventType,
     grossValueInCents: invoice.amount_paid,
@@ -488,7 +488,7 @@ async function handleChargeRefunded(orgId: string, charge: Stripe.Charge, stripe
       },
     });
 
-  insertPayment({
+  await insertPayment({
     organizationId: orgId,
     eventType: "refund",
     grossValueInCents: -refundedAmount,
@@ -640,7 +640,7 @@ async function handleSubscriptionCanceled(
     })
     .onConflictDoNothing();
 
-  insertPayment({
+  await insertPayment({
     organizationId: orgId,
     eventType: "subscription_canceled",
     grossValueInCents: valueInCents,
@@ -723,7 +723,7 @@ async function handleSubscriptionUpdated(
     })
     .onConflictDoNothing();
 
-  insertPayment({
+  await insertPayment({
     organizationId: orgId,
     eventType: "subscription_changed",
     grossValueInCents: newAmount ?? 0,
@@ -826,7 +826,7 @@ async function handlePaymentIntentSucceeded(
       },
     });
 
-  insertPayment({
+  await insertPayment({
     organizationId: orgId,
     eventType: "purchase",
     grossValueInCents: paymentIntent.amount_received,

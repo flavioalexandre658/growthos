@@ -11,6 +11,7 @@ import { resolveDateRange } from "@/utils/resolve-date-range";
 import { getUserPlan } from "@/utils/get-user-plan";
 import { resolvePeriodDays } from "@/utils/resolve-period-days";
 import { buildProfitAndLoss } from "@/utils/build-pl";
+import { reconcilePayments } from "@/utils/reconcile-payments";
 import type { IDateFilter, IFinancialData } from "@/interfaces/dashboard.interface";
 import type { IRevenueBySegment } from "@/interfaces/cost.interface";
 
@@ -46,6 +47,10 @@ export async function getFinancial(
     eq(events.organizationId, organizationId),
     gte(events.createdAt, startDate),
     lte(events.createdAt, endDate)
+  );
+
+  await reconcilePayments(organizationId).catch((err) =>
+    console.error("[reconcile] get-financial", err)
   );
 
   const [summary] = await db

@@ -14,6 +14,7 @@ import {
   getAllQueryEventTypes,
   injectCheckoutSteps,
 } from "@/utils/build-funnel-steps";
+import { reconcilePayments } from "@/utils/reconcile-payments";
 import type { IDateFilter, IGenericFunnelData } from "@/interfaces/dashboard.interface";
 
 export async function getFunnel(
@@ -79,6 +80,10 @@ export async function getFunnel(
   countMap.set("pageview", { total: pvSessions, uniqueTotal: pvSessions });
 
   const funnelSteps = injectCheckoutSteps(baseFunnelSteps, countMap, locale);
+
+  await reconcilePayments(organizationId).catch((err) =>
+    console.error("[reconcile] get-funnel", err)
+  );
 
   const revenueResult = await db
     .select({
