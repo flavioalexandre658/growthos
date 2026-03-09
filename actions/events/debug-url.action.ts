@@ -98,57 +98,58 @@ export async function debugUrl(input: z.infer<typeof schema>): Promise<IDebugRes
 
   if (!scriptSrc && !apiKeyValue) {
     const genericTrackerMatch = html.match(/tracker\.js/i);
+
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const [recentPageview] = await db
+      .select({ id: pageviewAggregates.id })
+      .from(pageviewAggregates)
+      .where(
+        and(
+          eq(pageviewAggregates.organizationId, data.organizationId),
+          gte(pageviewAggregates.createdAt, since),
+        ),
+      )
+      .orderBy(desc(pageviewAggregates.createdAt))
+      .limit(1);
+
+    if (recentPageview) {
+      result.trackerFound = true;
+      result.detectedViaEvents = true;
+
+      const [activeKey] = await db
+        .select()
+        .from(apiKeys)
+        .where(
+          and(
+            eq(apiKeys.organizationId, data.organizationId),
+            eq(apiKeys.isActive, true),
+          ),
+        )
+        .limit(1);
+
+      if (activeKey) {
+        result.apiKeyFound = true;
+        result.apiKeyValue = activeKey.key;
+        result.keyValid = true;
+        result.keyBelongsToOrg = true;
+
+        if (activeKey.expiresAt && activeKey.expiresAt < new Date()) {
+          result.keyExpired = true;
+          result.errors.push({
+            message: `A API key expirou em ${activeKey.expiresAt.toLocaleDateString("pt-BR")}`,
+            suggestion: "Crie uma nova API key sem data de expiração ou com data futura.",
+            ...(slug ? { link: { label: "Criar nova key", href: `/${slug}/settings` } } : {}),
+          });
+        }
+
+        result.warnings.push("trackerDetectedViaEvents");
+      }
+      return result;
+    }
+
     if (genericTrackerMatch) {
       result.warnings.push("tracker.js encontrado no HTML mas sem data-key visível");
     } else {
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const [recentPageview] = await db
-        .select({ id: pageviewAggregates.id })
-        .from(pageviewAggregates)
-        .where(
-          and(
-            eq(pageviewAggregates.organizationId, data.organizationId),
-            gte(pageviewAggregates.createdAt, since),
-          ),
-        )
-        .orderBy(desc(pageviewAggregates.createdAt))
-        .limit(1);
-
-      if (recentPageview) {
-        result.trackerFound = true;
-        result.detectedViaEvents = true;
-
-        const [activeKey] = await db
-          .select()
-          .from(apiKeys)
-          .where(
-            and(
-              eq(apiKeys.organizationId, data.organizationId),
-              eq(apiKeys.isActive, true),
-            ),
-          )
-          .limit(1);
-
-        if (activeKey) {
-          result.apiKeyFound = true;
-          result.apiKeyValue = activeKey.key;
-          result.keyValid = true;
-          result.keyBelongsToOrg = true;
-
-          if (activeKey.expiresAt && activeKey.expiresAt < new Date()) {
-            result.keyExpired = true;
-            result.errors.push({
-              message: `A API key expirou em ${activeKey.expiresAt.toLocaleDateString("pt-BR")}`,
-              suggestion: "Crie uma nova API key sem data de expiração ou com data futura.",
-              ...(slug ? { link: { label: "Criar nova key", href: `/${slug}/settings` } } : {}),
-            });
-          }
-
-          result.warnings.push("trackerDetectedViaEvents");
-        }
-        return result;
-      }
-
       result.errors.push({
         message: "tracker.js não encontrado no HTML da página",
         suggestion: "Instale o snippet do tracker.js no <head> de todas as páginas do seu site.",
