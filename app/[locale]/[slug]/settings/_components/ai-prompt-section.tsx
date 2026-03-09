@@ -68,10 +68,13 @@ function buildEventExample(
   }
 
   if (eventType === "signup") {
-    return `window.Groware.track('signup', {
+    return `// Após criar a conta, identifique o usuário:
+Groware.identify(user.id, { name: user.name, email: user.email })
+
+window.Groware.track('signup', {
   dedupe: true,                    // 1 cadastro por sessão (24h)
   customer_type: 'new',            // new | returning
-  customer_id: user.id, // NUNCA email ou CPF
+  customer_id: user.id,
 })`;
   }
 
@@ -263,6 +266,17 @@ O tracker captura automaticamente (sem código adicional):
 - referrer e canal de aquisição
 - session_id anônimo
 
+Após o login do usuário, chame Groware.identify() para vincular o perfil:
+
+window.Groware.identify(user.id, {
+  name: user.name,
+  email: user.email,
+  phone: user.phone,  // opcional
+})
+
+// No logout:
+window.Groware.reset()
+
 ════════════════════════════════════════════
 EVENTOS DO FUNIL — IMPLEMENTAR OBRIGATORIAMENTE
 ════════════════════════════════════════════
@@ -278,8 +292,8 @@ GROWARE_API_KEY=${apiKey}
 ════════════════════════════════════════════
 REGRAS OBRIGATÓRIAS
 ════════════════════════════════════════════
-1. NUNCA enviar email, CPF, nome ou qualquer PII em customer_id
-   → Use sempre o ID interno do usuário (UUID ou string opaca) — NUNCA dados pessoais
+1. customer_id deve ser o UUID do usuário autenticado — NUNCA email, CPF ou nome
+   → customer_id é um identificador opaco; nome/email/telefone vão em Groware.identify()
 2. customer_id é OBRIGATÓRIO em eventos financeiros e lifecycle
    (purchase, signup, trial_started, subscription_canceled, subscription_changed)
    → O servidor retorna HTTP 400 se customer_id estiver ausente nesses eventos

@@ -26,6 +26,7 @@
   var DEDUP_TTL_MS = 24 * 60 * 60 * 1000;
   var DEDUP_TTL_FINANCIAL_MS = 365 * 24 * 60 * 60 * 1000;
   var OPT_OUT_KEY = "groware_opt_out";
+  var CUSTOMER_KEY = "groware_customer";
   var FINANCIAL_EVENT_TYPES = [
     "payment",
     "refund",
@@ -294,6 +295,15 @@
     }
   }
 
+  function getStoredCustomer() {
+    try {
+      var raw = sessionStorage.getItem(CUSTOMER_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   function getAutoContext() {
     var params = new URLSearchParams(window.location.search);
     var storedUtms = getStoredUtms();
@@ -327,7 +337,9 @@
         ? "mobile"
         : "desktop";
 
-    return {
+    var customerCtx = getStoredCustomer();
+
+    var ctx = {
       source: source,
       medium: medium,
       campaign: campaign,
@@ -338,6 +350,15 @@
       device: device,
       session_id: getSessionId(),
     };
+
+    if (customerCtx) {
+      if (customerCtx.customer_id) ctx.customer_id = customerCtx.customer_id;
+      if (customerCtx.customer_name) ctx.customer_name = customerCtx.customer_name;
+      if (customerCtx.customer_email) ctx.customer_email = customerCtx.customer_email;
+      if (customerCtx.customer_phone) ctx.customer_phone = customerCtx.customer_phone;
+    }
+
+    return ctx;
   }
 
   function readQueue() {
@@ -652,6 +673,29 @@
 
   window.Groware = {
     track: track,
+    identify: function (customerId, traits) {
+      try {
+        var data = traits || {};
+        var customer = {
+          customer_id: customerId || null,
+          customer_name: data.name || null,
+          customer_email: data.email || null,
+          customer_phone: data.phone || null,
+        };
+        sessionStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer));
+        track("identify", {
+          customer_id: customerId,
+          customer_name: data.name || null,
+          customer_email: data.email || null,
+          customer_phone: data.phone || null,
+        });
+      } catch (_) {}
+    },
+    reset: function () {
+      try {
+        sessionStorage.removeItem(CUSTOMER_KEY);
+      } catch (_) {}
+    },
     clearDedupe: clearDedup,
     failedEvents: function () {
       return readFailed();

@@ -15,6 +15,7 @@ import {
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
 import { insertPayment } from "@/utils/insert-payment";
+import { upsertCustomer } from "@/utils/upsert-customer";
 import type { BillingInterval } from "@/utils/billing";
 
 const ASAAS_BASE_URL = "https://api.asaas.com/v3";
@@ -91,8 +92,27 @@ async function* paginateAsaas<T>(
   }
 }
 
-async function getOrgCurrency(organizationId: string): Promise<string> {
-  const [org] = await db
+async function fetchAsaasCustomerData(
+  customerId: string,
+  apiKey: string,
+): Promise<{ name: string | null; email: string | null; phone: string | null } | null> {
+  try {
+    const res = await fetch(`${ASAAS_BASE_URL}/customers/${customerId}`, {
+      headers: { access_token: apiKey },
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as { name?: string; email?: string; phone?: string; mobilePhone?: string };
+    return {
+      name: data.name ?? null,
+      email: data.email ?? null,
+      phone: data.phone ?? data.mobilePhone ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function getOrgCurrency(organizationId: string): Promise<string> {  const [org] = await db
     .select({ currency: organizations.currency })
     .from(organizations)
     .where(eq(organizations.id, organizationId))
@@ -165,6 +185,14 @@ export async function syncAsaasHistory(
   let paymentsSynced = 0;
   let oneTimePurchasesSynced = 0;
   const subIntervalMap = new Map<string, BillingInterval>();
+  const asaasCustomerCache = new Map<string, { name: string | null; email: string | null; phone: string | null } | null>();
+
+  async function getAsaasCustomer(asaasId: string) {
+    if (asaasCustomerCache.has(asaasId)) return asaasCustomerCache.get(asaasId) ?? null;
+    const data = await fetchAsaasCustomerData(asaasId, apiKey);
+    asaasCustomerCache.set(asaasId, data);
+    return data;
+  }
 
   try {
     for await (const sub of paginateAsaas<AsaasSubscription>("/subscriptions", apiKey)) {
@@ -320,6 +348,18 @@ export async function syncAsaasHistory(
         paymentsSynced++;
       } else {
         oneTimePurchasesSynced++;
+      }
+
+      const asaasCustomerData = await getAsaasCustomer(payment.customer);
+      if (asaasCustomerData) {
+        await upsertCustomer({
+          organizationId,
+          customerId,
+          name: asaasCustomerData.name,
+          email: asaasCustomerData.email,
+          phone: asaasCustomerData.phone,
+          eventTimestamp: paidAt,
+        }).catch(() => {});
       }
     }
 

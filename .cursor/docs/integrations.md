@@ -83,14 +83,31 @@ Não é necessário aplicar hash — IDs internos de usuário não contêm dados
 ### No tracker.js (browser)
 
 ```javascript
-window.Groware.track("signup", {
-  customer_id: user.id, // ← ID interno do usuário (UUID)
+// Identifique o usuário assim que ele fizer login
+// Isso enriquece todos os eventos subsequentes com PII
+window.Groware.identify(user.id, {
+  name: user.name,
+  email: user.email,
+  phone: user.phone, // opcional
 });
 
+// Após identify(), os campos de PII são incluídos automaticamente
+// em todos os eventos — não é necessário passar customer_id manualmente
 window.Groware.track("checkout_started", {
-  customer_id: user.id,
   gross_value: 79.9,
   currency: "BRL",
+});
+
+// Para limpar a identidade (ex.: logout)
+window.Groware.reset();
+
+// Também é possível passar customer_id diretamente nos eventos
+// (se identify() não foi chamado)
+window.Groware.track("signup", {
+  customer_id: user.id, // ← ID interno do usuário (UUID)
+  customer_name: user.name, // opcional
+  customer_email: user.email, // opcional
+  customer_phone: user.phone, // opcional
 });
 ```
 
@@ -539,6 +556,105 @@ i18n
 
 ---
 
+## Coleta de PII do Cliente (Customer Enrichment)
+
+O Groware agora suporta coleta opcional de dados de identificação do cliente (PII) para enriquecer a tabela `customers`.
+
+### Campos PII Suportados
+
+| Campo             | Onde enviar              | Descrição                  |
+| ----------------- | ------------------------ | -------------------------- |
+| `customer_name`   | Track API / identify()   | Nome completo do cliente   |
+| `customer_email`  | Track API / identify()   | Email do cliente           |
+| `customer_phone`  | Track API / identify()   | Telefone do cliente        |
+
+### Armazenamento
+
+Os campos PII (`name`, `email`, `phone`) são armazenados como texto simples na tabela `customers`. O acesso é controlado pela autenticação da aplicação.
+
+### Via Tracker.js — `Groware.identify()`
+
+O método `identify()` é a forma recomendada de associar PII a um usuário no browser:
+
+```javascript
+// Chamar após login do usuário
+window.Groware.identify(user.id, {
+  name: user.name,         // opcional
+  email: user.email,       // opcional
+  phone: user.phone,       // opcional
+});
+
+// Após identify(), todos os eventos incluem os campos PII automaticamente
+// Não é necessário repeti-los em cada evento
+
+// Limpar identidade no logout
+window.Groware.reset();
+```
+
+Os dados são armazenados no `sessionStorage` como `groware_customer` e enviados automaticamente com cada evento (pageview, signup, checkout_started, etc.).
+
+### Via Track API — campos diretos no payload
+
+```javascript
+await fetch('/api/track', {
+  method: 'POST',
+  body: JSON.stringify({
+    key: process.env.GROWARE_API_KEY,
+    event_type: 'signup',
+    customer_id: user.id,
+    customer_name: user.name,    // opcional
+    customer_email: user.email,  // opcional
+    customer_phone: user.phone,  // opcional
+  }),
+});
+```
+
+### Via Stripe — automático
+
+O Groware extrai automaticamente PII dos objetos Stripe:
+
+| Evento Stripe                  | Campos extraídos                           |
+| ------------------------------ | ------------------------------------------ |
+| `checkout.session.completed`   | `customer_details.name/email/phone`        |
+| `invoice.payment_succeeded`    | `customer_name`, `customer_email`          |
+| `charge.refunded`              | `billing_details.name/email/phone`         |
+| `payment_intent.succeeded`     | `latest_charge.billing_details.name/email/phone` |
+
+Nenhuma configuração adicional necessária — os dados chegam automaticamente via webhook.
+
+### Via Asaas — chamada à API
+
+Quando um evento Asaas chega, o Groware faz automaticamente uma chamada a `GET /api/v3/customers/{id}` para buscar `name`, `email` e `phone` do cliente. Os dados são cacheados por organização durante o sync histórico.
+
+### Tabela `customers`
+
+```typescript
+// Schema da tabela customers (db/schema/customer.schema.ts)
+{
+  id: uuid,
+  organizationId: uuid,
+  customerId: text,         // ID do usuário no sistema do cliente
+  name: text,               // plaintext
+  email: text,              // plaintext
+  phone: text,              // plaintext
+  country: text,            // ISO 3166-1 alpha-2 (via Vercel geo headers)
+  region: text,             // Código de estado/região
+  city: text,               // Nome da cidade
+  avatarUrl: text,          // URL do avatar (future use)
+  metadata: jsonb,          // Campos extras extensíveis
+  firstSeenAt: timestamp,   // Primeiro evento registrado
+  lastSeenAt: timestamp,    // Último evento (atualizado a cada evento)
+  createdAt: timestamp,
+  updatedAt: timestamp,
+}
+```
+
+### Geo-IP automático (via Vercel)
+
+O IP do visitante é usado para preencher `country`, `region` e `city` automaticamente via headers do Vercel (`x-vercel-ip-country`, `x-vercel-ip-country-region`, `x-vercel-ip-city`). Em desenvolvimento local, esses campos ficam nulos.
+
+---
+
 ## Campos de Metadata Obrigatórios no Checkout
 
 O cliente deve passar nos metadados do checkout de qualquer gateway:
@@ -613,9 +729,6 @@ asaas.payments.create({
 ## Variáveis de Ambiente
 
 ```bash
-# Criptografia das credenciais dos clientes
-ENCRYPTION_KEY=64_chars_hex_gerado_com_node_crypto
-
 # Desenvolvimento local
 STRIPE_WEBHOOK_SECRET=whsec_xxx  # gerado pelo stripe listen
 ```

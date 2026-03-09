@@ -101,17 +101,19 @@ const buildInstallHtml = (baseUrl: string) =>
 const buildInstallNextjs = (baseUrl: string) =>
   `import Script from 'next/script'\n\nexport default function RootLayout({ children }) {\n  return (\n    <html>\n      <head />\n      <body>\n        {children}\n        <Script\n          src="${baseUrl}/tracker.js"\n          data-key={process.env.NEXT_PUBLIC_GROWARE_KEY}\n          strategy="afterInteractive"\n        />\n      </body>\n    </html>\n  )\n}`;
 
+const IDENTIFY_CODE = `// Após o login do usuário — enriquece o perfil e vincula eventos\nwindow.Groware.identify(user.id, {\n  name: user.name,\n  email: user.email,\n  phone: user.phone,  // opcional\n})\n\n// No logout — limpa os dados do perfil da sessão\nwindow.Groware.reset()\n\n// Desse ponto em diante, todos os eventos enviados pelo tracker.js\n// incluem automaticamente customer_id, customer_name e customer_email.`;
+
 const ENV_CODE = `NEXT_PUBLIC_GROWARE_KEY=tok_convitede_xxx`;
 
 const HOOK_CODE = `'use client'\n\nimport { useCallback } from 'react'\nimport type { GrowareEventType, GrowareEventData } from '@/types/groware'\n\nexport function useTracker() {\n  const track = useCallback(\n    (eventType: GrowareEventType, data?: GrowareEventData) => {\n      if (typeof window === 'undefined') return\n      if (!window.Groware) return\n      window.Groware.track(eventType, data)\n    },\n    []\n  )\n  return { track }\n}`;
 
 const HOOK_USAGE = `'use client'\n\nimport { useTracker } from '@/hooks/use-tracker'\n\nexport function CheckoutButton({ product, price }) {\n  const { track } = useTracker()\n\n  const handleCheckout = async () => {\n    track('checkout_started', {\n      gross_value: price,\n      currency: 'BRL',\n      product_id: product.id,\n      product_name: product.name,\n    })\n    await openCheckout(product.id)\n  }\n\n  return <button onClick={handleCheckout}>Comprar R$ {price}</button>\n}`;
 
-const PAYMENT_CODE = `window.Groware.track('purchase', {\n  // Deduplicação — OBRIGATÓRIO para eventos financeiros\n  dedupe: invoice.id,       // ID único da transação no gateway\n\n  // Financeiro — obrigatório\n  gross_value: 150.00,\n  currency: 'BRL',          // ISO 4217 — sempre informe\n\n  // Financeiro — opcional\n  discount: 10.00,          // desconto aplicado em reais\n  installments: 1,\n  payment_method: 'pix',    // pix | credit_card | boleto | debit_card\n\n  // Tempo — opcional\n  event_time: '2026-03-06T14:03:11Z', // ISO 8601. Se omitido, usa o momento do envio.\n\n  // Produto — opcional mas recomendado\n  product_id: 'template-casamento-001',\n  product_name: 'Convite Casamento Premium',\n  category: 'casamento',\n\n  // Cliente — opcional mas recomendado\n  customer_type: 'new',     // new | returning\n  customer_id: 'hash_anonimo',\n  customer_segment: 'premium',\n  customer_cohort: '2024-Q1',\n})`;
+const PAYMENT_CODE = `window.Groware.track('purchase', {\n  // Deduplicação — OBRIGATÓRIO para eventos financeiros\n  dedupe: invoice.id,       // ID único da transação no gateway\n\n  // Financeiro — obrigatório\n  gross_value: 150.00,\n  currency: 'BRL',          // ISO 4217 — sempre informe\n\n  // Financeiro — opcional\n  discount: 10.00,          // desconto aplicado em reais\n  installments: 1,\n  payment_method: 'pix',    // pix | credit_card | boleto | debit_card\n\n  // Tempo — opcional\n  event_time: '2026-03-06T14:03:11Z', // ISO 8601. Se omitido, usa o momento do envio.\n\n  // Produto — opcional mas recomendado\n  product_id: 'template-casamento-001',\n  product_name: 'Convite Casamento Premium',\n  category: 'casamento',\n\n  // Cliente — opcional mas recomendado\n  customer_type: 'new',     // new | returning\n  customer_id: user.id,     // UUID do usuário autenticado\n  customer_segment: 'premium',\n  customer_cohort: '2024-Q1',\n})`;
 
-const RECURRING_PAYMENT = `// Primeiro pagamento de assinatura\nwindow.Groware.track('purchase', {\n  dedupe: invoice.id,           // ID único da invoice no gateway\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_type: 'recurring',\n  billing_interval: 'monthly',\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  plan_name: 'Pro Mensal',\n  customer_id: 'hash_cliente',\n})\n\n// Cancelamento de assinatura\nwindow.Groware.track('subscription_canceled', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_interval: 'monthly',\n  reason: 'user_canceled', // user_canceled | payment_failed | upgraded | downgraded\n})\n\n// Upgrade de plano\nwindow.Groware.track('subscription_changed', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  previous_plan_id: 'plan_basic',\n  new_plan_id: 'plan_pro',\n  previous_value: 49.00,\n  new_value: 89.00,\n  billing_interval: 'monthly',\n  currency: 'BRL',\n})`;
+const RECURRING_PAYMENT = `// Primeiro pagamento de assinatura\nwindow.Groware.track('purchase', {\n  dedupe: invoice.id,           // ID único da invoice no gateway\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_type: 'recurring',\n  billing_interval: 'monthly',\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  plan_name: 'Pro Mensal',\n  customer_id: user.id,\n})\n\n// Cancelamento de assinatura\nwindow.Groware.track('subscription_canceled', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  plan_id: 'plan_pro',\n  gross_value: 89.00,\n  currency: 'BRL',\n  billing_interval: 'monthly',\n  reason: 'user_canceled', // user_canceled | payment_failed | upgraded | downgraded\n})\n\n// Upgrade de plano\nwindow.Groware.track('subscription_changed', {\n  dedupe: subscription.id,      // garante dedup deterministico\n  subscription_id: 'sub_abc123',\n  previous_plan_id: 'plan_basic',\n  new_plan_id: 'plan_pro',\n  previous_value: 49.00,\n  new_value: 89.00,\n  billing_interval: 'monthly',\n  currency: 'BRL',\n})`;
 
-const SERVER_FETCH = `// Node.js / Next.js — renovação mensal às 3h da manhã\nawait fetch(\`\${process.env.GROWARE_URL}/api/track\`, {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    key: process.env.GROWARE_API_KEY,\n    event_type: 'purchase',\n    event_time: invoice.created_at, // ISO 8601 — data real do pagamento\n    gross_value: 89.00,\n    currency: 'BRL',\n    billing_type: 'recurring',\n    billing_interval: 'monthly',\n    subscription_id: subscription.id,\n    plan_id: subscription.planId,\n    customer_id: hashCustomerId(subscription.customerId),\n  }),\n})`;
+const SERVER_FETCH = `// Node.js / Next.js — renovação mensal às 3h da manhã\nawait fetch(\`\${process.env.GROWARE_URL}/api/track\`, {\n  method: 'POST',\n  headers: { 'Content-Type': 'application/json' },\n  body: JSON.stringify({\n    key: process.env.GROWARE_API_KEY,\n    event_type: 'purchase',\n    event_time: invoice.created_at, // ISO 8601 — data real do pagamento\n    gross_value: 89.00,\n    currency: 'BRL',\n    billing_type: 'recurring',\n    billing_interval: 'monthly',\n    subscription_id: subscription.id,\n    plan_id: subscription.planId,\n    customer_id: subscription.customerId,\n  }),\n})`;
 
 const SERVER_CURL = `curl -X POST https://groware.io/api/track \\\n  -H "Content-Type: application/json" \\\n  -d '{\n    "key": "tok_convitede_xxx",\n    "event_type": "purchase",\n    "event_time": "2025-12-01T10:00:00Z",\n    "gross_value": 89.00,\n    "currency": "BRL",\n    "billing_type": "recurring",\n    "subscription_id": "sub_abc123"\n  }'`;
 
@@ -119,7 +121,7 @@ const SERVER_PYTHON = `import requests\n\nrequests.post('https://groware.io/api/
 
 const DATA_ATTRS = `<!-- Botão de compra -->\n<button\n  data-groware="purchase"\n  data-groware-value="89.90"\n  data-groware-currency="BRL"\n  data-groware-product_id="template-001"\n  data-groware-product_name="Convite Casamento"\n  data-groware-payment_method="pix"\n  data-groware-dedupe="invoice-001"\n>\n  Pagar com PIX\n</button>\n\n<!-- Cadastro -->\n<button\n  data-groware="signup"\n  data-groware-customer_type="new"\n  data-groware-dedupe="true"\n>\n  Criar conta grátis\n</button>`;
 
-const TYPES_CODE = `// src/types/groware.d.ts\n\nexport type GrowareEventType =\n  | 'pageview'\n  | 'signup'\n  | 'trial_started'\n  | 'checkout_started'\n  | 'checkout_abandoned'\n  | 'purchase'\n  | 'subscription_canceled'\n  | 'subscription_changed'\n\nexport type GrowareCurrency = 'BRL' | 'USD' | 'EUR' | 'GBP' | 'ARS' | string\nexport type GrowarePaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'boleto' | string\nexport type GrowareBillingInterval = 'monthly' | 'yearly' | 'weekly'\nexport type GrowareBillingType = 'recurring' | 'one_time'\nexport type GrowareCustomerType = 'new' | 'returning'\n\nexport interface GrowareEventData {\n  // Financeiro\n  gross_value?: number\n  discount?: number              // desconto aplicado em reais\n  installments?: number\n  payment_method?: GrowarePaymentMethod\n  currency?: GrowareCurrency      // ISO 4217 — padrão: moeda da org\n\n  // Produto\n  product_id?: string\n  product_name?: string\n  category?: string\n\n  // Cliente\n  customer_type?: GrowareCustomerType\n  customer_id?: string             // hash anônimo — NUNCA email/CPF\n  customer_segment?: string\n  customer_cohort?: string\n\n  // Recorrência\n  billing_type?: GrowareBillingType\n  billing_interval?: GrowareBillingInterval\n  subscription_id?: string\n  plan_id?: string\n  plan_name?: string\n\n  // Subscription events\n  previous_plan_id?: string\n  new_plan_id?: string\n  previous_value?: number\n  new_value?: number\n  reason?: 'user_canceled' | 'payment_failed' | 'upgraded' | 'downgraded' | 'exit' | 'timeout'\n\n  // Tempo\n  event_time?: string             // ISO 8601 — quando o evento realmente aconteceu\n\n  // Livre\n  metadata?: Record<string, unknown>\n}\n\ndeclare global {\n  interface Window {\n    Groware: {\n      track: (eventType: GrowareEventType, data?: GrowareEventData) => void\n    }\n  }\n}`;
+const TYPES_CODE = `// src/types/groware.d.ts\n\nexport type GrowareEventType =\n  | 'pageview'\n  | 'signup'\n  | 'identify'\n  | 'trial_started'\n  | 'checkout_started'\n  | 'checkout_abandoned'\n  | 'purchase'\n  | 'subscription_canceled'\n  | 'subscription_changed'\n\nexport type GrowareCurrency = 'BRL' | 'USD' | 'EUR' | 'GBP' | 'ARS' | string\nexport type GrowarePaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'boleto' | string\nexport type GrowareBillingInterval = 'monthly' | 'yearly' | 'weekly'\nexport type GrowareBillingType = 'recurring' | 'one_time'\nexport type GrowareCustomerType = 'new' | 'returning'\n\nexport interface GrowareEventData {\n  // Financeiro\n  gross_value?: number\n  discount?: number              // desconto aplicado em reais\n  installments?: number\n  payment_method?: GrowarePaymentMethod\n  currency?: GrowareCurrency      // ISO 4217 — padrão: moeda da org\n\n  // Produto\n  product_id?: string\n  product_name?: string\n  category?: string\n\n  // Cliente\n  customer_type?: GrowareCustomerType\n  customer_id?: string             // UUID do usuário — NUNCA email/CPF\n  customer_name?: string           // Nome completo (opcional, via Groware.identify)\n  customer_email?: string          // Email (opcional, via Groware.identify)\n  customer_phone?: string          // Telefone (opcional, via Groware.identify)\n  customer_segment?: string\n  customer_cohort?: string\n\n  // Recorrência\n  billing_type?: GrowareBillingType\n  billing_interval?: GrowareBillingInterval\n  subscription_id?: string\n  plan_id?: string\n  plan_name?: string\n\n  // Subscription events\n  previous_plan_id?: string\n  new_plan_id?: string\n  previous_value?: number\n  new_value?: number\n  reason?: 'user_canceled' | 'payment_failed' | 'upgraded' | 'downgraded' | 'exit' | 'timeout'\n\n  // Tempo\n  event_time?: string             // ISO 8601 — quando o evento realmente aconteceu\n\n  // Livre\n  metadata?: Record<string, unknown>\n}\n\nexport interface GrowareTraits {\n  name?: string\n  email?: string\n  phone?: string\n}\n\ndeclare global {\n  interface Window {\n    Groware: {\n      track: (eventType: GrowareEventType, data?: GrowareEventData) => void\n      identify: (customerId: string, traits?: GrowareTraits) => void\n      reset: () => void\n    }\n  }\n}`;
 
 const DEBUG_CODE = `// 1 — Verificar se o tracker carregou\nconsole.log(window.Groware)\n// → { track: ƒ }\n\n// 2 — Disparar evento de teste\nwindow.Groware.track('pageview')\n// → Network: POST /api/track 204\n\n// 3 — Evento com moeda\nwindow.Groware.track('purchase', {\n  gross_value: 1.00,\n  currency: 'BRL',\n  product_name: 'Teste'\n})\n// Verificar em Dados → Eventos`;
 
@@ -130,7 +132,7 @@ const session = await stripe.checkout.sessions.create({
   mode: 'subscription',
   line_items: [{ price: priceId, quantity: 1 }],
   metadata: {
-    groware_customer_id: sha256(user.id + process.env.CUSTOMER_HASH_SALT),
+    groware_customer_id: user.id,
   },
   // ...
 })`;
@@ -139,21 +141,22 @@ const STRIPE_TOGETHER_FLOW = `// 1 — Usuário chega via Google Ads
 //     Groware (tracker.js): pageview · source: google · session: s_abc
 
 // 2 — Usuário cria conta
-//     Groware (tracker.js): signup · customer_id: hash_xyz · source: google
+//     Groware.identify(user.id, { name: user.name, email: user.email })
+//     Groware (tracker.js): signup · customer_id: user_uuid · source: google
 
 // 3 — Usuário inicia checkout (PASSE o customer_id aqui)
 window.Groware.track('checkout_started', {
   gross_value: 79.90,
   currency: 'BRL',
   product_name: 'Pro Mensal',
-  customer_id: hash_xyz,  // ← bridge entre tracker.js e Stripe
+  customer_id: user.id,  // ← bridge entre tracker.js e Stripe
 })
 
 // 4 — Stripe processa o pagamento
-//     metadata: { groware_customer_id: "hash_xyz" }
+//     metadata: { groware_customer_id: "user_uuid" }
 
 // 5 — Webhook chega no Groware
-//     Groware busca hash_xyz na events table
+//     Groware busca user_uuid na events table
 //     Encontra: source: google · landing: /pricing
 //     Salva purchase com contexto completo ✅
 
@@ -169,7 +172,7 @@ const CHECKLIST = [
   { label: "POST /api/track retorna 204", detail: "Disparar evento manual e verificar no Network" },
   { label: "Currency presente em eventos financeiros", detail: "Payload deve ter currency: 'BRL' (ou a moeda da venda)" },
   { label: "Dados aparecem em Dados → Eventos", detail: "Aguardar até 30s e atualizar a tela" },
-  { label: "Sem PII nos payloads", detail: "Nunca enviar email, CPF ou nome em customer_id" },
+  { label: "customer_id é o UUID do usuário, não PII", detail: "Nunca enviar email, CPF ou nome como customer_id. Use Groware.identify() para PII" },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -311,6 +314,15 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             <SubSection title="O que é capturado automaticamente">
               <AutoPropTable rows={AUTO_CONTEXT_ROWS} />
             </SubSection>
+
+            <SubSection title="Identificando o usuário (Groware.identify)">
+              <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+                Após o login, chame <Mono>Groware.identify()</Mono> para associar o usuário aos eventos.
+                O tracker enviará automaticamente <Mono>customer_id</Mono>, <Mono>customer_name</Mono> e{" "}
+                <Mono>customer_email</Mono> em todos os eventos subsequentes da sessão.
+              </p>
+              <CodeBlock code={IDENTIFY_CODE} lang="js" title="Após o login do usuário" />
+            </SubSection>
           </TabsContent>
 
           {/* NEXT.JS */}
@@ -406,7 +418,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   { name: "product_name", type: "string", description: "Nome legível do produto", example: "'Convite Casamento'" },
                   { name: "category", type: "string", description: "Categoria do produto", example: "'casamento'" },
                   { name: "customer_type", type: "string", description: "new | returning", example: "'new'" },
-                  { name: "customer_id", type: "string", required: true, description: "Hash anônimo (nunca PII). Obrigatório — servidor retorna 400 se ausente.", example: "'hash_abc'" },
+                  { name: "customer_id", type: "string", required: true, description: "UUID do usuário. Obrigatório — servidor retorna 400 se ausente.", example: "'usr_abc'" },
                   { name: "customer_segment", type: "string", description: "Segmentação do seu negócio", example: "'premium'" },
                   { name: "billing_type", type: "string", description: "recurring | one_time", example: "'one_time'" },
                   { name: "billing_interval", type: "string", description: "monthly | yearly | weekly. Obrigatório se recurring.", example: "'monthly'" },
@@ -421,7 +433,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 description="Novo cadastro. Calcula taxa de conversão e funil."
                 variant="secondary"
                 props={[
-                  { name: "customer_id", type: "string", required: true, description: "Hash anônimo (nunca PII). Obrigatório — servidor retorna 400 se ausente.", example: "'hash_abc'" },
+                  { name: "customer_id", type: "string", required: true, description: "UUID do usuário. Obrigatório — servidor retorna 400 se ausente.", example: "'usr_abc'" },
                   { name: "customer_type", type: "string", description: "new | returning", example: "'new'" },
                   { name: "event_time", type: "string", description: "ISO 8601 — quando o evento aconteceu. Se omitido, usa o momento do envio.", example: "'2026-03-06T14:03:11Z'" },
                 ]}
@@ -435,7 +447,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                   { name: "gross_value", type: "number", description: "Valor no carrinho", example: "89.00" },
                   { name: "currency", type: "string", required: true, description: "ISO 4217", example: "'BRL'" },
                   { name: "product_id", type: "string", description: "ID do produto", example: "'template-001'" },
-                  { name: "customer_id", type: "string", description: "Hash anônimo do cliente. Recomendado se você usa a integração Stripe — permite linkar o pagamento ao histórico de aquisição.", example: "'hash_xyz'" },
+                  { name: "customer_id", type: "string", description: "UUID do usuário. Recomendado se você usa a integração Stripe — permite linkar o pagamento ao histórico de aquisição.", example: "'usr_xyz'" },
                   { name: "event_time", type: "string", description: "ISO 8601 — quando o evento aconteceu. Se omitido, usa o momento do envio.", example: "'2026-03-06T14:03:11Z'" },
                 ]}
               />
@@ -464,7 +476,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 variant="destructive"
                 props={[
                   { name: "subscription_id", type: "string", required: true, description: "ID da assinatura no seu sistema", example: "'sub_abc'" },
-                  { name: "customer_id", type: "string", required: true, description: "Hash anônimo (nunca PII). Obrigatório — servidor retorna 400 se ausente.", example: "'hash_abc'" },
+                  { name: "customer_id", type: "string", required: true, description: "UUID do usuário. Obrigatório — servidor retorna 400 se ausente.", example: "'usr_abc'" },
                   { name: "gross_value", type: "number", description: "MRR que vai parar de entrar", example: "89.00" },
                   { name: "currency", type: "string", required: true, description: "ISO 4217", example: "'BRL'" },
                   { name: "billing_interval", type: "string", description: "monthly | yearly | weekly", example: "'monthly'" },
@@ -479,7 +491,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 variant="secondary"
                 props={[
                   { name: "subscription_id", type: "string", required: true, description: "ID da assinatura", example: "'sub_abc'" },
-                  { name: "customer_id", type: "string", required: true, description: "Hash anônimo (nunca PII). Obrigatório — servidor retorna 400 se ausente.", example: "'hash_abc'" },
+                  { name: "customer_id", type: "string", required: true, description: "UUID do usuário. Obrigatório — servidor retorna 400 se ausente.", example: "'usr_abc'" },
                   { name: "previous_plan_id", type: "string", description: "Plano anterior", example: "'plan_basic'" },
                   { name: "new_plan_id", type: "string", description: "Novo plano", example: "'plan_pro'" },
                   { name: "previous_value", type: "number", description: "Valor do plano anterior", example: "49.00" },
@@ -494,7 +506,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 description="Evento personalizado com qualquer nome. Use para rastrear ações específicas do seu produto — cliques, engajamentos, marcos do funil."
                 variant="outline"
                 props={[
-                  { name: "customer_id", type: "string", description: "Hash anônimo do usuário. Recomendado sempre que o usuário estiver autenticado — conecta o evento ao funil de conversão.", example: "'hash_abc'" },
+                  { name: "customer_id", type: "string", description: "UUID do usuário. Recomendado sempre que o usuário estiver autenticado — conecta o evento ao funil de conversão.", example: "'usr_abc'" },
                   { name: "gross_value", type: "number", description: "Valor monetário associado à ação, se aplicável", example: "29.90" },
                   { name: "currency", type: "string", description: "ISO 4217. Necessário se gross_value for informado.", example: "'BRL'" },
                   { name: "event_time", type: "string", description: "ISO 8601 — quando o evento aconteceu. Se omitido, usa o momento do envio.", example: "'2026-03-06T14:03:11Z'" },
@@ -509,7 +521,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             <Callout type="warn">
               <strong>customer_id obrigatório em eventos financeiros e lifecycle.</strong>
               <br />
-              Os eventos <Mono>purchase</Mono>, <Mono>refund</Mono>, <Mono>renewal</Mono>, <Mono>signup</Mono>, <Mono>trial_started</Mono>, <Mono>subscription_canceled</Mono> e <Mono>subscription_changed</Mono> exigem <Mono>customer_id</Mono>. O servidor retorna <strong>HTTP 400</strong> se o campo estiver ausente. Use sempre um hash anônimo — nunca envie email, CPF ou nome.
+              Os eventos <Mono>purchase</Mono>, <Mono>refund</Mono>, <Mono>renewal</Mono>, <Mono>signup</Mono>, <Mono>trial_started</Mono>, <Mono>subscription_canceled</Mono> e <Mono>subscription_changed</Mono> exigem <Mono>customer_id</Mono>. O servidor retorna <strong>HTTP 400</strong> se o campo estiver ausente. Use sempre o UUID do usuário autenticado — nunca envie email, CPF ou nome no <Mono>customer_id</Mono>. Para enriquecer o perfil com nome, email e telefone, use <Mono>Groware.identify()</Mono>.
               <br />
               Em eventos customizados (<Mono>event_custom</Mono>), o <Mono>customer_id</Mono> é recomendado sempre que o usuário estiver autenticado, pois vincula a ação ao histórico de aquisição e funil do cliente.
             </Callout>
@@ -748,9 +760,9 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
             </SubSection>
 
             <Callout type="warn">
-              <strong>Nunca envie PII no customer_id.</strong> Use sempre um hash anônimo.
-              Ex: <Mono>sha256(user.id + salt)</Mono>. Nome, email e CPF nunca devem
-              aparecer em nenhum campo do payload.
+              <strong>Nunca envie PII diretamente no customer_id.</strong> Use sempre o UUID do usuário autenticado.
+              Nome, email e telefone devem ser enviados via{" "}
+              <Mono>Groware.identify(user.id, {"{ name, email, phone }"})</Mono> — nunca como parte do <Mono>customer_id</Mono>.
             </Callout>
           </TabsContent>
 

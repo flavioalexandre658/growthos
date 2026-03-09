@@ -11,6 +11,7 @@ import { extractSubscriptionIdFromInvoice, mapBillingInterval, stripeEventHash }
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
 import { insertPayment } from "@/utils/insert-payment";
+import { upsertCustomer } from "@/utils/upsert-customer";
 import type { BillingInterval } from "@/utils/billing";
 
 function mapStripeStatus(
@@ -270,6 +271,16 @@ export async function syncStripeHistory(
       } else {
         oneTimePurchasesSynced++;
       }
+
+      if (customerId) {
+        await upsertCustomer({
+          organizationId,
+          customerId,
+          name: invoice.customer_name ?? null,
+          email: invoice.customer_email ?? null,
+          eventTimestamp: new Date(paidAt * 1000),
+        }).catch(() => {});
+      }
     }
 
     const invoiceLinkedIds = new Set<string>();
@@ -378,6 +389,17 @@ export async function syncStripeHistory(
         entryPage: acq?.entryPage ?? null,
         sessionId: acq?.sessionId ?? null,
       });
+
+      if (customerId) {
+        await upsertCustomer({
+          organizationId,
+          customerId,
+          name: charge.billing_details?.name ?? null,
+          email: charge.billing_details?.email ?? null,
+          phone: charge.billing_details?.phone ?? null,
+          eventTimestamp: new Date(charge.created * 1000),
+        }).catch(() => {});
+      }
 
       oneTimePurchasesSynced++;
     }

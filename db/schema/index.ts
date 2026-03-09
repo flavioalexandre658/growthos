@@ -18,3 +18,4 @@ export * from "./password-reset.schema";
 export * from "./milestone.schema";
 export * from "./usage-monthly.schema";
 export * from "./email-log.schema";
+export * from "./customer.schema";

@@ -9,6 +9,7 @@ import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
 import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
+import { upsertCustomer } from "@/utils/upsert-customer";
 
 function extractMetaCustomerId(metadata: Record<string, string> | null | undefined): string | null {
   if (!metadata) return null;
@@ -245,6 +246,21 @@ async function handleCheckoutSessionCompleted(
       error: err instanceof Error ? err.message : String(err),
     });
   });
+
+  upsertCustomer({
+    organizationId: orgId,
+    customerId,
+    name: session.customer_details?.name ?? null,
+    email: session.customer_details?.email ?? null,
+    phone: session.customer_details?.phone ?? null,
+    eventTimestamp: new Date(eventTimestamp * 1000),
+  }).catch((err) => {
+    console.error("[stripe-webhook] upsertCustomer failed (checkout.session.completed)", {
+      orgId,
+      customerId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
 }
 
 async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventTimestamp: number) {
@@ -364,6 +380,20 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventTi
       .set({ status: "active", updatedAt: new Date() })
       .where(eq(subscriptions.subscriptionId, subscriptionId));
   }
+
+  upsertCustomer({
+    organizationId: orgId,
+    customerId,
+    name: invoice.customer_name ?? null,
+    email: invoice.customer_email ?? null,
+    eventTimestamp: new Date(eventTimestamp * 1000),
+  }).catch((err) => {
+    console.error("[stripe-webhook] upsertCustomer failed (invoice.payment_succeeded)", {
+      orgId,
+      customerId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
 }
 
 async function handleChargeRefunded(orgId: string, charge: Stripe.Charge) {
@@ -438,6 +468,22 @@ async function handleChargeRefunded(orgId: string, charge: Stripe.Charge) {
       error: err instanceof Error ? err.message : String(err),
     });
   });
+
+  if (customerId) {
+    upsertCustomer({
+      organizationId: orgId,
+      customerId,
+      name: charge.billing_details?.name ?? null,
+      email: charge.billing_details?.email ?? null,
+      phone: charge.billing_details?.phone ?? null,
+    }).catch((err) => {
+      console.error("[stripe-webhook] upsertCustomer failed (charge.refunded)", {
+        orgId,
+        customerId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }
 }
 
 async function handleSubscriptionCreated(
@@ -758,6 +804,28 @@ async function handlePaymentIntentSucceeded(
       error: err instanceof Error ? err.message : String(err),
     });
   });
+
+  if (customerId) {
+    const billingDetails = paymentIntent.latest_charge &&
+      typeof paymentIntent.latest_charge === "object"
+      ? (paymentIntent.latest_charge as Stripe.Charge).billing_details
+      : null;
+
+    upsertCustomer({
+      organizationId: orgId,
+      customerId,
+      name: billingDetails?.name ?? null,
+      email: billingDetails?.email ?? null,
+      phone: billingDetails?.phone ?? null,
+      eventTimestamp: new Date(eventTimestamp * 1000),
+    }).catch((err) => {
+      console.error("[stripe-webhook] upsertCustomer failed (payment_intent.succeeded)", {
+        orgId,
+        customerId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }
 }
 
 async function handlePaymentFailed(orgId: string, invoice: Stripe.Invoice) {

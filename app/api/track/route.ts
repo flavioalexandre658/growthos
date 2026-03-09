@@ -7,6 +7,8 @@ import { resolveExchangeRate as resolveRate } from "@/utils/resolve-exchange-rat
 import { checkRateLimit } from "@/utils/rate-limiter";
 import { insertPayment } from "@/utils/insert-payment";
 import { getOrgOwnerId } from "@/utils/get-plan-usage";
+import { upsertCustomer } from "@/utils/upsert-customer";
+import { extractGeo } from "@/utils/extract-geo";
 import dayjs from "@/utils/dayjs";
 
 const MAX_PAYLOAD_BYTES = 64 * 1024;
@@ -341,6 +343,7 @@ async function handleSubscriptionUpsert(
 
 export async function POST(req: NextRequest) {
   const origin = req.headers.get("origin");
+  const geo = extractGeo(req.headers);
 
   if (isBotRequest(req)) {
     return new NextResponse(null, { status: 204, headers: buildCorsHeaders(origin) });
@@ -610,6 +613,27 @@ export async function POST(req: NextRequest) {
   if (inserted.length === 0) {
     responseHeaders["X-Groware-Duplicate"] = "true";
     return new NextResponse(null, { status: 204, headers: responseHeaders });
+  }
+
+  const customerId = toString(body.customer_id);
+  if (customerId) {
+    upsertCustomer({
+      organizationId: apiKey.organizationId,
+      customerId,
+      name: toString(body.customer_name),
+      email: toString(body.customer_email),
+      phone: toString(body.customer_phone),
+      country: geo.country,
+      region: geo.region,
+      city: geo.city,
+      eventTimestamp: createdAt,
+    }).catch((err) => {
+      console.error("[Groware] upsertCustomer failed", {
+        orgId: apiKey.organizationId,
+        customerId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
   }
 
   if (ownerId) {

@@ -12,6 +12,7 @@ import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
 import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
+import { upsertCustomer } from "@/utils/upsert-customer";
 import type { BillingInterval } from "@/utils/billing";
 
 interface AsaasPaymentPayload {
@@ -45,6 +46,32 @@ interface AsaasWebhookBody {
   event: string;
   payment?: AsaasPaymentPayload;
   subscription?: AsaasSubscriptionPayload;
+}
+
+interface AsaasCustomerData {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+}
+
+async function fetchAsaasCustomer(
+  asaasCustomerId: string,
+  apiKey: string,
+): Promise<AsaasCustomerData | null> {
+  try {
+    const res = await fetch(`https://api.asaas.com/v3/customers/${asaasCustomerId}`, {
+      headers: { access_token: apiKey },
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as { name?: string; email?: string; phone?: string; mobilePhone?: string };
+    return {
+      name: data.name ?? null,
+      email: data.email ?? null,
+      phone: data.phone ?? data.mobilePhone ?? null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 async function getOrgCurrency(orgId: string): Promise<string> {
@@ -105,28 +132,29 @@ export async function POST(
   }
 
   const orgId = integration.organizationId;
+  const asaasApiKey = decrypt(integration.accessToken);
 
-  await handleAsaasEvent(orgId, body).catch((err) => {
+  await handleAsaasEvent(orgId, body, asaasApiKey).catch((err) => {
     console.error("[asaas-webhook]", body.event, err);
   });
 
   return new NextResponse(null, { status: 200 });
 }
 
-async function handleAsaasEvent(orgId: string, body: AsaasWebhookBody) {
+async function handleAsaasEvent(orgId: string, body: AsaasWebhookBody, asaasApiKey: string) {
   let shouldCheckMilestones = false;
 
   switch (body.event) {
     case "PAYMENT_RECEIVED":
     case "PAYMENT_CONFIRMED":
       if (body.payment) {
-        await handlePaymentReceived(orgId, body.payment);
+        await handlePaymentReceived(orgId, body.payment, asaasApiKey);
         shouldCheckMilestones = true;
       }
       break;
     case "PAYMENT_REFUNDED":
       if (body.payment) {
-        await handlePaymentRefunded(orgId, body.payment);
+        await handlePaymentRefunded(orgId, body.payment, asaasApiKey);
       }
       break;
     case "PAYMENT_OVERDUE":
@@ -136,20 +164,20 @@ async function handleAsaasEvent(orgId: string, body: AsaasWebhookBody) {
       break;
     case "SUBSCRIPTION_CREATED":
       if (body.subscription) {
-        await handleSubscriptionCreated(orgId, body.subscription);
+        await handleSubscriptionCreated(orgId, body.subscription, asaasApiKey);
         shouldCheckMilestones = true;
       }
       break;
     case "SUBSCRIPTION_UPDATED":
       if (body.subscription) {
-        await handleSubscriptionUpdated(orgId, body.subscription);
+        await handleSubscriptionUpdated(orgId, body.subscription, asaasApiKey);
         shouldCheckMilestones = true;
       }
       break;
     case "SUBSCRIPTION_DELETED":
     case "SUBSCRIPTION_INACTIVATED":
       if (body.subscription) {
-        await handleSubscriptionCanceled(orgId, body.subscription, body.event);
+        await handleSubscriptionCanceled(orgId, body.subscription, body.event, asaasApiKey);
       }
       break;
   }
@@ -161,7 +189,7 @@ async function handleAsaasEvent(orgId: string, body: AsaasWebhookBody) {
   }
 }
 
-async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload) {
+async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload, asaasApiKey: string) {
   const customerId = payment.externalReference ?? payment.customer;
   const acq = await lookupAcquisitionContext(orgId, customerId);
 
@@ -278,9 +306,27 @@ async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload
       .set({ status: "active", updatedAt: new Date() })
       .where(eq(subscriptions.subscriptionId, payment.subscription!));
   }
+
+  fetchAsaasCustomer(payment.customer, asaasApiKey).then((customerData) => {
+    if (!customerData) return;
+    upsertCustomer({
+      organizationId: orgId,
+      customerId,
+      name: customerData.name,
+      email: customerData.email,
+      phone: customerData.phone,
+      eventTimestamp: paidAt,
+    }).catch((err) => {
+      console.error("[asaas-webhook] upsertCustomer failed (payment received)", {
+        orgId,
+        customerId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }).catch(() => {});
 }
 
-async function handlePaymentRefunded(orgId: string, payment: AsaasPaymentPayload) {
+async function handlePaymentRefunded(orgId: string, payment: AsaasPaymentPayload, asaasApiKey: string) {
   if (!payment.value) return;
 
   const customerId = payment.externalReference ?? payment.customer;
@@ -344,6 +390,23 @@ async function handlePaymentRefunded(orgId: string, payment: AsaasPaymentPayload
       error: err instanceof Error ? err.message : String(err),
     });
   });
+
+  fetchAsaasCustomer(payment.customer, asaasApiKey).then((customerData) => {
+    if (!customerData) return;
+    upsertCustomer({
+      organizationId: orgId,
+      customerId,
+      name: customerData.name,
+      email: customerData.email,
+      phone: customerData.phone,
+    }).catch((err) => {
+      console.error("[asaas-webhook] upsertCustomer failed (payment refunded)", {
+        orgId,
+        customerId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }).catch(() => {});
 }
 
 async function handlePaymentOverdue(orgId: string, payment: AsaasPaymentPayload) {
@@ -358,6 +421,7 @@ async function handlePaymentOverdue(orgId: string, payment: AsaasPaymentPayload)
 async function handleSubscriptionCreated(
   orgId: string,
   sub: AsaasSubscriptionPayload,
+  asaasApiKey: string,
 ) {
   const customerId = sub.externalReference ?? sub.customer;
   const billingInterval = mapAsaasBillingInterval(sub.cycle);
@@ -397,11 +461,30 @@ async function handleSubscriptionCreated(
         updatedAt: new Date(),
       },
     });
+
+  fetchAsaasCustomer(sub.customer, asaasApiKey).then((customerData) => {
+    if (!customerData) return;
+    upsertCustomer({
+      organizationId: orgId,
+      customerId,
+      name: customerData.name,
+      email: customerData.email,
+      phone: customerData.phone,
+      eventTimestamp: new Date(sub.dateCreated),
+    }).catch((err) => {
+      console.error("[asaas-webhook] upsertCustomer failed (subscription created)", {
+        orgId,
+        customerId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }).catch(() => {});
 }
 
 async function handleSubscriptionUpdated(
   orgId: string,
   sub: AsaasSubscriptionPayload,
+  asaasApiKey: string,
 ) {
   const [existing] = await db
     .select({ valueInCents: subscriptions.valueInCents })
@@ -481,12 +564,30 @@ async function handleSubscriptionUpdated(
       updatedAt: new Date(),
     })
     .where(eq(subscriptions.subscriptionId, sub.id));
+
+  fetchAsaasCustomer(sub.customer, asaasApiKey).then((customerData) => {
+    if (!customerData) return;
+    upsertCustomer({
+      organizationId: orgId,
+      customerId,
+      name: customerData.name,
+      email: customerData.email,
+      phone: customerData.phone,
+    }).catch((err) => {
+      console.error("[asaas-webhook] upsertCustomer failed (subscription updated)", {
+        orgId,
+        customerId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }).catch(() => {});
 }
 
 async function handleSubscriptionCanceled(
   orgId: string,
   sub: AsaasSubscriptionPayload,
   webhookEvent: string,
+  asaasApiKey: string,
 ) {
   const customerId = sub.externalReference ?? sub.customer;
   const billingInterval = mapAsaasBillingInterval(sub.cycle);
@@ -549,4 +650,21 @@ async function handleSubscriptionCanceled(
     .update(subscriptions)
     .set({ status: "canceled", canceledAt: new Date(), updatedAt: new Date() })
     .where(eq(subscriptions.subscriptionId, sub.id));
+
+  fetchAsaasCustomer(sub.customer, asaasApiKey).then((customerData) => {
+    if (!customerData) return;
+    upsertCustomer({
+      organizationId: orgId,
+      customerId,
+      name: customerData.name,
+      email: customerData.email,
+      phone: customerData.phone,
+    }).catch((err) => {
+      console.error("[asaas-webhook] upsertCustomer failed (subscription canceled)", {
+        orgId,
+        customerId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }).catch(() => {});
 }

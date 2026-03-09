@@ -420,7 +420,7 @@ function CodeSection() {
     {
       ln: "3",
       parts: [
-        { c: "text-indigo-400", t: "  data-api-key" },
+        { c: "text-indigo-400", t: "  data-key" },
         { c: "text-zinc-500", t: "=" },
         { c: "text-green-400", t: '"tok_your_key_here"' },
         { c: "text-pink-400", t: "></script>" },
