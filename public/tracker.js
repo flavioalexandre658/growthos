@@ -18,6 +18,9 @@
 
   if (isBot()) return;
 
+  var _stub = window.Groware;
+  var _preloadQueue = (_stub && _stub._q) ? _stub._q : [];
+
   var QUEUE_KEY = "groware_queue";
   var UTM_KEY = "groware_utm";
   var SESSION_KEY = "groware_sid";
@@ -687,36 +690,40 @@
     window.addEventListener("load", init);
   }
 
+  var identifyFn = function (customerId, traits) {
+    try {
+      var data = traits || {};
+      var customer = {
+        customer_id: customerId || null,
+        customer_name: data.name || null,
+        customer_email: data.email || null,
+        customer_phone: data.phone || null,
+        _ts: Date.now(),
+      };
+      currentCustomer = customer;
+      try { sessionStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer)); } catch (_) {}
+      try { localStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer)); } catch (_) {}
+      track("identify", {
+        customer_id: customerId,
+        customer_name: data.name || null,
+        customer_email: data.email || null,
+        customer_phone: data.phone || null,
+      });
+    } catch (_) {}
+  };
+
+  var resetFn = function () {
+    try {
+      currentCustomer = null;
+      try { sessionStorage.removeItem(CUSTOMER_KEY); } catch (_) {}
+      try { localStorage.removeItem(CUSTOMER_KEY); } catch (_) {}
+    } catch (_) {}
+  };
+
   window.Groware = {
     track: track,
-    identify: function (customerId, traits) {
-      try {
-        var data = traits || {};
-        var customer = {
-          customer_id: customerId || null,
-          customer_name: data.name || null,
-          customer_email: data.email || null,
-          customer_phone: data.phone || null,
-          _ts: Date.now(),
-        };
-        currentCustomer = customer;
-        try { sessionStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer)); } catch (_) {}
-        try { localStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer)); } catch (_) {}
-        track("identify", {
-          customer_id: customerId,
-          customer_name: data.name || null,
-          customer_email: data.email || null,
-          customer_phone: data.phone || null,
-        });
-      } catch (_) {}
-    },
-    reset: function () {
-      try {
-        currentCustomer = null;
-        try { sessionStorage.removeItem(CUSTOMER_KEY); } catch (_) {}
-        try { localStorage.removeItem(CUSTOMER_KEY); } catch (_) {}
-      } catch (_) {}
-    },
+    identify: identifyFn,
+    reset: resetFn,
     clearDedupe: clearDedup,
     failedEvents: function () {
       return readFailed();
@@ -725,4 +732,11 @@
       writeFailed([]);
     },
   };
+
+  for (var _i = 0; _i < _preloadQueue.length; _i++) {
+    var _cmd = _preloadQueue[_i];
+    if (_cmd[0] === "identify") identifyFn(_cmd[1], _cmd[2]);
+    else if (_cmd[0] === "reset") resetFn();
+    else if (_cmd[0] === "track") track(_cmd[1], _cmd[2]);
+  }
 })();

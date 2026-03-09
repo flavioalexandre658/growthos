@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "terser public/tracker.js -o public/tracker.min.js -c -m --source-map && next build",
     "start": "next start",
     "lint": "next lint",
+    "tracker:build": "terser public/tracker.js -o public/tracker.min.js -c -m --source-map",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx db/seed.ts",
     "db:seed-mrr-mock": "tsx db/seed-mrr-mock.ts",
@@ -69,6 +70,7 @@
     "eslint-config-next": "15.1.6",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
+    "terser": "^5.46.0",
     "tsx": "^4.21.0",
     "typescript": "^5"
   }

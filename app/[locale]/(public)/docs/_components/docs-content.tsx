@@ -98,18 +98,33 @@ const AUTO_CONTEXT_ROWS = [
 // ─── Code snippets ────────────────────────────────────────────────────────────
 
 const buildInstallHtml = (baseUrl: string) =>
-  `<script\n  async\n  src="${baseUrl}/tracker.js"\n  data-key="tok_xxx"\n></script>`;
+  `<!-- Groware — stub (garante que identify/track funcionam antes do script carregar) -->\n<script>\nwindow.Groware=window.Groware||{_q:[],track:function(e,d){this._q.push(["track",e,d])},identify:function(i,t){this._q.push(["identify",i,t])},reset:function(){this._q.push(["reset"])}}\n</script>\n\n<!-- Groware — script principal (carrega em paralelo, não bloqueia o HTML) -->\n<script async src="${baseUrl}/tracker.min.js" data-key="tok_xxx"></script>`;
 
 const buildInstallNextjs = (baseUrl: string) =>
-  `import Script from 'next/script'\n\nexport default function RootLayout({ children }) {\n  return (\n    <html>\n      <head />\n      <body>\n        {children}\n        <Script\n          src="${baseUrl}/tracker.js"\n          data-key={process.env.NEXT_PUBLIC_GROWARE_KEY}\n          strategy="afterInteractive"\n        />\n      </body>\n    </html>\n  )\n}`;
+  `import Script from 'next/script'\n\nexport default function RootLayout({ children }) {\n  return (\n    <html>\n      <head>\n        {/* Stub — garante que identify/track funcionam antes do script carregar */}\n        <script dangerouslySetInnerHTML={{ __html: \`window.Groware=window.Groware||{_q:[],track:function(e,d){this._q.push(["track",e,d])},identify:function(i,t){this._q.push(["identify",i,t])},reset:function(){this._q.push(["reset"])}}\` }} />\n      </head>\n      <body>\n        {children}\n        <Script\n          src="${baseUrl}/tracker.min.js"\n          data-key={process.env.NEXT_PUBLIC_GROWARE_KEY}\n          strategy="afterInteractive"\n        />\n      </body>\n    </html>\n  )\n}`;
 
 const IDENTIFY_CODE = `// Após o login do usuário — enriquece o perfil e vincula eventos\nwindow.Groware.identify(user.id, {\n  name: user.name,\n  email: user.email,\n  phone: user.phone,  // opcional\n})\n\n// No logout — limpa os dados do perfil da sessão\nwindow.Groware.reset()\n\n// Desse ponto em diante, todos os eventos enviados pelo tracker.js\n// incluem automaticamente customer_id, customer_name e customer_email.`;
 
+const IDENTIFY_STUB_CODE = `<!-- 1. Stub — coloque ANTES do <script async src="...tracker.min.js"> -->
+<!-- Garante que identify() funciona mesmo antes do tracker carregar -->
+<script>
+  window.Groware = window.Groware || { _q: [], track: function(e,d){ this._q.push(['track',e,d]); }, identify: function(id,t){ this._q.push(['identify',id,t]); }, reset: function(){ this._q.push(['reset']); } };
+</script>
+
+<!-- 2. Script principal (minificado) — carrega em paralelo sem bloquear o HTML -->
+<script async src="https://groware.io/tracker.min.js" data-key="tok_xxx"></script>
+
+<!-- 3. Agora identify() pode ser chamado em qualquer ponto da página -->
+<script>
+  // Funciona imediatamente (entra na fila se o tracker ainda não carregou)
+  window.Groware.identify('user_uuid', { name: 'João', email: 'joao@email.com' })
+</script>`;
+
 const ENV_CODE = `NEXT_PUBLIC_GROWARE_KEY=tok_convitede_xxx`;
 
-const HOOK_CODE = `'use client'\n\nimport { useCallback } from 'react'\nimport type { GrowareEventType, GrowareEventData } from '@/types/groware'\n\nexport function useTracker() {\n  const track = useCallback(\n    (eventType: GrowareEventType, data?: GrowareEventData) => {\n      if (typeof window === 'undefined') return\n      if (!window.Groware) return\n      window.Groware.track(eventType, data)\n    },\n    []\n  )\n  return { track }\n}`;
+const HOOK_CODE = `'use client'\n\nimport { useCallback } from 'react'\nimport type { GrowareEventType, GrowareEventData, GrowareTraits } from '@/types/groware'\n\nfunction fireWhenReady(fn: () => void) {\n  if (typeof window === 'undefined') return\n  if ('requestIdleCallback' in window) {\n    window.requestIdleCallback(() => fn(), { timeout: 5000 })\n  } else {\n    setTimeout(fn, 1000)\n  }\n}\n\nexport function useTracker() {\n  const track = useCallback(\n    (eventType: GrowareEventType, data?: GrowareEventData) => {\n      fireWhenReady(() => {\n        if ((window as any).Groware) (window as any).Groware.track(eventType, data)\n      })\n    },\n    []\n  )\n\n  const identify = useCallback(\n    (customerId: string, traits?: GrowareTraits) => {\n      fireWhenReady(() => {\n        if ((window as any).Groware) (window as any).Groware.identify(customerId, traits)\n      })\n    },\n    []\n  )\n\n  const reset = useCallback(\n    () => {\n      fireWhenReady(() => {\n        if ((window as any).Groware) (window as any).Groware.reset()\n      })\n    },\n    []\n  )\n\n  return { track, identify, reset }\n}`;
 
-const HOOK_USAGE = `'use client'\n\nimport { useTracker } from '@/hooks/use-tracker'\n\nexport function CheckoutButton({ product, price }) {\n  const { track } = useTracker()\n\n  const handleCheckout = async () => {\n    track('checkout_started', {\n      gross_value: price,\n      currency: 'BRL',\n      product_id: product.id,\n      product_name: product.name,\n    })\n    await openCheckout(product.id)\n  }\n\n  return <button onClick={handleCheckout}>Comprar R$ {price}</button>\n}`;
+const HOOK_USAGE = `'use client'\n\nimport { useEffect } from 'react'\nimport { useTracker } from '@/hooks/use-tracker'\n\nexport function UserSession({ user }) {\n  const { identify, reset } = useTracker()\n\n  useEffect(() => {\n    if (!user?.id) return\n    identify(user.id, {\n      name: user.name,\n      email: user.email,\n      phone: user.phone,\n    })\n  }, [user])\n\n  const handleLogout = () => {\n    reset()\n  }\n\n  return <button onClick={handleLogout}>Sair</button>\n}\n\nexport function CheckoutButton({ product, price }) {\n  const { track } = useTracker()\n\n  const handleCheckout = async () => {\n    track('checkout_started', {\n      gross_value: price,\n      currency: 'BRL',\n      product_id: product.id,\n      product_name: product.name,\n    })\n    await openCheckout(product.id)\n  }\n\n  return <button onClick={handleCheckout}>Comprar R$ {price}</button>\n}`;
 
 const PAYMENT_CODE = `window.Groware.track('purchase', {\n  // Deduplicação — OBRIGATÓRIO para eventos financeiros\n  dedupe: invoice.id,       // ID único da transação no gateway\n\n  // Financeiro — obrigatório\n  gross_value: 150.00,\n  currency: 'BRL',          // ISO 4217 — sempre informe\n\n  // Financeiro — opcional\n  discount: 10.00,          // desconto aplicado em reais\n  installments: 1,\n  payment_method: 'pix',    // pix | credit_card | boleto | debit_card\n\n  // Tempo — opcional\n  event_time: '2026-03-06T14:03:11Z', // ISO 8601. Se omitido, usa o momento do envio.\n\n  // Produto — opcional mas recomendado\n  product_id: 'template-casamento-001',\n  product_name: 'Convite Casamento Premium',\n  category: 'casamento',\n\n  // Cliente — opcional mas recomendado\n  customer_type: 'new',     // new | returning\n  customer_id: user.id,     // UUID do usuário autenticado\n  customer_segment: 'premium',\n  customer_cohort: '2024-Q1',\n})`;
 
@@ -375,11 +390,56 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
 
             <SubSection title="Identificando o usuário (Groware.identify)">
               <p className="text-sm text-zinc-400 leading-relaxed mb-4">
-                Após o login, chame <Mono>Groware.identify()</Mono> para associar o usuário aos eventos.
+                Após o login, chame <Mono>identify()</Mono> para associar o usuário aos eventos.
                 O tracker enviará automaticamente <Mono>customer_id</Mono>, <Mono>customer_name</Mono> e{" "}
                 <Mono>customer_email</Mono> em todos os eventos subsequentes da sessão.
               </p>
-              <CodeBlock code={IDENTIFY_CODE} lang="js" title="Após o login do usuário" />
+              <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+                Em projetos Next.js / React, use sempre o hook <Mono>useTracker</Mono> — ele é seguro contra SSR
+                e timing de carregamento. Em HTML puro, use o padrão stub abaixo.
+              </p>
+              <CodeBlock code={IDENTIFY_CODE} lang="js" title="HTML puro — após o login do usuário" />
+              <Callout type="warn">
+                <strong>Erro <Mono>.identify is not a function</Mono>?</strong>
+                <br />
+                O script carrega com <Mono>async</Mono>, então <Mono>window.Groware</Mono> pode não existir
+                quando você chama <Mono>identify()</Mono>. Em HTML puro, use o stub abaixo.
+                Em React/Next.js, use <Mono>const {"{ identify }"} = useTracker()</Mono> — nunca chame{" "}
+                <Mono>window.Groware.identify()</Mono> diretamente.
+              </Callout>
+              <CodeBlock code={IDENTIFY_STUB_CODE} lang="html" title="HTML puro — stub + script async (padrão correto)" />
+            </SubSection>
+
+            <SubSection title="Carregamento do script">
+              <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+                O Groware oferece dois arquivos de script. O padrão é o <Mono>tracker.min.js</Mono> — minificado (~10KB), ideal para produção. O <Mono>tracker.js</Mono> (~22KB) é a versão legível, útil apenas para depuração local.
+              </p>
+              <AttrTable rows={[
+                { name: "tracker.min.js", required: "recomendado", desc: "Versão minificada (~10KB). Use em produção. Mesmo comportamento do tracker.js.", example: `${serverUrl}/tracker.min.js` },
+                { name: "tracker.js", required: "debug", desc: "Versão legível (~22KB). Use apenas para inspecionar o código do tracker localmente.", example: `${serverUrl}/tracker.js` },
+              ]} />
+              <p className="text-sm text-zinc-400 leading-relaxed mt-4 mb-3">
+                <strong className="text-zinc-200">Por que usar <Mono>async</Mono> e não <Mono>defer</Mono>?</strong>
+                {" "}O atributo <Mono>async</Mono> faz o download do script em paralelo e executa assim que estiver pronto, capturando UTMs e referrer o mais cedo possível.
+                Já o <Mono>defer</Mono> atrasa a execução até o HTML terminar de ser analisado, o que pode causar perda de contexto de navegação em SPAs.
+              </p>
+              <CodeBlock
+                code={`<!-- Padrão recomendado: stub inline + async (não bloqueia o HTML) -->\n<script>\nwindow.Groware=window.Groware||{_q:[],track:function(e,d){this._q.push(["track",e,d])},identify:function(i,t){this._q.push(["identify",i,t])},reset:function(){this._q.push(["reset"])}}\n</script>\n<script async src="${serverUrl}/tracker.min.js" data-key="tok_xxx"></script>`}
+                lang="html"
+                title="Padrão recomendado (async)"
+              />
+              <p className="text-sm text-zinc-400 leading-relaxed mt-4 mb-3">
+                <strong className="text-zinc-200">Carregamento lazy (após o page load):</strong>
+                {" "}Use esta estratégia apenas em sites onde performance é crítica e você não precisa capturar eventos no carregamento inicial.
+              </p>
+              <CodeBlock
+                code={`<script>\nwindow.Groware=window.Groware||{_q:[],track:function(e,d){this._q.push(["track",e,d])},identify:function(i,t){this._q.push(["identify",i,t])},reset:function(){this._q.push(["reset"])}}\n\nwindow.addEventListener('load', function() {\n  var s = document.createElement('script');\n  s.src = '${serverUrl}/tracker.min.js';\n  s.async = true;\n  s.setAttribute('data-key', 'tok_xxx');\n  document.head.appendChild(s);\n});\n</script>`}
+                lang="html"
+                title="Lazy loading (após window.load)"
+              />
+              <Callout type="tip">
+                O carregamento lazy garante zero impacto no LCP/FCP, mas pode perder o UTM de origem se o usuário navegar antes do <Mono>window.load</Mono>. Para a maioria dos casos, o padrão <Mono>async</Mono> é o ideal.
+              </Callout>
             </SubSection>
           </TabsContent>
 
@@ -398,9 +458,26 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
               Nunca exponha a API key no client-side de forma pública. A chave no tracker é segura pois é validada pelo Groware — mas nunca a use em chamadas autenticadas de admin.
             </Callout>
 
-            <SubSection title="Hook reutilizável (recomendado)">
+            <SubSection title="Chamando identify sem erros de timing">
               <p className="text-sm text-zinc-400 leading-relaxed mb-4">
-                Encapsula <Mono>window.Groware</Mono> com tipagem TypeScript e proteção SSR.
+                Com <Mono>strategy=&quot;afterInteractive&quot;</Mono>, o script é carregado de forma assíncrona.
+                Chamar <Mono>window.Groware.identify()</Mono> diretamente pode resultar em{" "}
+                <Mono>.identify is not a function</Mono> se o script ainda não carregou.
+                Use sempre o hook <Mono>useTracker</Mono> — ele usa <Mono>requestIdleCallback</Mono>{" "}
+                para aguardar o script e é seguro em SSR.
+              </p>
+              <Callout type="warn">
+                <strong>Nunca chame <Mono>window.Groware.identify()</Mono> diretamente.</strong>
+                {" "}Use sempre <Mono>const {"{ identify }"} = useTracker()</Mono> para garantir segurança
+                em SSR e durante o carregamento assíncrono do script.
+              </Callout>
+            </SubSection>
+
+            <SubSection title="Hook useTracker (recomendado)">
+              <p className="text-sm text-zinc-400 leading-relaxed mb-4">
+                Encapsula <Mono>window.Groware</Mono> com tipagem TypeScript, proteção SSR e
+                aguarda o script via <Mono>requestIdleCallback</Mono>. Exponha <Mono>track</Mono>,{" "}
+                <Mono>identify</Mono> e <Mono>reset</Mono> de forma segura.
               </p>
               <CodeBlock code={HOOK_CODE} lang="ts" title="hooks/use-tracker.ts" />
               <CodeBlock code={HOOK_USAGE} lang="tsx" title="Usando em um componente" />
@@ -798,7 +875,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
           <TabsContent value="debug" className="mt-0 space-y-6">
             <SectionHeader title="Debug & Validação" />
 
-            <CodeBlock code={`<script\n  src="${serverUrl}/tracker.js"\n  data-key="tok_xxx"\n  data-debug="true"\n></script>`} lang="html" title="Ativar modo debug" />
+            <CodeBlock code={`<script\n  src="${serverUrl}/tracker.js"\n  data-key="tok_xxx"\n  data-debug="true"\n></script>\n<!-- Use tracker.js (não minificado) para debug — código legível no DevTools -->`} lang="html" title="Ativar modo debug (versão legível)" />
             <CodeBlock code={DEBUG_CODE} lang="js" title="Console do navegador" />
 
             <Separator className="bg-zinc-800/60" />
