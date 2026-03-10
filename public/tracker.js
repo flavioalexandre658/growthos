@@ -313,7 +313,7 @@
       var lsRaw = localStorage.getItem(CUSTOMER_KEY);
       if (lsRaw) {
         var parsed = JSON.parse(lsRaw);
-        if (parsed._ts && Date.now() - parsed._ts < 86400000) {
+        if (parsed._ts && Date.now() - parsed._ts < 2592000000) {
           currentCustomer = parsed;
           return currentCustomer;
         }
@@ -672,24 +672,6 @@
     window.addEventListener("popstate", onNavigate);
   }
 
-  persistUtms();
-
-  flushQueue();
-  retryFailedEvents();
-
-  function init() {
-    track("pageview", {});
-    setupDataAttrTracking();
-    setupSpaTracking();
-    setupCheckoutAbandon();
-  }
-
-  if (document.readyState === "complete") {
-    init();
-  } else {
-    window.addEventListener("load", init);
-  }
-
   var identifyFn = function (customerId, traits) {
     try {
       var data = traits || {};
@@ -720,6 +702,17 @@
     } catch (_) {}
   };
 
+  var _i, _cmd;
+  for (_i = 0; _i < _preloadQueue.length; _i++) {
+    _cmd = _preloadQueue[_i];
+    if (_cmd[0] === "identify") identifyFn(_cmd[1], _cmd[2]);
+    else if (_cmd[0] === "reset") resetFn();
+  }
+  for (_i = 0; _i < _preloadQueue.length; _i++) {
+    _cmd = _preloadQueue[_i];
+    if (_cmd[0] === "track") track(_cmd[1], _cmd[2]);
+  }
+
   window.Groware = {
     track: track,
     identify: identifyFn,
@@ -733,10 +726,21 @@
     },
   };
 
-  for (var _i = 0; _i < _preloadQueue.length; _i++) {
-    var _cmd = _preloadQueue[_i];
-    if (_cmd[0] === "identify") identifyFn(_cmd[1], _cmd[2]);
-    else if (_cmd[0] === "reset") resetFn();
-    else if (_cmd[0] === "track") track(_cmd[1], _cmd[2]);
+  persistUtms();
+
+  flushQueue();
+  retryFailedEvents();
+
+  function init() {
+    track("pageview", {});
+    setupDataAttrTracking();
+    setupSpaTracking();
+    setupCheckoutAbandon();
+  }
+
+  if (document.readyState === "complete") {
+    init();
+  } else {
+    window.addEventListener("load", init);
   }
 })();

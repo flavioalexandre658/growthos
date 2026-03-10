@@ -635,6 +635,31 @@ export async function POST(req: NextRequest) {
         error: err instanceof Error ? err.message : String(err),
       });
     });
+
+    if (eventType === "identify") {
+      const sessionId = toString(body.session_id);
+      if (sessionId) {
+        db.update(events)
+          .set({ customerId })
+          .where(
+            and(
+              eq(events.organizationId, apiKey.organizationId),
+              eq(events.sessionId, sessionId),
+              sql`${events.customerId} IS NULL`,
+              sql`${events.createdAt} > now() - interval '1 hour'`
+            )
+          )
+          .execute()
+          .catch((err) => {
+            console.error("[Groware] retroactive session enrichment failed", {
+              orgId: apiKey.organizationId,
+              sessionId,
+              customerId,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          });
+      }
+    }
   }
 
   if (ownerId) {
