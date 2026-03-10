@@ -47,12 +47,12 @@ export function LandingNav() {
         >
           {t("signIn")}
         </Link>
-        <a
+        <Link
           href="/register"
           className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-500 transition-all shadow-[0_0_24px_rgba(79,70,229,0.35)]"
         >
           {t("earlyAccess")}
-        </a>
+        </Link>
       </div>
     </nav>
   );
