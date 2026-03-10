@@ -11,6 +11,7 @@ import { ChannelsTreemap } from "./channels-treemap";
 import { ChannelsKpiStrip } from "./channels-kpi-strip";
 import { ChannelsTable } from "./channels-table";
 import { ChannelsInvestmentKpis } from "./channels-investment-kpis";
+import { ChannelsCampaigns } from "./channels-campaigns";
 import { Input } from "@/components/ui/input";
 import { IconSearch, IconBrandGoogle } from "@tabler/icons-react";
 import { WelcomeState } from "@/components/ui/welcome-state";
@@ -100,6 +101,8 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
           {investmentGroups.length > 0 && (
             <ChannelsInvestmentKpis groups={investmentGroups} />
           )}
+
+          <ChannelsCampaigns filter={filter} />
 
           <ChannelsTreemap data={channelsData} isLoading={isLoading} />
 

@@ -99,6 +99,17 @@ export interface IChannelData {
   previousRevenue?: number;
   investment?: number;
   roi?: number | null;
+  customersCount?: number;
+  cac?: number | null;
+  avgLtv?: number;
+  churnRate?: string | null;
+  paybackMonths?: number | null;
+}
+
+export interface ICampaignData {
+  campaign: string;
+  revenue: number;
+  purchases: number;
 }
 
 export interface IChannelInvestmentGroup {

@@ -124,6 +124,9 @@ export function ChannelsTable({
     { key: "revenue", label: t("sortRevenue") },
     { key: "conversion_rate", label: t("sortConversion") },
     { key: "ticket_medio", label: t("sortTicket") },
+    { key: "customersCount", label: t("sortCustomers") },
+    { key: "avgLtv", label: t("sortLtv") },
+    { key: "churnRate", label: t("sortChurn") },
   ];
 
   const stepSortOptions: { key: string; label: string }[] = stepMeta.map((s) => ({
@@ -222,6 +225,60 @@ export function ChannelsTable({
             {c.roi >= 0 ? "+" : ""}{c.roi}%
           </span>
         );
+      },
+    },
+    {
+      key: "customersCount",
+      header: t("colCustomers"),
+      align: "right",
+      render: (c) => (
+        <span className="font-mono text-sm text-zinc-400">
+          {c.customersCount !== undefined ? fmtInt(c.customersCount) : <span className="text-zinc-700">—</span>}
+        </span>
+      ),
+    },
+    {
+      key: "cac",
+      header: t("colCac"),
+      align: "right",
+      render: (c) => {
+        if (c.cac == null || c.cac === undefined) return <span className="text-zinc-600 text-sm">—</span>;
+        return (
+          <span className={cn("font-mono text-sm font-semibold", c.cac > 50000 ? "text-red-400" : c.cac > 20000 ? "text-amber-400" : "text-zinc-300")}>
+            {fmtBRLDecimal(c.cac / 100)}
+          </span>
+        );
+      },
+    },
+    {
+      key: "avgLtv",
+      header: t("colAvgLtv"),
+      align: "right",
+      render: (c) => (
+        <span className="font-mono text-sm text-emerald-400">
+          {c.avgLtv !== undefined && c.avgLtv > 0 ? fmtBRLDecimal(c.avgLtv / 100) : <span className="text-zinc-700">—</span>}
+        </span>
+      ),
+    },
+    {
+      key: "churnRate",
+      header: t("colChurn"),
+      align: "right",
+      render: (c) => {
+        if (!c.churnRate) return <span className="text-zinc-600 text-sm">—</span>;
+        const n = parseFloat(c.churnRate);
+        const color = n >= 10 ? "text-red-400" : n >= 5 ? "text-amber-400" : n > 0 ? "text-zinc-300" : "text-emerald-400";
+        return <span className={cn("font-mono text-sm font-semibold", color)}>{c.churnRate}</span>;
+      },
+    },
+    {
+      key: "paybackMonths",
+      header: t("colPayback"),
+      align: "right",
+      render: (c) => {
+        if (c.paybackMonths == null || c.paybackMonths === undefined) return <span className="text-zinc-600 text-sm">—</span>;
+        if (c.paybackMonths === 0) return <span className="text-emerald-400 text-sm font-mono">{t("instant")}</span>;
+        return <span className="font-mono text-sm text-zinc-300">{t("months", { value: c.paybackMonths })}</span>;
       },
     },
     {

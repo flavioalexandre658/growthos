@@ -2,10 +2,10 @@
 
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
-import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
+import { eq, and, gte, lte, sql, inArray, isNotNull } from "drizzle-orm";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
-import { events, organizations, payments, marketingSpends } from "@/db/schema";
+import { events, organizations, payments, marketingSpends, customers, subscriptions } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import { getUserPlan } from "@/utils/get-user-plan";
 import { getPageviewSessionsByChannel } from "@/utils/get-pageview-counts";
@@ -116,7 +116,13 @@ export async function getChannels(
     ELSE COALESCE("source", 'direct') || '_organic'
   END`);
 
-  const [rawRows, prevRawRows, marketingRows] = await Promise.all([
+  const channelExprCustomers = sql.raw(`CASE
+    WHEN COALESCE("first_source", 'direct') = 'direct' AND COALESCE("first_medium", 'direct') = 'direct' THEN 'direct'
+    WHEN COALESCE("first_medium", '') IN (${paidList}) THEN COALESCE("first_source", 'direct') || '_paid'
+    ELSE COALESCE("first_source", 'direct') || '_organic'
+  END`);
+
+  const [rawRows, prevRawRows, marketingRows, customerCountRows, ltvRows, churnRows] = await Promise.all([
     db
       .select({
         channel: sql<string>`${channelExpr}`,
@@ -166,6 +172,70 @@ export async function getChannels(
         )
       )
       .groupBy(marketingSpends.source, marketingSpends.sourceLabel),
+
+    db
+      .select({
+        channel: sql<string>`${channelExprCustomers}`,
+        cnt: sql<number>`COUNT(*)`,
+      })
+      .from(customers)
+      .where(
+        and(
+          eq(customers.organizationId, organizationId),
+          isNotNull(customers.firstSource)
+        )
+      )
+      .groupBy(sql`${channelExprCustomers}`),
+
+    db
+      .select({
+        channel: sql<string>`${channelExprCustomers}`,
+        avgLtv: sql<number>`AVG(ltv_sub.total_ltv)`,
+      })
+      .from(
+        db
+          .select({
+            customerId: payments.customerId,
+            totalLtv: sql<number>`SUM(COALESCE(${payments.baseGrossValueInCents}, ${payments.grossValueInCents}))`.as("total_ltv"),
+          })
+          .from(payments)
+          .where(
+            and(
+              eq(payments.organizationId, organizationId),
+              inArray(payments.eventType, REVENUE_EVENT_TYPES),
+              isNotNull(payments.customerId)
+            )
+          )
+          .groupBy(payments.customerId)
+          .as("ltv_sub")
+      )
+      .innerJoin(
+        customers,
+        and(
+          eq(customers.customerId, sql`ltv_sub.customer_id`),
+          eq(customers.organizationId, organizationId),
+          isNotNull(customers.firstSource)
+        )
+      )
+      .groupBy(sql`${channelExprCustomers}`),
+
+    db
+      .select({
+        channel: sql<string>`${channelExprCustomers}`,
+        totalSubs: sql<number>`COUNT(*)`,
+        canceledSubs: sql<number>`COUNT(*) FILTER (WHERE ${subscriptions.status} = 'canceled')`,
+      })
+      .from(subscriptions)
+      .innerJoin(
+        customers,
+        and(
+          eq(customers.customerId, subscriptions.customerId),
+          eq(customers.organizationId, subscriptions.organizationId),
+          isNotNull(customers.firstSource)
+        )
+      )
+      .where(eq(subscriptions.organizationId, organizationId))
+      .groupBy(sql`${channelExprCustomers}`),
   ]);
 
   const revenueRows = await db
@@ -262,6 +332,31 @@ export async function getChannels(
     marketingBySource.set(row.source, Number(row.totalAmountInCents));
   }
 
+  const customerCountMap = new Map<string, number>();
+  for (const row of customerCountRows) {
+    const normalized = normalizeChannel(row.channel);
+    customerCountMap.set(normalized, (customerCountMap.get(normalized) ?? 0) + Number(row.cnt));
+  }
+
+  const avgLtvMap = new Map<string, number>();
+  for (const row of ltvRows) {
+    const normalized = normalizeChannel(row.channel);
+    avgLtvMap.set(normalized, Number(row.avgLtv));
+  }
+
+  const churnMap = new Map<string, { total: number; canceled: number }>();
+  for (const row of churnRows) {
+    const normalized = normalizeChannel(row.channel);
+    const existing = churnMap.get(normalized) ?? { total: 0, canceled: 0 };
+    churnMap.set(normalized, {
+      total: existing.total + Number(row.totalSubs),
+      canceled: existing.canceled + Number(row.canceledSubs),
+    });
+  }
+
+  const periodDays = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / 86_400_000));
+  const periodMonths = periodDays / 30;
+
   const allChannels: IChannelData[] = Array.from(channelMap.entries()).map(
     ([channel, data]) => {
       const firstStepKey = funnelSteps[0]?.eventType;
@@ -284,6 +379,24 @@ export async function getChannels(
         }
       }
 
+      const customersCount = customerCountMap.get(channel);
+      const avgLtv = avgLtvMap.get(channel);
+      const churnData = churnMap.get(channel);
+      const churnRate = churnData && churnData.total > 0
+        ? (churnData.canceled / churnData.total * 100).toFixed(1) + "%"
+        : null;
+
+      let cac: number | null | undefined;
+      if (investment !== undefined && customersCount !== undefined && customersCount > 0) {
+        cac = Math.round(investment / customersCount);
+      }
+
+      let paybackMonths: number | null | undefined;
+      if (cac != null && avgLtv != null && avgLtv > 0 && periodMonths > 0) {
+        const monthlyArpu = avgLtv / Math.max(periodMonths, 1);
+        paybackMonths = monthlyArpu > 0 ? Math.round((cac / monthlyArpu) * 10) / 10 : null;
+      }
+
       return {
         channel,
         steps: data.steps,
@@ -293,6 +406,11 @@ export async function getChannels(
         previousRevenue: previousRevenueMap.get(channel),
         ...(investment !== undefined && { investment }),
         ...(roi !== undefined && { roi }),
+        ...(customersCount !== undefined && { customersCount }),
+        ...(avgLtv !== undefined && { avgLtv }),
+        ...(churnRate !== null && churnRate !== undefined && { churnRate }),
+        ...(cac !== undefined && { cac }),
+        ...(paybackMonths !== undefined && { paybackMonths }),
       };
     }
   );
@@ -316,6 +434,11 @@ export async function getChannels(
       return parseFloat(b.conversion_rate) - parseFloat(a.conversion_rate);
     }
     if (orderBy === "ticket_medio") return b.ticket_medio - a.ticket_medio;
+    if (orderBy === "customersCount") return (b.customersCount ?? 0) - (a.customersCount ?? 0);
+    if (orderBy === "avgLtv") return (b.avgLtv ?? 0) - (a.avgLtv ?? 0);
+    if (orderBy === "churnRate") {
+      return parseFloat(b.churnRate ?? "0") - parseFloat(a.churnRate ?? "0");
+    }
     const aVal = a.steps[orderBy] ?? 0;
     const bVal = b.steps[orderBy] ?? 0;
     return bVal - aVal;
