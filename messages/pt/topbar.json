@@ -12,11 +12,15 @@
         "alert_churn_rate": "Alerta: taxa de churn",
         "alert_revenue_drop": "Alerta: queda de receita",
         "milestone": "Marco atingido",
-        "email_sequence": "E-mail enviado",
-        "weekly_digest": "Resumo semanal",
-        "recommendation": "Recomendação"
-      }
+      "email_sequence": "E-mail enviado",
+      "weekly_digest": "Resumo semanal",
+      "recommendation": "Recomendação"
     },
+    "emailModal": {
+      "sentTo": "Enviado para",
+      "noContent": "Conteúdo do e-mail não disponível"
+    }
+  },
     "help": "Ajuda e documentação",
     "settings": "Configurações",
     "userMenu": {

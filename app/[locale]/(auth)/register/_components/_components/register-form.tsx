@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { register as registerUser } from "@/actions/auth/register.action";
 import { cn } from "@/lib/utils";
+import { pushDataLayerEvent } from "@/utils/datalayer";
 
 const registerSchema = z
   .object({
@@ -63,6 +64,7 @@ export function RegisterForm() {
       });
 
       if (result?.ok) {
+        pushDataLayerEvent("AccountCreated", { method: "credentials" });
         toast.success("Conta criada! Vamos configurar tudo.");
         router.push("/onboarding");
       } else {

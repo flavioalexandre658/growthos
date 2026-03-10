@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "@/i18n/routing";
 import { useSession, signOut } from "next-auth/react";
@@ -21,6 +22,7 @@ import {
   IconMail,
   IconFileAnalytics,
   IconBulb,
+  IconX,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { SensitiveToggle } from "@/components/ui/sensitive-toggle";
@@ -35,6 +37,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -117,13 +125,24 @@ function notificationIcon(type: NotificationType) {
 function NotificationItem({
   notification,
   onRead,
+  onEmailClick,
 }: {
   notification: NotificationRow;
   onRead: (id: string, linkUrl: string | null) => void;
+  onEmailClick: (notification: NotificationRow) => void;
 }) {
+  const hasEmailHtml = notification.type === "email_sequence" &&
+    (notification.metadata as Record<string, unknown> | null)?.emailHtml;
+
   return (
     <button
-      onClick={() => onRead(notification.id, notification.linkUrl)}
+      onClick={() => {
+        if (hasEmailHtml) {
+          onEmailClick(notification);
+        } else {
+          onRead(notification.id, notification.linkUrl);
+        }
+      }}
       className={cn(
         "w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-zinc-900/60",
         !notification.isRead && "bg-zinc-900/30",
@@ -155,11 +174,70 @@ function NotificationItem({
   );
 }
 
+function EmailPreviewDialog({
+  notification,
+  open,
+  onClose,
+}: {
+  notification: NotificationRow | null;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const t = useTranslations("topbar.notifications.emailModal");
+  const metadata = notification?.metadata as Record<string, unknown> | null;
+  const emailHtml = (metadata?.emailHtml as string) ?? "";
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-2xl h-[85vh] flex flex-col gap-0 border-zinc-800 bg-zinc-950 p-0 overflow-hidden [&>button]:hidden">
+        <DialogHeader className="shrink-0 border-b border-zinc-800/60 px-5 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <DialogTitle className="text-sm font-semibold text-zinc-200 leading-snug">
+                {notification?.title}
+              </DialogTitle>
+              {notification?.body && (
+                <p className="mt-1 text-xs text-zinc-500">
+                  {t("sentTo")}: {notification.body}
+                </p>
+              )}
+              <p className="mt-1 text-[10px] text-zinc-600">
+                {notification ? dayjs(notification.createdAt).fromNow() : ""}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-300"
+            >
+              <IconX size={16} />
+            </button>
+          </div>
+        </DialogHeader>
+        <div className="flex-1 overflow-hidden">
+          {emailHtml ? (
+            <iframe
+              srcDoc={emailHtml}
+              sandbox="allow-same-origin"
+              className="h-full w-full border-0"
+              title={notification?.title ?? "Email"}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center">
+              <p className="text-xs text-zinc-600">{t("noContent")}</p>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function NotificationsPopover() {
   const t = useTranslations("topbar.notifications");
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const router = useRouter();
+  const [emailNotification, setEmailNotification] = useState<NotificationRow | null>(null);
 
   const { data: notifications = [], isLoading } = useNotifications(orgId);
   const { data: unreadCount = 0 } = useUnreadNotificationCount(orgId);
@@ -171,81 +249,99 @@ function NotificationsPopover() {
     if (linkUrl) router.push(linkUrl as Parameters<typeof router.push>[0]);
   }
 
+  function handleEmailClick(notification: NotificationRow) {
+    markRead({ id: notification.id });
+    setEmailNotification(notification);
+  }
+
   function handleMarkAll() {
     if (!orgId) return;
     markAllRead({ organizationId: orgId });
   }
 
   return (
-    <Popover>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            <button className="relative flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800/70 hover:text-zinc-300">
-              <IconBell size={16} />
+    <>
+      <Popover>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <button className="relative flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800/70 hover:text-zinc-300">
+                <IconBell size={16} />
+                {unreadCount > 0 && (
+                  <span className="absolute right-1.5 top-1.5 flex h-2 w-2 items-center justify-center rounded-full bg-indigo-500 ring-1 ring-zinc-950" />
+                )}
+              </button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="z-[60] text-xs bg-zinc-800 border-zinc-700 text-zinc-200">
+            {t("title")}
+          </TooltipContent>
+        </Tooltip>
+        <PopoverContent
+          align="end"
+          sideOffset={8}
+          className="w-80 rounded-xl border-zinc-800 bg-zinc-950 p-0 shadow-2xl"
+        >
+          <div className="flex items-center justify-between border-b border-zinc-800/60 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-zinc-200">{t("title")}</h4>
               {unreadCount > 0 && (
-                <span className="absolute right-1.5 top-1.5 flex h-2 w-2 items-center justify-center rounded-full bg-indigo-500 ring-1 ring-zinc-950" />
+                <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-500/20 px-1 text-[10px] font-bold text-indigo-400 ring-1 ring-indigo-500/30">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
               )}
-            </button>
-          </PopoverTrigger>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" className="z-[60] text-xs bg-zinc-800 border-zinc-700 text-zinc-200">
-          {t("title")}
-        </TooltipContent>
-      </Tooltip>
-      <PopoverContent
-        align="end"
-        sideOffset={8}
-        className="w-80 rounded-xl border-zinc-800 bg-zinc-950 p-0 shadow-2xl"
-      >
-        <div className="flex items-center justify-between border-b border-zinc-800/60 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <h4 className="text-sm font-semibold text-zinc-200">{t("title")}</h4>
+            </div>
             {unreadCount > 0 && (
-              <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-500/20 px-1 text-[10px] font-bold text-indigo-400 ring-1 ring-indigo-500/30">
-                {unreadCount > 99 ? "99+" : unreadCount}
-              </span>
+              <button
+                onClick={handleMarkAll}
+                disabled={markingAll}
+                className="text-[11px] font-medium text-zinc-500 transition-colors hover:text-zinc-300 disabled:opacity-50"
+              >
+                {t("markAllRead")}
+              </button>
             )}
           </div>
-          {unreadCount > 0 && (
-            <button
-              onClick={handleMarkAll}
-              disabled={markingAll}
-              className="text-[11px] font-medium text-zinc-500 transition-colors hover:text-zinc-300 disabled:opacity-50"
-            >
-              {t("markAllRead")}
-            </button>
-          )}
-        </div>
 
-        <div className="max-h-[400px] overflow-y-auto divide-y divide-zinc-800/40">
-          {isLoading ? (
-            <div className="flex flex-col gap-3 p-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="h-6 w-6 shrink-0 rounded-full bg-zinc-800 animate-pulse" />
-                  <div className="flex-1 space-y-1.5">
-                    <div className="h-3 w-3/4 rounded bg-zinc-800 animate-pulse" />
-                    <div className="h-2.5 w-1/2 rounded bg-zinc-800/60 animate-pulse" />
+          <div className="max-h-[400px] overflow-y-auto divide-y divide-zinc-800/40">
+            {isLoading ? (
+              <div className="flex flex-col gap-3 p-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="h-6 w-6 shrink-0 rounded-full bg-zinc-800 animate-pulse" />
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-3 w-3/4 rounded bg-zinc-800 animate-pulse" />
+                      <div className="h-2.5 w-1/2 rounded bg-zinc-800/60 animate-pulse" />
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 py-10 px-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 ring-1 ring-zinc-800">
-                <IconBellOff size={18} className="text-zinc-600" />
+                ))}
               </div>
-              <p className="text-xs text-zinc-600">{t("empty")}</p>
-            </div>
-          ) : (
-            notifications.map((n) => (
-              <NotificationItem key={n.id} notification={n} onRead={handleRead} />
-            ))
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
+            ) : notifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 py-10 px-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 ring-1 ring-zinc-800">
+                  <IconBellOff size={18} className="text-zinc-600" />
+                </div>
+                <p className="text-xs text-zinc-600">{t("empty")}</p>
+              </div>
+            ) : (
+              notifications.map((n) => (
+                <NotificationItem
+                  key={n.id}
+                  notification={n}
+                  onRead={handleRead}
+                  onEmailClick={handleEmailClick}
+                />
+              ))
+            )}
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      <EmailPreviewDialog
+        notification={emailNotification}
+        open={!!emailNotification}
+        onClose={() => setEmailNotification(null)}
+      />
+    </>
   );
 }
 

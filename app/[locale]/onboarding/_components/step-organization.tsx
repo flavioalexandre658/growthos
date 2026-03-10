@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createOrganization } from "@/actions/organizations/create-organization.action";
 import { updateOrganizationRegional } from "@/actions/organizations/update-organization-regional.action";
+import { pushDataLayerEvent } from "@/utils/datalayer";
 import {
   TIMEZONE_OPTIONS,
   CURRENCY_OPTIONS,
@@ -126,6 +127,7 @@ export function StepOrganization({ onComplete }: StepOrganizationProps) {
       });
 
       toast.success(t("successToast"));
+      pushDataLayerEvent("OrganizationCreated");
       onComplete({ ...org, timezone, currency, locale, country, language });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t("errorToast");

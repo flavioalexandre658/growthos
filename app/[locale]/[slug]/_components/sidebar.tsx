@@ -107,17 +107,22 @@ function buildNavSections(slug: string, hasData: boolean, hasAi: boolean, t: (ke
     },
   ];
 
+  const dataItems: NavItemDef[] = [
+    { href: `/${slug}/events`, label: t("nav.events"), icon: IconList, exact: true },
+    { href: `/${slug}/events/debug`, label: t("nav.debug"), icon: IconBug, exact: true },
+  ];
+
   if (hasData) {
-    sections.splice(3, 0, {
-      title: t("sections.data"),
-      items: [
-        { href: `/${slug}/events`, label: t("nav.events"), icon: IconList, exact: true },
-        { href: `/${slug}/customers`, label: t("nav.customers"), icon: IconUsers, exact: false },
-        { href: `/${slug}/subscriptions`, label: t("nav.subscriptions"), icon: IconReceipt2, exact: false },
-        { href: `/${slug}/events/debug`, label: t("nav.debug"), icon: IconBug, exact: true },
-      ],
-    });
+    dataItems.splice(1, 0,
+      { href: `/${slug}/customers`, label: t("nav.customers"), icon: IconUsers, exact: false },
+      { href: `/${slug}/subscriptions`, label: t("nav.subscriptions"), icon: IconReceipt2, exact: false },
+    );
   }
+
+  sections.splice(3, 0, {
+    title: t("sections.data"),
+    items: dataItems,
+  });
 
   return sections;
 }

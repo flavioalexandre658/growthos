@@ -68,6 +68,7 @@ export const authOptions: NextAuthOptions = {
           role: user.role,
           locale: user.locale,
           onboardingCompleted: user.onboardingCompleted,
+          authProvider: user.authProvider ?? "credentials",
         };
       },
     }),
@@ -146,6 +147,7 @@ export const authOptions: NextAuthOptions = {
           token.role = dbUser.role;
           token.locale = dbUser.locale;
           token.onboardingCompleted = dbUser.onboardingCompleted;
+          token.authProvider = dbUser.authProvider ?? "google";
         }
       } else if (user) {
         token.id = user.id;
@@ -154,6 +156,7 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.locale = user.locale;
         token.onboardingCompleted = user.onboardingCompleted;
+        token.authProvider = user.authProvider ?? "credentials";
       }
 
       return token;
@@ -166,6 +169,7 @@ export const authOptions: NextAuthOptions = {
         role: token.role,
         locale: token.locale,
         onboardingCompleted: token.onboardingCompleted,
+        authProvider: token.authProvider ?? "credentials",
       };
       return session;
     },

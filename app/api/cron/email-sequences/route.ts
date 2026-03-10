@@ -157,8 +157,12 @@ export async function GET(req: NextRequest) {
         createNotification({
           organizationId: member.organizationId,
           type: "email_sequence",
-          title: `E-mail enviado: ${item.emailId}`,
+          title: result.subject ?? item.emailId,
           body: member.userEmail,
+          metadata: {
+            emailId: item.emailId,
+            emailHtml: result.html ?? null,
+          },
         }).catch(() => {});
 
         processed++;

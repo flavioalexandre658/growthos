@@ -217,7 +217,7 @@ export function StepInstallTracker({
     setIsFinishing(true);
     try {
       await completeOnboarding();
-      pushDataLayerEvent("SignUp");
+      pushDataLayerEvent("OnboardingCompleted");
       await update({ onboardingCompleted: true });
       toast.success(t("welcomeToast"));
       window.location.href = slug ? `/${slug}` : "/organizations";

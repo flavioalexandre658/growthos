@@ -12,11 +12,15 @@
         "alert_churn_rate": "Alert: churn rate",
         "alert_revenue_drop": "Alert: revenue drop",
         "milestone": "Milestone reached",
-        "email_sequence": "Email sent",
-        "weekly_digest": "Weekly digest",
-        "recommendation": "Recommendation"
-      }
+      "email_sequence": "Email sent",
+      "weekly_digest": "Weekly digest",
+      "recommendation": "Recommendation"
     },
+    "emailModal": {
+      "sentTo": "Sent to",
+      "noContent": "Email content not available"
+    }
+  },
     "help": "Help & documentation",
     "settings": "Settings",
     "userMenu": {

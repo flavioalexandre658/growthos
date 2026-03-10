@@ -222,7 +222,7 @@ interface SendSequenceEmailInput {
 
 export async function sendSequenceEmail(
   input: SendSequenceEmailInput,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; subject?: string; html?: string }> {
   const { emailId, segment, userId, organizationId, userEmail, data } = input;
 
   const html = renderEmailHtml(emailId, data, userId, organizationId);
@@ -248,5 +248,5 @@ export async function sendSequenceEmail(
     sentAt: new Date(),
   });
 
-  return { success: true };
+  return { success: true, subject, html };
 }

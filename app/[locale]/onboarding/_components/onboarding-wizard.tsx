@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { useSession } from "next-auth/react";
 import { IconCheck } from "@tabler/icons-react";
 import { GrowareLogo } from "@/components/groware-logo";
 import { cn } from "@/lib/utils";
 import { StepOrganization } from "./step-organization";
 import { StepFunnelConfig } from "./step-funnel-config";
 import { StepInstallTracker } from "./step-install-tracker";
+import { pushDataLayerEvent } from "@/utils/datalayer";
 import type { IOrganization } from "@/interfaces/organization.interface";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
@@ -34,6 +36,7 @@ export function OnboardingWizard({
   existingApiKey,
 }: OnboardingWizardProps) {
   const t = useTranslations("onboarding.wizard");
+  const { data: session } = useSession();
   const [currentStep, setCurrentStep] = useState(() =>
     calcInitialStep(existingOrg, existingApiKey),
   );
@@ -41,6 +44,15 @@ export function OnboardingWizard({
   const [funnelSteps, setFunnelSteps] = useState<IFunnelStepConfig[]>(
     existingOrg?.funnelSteps ?? [],
   );
+
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId || session?.user?.authProvider !== "google") return;
+    const key = `accountCreated_${userId}`;
+    if (localStorage.getItem(key)) return;
+    pushDataLayerEvent("AccountCreated", { method: "google" });
+    localStorage.setItem(key, "1");
+  }, [session]);
 
   const advance = () => {
     setCurrentStep((s) => Math.min(s + 1, 3));

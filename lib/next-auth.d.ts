@@ -9,6 +9,7 @@ declare module "next-auth" {
       role: string;
       locale: string;
       onboardingCompleted: boolean;
+      authProvider: string;
     };
   }
 
@@ -19,6 +20,7 @@ declare module "next-auth" {
     role: string;
     locale: string;
     onboardingCompleted: boolean;
+    authProvider: string;
   }
 }
 
@@ -30,5 +32,6 @@ declare module "next-auth/jwt" {
     role: string;
     locale: string;
     onboardingCompleted: boolean;
+    authProvider: string;
   }
 }
