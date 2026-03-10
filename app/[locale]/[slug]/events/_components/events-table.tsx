@@ -45,6 +45,7 @@ import { DetailField, CopyButton } from "./event-detail-field";
 import type { DetailFieldProps } from "./event-detail-field";
 import type { IEvent } from "@/interfaces/event.interface";
 import type { IPaginationMeta } from "@/interfaces/dashboard.interface";
+import { useSensitiveMode } from "@/hooks/use-sensitive-mode";
 
 dayjs.extend(relativeTime);
 
@@ -58,6 +59,7 @@ function EventDetailGrid({
   const t = useTranslations("events.eventsTable");
   const [sessionOpen, setSessionOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
+  const { isSensitive, maskName } = useSensitiveMode();
   const fields: DetailFieldProps[] = [];
 
   if (event.productId)
@@ -124,7 +126,7 @@ function EventDetailGrid({
             <div className="flex items-center gap-0 flex-1 min-w-0 justify-end">
               {event.customerName && (
                 <span className="text-xs font-medium text-zinc-300 truncate mr-2 max-w-[120px]">
-                  {event.customerName}
+                  {isSensitive ? maskName(event.customerName) : event.customerName}
                 </span>
               )}
               <span className="text-xs font-mono text-zinc-500 truncate" title={event.customerId}>
@@ -208,6 +210,7 @@ function EventCard({
   const [expanded, setExpanded] = useState(false);
   const deleteMutation = useDeleteEvent();
   const details = hasEventDetails(event);
+  const { isSensitive, maskName } = useSensitiveMode();
 
   const handleDelete = async () => {
     await deleteMutation.mutateAsync({ id: event.id, organizationId });
@@ -303,7 +306,9 @@ function EventCard({
                 {event.customerName ? event.customerName.charAt(0).toUpperCase() : <IconUser size={10} />}
               </div>
               <span className="text-[11px] text-zinc-500 truncate max-w-[180px] group-hover/cust:text-violet-400 transition-colors">
-                {event.customerName ?? event.customerId.slice(0, 20) + "…"}
+                {isSensitive
+                  ? maskName(event.customerName ?? event.customerId)
+                  : (event.customerName ?? event.customerId.slice(0, 20) + "…")}
               </span>
             </Link>
           )}
@@ -362,6 +367,7 @@ function EventRow({
   const [expanded, setExpanded] = useState(false);
   const deleteMutation = useDeleteEvent();
   const details = hasEventDetails(event);
+  const { isSensitive, maskName } = useSensitiveMode();
 
   const handleDelete = async () => {
     await deleteMutation.mutateAsync({ id: event.id, organizationId });
@@ -464,7 +470,9 @@ function EventRow({
               </div>
               <div className="min-w-0">
                 <p className="text-xs text-zinc-300 truncate group-hover/cust:text-violet-300 transition-colors">
-                  {event.customerName ?? <span className="font-mono text-zinc-600">{event.customerId.slice(0, 10)}…</span>}
+                  {isSensitive
+                    ? maskName(event.customerName ?? event.customerId)
+                    : (event.customerName ?? <span className="font-mono text-zinc-600">{event.customerId.slice(0, 10)}…</span>)}
                 </p>
               </div>
             </Link>

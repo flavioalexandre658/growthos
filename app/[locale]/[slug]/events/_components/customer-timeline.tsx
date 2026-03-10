@@ -13,6 +13,7 @@ import { formatDate } from "@/utils/format-date";
 import { getEventTypeBadgeClass } from "./events-filters";
 import { DetailField } from "./event-detail-field";
 import type { ICustomerEvent } from "@/interfaces/event.interface";
+import { useSensitiveMode } from "@/hooks/use-sensitive-mode";
 
 function formatEventValue(event: ICustomerEvent): string | null {
   const cents = event.baseGrossValueInCents ?? event.grossValueInCents;
@@ -96,6 +97,7 @@ export function CustomerTimeline({
   const tz = organization?.timezone ?? "America/Sao_Paulo";
   const slug = organization?.slug ?? "";
   const { data, isLoading } = useCustomerEvents(organizationId, customerId);
+  const { isSensitive, maskName } = useSensitiveMode();
 
   const customerName = data?.[0]?.customerName ?? null;
 
@@ -144,7 +146,9 @@ export function CustomerTimeline({
           </div>
           <div className="flex-1 min-w-0">
             {customerName && (
-              <p className="text-xs font-semibold text-zinc-200 truncate">{customerName}</p>
+              <p className="text-xs font-semibold text-zinc-200 truncate">
+                {isSensitive ? maskName(customerName) : customerName}
+              </p>
             )}
             <p className="text-[10px] font-mono text-zinc-600 truncate">{customerId}</p>
           </div>

@@ -16,6 +16,7 @@ import {
 } from "@tabler/icons-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useSensitiveMode } from "@/hooks/use-sensitive-mode";
 
 export function AtRiskCustomers() {
   const t = useTranslations("customers");
@@ -29,6 +30,7 @@ export function AtRiskCustomers() {
   const PAGE_SIZE = 20;
 
   const { data: customers = [], isLoading } = useAtRiskCustomers(orgId, { daysThreshold });
+  const { isSensitive, maskName, maskEmail } = useSensitiveMode();
 
   const total = customers.length;
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -106,12 +108,16 @@ export function AtRiskCustomers() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-zinc-100">
-                      {customer.name ?? <span className="text-zinc-500 italic">{t("empty.title")}</span>}
+                      {customer.name
+                        ? (isSensitive ? maskName(customer.name) : customer.name)
+                        : <span className="text-zinc-500 italic">{t("empty.title")}</span>}
                     </p>
                     <p className="text-[11px] text-zinc-500 truncate">
-                      {customer.email ?? (
-                        <span className="font-mono text-zinc-700">{customer.customerId.slice(0, 20)}…</span>
-                      )}
+                      {customer.email
+                        ? (isSensitive ? maskEmail(customer.email) : customer.email)
+                        : (
+                          <span className="font-mono text-zinc-700">{customer.customerId.slice(0, 20)}…</span>
+                        )}
                     </p>
                   </div>
                 </div>

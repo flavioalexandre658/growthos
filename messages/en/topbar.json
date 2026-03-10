@@ -1,0 +1,27 @@
+{
+  "topbar": {
+    "notifications": {
+      "title": "Notifications",
+      "empty": "No notifications at the moment",
+      "markAllRead": "Mark all as read",
+      "types": {
+        "purchase": "New purchase",
+        "renewal": "Renewal",
+        "refund": "Refund",
+        "alert_no_events": "Alert: no events",
+        "alert_churn_rate": "Alert: churn rate",
+        "alert_revenue_drop": "Alert: revenue drop",
+        "milestone": "Milestone reached",
+        "email_sequence": "Email sent",
+        "weekly_digest": "Weekly digest",
+        "recommendation": "Recommendation"
+      }
+    },
+    "help": "Help & documentation",
+    "settings": "Settings",
+    "userMenu": {
+      "loggedAs": "Logged in as",
+      "logout": "Sign out"
+    }
+  }
+}

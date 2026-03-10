@@ -1,11 +1,14 @@
 "use client";
 
-import { Suspense, useState, useCallback } from "react";
+import { Suspense, useState, useCallback, useEffect, useRef } from "react";
 import { useFunnel } from "@/hooks/queries/use-funnel";
 import { useDaily } from "@/hooks/queries/use-daily";
 import { useSourceDistribution } from "@/hooks/queries/use-source-distribution";
 import { useTopProducts } from "@/hooks/queries/use-top-products";
 import { useOrganization } from "@/components/providers/organization-provider";
+import { useAtRiskCustomersCount } from "@/hooks/queries/use-at-risk-customers";
+import { useCreateDashboardAlerts } from "@/hooks/mutations/use-create-dashboard-alerts";
+import { fmtBRLDecimal } from "@/utils/format";
 import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { KpiCards } from "./kpi-cards";
 import { FunnelSection } from "./funnel-section";
@@ -13,123 +16,157 @@ import { DailyChart } from "./daily-chart";
 import { PeriodFilter } from "./period-filter";
 import { SourceChart } from "./source-chart";
 import { TopProducts } from "./top-products";
-import { DashboardAlerts } from "./dashboard-alerts";
 import { TopCustomersCard } from "./top-customers-card";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { IconEye, IconEyeOff, IconCreditCard, IconCode, IconX } from "@tabler/icons-react";
-import { cn } from "@/lib/utils";
+import { StepVisibilityToggle } from "@/components/ui/step-visibility-toggle";
+import type { StepVisibilityToggleProps } from "@/components/ui/step-visibility-toggle";
+import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
+import { IconCreditCard, IconCode, IconX } from "@tabler/icons-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-
-interface StepOption {
-  eventType: string;
-  label: string;
-}
-
-interface StepVisibilityToggleProps {
-  steps: StepOption[];
-  hiddenKeys: Set<string>;
-  onToggle: (eventType: string) => void;
-}
-
-function StepVisibilityToggle({ steps, hiddenKeys, onToggle }: StepVisibilityToggleProps) {
-  const t = useTranslations("dashboard.overview");
-  const hiddenCount = steps.filter((s) => hiddenKeys.has(s.eventType)).length;
-
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          className={cn(
-            "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors",
-            hiddenCount > 0
-              ? "border-amber-800/40 bg-amber-950/20 text-amber-400 hover:bg-amber-950/30"
-              : "border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600"
-          )}
-          title={t("stepsVisibleTitle")}
-        >
-          <IconEye size={13} />
-          <span className="hidden sm:inline">{t("stepsButton")}</span>
-          {hiddenCount > 0 && (
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-600/30 text-[9px] font-bold text-amber-300">
-              {hiddenCount}
-            </span>
-          )}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-56 border-zinc-800 bg-zinc-900 p-0 shadow-xl"
-        align="end"
-        sideOffset={6}
-      >
-        <div className="px-3 py-2.5 border-b border-zinc-800">
-          <p className="text-xs font-semibold text-zinc-300">{t("stepsPopoverTitle")}</p>
-          <p className="text-[10px] text-zinc-600 mt-0.5">{t("stepsPopoverDescription")}</p>
-        </div>
-        <div className="p-1.5 space-y-0.5">
-          {steps.map((step) => {
-            const isHidden = hiddenKeys.has(step.eventType);
-            return (
-              <button
-                key={step.eventType}
-                type="button"
-                onClick={() => onToggle(step.eventType)}
-                className={cn(
-                  "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left transition-colors",
-                  isHidden
-                    ? "text-zinc-600 hover:bg-zinc-800/60 hover:text-zinc-400"
-                    : "text-zinc-200 hover:bg-zinc-800/60"
-                )}
-              >
-                <div
-                  className={cn(
-                    "flex h-5 w-5 items-center justify-center rounded shrink-0 transition-colors",
-                    isHidden ? "bg-zinc-800" : "bg-indigo-600/20"
-                  )}
-                >
-                  {isHidden ? (
-                    <IconEyeOff size={11} className="text-zinc-600" />
-                  ) : (
-                    <IconEye size={11} className="text-indigo-400" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={cn("text-xs font-medium truncate", isHidden && "line-through")}>
-                    {step.label}
-                  </p>
-                  <p className="text-[10px] font-mono text-zinc-700 truncate">{step.eventType}</p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        {hiddenCount > 0 && (
-          <div className="px-2.5 pb-2.5">
-            <button
-              type="button"
-              onClick={() => steps.forEach((s) => { if (hiddenKeys.has(s.eventType)) onToggle(s.eventType); })}
-              className="w-full rounded-md border border-zinc-700/50 py-1.5 text-[11px] font-medium text-zinc-500 hover:text-zinc-200 hover:border-zinc-600 transition-colors"
-            >
-              {t("showAll")}
-            </button>
-          </div>
-        )}
-      </PopoverContent>
-    </Popover>
-  );
-}
 
 interface OverviewContentProps {
   filter: IDateFilter;
 }
 
+type StepOption = StepVisibilityToggleProps["steps"][number];
+
+interface AlertEntry {
+  id: string;
+  title: string;
+  body: string;
+  linkUrl?: string;
+  metadata?: {
+    alertId: string;
+    abandonedCount?: number;
+  };
+}
+
+interface AtRiskData {
+  count: number;
+  totalValueInCents: number;
+  topCustomers: { name: string | null; email: string | null }[];
+}
+
+function buildAlertEntries(
+  data: IGenericFunnelData,
+  slug: string,
+  t: (key: string, values?: Record<string, string | number | Date>) => string,
+  atRisk?: AtRiskData,
+): AlertEntry[] {
+  const alerts: AlertEntry[] = [];
+
+  const prevMap = new Map(
+    (data.previousSteps ?? []).map((s) => [s.key, s.value]),
+  );
+
+  const abandonedCount = data.checkoutAbandoned ?? 0;
+  if (abandonedCount > 0) {
+    const avgTicketCents =
+      data.revenue > 0
+        ? data.revenue /
+          Math.max(
+            data.steps.find((s) => s.key === "purchase" || s.key === "purchases")
+              ?.value ?? 1,
+            1,
+          )
+        : 0;
+    const lostRevenue = abandonedCount * avgTicketCents;
+    alerts.push({
+      id: "abandoned",
+      title: t("abandonedCarts", { count: abandonedCount }),
+      body: t("abandonedRevenue", { amount: fmtBRLDecimal(lostRevenue / 100) }),
+      linkUrl: `/${slug}/events?event_types=checkout_abandoned`,
+      metadata: { alertId: "abandoned", abandonedCount },
+    });
+  }
+
+  const revenueChange =
+    data.previousRevenue && data.previousRevenue > 0
+      ? ((data.revenue - data.previousRevenue) / data.previousRevenue) * 100
+      : null;
+
+  if (revenueChange !== null && Math.abs(revenueChange) >= 5) {
+    const isUp = revenueChange > 0;
+    alerts.push({
+      id: "revenue-trend",
+      title: isUp
+        ? t("revenueGrew", { pct: revenueChange.toFixed(0) })
+        : t("revenueFell", { pct: Math.abs(revenueChange).toFixed(0) }),
+      body: isUp
+        ? t("revenueChangeUp", {
+            from: fmtBRLDecimal((data.previousRevenue ?? 0) / 100),
+            to: fmtBRLDecimal(data.revenue / 100),
+          })
+        : t("revenueChangeDown", {
+            from: fmtBRLDecimal((data.previousRevenue ?? 0) / 100),
+            to: fmtBRLDecimal(data.revenue / 100),
+          }),
+      metadata: { alertId: "revenue-trend" },
+    });
+  }
+
+  const nonPageviewSteps = data.steps.filter((s) => s.key !== "pageview");
+  let worstRate = Infinity;
+  let worstLabel = "";
+  let worstFromLabel = "";
+  for (let i = 0; i < nonPageviewSteps.length - 1; i++) {
+    const from = nonPageviewSteps[i];
+    const to = nonPageviewSteps[i + 1];
+    if (from.value <= 0) continue;
+    const rate = (to.value / from.value) * 100;
+    if (rate < worstRate) {
+      worstRate = rate;
+      worstFromLabel = from.label;
+      worstLabel = to.label;
+    }
+  }
+  if (worstRate < 30 && worstLabel) {
+    alerts.push({
+      id: "bottleneck",
+      title: t("bottleneck", { from: worstFromLabel, to: worstLabel }),
+      body: t("bottleneckDescription", { pct: worstRate.toFixed(0) }),
+      metadata: { alertId: "bottleneck" },
+    });
+  }
+
+  const stepsWithGrowth = nonPageviewSteps.filter((s) => {
+    const prev = prevMap.get(s.key);
+    if (!prev || prev === 0) return false;
+    return ((s.value - prev) / prev) * 100 >= 20;
+  });
+  if (stepsWithGrowth.length > 0) {
+    const best = stepsWithGrowth[0];
+    const prev = prevMap.get(best.key) ?? 1;
+    const pct = ((best.value - prev) / prev) * 100;
+    alerts.push({
+      id: "growth-step",
+      title: t("stepGrew", { label: best.label, pct: pct.toFixed(0) }),
+      body: t("stepGrewDescription", { from: prev, to: best.value }),
+      metadata: { alertId: "growth-step" },
+    });
+  }
+
+  if (atRisk && atRisk.count > 0) {
+    const names = atRisk.topCustomers
+      .map((c) => c.name ?? c.email ?? "—")
+      .join(", ");
+    const plural = atRisk.count > 1 ? "s" : "";
+    alerts.unshift({
+      id: "at-risk-customers",
+      title: t("atRiskCustomers", { count: atRisk.count, plural }),
+      body: t("atRiskCustomersDescription", { names }),
+      linkUrl: `/${slug}/customers?tab=atRisk`,
+      metadata: { alertId: "at-risk-customers" },
+    });
+  }
+
+  return alerts;
+}
+
 export function OverviewContent({ filter }: OverviewContentProps) {
   const t = useTranslations("dashboard.overview");
   const tTour = useTranslations("tour.welcome.dashboard");
+  const tAlerts = useTranslations("dashboard.alerts");
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const slug = organization?.slug ?? "";
@@ -137,7 +174,7 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   const initialHiddenKeys = new Set(
     (organization?.funnelSteps ?? [])
       .filter((s) => s.hidden)
-      .map((s) => s.eventType)
+      .map((s) => s.eventType),
   );
 
   const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(initialHiddenKeys);
@@ -155,6 +192,8 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   const { data: dailyResult, isPending: dailyLoading } = useDaily(orgId, filter);
   const { data: sourceData, isPending: sourceLoading } = useSourceDistribution(orgId, filter);
   const { data: topProducts, isPending: topProductsLoading } = useTopProducts(orgId, filter);
+  const { data: atRiskData } = useAtRiskCustomersCount(orgId ?? "");
+  const { mutate: createAlerts } = useCreateDashboardAlerts(orgId ?? "");
 
   const allSteps: StepOption[] = (funnel?.steps ?? [])
     .filter((s) => s.key !== "pageview")
@@ -175,6 +214,18 @@ export function OverviewContent({ filter }: OverviewContentProps) {
     funnel !== undefined &&
     (funnel?.steps ?? []).every((s) => s.value === 0) &&
     (!funnel?.revenue || funnel.revenue === 0);
+
+  const alertsDispatchedRef = useRef(false);
+
+  useEffect(() => {
+    if (!funnel || funnelLoading || !orgId || alertsDispatchedRef.current) return;
+
+    const alertEntries = buildAlertEntries(funnel, slug, tAlerts, atRiskData ?? undefined);
+    if (alertEntries.length === 0) return;
+
+    alertsDispatchedRef.current = true;
+    createAlerts({ organizationId: orgId, alerts: alertEntries });
+  }, [funnel, funnelLoading, orgId, slug, atRiskData, tAlerts, createAlerts]);
 
   return (
     <div className="space-y-4">
@@ -221,7 +272,9 @@ export function OverviewContent({ filter }: OverviewContentProps) {
           <button
             onClick={() => {
               setBannerDismissed(true);
-              try { localStorage.setItem("groware_dashboard_banner_dismissed", "1"); } catch {}
+              try {
+                localStorage.setItem("groware_dashboard_banner_dismissed", "1");
+              } catch {}
             }}
             className="absolute top-2.5 right-2.5 flex h-5 w-5 items-center justify-center rounded-md text-zinc-600 hover:text-zinc-300 hover:bg-zinc-800 transition-colors"
           >
@@ -250,10 +303,6 @@ export function OverviewContent({ filter }: OverviewContentProps) {
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <TopProducts data={topProducts} isLoading={topProductsLoading} />
-        <DashboardAlerts data={funnel} isLoading={funnelLoading} />
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
         <TopCustomersCard />
       </div>
     </div>

@@ -8,6 +8,7 @@ import timezone from "dayjs/plugin/timezone";
 import { getEmailDynamicData } from "@/actions/emails/get-email-data.action";
 import { sendSequenceEmail } from "@/actions/emails/send-sequence-email.action";
 import type { IEmailSequenceState } from "@/interfaces/email-sequence.interface";
+import { createNotification } from "@/utils/create-notification";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -94,6 +95,12 @@ export async function GET(req: NextRequest) {
     });
 
     if (result.success) {
+      createNotification({
+        organizationId: member.organizationId,
+        type: "weekly_digest",
+        title: "Resumo semanal enviado",
+        body: member.userEmail,
+      }).catch(() => {});
       processed++;
     }
   }

@@ -24,5 +24,11 @@
     "submitCta": "Solicitar acesso →",
     "successToast": "Você está na lista! Entraremos em contato em breve.",
     "invalidEmail": "Digite um e-mail válido"
+  },
+  "sensitiveMode": {
+    "enable": "Ocultar dados pessoais",
+    "disable": "Mostrar dados pessoais",
+    "active": "Modo privado ativo",
+    "tooltip": "Oculta nomes, e-mails e outras informações pessoais de clientes"
   }
 }

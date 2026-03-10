@@ -8,6 +8,7 @@ import { fmtBRL } from "@/utils/format";
 import { IconUser, IconUsers, IconArrowRight } from "@tabler/icons-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useSensitiveMode } from "@/hooks/use-sensitive-mode";
 
 export function TopCustomersCard() {
   const t = useTranslations("dashboard.topCustomers");
@@ -16,6 +17,7 @@ export function TopCustomersCard() {
   const slug = organization?.slug ?? "";
 
   const { data: customers, isLoading } = useTopCustomers(orgId, { limit: 5 });
+  const { isSensitive, maskName, maskEmail } = useSensitiveMode();
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 overflow-hidden">
@@ -66,10 +68,14 @@ export function TopCustomersCard() {
 
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-zinc-200 truncate group-hover:text-zinc-100 transition-colors">
-                  {customer.name ?? customer.email ?? customer.customerId.slice(0, 20) + "…"}
+                  {isSensitive
+                    ? maskName(customer.name ?? customer.email ?? customer.customerId)
+                    : (customer.name ?? customer.email ?? customer.customerId.slice(0, 20) + "…")}
                 </p>
                 {(customer.name && customer.email) && (
-                  <p className="text-[10px] text-zinc-600 truncate">{customer.email}</p>
+                  <p className="text-[10px] text-zinc-600 truncate">
+                    {isSensitive ? maskEmail(customer.email) : customer.email}
+                  </p>
                 )}
                 {!customer.name && !customer.email && (
                   <p className="text-[10px] text-zinc-700 font-mono truncate">{customer.customerId.slice(0, 16)}…</p>

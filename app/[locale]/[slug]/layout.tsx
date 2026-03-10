@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-options";
 import { getOrganizationBySlug } from "@/actions/organizations/get-organization-by-slug.action";
 import { updateLastActivity } from "@/actions/emails/update-last-activity.action";
 import { Sidebar } from "./_components/sidebar";
+import { Topbar } from "./_components/topbar";
 import { MobileChecklistBanner } from "./_components/mobile-checklist-banner";
 
 interface OrgLayoutProps {
@@ -25,9 +26,10 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
   void updateLastActivity(org.id);
 
   return (
-    <div className="flex min-h-screen bg-zinc-950">
+    <div className="flex h-screen overflow-hidden bg-zinc-950">
       <Sidebar slug={slug} />
-      <main className="flex-1 min-w-0 md:overflow-auto">
+      <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto">
+        <Topbar slug={slug} />
         <div className="pt-14 md:pt-0">
           <MobileChecklistBanner slug={slug} />
           {children}

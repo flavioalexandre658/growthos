@@ -14,6 +14,7 @@ import {
 } from "@tabler/icons-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useSensitiveMode } from "@/hooks/use-sensitive-mode";
 
 export function ExpansionCandidates() {
   const t = useTranslations("customers");
@@ -28,6 +29,7 @@ export function ExpansionCandidates() {
     minLtvCents,
     minTenureMonths,
   });
+  const { isSensitive, maskName, maskEmail } = useSensitiveMode();
 
   return (
     <div className="space-y-4">
@@ -123,12 +125,16 @@ export function ExpansionCandidates() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-zinc-100">
-                      {candidate.name ?? <span className="text-zinc-500 italic">{t("empty.title")}</span>}
+                      {candidate.name
+                        ? (isSensitive ? maskName(candidate.name) : candidate.name)
+                        : <span className="text-zinc-500 italic">{t("empty.title")}</span>}
                     </p>
                     <p className="text-[11px] text-zinc-500 truncate">
-                      {candidate.email ?? (
-                        <span className="font-mono text-zinc-700">{candidate.customerId.slice(0, 20)}…</span>
-                      )}
+                      {candidate.email
+                        ? (isSensitive ? maskEmail(candidate.email) : candidate.email)
+                        : (
+                          <span className="font-mono text-zinc-700">{candidate.customerId.slice(0, 20)}…</span>
+                        )}
                     </p>
                   </div>
                 </Link>

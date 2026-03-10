@@ -11,6 +11,10 @@
     {
       "path": "/api/cron/aggregate-and-cleanup",
       "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/evaluate-alerts",
+      "schedule": "0 * * * *"
     }
   ]
 }

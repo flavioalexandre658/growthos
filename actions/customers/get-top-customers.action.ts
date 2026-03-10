@@ -30,6 +30,7 @@ export async function getTopCustomers(
 ): Promise<ITopCustomer[]> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return [];
+  if (!organizationId) return [];
 
   const limit = params.limit ?? 50;
   const sortBy = params.sortBy ?? "ltv";

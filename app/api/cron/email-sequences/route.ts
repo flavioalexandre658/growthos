@@ -14,6 +14,7 @@ import {
   QUIET_HOUR_END,
 } from "@/lib/email-templates/sequence-constants";
 import type { IEmailSequenceState } from "@/interfaces/email-sequence.interface";
+import { createNotification } from "@/utils/create-notification";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -152,6 +153,13 @@ export async function GET(req: NextRequest) {
               eq(orgMembers.organizationId, member.organizationId),
             ),
           );
+
+        createNotification({
+          organizationId: member.organizationId,
+          type: "email_sequence",
+          title: `E-mail enviado: ${item.emailId}`,
+          body: member.userEmail,
+        }).catch(() => {});
 
         processed++;
         break;

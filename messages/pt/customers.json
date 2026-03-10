@@ -120,6 +120,10 @@
       },
       "timeline": {
         "title": "Histórico de Eventos"
+      },
+      "funnel": {
+        "title": "Funil do Cliente",
+        "subtitle": "Jornada de conversão deste cliente"
       }
     },
     "intervals": {

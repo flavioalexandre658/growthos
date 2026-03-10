@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useSensitiveMode } from "@/hooks/use-sensitive-mode";
 
 const MEDAL_COLORS = [
   "text-yellow-400",
@@ -37,6 +38,7 @@ export function TopCustomersRanking() {
   const [sortBy, setSortBy] = useState<TopCustomerSortBy>("ltv");
 
   const { data: customers = [], isLoading } = useTopCustomers(orgId, { limit: 50, sortBy });
+  const { isSensitive, maskName, maskEmail } = useSensitiveMode();
 
   return (
     <div className="space-y-4">
@@ -129,13 +131,15 @@ export function TopCustomersRanking() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-zinc-100">
-                      {customer.name ?? customer.email ?? (
-                        <span className="font-mono text-zinc-600 text-[11px]">{customer.customerId.slice(0, 16)}…</span>
-                      )}
+                      {isSensitive
+                        ? maskName(customer.name ?? customer.email ?? customer.customerId)
+                        : (customer.name ?? customer.email ?? (
+                          <span className="font-mono text-zinc-600 text-[11px]">{customer.customerId.slice(0, 16)}…</span>
+                        ))}
                     </p>
                     <p className="text-[11px] text-zinc-500 truncate">
                       {customer.name && customer.email
-                        ? customer.email
+                        ? (isSensitive ? maskEmail(customer.email) : customer.email)
                         : customer.name
                           ? <span className="font-mono text-zinc-700">{customer.customerId.slice(0, 20)}…</span>
                           : null}

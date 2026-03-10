@@ -34,6 +34,7 @@ import { AtRiskCustomers } from "./at-risk-customers";
 import { TopCustomersRanking } from "./top-customers-ranking";
 import { CustomerCohorts } from "./customer-cohorts";
 import { ExpansionCandidates } from "./expansion-candidates";
+import { useSensitiveMode } from "@/hooks/use-sensitive-mode";
 
 function AllCustomersList() {
   const t = useTranslations("customers");
@@ -67,6 +68,8 @@ function AllCustomersList() {
 
   const customers = data?.data ?? [];
   const pagination = data?.pagination;
+
+  const { isSensitive, maskName, maskEmail, maskLocation } = useSensitiveMode();
 
   return (
     <div className="space-y-4">
@@ -153,12 +156,16 @@ function AllCustomersList() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-zinc-100">
-                      {customer.name ?? <span className="text-zinc-500 italic">{t("empty.title")}</span>}
+                      {customer.name
+                        ? (isSensitive ? maskName(customer.name) : customer.name)
+                        : <span className="text-zinc-500 italic">{t("empty.title")}</span>}
                     </p>
                     <p className="text-[11px] text-zinc-500 truncate">
-                      {customer.email ?? (
-                        <span className="font-mono text-zinc-700">{customer.customerId.slice(0, 20)}…</span>
-                      )}
+                      {customer.email
+                        ? (isSensitive ? maskEmail(customer.email) : customer.email)
+                        : (
+                          <span className="font-mono text-zinc-700">{customer.customerId.slice(0, 20)}…</span>
+                        )}
                     </p>
                   </div>
                 </div>
@@ -168,7 +175,9 @@ function AllCustomersList() {
                     <IconMapPin size={11} className="shrink-0 text-zinc-600" />
                   )}
                   <span className="truncate">
-                    {[customer.city, customer.country].filter(Boolean).join(", ") || "—"}
+                    {isSensitive
+                      ? maskLocation(customer.city ?? null, customer.country ?? null)
+                      : ([customer.city, customer.country].filter(Boolean).join(", ") || "—")}
                   </span>
                 </div>
 

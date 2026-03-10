@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import dayjs from "dayjs";
 import type { ICohortCustomer } from "@/actions/customers/get-customer-cohorts.action";
+import { useSensitiveMode } from "@/hooks/use-sensitive-mode";
 
 const STATUS_STYLES: Record<ICohortCustomer["status"], { avatar: string; badge: string; label: (t: (k: string) => string) => string }> = {
   subscriber: {
@@ -48,6 +49,7 @@ export function CustomerCohorts() {
   const { data, isLoading } = useCustomerCohorts(orgId, {
     expandMonth: expandedMonth ?? undefined,
   });
+  const { isSensitive, maskName, maskEmail } = useSensitiveMode();
 
   const cohorts = data?.cohorts ?? [];
   const maxTotal = Math.max(...cohorts.map((c) => c.totalCustomers), 1);
@@ -181,10 +183,14 @@ export function CustomerCohorts() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-medium text-zinc-300 truncate group-hover:text-zinc-100">
-                                {c.name ?? c.email ?? c.customerId.slice(0, 20) + "…"}
+                                {isSensitive
+                                  ? maskName(c.name ?? c.email ?? c.customerId)
+                                  : (c.name ?? c.email ?? c.customerId.slice(0, 20) + "…")}
                               </p>
                               {c.name && c.email && (
-                                <p className="text-[10px] text-zinc-600 truncate">{c.email}</p>
+                                <p className="text-[10px] text-zinc-600 truncate">
+                                  {isSensitive ? maskEmail(c.email) : c.email}
+                                </p>
                               )}
                             </div>
                             <div className="flex items-center gap-2 shrink-0">

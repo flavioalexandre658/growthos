@@ -24,5 +24,11 @@
     "submitCta": "Request access →",
     "successToast": "You're on the list! We'll reach out soon.",
     "invalidEmail": "Enter a valid email"
+  },
+  "sensitiveMode": {
+    "enable": "Hide personal data",
+    "disable": "Show personal data",
+    "active": "Privacy mode active",
+    "tooltip": "Hides names, emails and other personal customer information"
   }
 }

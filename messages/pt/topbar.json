@@ -1,0 +1,27 @@
+{
+  "topbar": {
+    "notifications": {
+      "title": "Notificações",
+      "empty": "Nenhuma notificação no momento",
+      "markAllRead": "Marcar todas como lidas",
+      "types": {
+        "purchase": "Nova compra",
+        "renewal": "Renovação",
+        "refund": "Reembolso",
+        "alert_no_events": "Alerta: sem eventos",
+        "alert_churn_rate": "Alerta: taxa de churn",
+        "alert_revenue_drop": "Alerta: queda de receita",
+        "milestone": "Marco atingido",
+        "email_sequence": "E-mail enviado",
+        "weekly_digest": "Resumo semanal",
+        "recommendation": "Recomendação"
+      }
+    },
+    "help": "Ajuda e documentação",
+    "settings": "Configurações",
+    "userMenu": {
+      "loggedAs": "Logado como",
+      "logout": "Sair da conta"
+    }
+  }
+}

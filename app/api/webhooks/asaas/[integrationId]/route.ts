@@ -13,6 +13,7 @@ import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
 import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
+import { createNotification } from "@/utils/create-notification";
 import type { BillingInterval } from "@/utils/billing";
 
 interface AsaasPaymentPayload {
@@ -323,6 +324,17 @@ async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload
         error: err instanceof Error ? err.message : String(err),
       });
     });
+  }).catch(() => {});
+
+  const asaasValueLabel = payment.value
+    ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(payment.value)
+    : null;
+  createNotification({
+    organizationId: orgId,
+    type: isRecurring ? "renewal" : "purchase",
+    title: customerId,
+    body: asaasValueLabel ?? undefined,
+    metadata: { customerId, valueInCents: Math.round((payment.value ?? 0) * 100), currency: "BRL" },
   }).catch(() => {});
 }
 

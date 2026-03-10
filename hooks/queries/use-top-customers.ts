@@ -14,6 +14,7 @@ export function useTopCustomers(
   return useQuery({
     queryKey: getTopCustomersQueryKey(organizationId, params.limit, params.sortBy),
     queryFn: () => getTopCustomers(organizationId, params),
+    enabled: !!organizationId,
     staleTime: 60_000,
   });
 }

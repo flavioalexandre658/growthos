@@ -120,6 +120,10 @@
       },
       "timeline": {
         "title": "Event History"
+      },
+      "funnel": {
+        "title": "Customer Funnel",
+        "subtitle": "This customer's conversion journey"
       }
     },
     "intervals": {

@@ -6,6 +6,7 @@ import { SessionProvider } from "@/components/providers/session-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { OrganizationProvider } from "@/components/providers/organization-provider";
 import { ToasterProvider } from "@/components/providers/toaster-provider";
+import { SensitiveModeProvider } from "@/components/providers/sensitive-mode-provider";
 import { routing } from "../../i18n/routing";
 import { notFound } from "next/navigation";
 
@@ -110,8 +111,10 @@ export default async function LocaleLayout({ children, params }: Props) {
           <SessionProvider>
             <QueryProvider>
               <OrganizationProvider>
-                {children}
-                <ToasterProvider />
+                <SensitiveModeProvider>
+                  {children}
+                  <ToasterProvider />
+                </SensitiveModeProvider>
               </OrganizationProvider>
             </QueryProvider>
           </SessionProvider>

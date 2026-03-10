@@ -4,14 +4,12 @@ import Link from "next/link";
 import { usePathname as usePathnameWithLocale, useSearchParams } from "next/navigation";
 import { usePathname, useRouter } from "@/i18n/routing";
 import { useState, useRef, useEffect, useCallback, Suspense } from "react";
-import { signOut } from "next-auth/react";
 import {
   IconLayoutDashboard,
   IconBrandGoogle,
   IconCurrencyDollar,
   IconMenu2,
   IconX,
-  IconLogout,
   IconChevronLeft,
   IconChevronRight,
   IconChevronDown,
@@ -57,6 +55,7 @@ import { useOrgHasData } from "@/hooks/queries/use-org-has-data";
 import { useBilling } from "@/hooks/queries/use-billing";
 import { SetupChecklist } from "./setup-checklist";
 import { GlobalSearch } from "./global-search";
+import { MobileTopbarActions } from "./topbar";
 
 const STORAGE_KEY = "groware_active_org";
 
@@ -482,16 +481,6 @@ function SidebarContent({
             <NavItem key={item.href} {...item} collapsed={collapsed} onClick={onClose} />
           ))}
         </Suspense>
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-500 hover:bg-zinc-800/60 hover:text-zinc-100 transition-all w-full border border-transparent",
-            collapsed && "justify-center w-auto",
-          )}
-        >
-          <IconLogout size={18} className="shrink-0" />
-          {!collapsed && <span>{t("logout")}</span>}
-        </button>
       </div>
     </div>
   );
@@ -517,19 +506,22 @@ export function Sidebar({ slug }: { slug: string }) {
         />
       </aside>
 
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-14 px-4 bg-zinc-950 border-b border-zinc-800/60">
-        <GrowareLogo size="sm" />
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-zinc-400">
-              <IconMenu2 size={20} />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-56 bg-zinc-950 border-zinc-800 [&>button:last-of-type]:hidden">
-            <SheetTitle className="sr-only">{t("mobileMenuTitle")}</SheetTitle>
-            <SidebarContent slug={slug} onClose={() => setMobileOpen(false)} />
-          </SheetContent>
-        </Sheet>
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-14 px-3 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/60">
+        <div className="flex items-center gap-2">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="text-zinc-400 h-8 w-8">
+                <IconMenu2 size={18} />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="p-0 w-56 bg-zinc-950 border-zinc-800 [&>button:last-of-type]:hidden">
+              <SheetTitle className="sr-only">{t("mobileMenuTitle")}</SheetTitle>
+              <SidebarContent slug={slug} onClose={() => setMobileOpen(false)} />
+            </SheetContent>
+          </Sheet>
+          <GrowareLogo size="sm" />
+        </div>
+        <MobileTopbarActions slug={slug} />
       </div>
     </>
   );

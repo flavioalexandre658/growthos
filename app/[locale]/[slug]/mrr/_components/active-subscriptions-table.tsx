@@ -28,6 +28,7 @@ import type {
   SubscriptionSortField,
   SortDirection,
 } from "@/interfaces/mrr.interface";
+import { useSensitiveMode } from "@/hooks/use-sensitive-mode";
 
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "outline" | "destructive"> = {
   active: "default",
@@ -62,6 +63,8 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
     sortField,
     sortDir,
   });
+
+  const { isSensitive, maskName, maskEmail } = useSensitiveMode();
 
   const resetPage = () => setPage(1);
 
@@ -137,13 +140,17 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
           onClick={(e) => e.stopPropagation()}
         >
           <span className="text-sm font-medium text-zinc-200 truncate group-hover/link:text-violet-400 transition-colors">
-            {row.customerName ?? <span className="font-mono text-xs text-zinc-400">{row.customerId.slice(0, 16)}…</span>}
+            {row.customerName
+              ? (isSensitive ? maskName(row.customerName) : row.customerName)
+              : <span className="font-mono text-xs text-zinc-400">{row.customerId.slice(0, 16)}…</span>}
           </span>
           {row.customerName && (
             <span className="text-[10px] font-mono text-zinc-600 truncate">{row.customerId.slice(0, 16)}…</span>
           )}
           {row.customerEmail && (
-            <span className="text-[10px] text-zinc-500 truncate">{row.customerEmail}</span>
+            <span className="text-[10px] text-zinc-500 truncate">
+              {isSensitive ? maskEmail(row.customerEmail) : row.customerEmail}
+            </span>
           )}
         </Link>
       ),
@@ -152,7 +159,9 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
           <div className="min-w-0">
             <p className="text-sm font-medium text-zinc-200 truncate">{row.planName}</p>
             <p className="text-[10px] text-zinc-500 truncate">
-              {row.customerName ?? <span className="font-mono text-zinc-600">{row.customerId.slice(0, 20)}…</span>}
+              {row.customerName
+                ? (isSensitive ? maskName(row.customerName) : row.customerName)
+                : <span className="font-mono text-zinc-600">{row.customerId.slice(0, 20)}…</span>}
             </p>
           </div>
           <div className="shrink-0 text-right">

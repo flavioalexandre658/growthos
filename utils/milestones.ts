@@ -4,6 +4,7 @@ import { milestones, organizations, orgMembers, users } from "@/db/schema";
 import { getPublicMetrics } from "@/actions/public/get-public-metrics.action";
 import { sendEmail } from "@/lib/email";
 import { milestoneReachedEmail } from "@/lib/email-templates/milestone-reached";
+import { createNotification } from "@/utils/create-notification";
 
 export interface IMilestoneDefinition {
   key: string;
@@ -170,5 +171,13 @@ export async function checkMilestones(orgId: string): Promise<void> {
       .update(milestones)
       .set({ notifiedAt: new Date() })
       .where(and(eq(milestones.organizationId, orgId), eq(milestones.key, def.key)));
+
+    createNotification({
+      organizationId: orgId,
+      type: "milestone",
+      title: `${def.emoji} ${def.label}`,
+      body: metricValue,
+      linkUrl: `/${org.slug}/mrr`,
+    }).catch(() => {});
   }
 }

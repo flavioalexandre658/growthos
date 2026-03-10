@@ -6,11 +6,14 @@ import { fmtInt } from "@/utils/format";
 import { getStepColor } from "@/utils/step-colors";
 import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
 import { useTranslations } from "next-intl";
+import { cn } from "@/lib/utils";
 
 interface FunnelSectionProps {
   data: IGenericFunnelData | null | undefined;
   isLoading: boolean;
   hiddenKeys?: Set<string>;
+  compact?: boolean;
+  headerRight?: React.ReactNode;
 }
 
 interface SankeyFunnelProps {
@@ -365,6 +368,8 @@ export function FunnelSection({
   data,
   isLoading,
   hiddenKeys,
+  compact,
+  headerRight,
 }: FunnelSectionProps) {
   const t = useTranslations("dashboard.funnel");
   const allStepKeys = (data?.steps ?? [])
@@ -376,31 +381,38 @@ export function FunnelSection({
   );
 
   const stepCount = visibleSteps.length || 3;
+  const skeletonH = compact ? "h-36" : "h-56";
+  const emptyH = compact ? "h-36" : "h-56";
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
-      <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
-      <p className="mt-0.5 text-xs text-zinc-500 mb-2">
-        {visibleSteps.map((s) => s.label).join(" → ") || t("fallbackSubtitle")}
-      </p>
+    <div className={cn("rounded-xl border border-zinc-800 bg-zinc-900/50 flex flex-col", compact ? "p-3" : "p-5")}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
+          <p className="mt-0.5 text-xs text-zinc-500 mb-2">
+            {visibleSteps.map((s) => s.label).join(" → ") || t("fallbackSubtitle")}
+          </p>
+        </div>
+        {headerRight}
+      </div>
 
       {isLoading ? (
-        <Skeleton className="h-56 w-full rounded-lg bg-zinc-800" />
+        <Skeleton className={`${skeletonH} w-full rounded-lg bg-zinc-800`} />
       ) : visibleSteps.length < 2 ? (
-        <div className="flex h-56 items-center justify-center">
+        <div className={`flex ${emptyH} items-center justify-center`}>
           <p className="text-xs text-zinc-700">
             {t("minStepsWarning")}
           </p>
         </div>
       ) : (
-        <>
-          <div className="md:hidden">
+        <div className={compact ? "flex-1 flex items-center" : ""}>
+          <div className="md:hidden w-full">
             <FunnelMobile steps={visibleSteps} allStepKeys={allStepKeys} />
           </div>
-          <div className="hidden md:block">
+          <div className="hidden md:block w-full">
             <SankeyFunnel steps={visibleSteps} allStepKeys={allStepKeys} />
           </div>
-        </>
+        </div>
       )}
 
       {isLoading && (

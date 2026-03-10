@@ -1,6 +1,7 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useState, useCallback } from "react";
+import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import {
   IconArrowLeft,
@@ -14,9 +15,13 @@ import { formatDate } from "@/utils/format-date";
 import { fmtBRLDecimal } from "@/utils/format";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useCustomerSummary } from "@/hooks/queries/use-customer-summary";
+import { useCustomerFunnel } from "@/hooks/queries/use-customer-funnel";
 import type { ICustomerSummary } from "@/actions/customers/get-customer-summary.action";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CustomerTimeline } from "../../../events/_components/customer-timeline";
+import { FunnelSection } from "@/app/[locale]/[slug]/_components/funnel-section";
+import { StepVisibilityToggle } from "@/components/ui/step-visibility-toggle";
+import { useSensitiveMode } from "@/hooks/use-sensitive-mode";
 
 interface CustomerDetailContentProps {
   customerId: string;
@@ -74,12 +79,37 @@ function AcquisitionCard({ summary }: {
 export function CustomerDetailContent({ customerId }: CustomerDetailContentProps) {
   const t = useTranslations("customers");
   const tDetail = useTranslations("customers.detail");
+  const locale = useLocale();
   const { organization } = useOrganization();
   const slug = organization?.slug ?? "";
   const orgId = organization?.id ?? "";
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
 
   const { data: summary, isLoading } = useCustomerSummary(orgId, customerId);
+  const { data: customerFunnel, isPending: funnelLoading } = useCustomerFunnel(orgId, customerId);
+
+  const { isSensitive, maskName, maskEmail, maskPhone, maskLocation } = useSensitiveMode();
+
+  const initialHiddenKeys = new Set(
+    (organization?.funnelSteps ?? [])
+      .filter((s) => s.hidden)
+      .map((s) => s.eventType)
+  );
+  const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(initialHiddenKeys);
+
+  const toggleHidden = useCallback((eventType: string) => {
+    setHiddenKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(eventType)) next.delete(eventType);
+      else next.add(eventType);
+      return next;
+    });
+  }, []);
+
+  const allSteps = (customerFunnel?.steps ?? []).map((s) => ({
+    eventType: s.key,
+    label: s.label,
+  }));
 
   const INTERVAL_LABELS: Record<string, string> = {
     monthly: t("intervals.monthly"),
@@ -88,6 +118,8 @@ export function CustomerDetailContent({ customerId }: CustomerDetailContentProps
     yearly: t("intervals.yearly"),
     weekly: t("intervals.weekly"),
   };
+
+  void locale;
 
   return (
     <div className="space-y-5">
@@ -121,25 +153,29 @@ export function CustomerDetailContent({ customerId }: CustomerDetailContentProps
               </div>
               <div className="flex-1 min-w-0">
                 <h1 className="text-lg font-bold text-zinc-100">
-                  {summary.customer.name ?? tDetail("unknownCustomer")}
+                  {isSensitive
+                    ? maskName(summary.customer.name ?? tDetail("unknownCustomer"))
+                    : (summary.customer.name ?? tDetail("unknownCustomer"))}
                 </h1>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                   {summary.customer.email && (
                     <span className="flex items-center gap-1 text-xs text-zinc-400">
                       <IconMail size={11} className="text-zinc-600" />
-                      {summary.customer.email}
+                      {isSensitive ? maskEmail(summary.customer.email) : summary.customer.email}
                     </span>
                   )}
                   {summary.customer.phone && (
                     <span className="flex items-center gap-1 text-xs text-zinc-400">
                       <IconPhone size={11} className="text-zinc-600" />
-                      {summary.customer.phone}
+                      {isSensitive ? maskPhone(summary.customer.phone) : summary.customer.phone}
                     </span>
                   )}
                   {(summary.customer.city || summary.customer.country) && (
                     <span className="flex items-center gap-1 text-xs text-zinc-500">
                       <IconMapPin size={11} className="text-zinc-600" />
-                      {[summary.customer.city, summary.customer.country].filter(Boolean).join(", ")}
+                      {isSensitive
+                        ? maskLocation(summary.customer.city ?? null, summary.customer.country ?? null)
+                        : [summary.customer.city, summary.customer.country].filter(Boolean).join(", ")}
                     </span>
                   )}
                   <span className="flex items-center gap-1 text-xs text-zinc-500">
@@ -246,13 +282,30 @@ export function CustomerDetailContent({ customerId }: CustomerDetailContentProps
       </div>
 
       {orgId && (
-        <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/30 p-4">
-          <h3 className="text-xs font-semibold text-zinc-400 mb-1">{tDetail("timeline.title")}</h3>
-          <CustomerTimeline
-            organizationId={orgId}
-            customerId={customerId}
-            currentEventId=""
+        <div className="grid grid-cols-1 xl:grid-cols-[45fr_55fr] gap-4">
+          <FunnelSection
+            data={customerFunnel ?? null}
+            isLoading={funnelLoading}
+            hiddenKeys={hiddenKeys}
+            compact
+            headerRight={
+              allSteps.length > 0 ? (
+                <StepVisibilityToggle
+                  steps={allSteps}
+                  hiddenKeys={hiddenKeys}
+                  onToggle={toggleHidden}
+                />
+              ) : undefined
+            }
           />
+          <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/30 p-4">
+            <h3 className="text-xs font-semibold text-zinc-400 mb-1">{tDetail("timeline.title")}</h3>
+            <CustomerTimeline
+              organizationId={orgId}
+              customerId={customerId}
+              currentEventId=""
+            />
+          </div>
         </div>
       )}
     </div>

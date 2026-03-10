@@ -17,6 +17,7 @@ export function useAtRiskCustomers(organizationId: string, params: { daysThresho
   return useQuery({
     queryKey: getAtRiskCustomersQueryKey(organizationId, params.daysThreshold),
     queryFn: () => getAtRiskCustomers(organizationId, params.daysThreshold),
+    enabled: !!organizationId,
     staleTime: 60_000,
   });
 }
@@ -25,6 +26,7 @@ export function useAtRiskCustomersCount(organizationId: string, params: { daysTh
   return useQuery({
     queryKey: getAtRiskCustomersCountQueryKey(organizationId, params.daysThreshold),
     queryFn: () => getAtRiskCustomersCount(organizationId, params.daysThreshold),
+    enabled: !!organizationId,
     staleTime: 60_000,
   });
 }

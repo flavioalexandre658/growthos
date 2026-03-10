@@ -10,6 +10,7 @@ import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
 import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
+import { createNotification } from "@/utils/create-notification";
 
 function extractMetaCustomerId(metadata: Record<string, string> | null | undefined): string | null {
   if (!metadata) return null;
@@ -299,6 +300,18 @@ async function handleCheckoutSessionCompleted(
       error: err instanceof Error ? err.message : String(err),
     });
   });
+
+  const customerLabel = session.customer_details?.name ?? session.customer_details?.email ?? customerId;
+  const valueLabel = session.amount_total
+    ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: (session.currency ?? "brl").toUpperCase() }).format(session.amount_total / 100)
+    : null;
+  createNotification({
+    organizationId: orgId,
+    type: "purchase",
+    title: customerLabel,
+    body: valueLabel ?? undefined,
+    metadata: { customerId, valueInCents: session.amount_total, currency: session.currency },
+  }).catch(() => {});
 }
 
 async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventTimestamp: number, stripe: Stripe) {
@@ -435,6 +448,18 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventTi
       });
     });
   }
+
+  const invoiceCustomerLabel = invoice.customer_name ?? invoice.customer_email ?? customerId ?? "Cliente";
+  const invoiceValueLabel = invoice.amount_paid
+    ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: eventCurrency }).format(invoice.amount_paid / 100)
+    : null;
+  createNotification({
+    organizationId: orgId,
+    type: eventType,
+    title: invoiceCustomerLabel,
+    body: invoiceValueLabel ?? undefined,
+    metadata: { customerId, valueInCents: invoice.amount_paid, currency: eventCurrency },
+  }).catch(() => {});
 }
 
 async function handleChargeRefunded(orgId: string, charge: Stripe.Charge, stripe: Stripe) {

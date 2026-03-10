@@ -29,6 +29,7 @@ export async function getAtRiskCustomers(
 ): Promise<IAtRiskCustomer[]> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return [];
+  if (!organizationId) return [];
 
   const thresholdDate = new Date(Date.now() - daysThreshold * 24 * 60 * 60 * 1000);
 
@@ -79,6 +80,7 @@ export async function getAtRiskCustomersCount(
 ): Promise<{ count: number; totalValueInCents: number; topCustomers: { name: string | null; email: string | null }[] }> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return { count: 0, totalValueInCents: 0, topCustomers: [] };
+  if (!organizationId) return { count: 0, totalValueInCents: 0, topCustomers: [] };
 
   const thresholdDate = new Date(Date.now() - daysThreshold * 24 * 60 * 60 * 1000);
 

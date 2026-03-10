@@ -9,6 +9,7 @@ import { insertPayment } from "@/utils/insert-payment";
 import { getOrgOwnerId } from "@/utils/get-plan-usage";
 import { upsertCustomer } from "@/utils/upsert-customer";
 import { extractGeo } from "@/utils/extract-geo";
+import { createNotification } from "@/utils/create-notification";
 import dayjs from "@/utils/dayjs";
 
 const MAX_PAYLOAD_BYTES = 64 * 1024;
@@ -706,6 +707,26 @@ export async function POST(req: NextRequest) {
         error: err instanceof Error ? err.message : String(err),
       });
     });
+
+    if (eventType === "purchase" || eventType === "renewal") {
+      const customerLabel = toString(body.customer_name) || toString(body.customer_id) || "Cliente";
+      const valueLabel = grossValueInCents
+        ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: eventCurrency ?? "BRL" }).format(grossValueInCents / 100)
+        : null;
+      createNotification({
+        organizationId: apiKey.organizationId,
+        type: eventType,
+        title: customerLabel,
+        body: valueLabel ?? undefined,
+        linkUrl: undefined,
+        metadata: {
+          customerId: toString(body.customer_id),
+          customerName: toString(body.customer_name),
+          valueInCents: grossValueInCents,
+          currency: eventCurrency,
+        },
+      }).catch(() => {});
+    }
   }
 
   await handleSubscriptionUpsert(
