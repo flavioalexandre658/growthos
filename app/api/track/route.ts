@@ -15,7 +15,7 @@ import dayjs from "@/utils/dayjs";
 const MAX_PAYLOAD_BYTES = 64 * 1024;
 
 const BOT_UA_PATTERN =
-  /bot|crawler|spider|headless|curl|python-requests|wget|scrapy|puppeteer|playwright|selenium|phantomjs|slurp|mediapartners|facebookexternalhit|bingpreview|googlebot|yandexbot|baiduspider|duckduckbot|applebot|semrush|ahrefs|mj12bot|dotbot|petalbot|bytespider|gptbot|claudebot|cohere-ai|ia_archiver|archive\.org_bot|screaming.frog|httpx|go-http-client|java\/|okhttp|node-fetch|undici|postman|insomnia|ahrefsbot|rogerbot|twitterbot|linkedinbot|pinterest|telegrambot|ccbot|amazonbot|dataforseo|httrack|ltx71|bubing/i;
+  /bot|crawler|spider|headless|curl|python-requests|wget|scrapy|puppeteer|playwright|selenium|phantomjs|slurp|mediapartners|facebookexternalhit|bingpreview|googlebot|yandexbot|baiduspider|duckduckbot|applebot|semrush|ahrefs|mj12bot|dotbot|petalbot|bytespider|gptbot|claudebot|cohere-ai|ia_archiver|archive\.org_bot|screaming.frog|httpx|go-http-client|java\/|okhttp|node-fetch|undici|ahrefsbot|rogerbot|twitterbot|linkedinbot|pinterest|telegrambot|ccbot|amazonbot|dataforseo|httrack|ltx71|bubing/i;
 
 function isBotRequest(req: NextRequest): boolean {
   const ua = req.headers.get("user-agent") ?? "";
