@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
-import toast from "react-hot-toast";
+import { Link } from "@/i18n/routing";
 
 interface LandingCtaFormProps {
   variant?: "hero" | "cta";
@@ -10,54 +9,24 @@ interface LandingCtaFormProps {
 
 export function LandingCtaForm({ variant = "hero" }: LandingCtaFormProps) {
   const t = useTranslations("cta");
-  const [email, setEmail] = useState("");
-
-  const handleSubmit = () => {
-    if (!email.includes("@")) {
-      toast.error(t("invalidEmail"));
-      return;
-    }
-    toast.success(t("successToast"));
-    setEmail("");
-  };
 
   if (variant === "cta") {
     return (
-      <div className="flex flex-col sm:flex-row bg-zinc-900 border border-white/[0.07] rounded-xl p-2 gap-2">
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-          placeholder={t("emailPlaceholderWork")}
-          className="w-full sm:w-64 px-4 py-2.5 bg-transparent border-none outline-none text-zinc-200 text-base sm:text-sm placeholder:text-zinc-600 font-sans"
-        />
-        <button
-          onClick={handleSubmit}
-          className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-indigo-600 text-white text-sm font-semibold whitespace-nowrap hover:bg-indigo-500 transition-all shadow-[0_0_24px_rgba(79,70,229,0.4)]"
-        >
-          {t("submitCta")}
-        </button>
-      </div>
+      <Link
+        href="/register"
+        className="inline-flex items-center px-8 py-3.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold whitespace-nowrap hover:bg-indigo-500 transition-all shadow-[0_0_24px_rgba(79,70,229,0.4)]"
+      >
+        {t("submitCta")}
+      </Link>
     );
   }
 
   return (
-    <div className="flex gap-2.5 flex-col sm:flex-row">
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-        placeholder={t("emailPlaceholder")}
-        className="w-full sm:w-72 px-4 py-3 rounded-xl bg-zinc-900 border border-white/[0.07] text-zinc-200 text-sm placeholder:text-zinc-600 outline-none focus:border-indigo-500/40 focus:ring-2 focus:ring-indigo-600/10 transition-all font-sans"
-      />
-      <button
-        onClick={handleSubmit}
-        className="px-6 py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold whitespace-nowrap hover:bg-indigo-500 transition-all shadow-[0_0_32px_rgba(79,70,229,0.4)] hover:-translate-y-0.5"
-      >
-        {t("submitHero")}
-      </button>
-    </div>
+    <Link
+      href="/register"
+      className="inline-flex items-center px-8 py-3.5 rounded-xl bg-indigo-600 text-white text-sm font-semibold whitespace-nowrap hover:bg-indigo-500 transition-all shadow-[0_0_32px_rgba(79,70,229,0.4)] hover:-translate-y-0.5"
+    >
+      {t("submitHero")}
+    </Link>
   );
 }

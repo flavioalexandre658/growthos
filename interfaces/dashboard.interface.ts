@@ -84,6 +84,17 @@ export interface IChannelData {
   ticket_medio: number;
   conversion_rate: string;
   previousRevenue?: number;
+  investment?: number;
+  roi?: number | null;
+}
+
+export interface IChannelInvestmentGroup {
+  source: string;
+  label: string;
+  investmentInCents: number;
+  revenueInCents: number;
+  roi: number | null;
+  channelKeys: string[];
 }
 
 export interface IChannelsResult {
@@ -94,6 +105,7 @@ export interface IChannelsResult {
   channelsWithRevenue: number;
   topChannel: string;
   concentrationTop2: number;
+  investmentGroups: IChannelInvestmentGroup[];
 }
 
 export interface ILandingPageData {

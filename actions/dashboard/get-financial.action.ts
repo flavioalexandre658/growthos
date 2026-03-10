@@ -6,12 +6,13 @@ import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 
 import { db } from "@/db";
-import { events, payments, fixedCosts, variableCosts, organizations } from "@/db/schema";
+import { events, payments, fixedCosts, variableCosts, organizations, marketingSpends } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import { getUserPlan } from "@/utils/get-user-plan";
 import { resolvePeriodDays } from "@/utils/resolve-period-days";
 import { buildProfitAndLoss } from "@/utils/build-pl";
 import { reconcilePayments } from "@/utils/reconcile-payments";
+import dayjs from "@/utils/dayjs";
 import type { IDateFilter, IFinancialData } from "@/interfaces/dashboard.interface";
 import type { IRevenueBySegment } from "@/interfaces/cost.interface";
 
@@ -175,10 +176,31 @@ export async function getFinancial(
     }
   }
 
-  const [orgFixedCosts, orgVariableCosts] = await Promise.all([
+  const [orgFixedCosts, orgVariableCosts, marketingRows] = await Promise.all([
     db.select().from(fixedCosts).where(eq(fixedCosts.organizationId, organizationId)),
     db.select().from(variableCosts).where(eq(variableCosts.organizationId, organizationId)),
+    db
+      .select({
+        source: marketingSpends.source,
+        sourceLabel: marketingSpends.sourceLabel,
+        totalAmountInCents: sql<number>`COALESCE(SUM(${marketingSpends.amountInCents}), 0)`,
+      })
+      .from(marketingSpends)
+      .where(
+        and(
+          eq(marketingSpends.organizationId, organizationId),
+          gte(marketingSpends.spentAt, dayjs(startDate).tz(tz).format("YYYY-MM-DD")),
+          lte(marketingSpends.spentAt, dayjs(endDate).tz(tz).format("YYYY-MM-DD"))
+        )
+      )
+      .groupBy(marketingSpends.source, marketingSpends.sourceLabel),
   ]);
+
+  const marketingBreakdown = marketingRows.map((r) => ({
+    source: r.source,
+    sourceLabel: r.sourceLabel,
+    totalAmountInCents: Number(r.totalAmountInCents),
+  }));
 
   const eventCosts = totalDiscounts;
   const pl = buildProfitAndLoss(
@@ -187,7 +209,8 @@ export async function getFinancial(
     orgVariableCosts,
     periodDays,
     revenueBySegment,
-    eventCosts
+    eventCosts,
+    marketingBreakdown
   );
 
   const prevPaymentsCondition = and(

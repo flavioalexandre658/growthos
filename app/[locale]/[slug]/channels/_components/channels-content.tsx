@@ -10,6 +10,7 @@ import { PeriodFilter } from "@/app/[locale]/[slug]/_components/period-filter";
 import { ChannelsTreemap } from "./channels-treemap";
 import { ChannelsKpiStrip } from "./channels-kpi-strip";
 import { ChannelsTable } from "./channels-table";
+import { ChannelsInvestmentKpis } from "./channels-investment-kpis";
 import { Input } from "@/components/ui/input";
 import { IconSearch, IconBrandGoogle } from "@tabler/icons-react";
 import { WelcomeState } from "@/components/ui/welcome-state";
@@ -48,6 +49,7 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
   const channelsData = resp?.data ?? [];
   const pagination = resp?.pagination ?? EMPTY_PAGINATION;
   const stepMeta = resp?.stepMeta ?? [];
+  const investmentGroups = resp?.investmentGroups ?? [];
 
   const hasNoData = !isLoading && resp !== undefined && channelsData.length === 0;
 
@@ -94,6 +96,10 @@ export function ChannelsContent({ filter }: ChannelsContentProps) {
       ) : (
         <>
           <ChannelsKpiStrip data={resp} isLoading={isLoading} />
+
+          {investmentGroups.length > 0 && (
+            <ChannelsInvestmentKpis groups={investmentGroups} />
+          )}
 
           <ChannelsTreemap data={channelsData} isLoading={isLoading} />
 

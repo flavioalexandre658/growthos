@@ -38,9 +38,10 @@ export function CostCompositionChart({ data, isLoading }: CostCompositionChartPr
   const gross = (data?.grossRevenueInCents ?? 0) / 100;
   const fixedCosts = (data?.totalFixedCostsInCents ?? 0) / 100;
   const varCosts = (data?.totalVariableCostsInCents ?? 0) / 100;
-  const remaining = Math.max(0, gross - fixedCosts - varCosts);
+  const marketingCosts = (data?.totalMarketingSpendInCents ?? 0) / 100;
+  const remaining = Math.max(0, gross - fixedCosts - varCosts - marketingCosts);
 
-  if (gross === 0 && fixedCosts === 0 && varCosts === 0) {
+  if (gross === 0 && fixedCosts === 0 && varCosts === 0 && marketingCosts === 0) {
     return (
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
         <h3 className="text-sm font-bold text-zinc-100 mb-1">{t("title")}</h3>
@@ -54,7 +55,7 @@ export function CostCompositionChart({ data, isLoading }: CostCompositionChartPr
     );
   }
 
-  const total = fixedCosts + varCosts + remaining;
+  const total = fixedCosts + varCosts + marketingCosts + remaining;
   const segments: Segment[] = [
     {
       label: t("variableCosts"),
@@ -69,6 +70,13 @@ export function CostCompositionChart({ data, isLoading }: CostCompositionChartPr
       color: "#ef4444",
       bgColor: "bg-red-500",
       textColor: "text-red-400",
+    },
+    {
+      label: t("marketingSpend"),
+      value: marketingCosts,
+      color: "#a78bfa",
+      bgColor: "bg-violet-500",
+      textColor: "text-violet-400",
     },
     {
       label: t("remainingMargin"),

@@ -16,6 +16,7 @@ import {
   IconPercentage,
   IconWallet,
   IconInfoCircle,
+  IconSpeakerphone,
 } from "@tabler/icons-react";
 import type { ICostsSummary } from "@/interfaces/cost.interface";
 
@@ -91,8 +92,8 @@ export function CostsImpactCards({ data, isLoading }: CostsImpactCardsProps) {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, i) => (
           <ImpactCardSkeleton key={i} />
         ))}
       </div>
@@ -101,6 +102,7 @@ export function CostsImpactCards({ data, isLoading }: CostsImpactCardsProps) {
 
   const fixedTotal = fmtBRLDecimal((data?.totalFixedCostsInCents ?? 0) / 100);
   const varTotal = fmtBRLDecimal((data?.totalVariableCostsInCents ?? 0) / 100);
+  const marketingTotal = fmtBRLDecimal((data?.totalMarketingSpendInCents ?? 0) / 100);
   const costTotal = fmtBRLDecimal((data?.totalCostsInCents ?? 0) / 100);
   const impact = data?.impactPercent ?? 0;
   const margin = data?.marginPercent ?? 0;
@@ -126,6 +128,16 @@ export function CostsImpactCards({ data, isLoading }: CostsImpactCardsProps) {
       bgColor: "bg-orange-600/20",
       tooltip: t("variableTooltip"),
       ariaLabel: t("infoAriaLabel", { label: t("variableLabel") }),
+    },
+    {
+      label: t("marketingLabel"),
+      value: marketingTotal,
+      sub: t("marketingSub"),
+      icon: IconSpeakerphone,
+      color: "text-violet-400",
+      bgColor: "bg-violet-600/20",
+      tooltip: t("marketingTooltip"),
+      ariaLabel: t("infoAriaLabel", { label: t("marketingLabel") }),
     },
     {
       label: t("totalLabel"),
@@ -160,7 +172,7 @@ export function CostsImpactCards({ data, isLoading }: CostsImpactCardsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
       {cards.map((card) => (
         <ImpactCard key={card.label} {...card} />
       ))}

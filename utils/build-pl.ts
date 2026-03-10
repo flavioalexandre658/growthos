@@ -6,6 +6,7 @@ import type {
   IPLVariableBreakdown,
   IRevenueBySegment,
   FixedCostFrequency,
+  IMarketingSpendSummary,
 } from "@/interfaces/cost.interface";
 
 const FREQUENCY_MONTHS: Record<FixedCostFrequency, number> = {
@@ -21,7 +22,8 @@ export function buildProfitAndLoss(
   variableCosts: IVariableCost[],
   periodDays: number,
   revenueBySegment?: IRevenueBySegment,
-  eventCostsInCents: number = 0
+  eventCostsInCents: number = 0,
+  marketingBreakdown: IMarketingSpendSummary[] = []
 ): IProfitAndLoss {
   const fixedBreakdown: IPLCostBreakdown[] = fixedCosts.map((cost) => {
     const frequency: FixedCostFrequency = (cost.frequency as FixedCostFrequency) ?? "monthly";
@@ -73,9 +75,13 @@ export function buildProfitAndLoss(
     (sum, c) => sum + c.calculatedInCents,
     0
   );
+  const marketingSpendInCents = marketingBreakdown.reduce(
+    (sum, m) => sum + m.totalAmountInCents,
+    0
+  );
 
   const operatingProfitInCents = grossRevenueInCents - eventCostsInCents - totalVariableCostsInCents;
-  const netProfitInCents = grossRevenueInCents - eventCostsInCents - totalVariableCostsInCents - totalFixedCostsInCents;
+  const netProfitInCents = grossRevenueInCents - eventCostsInCents - totalVariableCostsInCents - marketingSpendInCents - totalFixedCostsInCents;
   const marginPercent =
     grossRevenueInCents > 0
       ? Math.round((netProfitInCents / grossRevenueInCents) * 10000) / 100
@@ -86,6 +92,8 @@ export function buildProfitAndLoss(
     eventCostsInCents,
     totalFixedCostsInCents,
     totalVariableCostsInCents,
+    marketingSpendInCents,
+    marketingBreakdown,
     operatingProfitInCents,
     netProfitInCents,
     marginPercent,

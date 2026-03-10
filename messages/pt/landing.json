@@ -1,12 +1,13 @@
 {
   "landing": {
     "hero": {
-      "badge": "Em acesso antecipado",
+      "badge": "Grátis até R$15k de receita/mês",
       "badgeSuffix": " · Integração com Stripe disponível",
       "headline1": "Do funil ao lucro real.",
       "headline2": "Tudo num só lugar.",
-      "subheadline": "MRR, canais de aquisição, P&L real e análise com IA — conectados em um único dashboard. Feito para founders de SaaS que querem crescer com clareza.",
-      "disclaimer": "Sem cartão de crédito · Grátis durante o beta",
+      "subheadline": "Conecte seu Stripe em 2 minutos e veja de onde vem cada real da sua receita — canal, campanha, landing page e margem real. Tudo junto, sem planilha.",
+      "disclaimer": "Sem cartão de crédito · Grátis até R$15k de receita/mês",
+      "socialProof": "Usado por {count}+ founders de SaaS brasileiros",
       "mockupLabel": "groware.io / visão-geral",
       "overview": "Visão Geral",
       "overviewSub": "Performance consolidada do período",
@@ -26,27 +27,27 @@
     "problem": {
       "label": "// o problema",
       "headline1": "Seus dados estão em todo lugar,",
-      "headline2": "menos conectados.",
-      "description": "MRR no Stripe. Custos numa planilha. Aquisição no Google Analytics. P&L no Excel. Nada conversa entre si — e você passa horas conectando os pontos manualmente.",
+      "headline2": "menos onde você precisa.",
+      "description": "MRR no Stripe. Custos numa planilha. Aquisição no Google Analytics. Nada conversa entre si — e você descobre sua margem real com um mês de atraso, se descobre.",
       "items": [
         {
           "icon": "📊",
           "title": "Dashboard do Stripe",
-          "desc": "Mostra receita — mas não de onde veio, quanto custou, ou qual é sua margem de verdade."
+          "desc": "Mostra o que entrou. Não de onde veio, quanto custou pra adquirir, ou se você teve lucro de verdade."
         },
         {
           "icon": "📋",
           "title": "Planilhas",
-          "desc": "Atualizações manuais, fórmulas quebradas, sempre com um mês de atraso. Ninguém confia nos números."
+          "desc": "Você atualiza na sexta. Na segunda já está errada. E quando a fórmula quebra, ninguém sabe desde quando."
         },
         {
           "icon": "📉",
           "title": "Google Analytics",
-          "desc": "Pageviews e sessões — mas zero conexão com receita, assinaturas ou resultados reais do negócio."
+          "desc": "Sabe quantas sessões vieram do Google. Não sabe se alguma delas pagou."
         }
       ],
       "solutionTitle": "O Groware conecta tudo isso.",
-      "solutionDesc": "Um script. Um webhook. Funil → MRR → canais → custos → margem → insight com IA — tudo em tempo real. Tudo que seu time de growth e seu CFO precisam, em um só lugar."
+      "solutionDesc": "Um script. Um webhook. Funil → MRR → canais → custos → margem real → IA — tudo junto, em tempo real. Só você e os números que importam."
     },
     "features": {
       "label": "// funcionalidades",
@@ -56,47 +57,84 @@
         {
           "title": "Visão Geral",
           "desc": "Funil em tempo real, KPIs com variação vs período anterior e gráfico diário. Veja visitas → cadastros → checkouts → receita em uma só tela.",
-          "tags": ["funil", "KPIs", "diário"]
+          "tags": [
+            "funil",
+            "KPIs",
+            "diário"
+          ]
         },
         {
           "title": "Recorrência (MRR)",
           "desc": "MRR, ARR, ARPU, LTV, Churn Rate, Revenue Churn. Sankey de fluxo de assinantes e gráfico de movimentação: Novo / Expansão / Contração / Churn.",
-          "tags": ["MRR", "ARR", "LTV", "churn"]
+          "tags": [
+            "MRR",
+            "ARR",
+            "LTV",
+            "churn"
+          ]
         },
         {
           "title": "Financeiro",
           "desc": "Receita bruta, líquida, descontos e ticket médio. Breakdown por método (PIX, cartão, boleto) e categoria de produto.",
-          "tags": ["receita", "ticket", "métodos"]
+          "tags": [
+            "receita",
+            "ticket",
+            "métodos"
+          ]
         },
         {
           "title": "Custos & P&L",
           "desc": "Cadastre custos fixos e variáveis (absoluto ou % da receita). P&L em tempo real: Receita Bruta → Lucro Bruto → Lucro Real → Margem Real.",
-          "tags": ["P&L", "margem", "custos"]
+          "tags": [
+            "P&L",
+            "margem",
+            "custos"
+          ]
         },
         {
           "title": "Canais de Aquisição",
           "desc": "Receita, etapas do funil, taxa de conversão e ticket médio por canal de origem. Heatmap visual e tabela ordenável por qualquer coluna.",
-          "tags": ["UTMs", "fonte", "ROI"]
+          "tags": [
+            "UTMs",
+            "fonte",
+            "ROI"
+          ]
         },
         {
           "title": "Landing Pages",
           "desc": "Quais páginas de entrada geram mais receita? Métricas completas de funil por URL, com busca, ordenação e paginação.",
-          "tags": ["URL", "entrada", "conversão"]
+          "tags": [
+            "URL",
+            "entrada",
+            "conversão"
+          ]
         },
         {
           "title": "Eventos & Debug",
           "desc": "Tabela de eventos com atualização em tempo real. Filtre por tipo, modelo de cobrança, data. Alertas automáticos para IDs sem deduplicação.",
-          "tags": ["tempo real", "debug", "dedupe"]
+          "tags": [
+            "tempo real",
+            "debug",
+            "dedupe"
+          ]
         },
         {
           "title": "Assinaturas",
           "desc": "Ativo, em trial, em atraso, cancelado — com plano, intervalo, valor mensal normalizado e ID do cliente. Histórico completo.",
-          "tags": ["status", "planos", "intervalos"]
+          "tags": [
+            "status",
+            "planos",
+            "intervalos"
+          ]
         },
         {
           "title": "Comparativo de Períodos",
           "desc": "Compare dois intervalos de datas — visão geral, canais, financeiro ou landing pages. Lado a lado ou resumo por IA.",
-          "tags": ["diff", "tendências", "comparar"]
+          "tags": [
+            "diff",
+            "tendências",
+            "comparar"
+          ]
         }
       ]
     },
@@ -143,7 +181,7 @@
         {
           "name": "Asaas",
           "desc": "PIX, boleto, cartão. O gateway dominante para SaaS — integração nativa completa.",
-          "status": "soon"
+          "status": "live"
         },
         {
           "name": "Kiwify",
@@ -203,12 +241,30 @@
         }
       ],
       "mockupPlItems": [
-        { "label": "RECEITA BRUTA", "value": "R$48.240" },
-        { "label": "CUSTOS VARIÁVEIS", "value": "− R$7.120" },
-        { "label": "LUCRO OPERACIONAL", "value": "R$41.120" },
-        { "label": "CUSTOS FIXOS", "value": "− R$11.400" },
-        { "label": "LUCRO LÍQUIDO", "value": "R$29.720" },
-        { "label": "MARGEM REAL", "value": "61,6%" }
+        {
+          "label": "RECEITA BRUTA",
+          "value": "R$48.240"
+        },
+        {
+          "label": "CUSTOS VARIÁVEIS",
+          "value": "− R$7.120"
+        },
+        {
+          "label": "LUCRO OPERACIONAL",
+          "value": "R$41.120"
+        },
+        {
+          "label": "CUSTOS FIXOS",
+          "value": "− R$11.400"
+        },
+        {
+          "label": "LUCRO LÍQUIDO",
+          "value": "R$29.720"
+        },
+        {
+          "label": "MARGEM REAL",
+          "value": "61,6%"
+        }
       ],
       "mockupDiagnosisHeader": "## Diagnóstico",
       "mockupDiagnosisLine": "Sua margem real de <highlight>61,6%</highlight> está <above>acima da média</above> para SaaS B2C.",
@@ -236,15 +292,19 @@
         "revenue": "Receita",
         "vs": "vs anterior"
       },
-      "filters": ["Receita", "Conversão", "Ticket"]
+      "filters": [
+        "Receita",
+        "Conversão",
+        "Ticket"
+      ]
     },
     "ctaSection": {
-      "badge": "GRÁTIS DURANTE O BETA",
+      "badge": "GRÁTIS ATÉ R$15K DE RECEITA/MÊS",
       "headline1": "Pare de adivinhar.",
       "headline2": "Comece a",
       "headline3": "crescer com clareza.",
-      "description": "Acesse o Groware com antecedência e transforme seus dados espalhados em decisões de crescimento — antes que sua concorrência o faça.",
-      "disclaimer": "Grátis durante o beta · Sem cartão · Configuração em 5 minutos"
+      "description": "Conecte seu Stripe, instale o tracker e veja de onde vem cada real da sua receita — canal, campanha, margem real. Em menos de 5 minutos.",
+      "disclaimer": "Sem cartão de crédito · Grátis até R$15k de receita/mês · Configuração em 5 minutos"
     },
     "strip": [
       "MRR & ARR",

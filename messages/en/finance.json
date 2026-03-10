@@ -30,6 +30,10 @@
           "label": "= Operating Profit",
           "desc": "Result after discounts and configured variable costs."
         },
+        "marketingSpend": {
+          "label": "− Marketing Spend",
+          "desc": "Sum of paid ad investments (Google Ads, Meta Ads, etc.) in the period."
+        },
         "fixedCosts": {
           "label": "− Fixed Costs",
           "desc": "Fixed monthly values configured on the platform, prorated proportionally to the period."
@@ -101,11 +105,12 @@
     },
     "profitLossWaterfall": {
       "title": "Result Composition",
-      "subtitle": "Revenue → Discounts → Variable Costs → Operating Profit → Fixed Costs → Net Profit",
+      "subtitle": "Revenue → Discounts → Variable Costs → Operating Profit → Marketing → Fixed Costs → Net Profit",
       "revenue": "Revenue",
       "discounts": "Discounts",
       "variableCosts": "Var. Costs",
       "operatingProfit": "Op. Profit",
+      "marketingSpend": "Marketing",
       "fixedCosts": "Fixed Costs",
       "netProfit": "Net Profit"
     },
@@ -133,7 +138,8 @@
       "title": "Manage Costs",
       "subtitle": "Register fixed and variable costs to calculate the P&L in Financial",
       "fixedCostsTab": "Fixed Costs",
-      "variableCostsTab": "Variable Costs"
+      "variableCostsTab": "Variable Costs",
+      "marketingTab": "Marketing Spend"
     },
     "fixedCosts": {
       "title": "Fixed Costs",
@@ -249,6 +255,7 @@
       "noDataForPeriod": "No data for the period",
       "variableCosts": "Variable Costs",
       "fixedCosts": "Fixed Costs",
+      "marketingSpend": "Marketing",
       "remainingMargin": "Remaining / Margin"
     },
     "costsImpact": {
@@ -258,9 +265,12 @@
       "variableLabel": "Variable Costs",
       "variableSub": "on {value} in revenue",
       "variableTooltip": "Costs calculated as a percentage of revenue — gateway fees, marketplace commissions, taxes. Grow proportionally to sales.",
+      "marketingLabel": "Marketing Spend",
+      "marketingSub": "ad investment",
+      "marketingTooltip": "Sum of paid ad spend (Google Ads, Meta Ads, etc.) in the selected period. Register in the Marketing Spend tab.",
       "totalLabel": "Total Cost",
-      "totalSub": "fixed + variable",
-      "totalTooltip": "Sum of all costs in the period (fixed + variable). This is the total that must be covered by revenue for the business to be profitable.",
+      "totalSub": "fixed + variable + marketing",
+      "totalTooltip": "Sum of all costs in the period (fixed + variable + marketing). This is the total that must be covered by revenue for the business to be profitable.",
       "marginImpactLabel": "Margin Impact",
       "marginImpactSub": "net margin: {value}%",
       "marginImpactTooltip": "Percentage of gross revenue consumed by total costs. Above 50% is concerning — it means more than half of what comes in already goes to expenses.",
@@ -279,6 +289,50 @@
       "showMore": "View full analysis",
       "connectionError": "Error connecting to AI",
       "apiKeyError": "Error getting analysis. Check your GEMINI_API_KEY configuration."
+    },
+    "marketingSpend": {
+      "title": "Marketing Spend",
+      "subtitle": "Register paid ad investments by channel",
+      "add": "Add Spend",
+      "emptyTitle": "No spend recorded",
+      "emptyDescription": "Register your Google Ads, Meta Ads and other paid channel investments to calculate ROI per channel.",
+      "addFirst": "Add first spend",
+      "totalLabel": "Total in period",
+      "filterBySource": "All channels",
+      "columnDate": "Date",
+      "columnSource": "Channel",
+      "columnDescription": "Description",
+      "columnAmount": "Amount",
+      "columnActions": "",
+      "toastCreated": "Marketing spend added!",
+      "toastUpdated": "Marketing spend updated!",
+      "toastDeleted": "Marketing spend removed!",
+      "formAdd": "Add Marketing Spend",
+      "formEdit": "Edit Marketing Spend",
+      "formDescription": "Register the amount invested in a paid ad channel for the period.",
+      "sourceLabel": "Channel",
+      "sourcePlaceholder": "Select channel...",
+      "sourceOther": "Other",
+      "sourceOtherKeyLabel": "Channel identifier",
+      "sourceOtherKeyPlaceholder": "E.g.: taboola, outbrain...",
+      "sourceOtherLabelField": "Display name",
+      "sourceOtherLabelPlaceholder": "E.g.: Taboola, Outbrain...",
+      "amountLabel": "Amount Invested",
+      "amountPlaceholder": "$0.00",
+      "dateLabel": "Spend Date",
+      "descriptionLabel": "Description (optional)",
+      "descriptionPlaceholder": "E.g.: Black Friday campaign...",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "save": "Save",
+      "validation": {
+        "sourceRequired": "Channel is required",
+        "sourceLabelRequired": "Channel name is required",
+        "sourceKeyRequired": "Identifier is required",
+        "amountRequired": "Amount is required",
+        "amountMustBePositive": "Amount must be positive",
+        "dateRequired": "Date is required"
+      }
     }
   }
 }

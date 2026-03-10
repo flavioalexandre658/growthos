@@ -20,3 +20,4 @@ export * from "./usage-monthly.schema";
 export * from "./email-log.schema";
 export * from "./customer.schema";
 export * from "./notification.schema";
+export * from "./marketing-spend.schema";

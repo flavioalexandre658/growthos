@@ -34,10 +34,18 @@
       "colConversion": "Conversion",
       "colRevenue": "Revenue",
       "colAvgTicket": "Avg. Ticket",
+      "colInvestment": "Investment",
+      "colRoi": "ROI",
       "noRevenue": "no revenue",
       "hide": "Hide",
       "showNoRevenue": "+{count} without revenue",
       "emptyState": "No attribution data in the period"
+    },
+    "investmentKpis": {
+      "invest": "Invest.",
+      "revenue": "Revenue",
+      "roi": "ROI",
+      "noInvestment": "No investment recorded in the period"
     }
   }
 }

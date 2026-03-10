@@ -32,6 +32,7 @@ import { buildProfitAndLoss } from "@/utils/build-pl";
 import { cn } from "@/lib/utils";
 import { useTourProgress } from "@/hooks/queries/use-tour-progress";
 import { useUpdateTourState } from "@/hooks/mutations/use-update-tour-state";
+import { useMarketingSpendSummary } from "@/hooks/queries/use-marketing-spend-summary";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/pt-br";
@@ -496,6 +497,7 @@ export function AiContent() {
   const { data: revenueSegments, isPending: segmentsLoading } = useRevenueSegments(orgId, DEFAULT_FILTER);
   const { data: topProducts } = useTopProducts(orgId, DEFAULT_FILTER);
   const { data: channelsResult } = useChannels(orgId, { period: "30d", limit: 10 });
+  const { data: marketingSummary } = useMarketingSpendSummary(orgId, DEFAULT_FILTER);
 
   const [result, setResult] = useState<IAnalysisResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
@@ -608,6 +610,15 @@ export function AiContent() {
       ...(topProds?.length && { top_produtos: topProds }),
       ...(perfil && { perfil }),
       periodo: DEFAULT_FILTER,
+      ...(marketingSummary?.length && {
+        gastos_marketing: {
+          total: `R$ ${(marketingSummary.reduce((s, m) => s + m.totalAmountInCents, 0) / 100).toFixed(2)}`,
+          por_canal: marketingSummary.map((m) => ({
+            canal: m.sourceLabel,
+            valor: `R$ ${(m.totalAmountInCents / 100).toFixed(2)}`,
+          })),
+        },
+      }),
     };
 
     try {

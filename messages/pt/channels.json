@@ -34,10 +34,18 @@
       "colConversion": "Conversão",
       "colRevenue": "Receita",
       "colAvgTicket": "Ticket Médio",
+      "colInvestment": "Investimento",
+      "colRoi": "ROI",
       "noRevenue": "sem receita",
       "hide": "Ocultar",
       "showNoRevenue": "+{count} sem receita",
       "emptyState": "Sem dados de attribution no período"
+    },
+    "investmentKpis": {
+      "invest": "Invest.",
+      "revenue": "Receita",
+      "roi": "ROI",
+      "noInvestment": "Sem investimento registrado no período"
     }
   }
 }

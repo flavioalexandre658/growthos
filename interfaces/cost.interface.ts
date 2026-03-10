@@ -27,6 +27,41 @@ export interface IVariableCost {
   updatedAt: Date;
 }
 
+export interface IMarketingSpend {
+  id: string;
+  organizationId: string;
+  source: string;
+  sourceLabel: string;
+  amountInCents: number;
+  spentAt: string;
+  description: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ICreateMarketingSpend {
+  organizationId: string;
+  source: string;
+  sourceLabel: string;
+  amountInCents: number;
+  spentAt: string;
+  description?: string;
+}
+
+export interface IUpdateMarketingSpend {
+  source?: string;
+  sourceLabel?: string;
+  amountInCents?: number;
+  spentAt?: string;
+  description?: string;
+}
+
+export interface IMarketingSpendSummary {
+  source: string;
+  sourceLabel: string;
+  totalAmountInCents: number;
+}
+
 export interface ICreateFixedCost {
   organizationId: string;
   name: string;
@@ -73,6 +108,7 @@ export interface ICostsSummary {
   grossRevenueInCents: number;
   totalFixedCostsInCents: number;
   totalVariableCostsInCents: number;
+  totalMarketingSpendInCents: number;
   totalCostsInCents: number;
   impactPercent: number;
   marginPercent: number;
@@ -83,6 +119,8 @@ export interface IProfitAndLoss {
   eventCostsInCents: number;
   totalFixedCostsInCents: number;
   totalVariableCostsInCents: number;
+  marketingSpendInCents: number;
+  marketingBreakdown: IMarketingSpendSummary[];
   operatingProfitInCents: number;
   netProfitInCents: number;
   marginPercent: number;

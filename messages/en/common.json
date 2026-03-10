@@ -4,8 +4,8 @@
     "integrations": "Integrations",
     "ai": "AI Analysis",
     "docs": "Docs",
-    "signIn": "Sign in",
-    "earlyAccess": "Early access"
+    "signIn": "I have an account",
+    "earlyAccess": "Start for free"
   },
   "footer": {
     "copyright": "© 2026 Groware. All rights reserved.",
@@ -18,12 +18,8 @@
     }
   },
   "cta": {
-    "emailPlaceholder": "you@email.com",
-    "emailPlaceholderWork": "Your work email",
-    "submitHero": "Start for free →",
-    "submitCta": "Request access →",
-    "successToast": "You're on the list! We'll reach out soon.",
-    "invalidEmail": "Enter a valid email"
+    "submitHero": "Connect my Stripe for free →",
+    "submitCta": "Get started for free →"
   },
   "sensitiveMode": {
     "enable": "Hide personal data",

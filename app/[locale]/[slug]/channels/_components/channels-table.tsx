@@ -14,6 +14,13 @@ import { cn } from "@/lib/utils";
 import { getChannelName, getChannelColor } from "@/utils/channel-colors";
 import { fmtInt, fmtBRLDecimal } from "@/utils/format";
 
+function roiColor(roi: number) {
+  if (roi >= 500) return "text-emerald-400";
+  if (roi >= 100) return "text-zinc-300";
+  if (roi >= 0) return "text-amber-400";
+  return "text-red-400";
+}
+
 function conversionColor(value: string) {
   const n = parseFloat(value);
   if (n >= 10) return "text-emerald-400";
@@ -191,6 +198,31 @@ export function ChannelsTable({
           {variationBadge(c.revenue, c.previousRevenue)}
         </div>
       ),
+    },
+    {
+      key: "investment",
+      header: t("colInvestment"),
+      align: "right",
+      render: (c) => (
+        <span className="font-mono text-sm text-violet-400">
+          {c.investment !== undefined ? fmtBRLDecimal(c.investment / 100) : <span className="text-zinc-600">—</span>}
+        </span>
+      ),
+    },
+    {
+      key: "roi",
+      header: t("colRoi"),
+      align: "right",
+      render: (c) => {
+        if (c.investment === undefined || c.roi === undefined || c.roi === null) {
+          return <span className="text-zinc-600 text-sm">—</span>;
+        }
+        return (
+          <span className={cn("font-mono text-sm font-semibold", roiColor(c.roi))}>
+            {c.roi >= 0 ? "+" : ""}{c.roi}%
+          </span>
+        );
+      },
     },
     {
       key: "ticket_medio",

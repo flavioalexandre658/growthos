@@ -277,6 +277,10 @@ function HeroSection() {
         {t("disclaimer")}
       </p>
 
+      <p className="mt-3 text-xs text-zinc-700 font-mono landing-fade-5">
+        {t("socialProof", { count: 30 })}
+      </p>
+
       <HeroMockup />
     </section>
   );
@@ -609,9 +613,8 @@ function IntegrationsSection() {
                 <p className="text-xs text-zinc-500 leading-relaxed mt-1">{desc}</p>
               </div>
               <span
-                className={`text-xs font-mono px-2 py-0.5 rounded w-fit ${
-                  status === "live" ? "bg-emerald-400/10 text-emerald-400" : "bg-indigo-600/10 text-indigo-400"
-                }`}
+                className={`text-xs font-mono px-2 py-0.5 rounded w-fit ${status === "live" ? "bg-emerald-400/10 text-emerald-400" : "bg-indigo-600/10 text-indigo-400"
+                  }`}
               >
                 {status === "live" ? t("statusLive") : t("statusSoon")}
               </span>
@@ -772,11 +775,10 @@ function MetricsSection() {
             {filters.map((s, i) => (
               <span
                 key={s}
-                className={`text-[10px] font-semibold px-2 py-1 rounded border ${
-                  i === 0
+                className={`text-[10px] font-semibold px-2 py-1 rounded border ${i === 0
                     ? "border-indigo-600/50 bg-indigo-600/20 text-indigo-400"
                     : "border-zinc-700 text-zinc-500"
-                }`}
+                  }`}
               >
                 {s}
               </span>
@@ -812,17 +814,15 @@ function MetricsSection() {
                 <span className="font-mono text-sm text-zinc-400">{signup}</span>
                 <span className="font-mono text-sm text-zinc-400">{payment}</span>
                 <span
-                  className={`font-mono text-sm font-semibold ${
-                    parseFloat(conv) >= 3 ? "text-emerald-400" : parseFloat(conv) >= 1 ? "text-amber-400" : "text-zinc-500"
-                  }`}
+                  className={`font-mono text-sm font-semibold ${parseFloat(conv) >= 3 ? "text-emerald-400" : parseFloat(conv) >= 1 ? "text-amber-400" : "text-zinc-500"
+                    }`}
                 >
                   {conv}
                 </span>
                 <span className="font-mono text-sm font-bold text-emerald-400">{revenue}</span>
                 <span
-                  className={`font-mono text-sm ${
-                    negative ? "text-red-400" : up ? "text-emerald-400" : "text-zinc-500"
-                  }`}
+                  className={`font-mono text-sm ${negative ? "text-red-400" : up ? "text-emerald-400" : "text-zinc-500"
+                    }`}
                 >
                   {negative ? "↓ " : up ? "↑ " : ""}
                   {trend}
@@ -841,7 +841,7 @@ function CtaSection() {
 
   return (
     <section
-      id="acesso-antecipado"
+      id="comecar"
       className="px-6 py-32 sm:py-40 flex flex-col items-center text-center relative overflow-hidden"
     >
       <div

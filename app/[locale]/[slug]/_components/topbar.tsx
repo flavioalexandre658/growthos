@@ -83,7 +83,7 @@ function TopbarIconButton({
           {children}
         </button>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="text-xs">
+      <TooltipContent side="bottom" className="z-[60] text-xs bg-zinc-800 border-zinc-700 text-zinc-200">
         {tooltip}
       </TooltipContent>
     </Tooltip>
@@ -189,7 +189,7 @@ function NotificationsPopover() {
             </button>
           </PopoverTrigger>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="text-xs">
+        <TooltipContent side="bottom" className="z-[60] text-xs bg-zinc-800 border-zinc-700 text-zinc-200">
           {t("title")}
         </TooltipContent>
       </Tooltip>
@@ -276,7 +276,7 @@ function UserMenu() {
         <TooltipContent
           side="bottom"
           collisionPadding={8}
-          className="text-xs max-w-[180px] truncate"
+          className="z-[60] text-xs max-w-[180px] truncate bg-zinc-800 border-zinc-700 text-zinc-200"
         >
           {userName ?? userEmail ?? ""}
         </TooltipContent>
@@ -315,7 +315,7 @@ export function Topbar({ slug }: TopbarProps) {
 
   return (
     <TooltipProvider delayDuration={150}>
-      <div className="sticky top-0 z-40 hidden md:flex items-center justify-end gap-1 h-14 px-4 border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-sm overflow-hidden">
+      <div className="sticky top-0 z-40 hidden md:flex items-center justify-end gap-1 h-14 px-4 border-b border-zinc-800/60 bg-zinc-950/80 backdrop-blur-sm">
         <SensitiveToggle />
         <NotificationsPopover />
         <Link href="/docs" className="contents">

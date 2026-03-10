@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FixedCostsTable } from "./fixed-costs-table";
 import { VariableCostsTable } from "./variable-costs-table";
+import { MarketingSpendTable } from "./marketing-spend-table";
 import { CostsImpactCards } from "./costs-impact-cards";
 import { CostCompositionChart } from "./cost-composition-chart";
 import { useCostsSummary } from "@/hooks/queries/use-costs-summary";
@@ -107,6 +108,12 @@ export function CostsContent() {
           >
             {t("variableCostsTab")}
           </TabsTrigger>
+          <TabsTrigger
+            value="marketing"
+            className="text-xs data-[state=active]:bg-zinc-700 data-[state=active]:text-zinc-100 text-zinc-400"
+          >
+            {t("marketingTab")}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="fixed">
@@ -115,6 +122,10 @@ export function CostsContent() {
 
         <TabsContent value="variable">
           <VariableCostsTable organizationId={orgId} grossRevenueInCents={summary?.grossRevenueInCents} />
+        </TabsContent>
+
+        <TabsContent value="marketing">
+          <MarketingSpendTable organizationId={orgId} />
         </TabsContent>
       </Tabs>
     </div>

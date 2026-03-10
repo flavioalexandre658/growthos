@@ -18,6 +18,7 @@ interface WaterfallNames {
   discounts: string;
   variableCosts: string;
   operatingProfit: string;
+  marketingSpend: string;
   fixedCosts: string;
   netProfit: string;
 }
@@ -27,6 +28,7 @@ function buildData(pl: IProfitAndLoss, names: WaterfallNames): WaterfallEntry[] 
   const eventCosts = Math.abs(pl.eventCostsInCents / 100);
   const varTotal = Math.abs(pl.totalVariableCostsInCents / 100);
   const opProfit = pl.operatingProfitInCents / 100;
+  const marketingTotal = Math.abs(pl.marketingSpendInCents / 100);
   const fixedTotal = Math.abs(pl.totalFixedCostsInCents / 100);
   const net = pl.netProfitInCents / 100;
 
@@ -35,6 +37,7 @@ function buildData(pl: IProfitAndLoss, names: WaterfallNames): WaterfallEntry[] 
     { name: names.discounts, value: -eventCosts, color: "#f43f5e", isNegative: true },
     { name: names.variableCosts, value: -varTotal, color: "#f97316", isNegative: true },
     { name: names.operatingProfit, value: opProfit, color: opProfit >= 0 ? "#06b6d4" : "#ef4444", isNegative: opProfit < 0 },
+    { name: names.marketingSpend, value: -marketingTotal, color: "#a78bfa", isNegative: true },
     { name: names.fixedCosts, value: -fixedTotal, color: "#ef4444", isNegative: true },
     { name: names.netProfit, value: net, color: net >= 0 ? "#6366f1" : "#ef4444", isNegative: net < 0 },
   ].filter((d) => d.value !== 0);
@@ -168,6 +171,7 @@ export function ProfitLossWaterfall({ pl, isLoading }: ProfitLossWaterfallProps)
     discounts: t("discounts"),
     variableCosts: t("variableCosts"),
     operatingProfit: t("operatingProfit"),
+    marketingSpend: t("marketingSpend"),
     fixedCosts: t("fixedCosts"),
     netProfit: t("netProfit"),
   };

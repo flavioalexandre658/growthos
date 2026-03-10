@@ -5,10 +5,11 @@ import { authOptions } from "@/lib/auth-options";
 import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { db } from "@/db";
-import { events, organizations, payments } from "@/db/schema";
+import { events, organizations, payments, marketingSpends } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
 import { getUserPlan } from "@/utils/get-user-plan";
 import { getPageviewSessionsByChannel } from "@/utils/get-pageview-counts";
+import dayjs from "@/utils/dayjs";
 import {
   buildFunnelSteps,
   getAllQueryEventTypes,
@@ -16,11 +17,13 @@ import {
   buildExtendedStepMeta,
 } from "@/utils/build-funnel-steps";
 import { getChannelName } from "@/utils/channel-colors";
+import { getSourceForChannelKey, getChannelKeysForSource, isGroupedSource, getMarketingSourceLabel, SOURCE_GROUPS } from "@/utils/marketing-sources";
 import type {
   IDateFilter,
   IChannelParams,
   IChannelData,
   IChannelsResult,
+  IChannelInvestmentGroup,
 } from "@/interfaces/dashboard.interface";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
@@ -69,6 +72,7 @@ export async function getChannels(
     channelsWithRevenue: 0,
     topChannel: "",
     concentrationTop2: 0,
+    investmentGroups: [],
   };
 
   const session = await getServerSession(authOptions);
@@ -112,7 +116,7 @@ export async function getChannels(
     ELSE COALESCE("source", 'direct') || '_organic'
   END`);
 
-  const [rawRows, prevRawRows] = await Promise.all([
+  const [rawRows, prevRawRows, marketingRows] = await Promise.all([
     db
       .select({
         channel: sql<string>`${channelExpr}`,
@@ -146,6 +150,22 @@ export async function getChannels(
         )
       )
       .groupBy(sql`${channelExprPayments}`),
+
+    db
+      .select({
+        source: marketingSpends.source,
+        sourceLabel: marketingSpends.sourceLabel,
+        totalAmountInCents: sql<number>`COALESCE(SUM(${marketingSpends.amountInCents}), 0)`,
+      })
+      .from(marketingSpends)
+      .where(
+        and(
+          eq(marketingSpends.organizationId, organizationId),
+          gte(marketingSpends.spentAt, dayjs(startDate).tz(tz).format("YYYY-MM-DD")),
+          lte(marketingSpends.spentAt, dayjs(endDate).tz(tz).format("YYYY-MM-DD"))
+        )
+      )
+      .groupBy(marketingSpends.source, marketingSpends.sourceLabel),
   ]);
 
   const revenueRows = await db
@@ -237,6 +257,11 @@ export async function getChannels(
     channelMap.get(normalizedSource)!.steps["pageview"] = sessions;
   }
 
+  const marketingBySource = new Map<string, number>();
+  for (const row of marketingRows) {
+    marketingBySource.set(row.source, Number(row.totalAmountInCents));
+  }
+
   const allChannels: IChannelData[] = Array.from(channelMap.entries()).map(
     ([channel, data]) => {
       const firstStepKey = funnelSteps[0]?.eventType;
@@ -247,6 +272,18 @@ export async function getChannels(
         firstCount > 0 ? ((lastCount / firstCount) * 100).toFixed(1) + "%" : "0%";
       const ticketMedio = data.purchaseCount > 0 ? data.revenue / data.purchaseCount : 0;
 
+      const marketingSource = getSourceForChannelKey(channel);
+      let investment: number | undefined;
+      let roi: number | null | undefined;
+
+      if (marketingSource && !isGroupedSource(marketingSource)) {
+        const investmentAmt = marketingBySource.get(marketingSource);
+        if (investmentAmt !== undefined) {
+          investment = investmentAmt;
+          roi = investmentAmt > 0 ? Math.round(((data.revenue - investmentAmt) / investmentAmt) * 100) : null;
+        }
+      }
+
       return {
         channel,
         steps: data.steps,
@@ -254,6 +291,8 @@ export async function getChannels(
         ticket_medio: ticketMedio,
         conversion_rate: conversionRate,
         previousRevenue: previousRevenueMap.get(channel),
+        ...(investment !== undefined && { investment }),
+        ...(roi !== undefined && { roi }),
       };
     }
   );
@@ -295,6 +334,27 @@ export async function getChannels(
   const top2Revenue = allSorted.slice(0, 2).reduce((sum, c) => sum + c.revenue, 0);
   const concentrationTop2 = totalRevenue > 0 ? Math.round((top2Revenue / totalRevenue) * 100) : 0;
 
+  const investmentGroups: IChannelInvestmentGroup[] = Object.entries(SOURCE_GROUPS)
+    .map(([source, cfg]) => {
+      const investmentAmt = marketingBySource.get(source) ?? 0;
+      if (investmentAmt === 0) return null;
+      const channelKeys = cfg.sources.map((s) => `${s}_paid`);
+      const revenueInCents = channelKeys.reduce((sum, ck) => {
+        const ch = allChannels.find((c) => c.channel === ck);
+        return sum + (ch?.revenue ?? 0);
+      }, 0);
+      const roi = investmentAmt > 0 ? Math.round(((revenueInCents - investmentAmt) / investmentAmt) * 100) : null;
+      return {
+        source,
+        label: getMarketingSourceLabel(source, locale),
+        investmentInCents: investmentAmt,
+        revenueInCents,
+        roi,
+        channelKeys,
+      } satisfies IChannelInvestmentGroup;
+    })
+    .filter((g): g is IChannelInvestmentGroup => g !== null);
+
   return {
     data,
     pagination: {
@@ -308,5 +368,6 @@ export async function getChannels(
     channelsWithRevenue,
     topChannel,
     concentrationTop2,
+    investmentGroups,
   };
 }

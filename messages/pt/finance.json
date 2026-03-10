@@ -30,6 +30,10 @@
           "label": "= Lucro Operacional",
           "desc": "Resultado após descontos e custos variáveis configurados."
         },
+        "marketingSpend": {
+          "label": "− Gastos de Marketing",
+          "desc": "Soma dos investimentos em anúncios pagos (Google Ads, Meta Ads, etc.) no período."
+        },
         "fixedCosts": {
           "label": "− Custos Fixos",
           "desc": "Valores mensais fixos configurados na plataforma, rateados proporcionalmente ao período."
@@ -101,11 +105,12 @@
     },
     "profitLossWaterfall": {
       "title": "Composição do Resultado",
-      "subtitle": "Receita → Descontos → Custos Variáveis → Lucro Operacional → Custos Fixos → Lucro Líquido",
+      "subtitle": "Receita → Descontos → Custos Variáveis → Lucro Operacional → Marketing → Custos Fixos → Lucro Líquido",
       "revenue": "Receita",
       "discounts": "Descontos",
       "variableCosts": "Custos Var.",
       "operatingProfit": "Lucro Op.",
+      "marketingSpend": "Marketing",
       "fixedCosts": "Custos Fixos",
       "netProfit": "Lucro Líq."
     },
@@ -133,7 +138,8 @@
       "title": "Gerenciar Custos",
       "subtitle": "Cadastre custos fixos e variáveis para calcular o P&L no Financeiro",
       "fixedCostsTab": "Custos Fixos",
-      "variableCostsTab": "Custos Variáveis"
+      "variableCostsTab": "Custos Variáveis",
+      "marketingTab": "Gastos de Marketing"
     },
     "fixedCosts": {
       "title": "Custos Fixos",
@@ -249,6 +255,7 @@
       "noDataForPeriod": "Sem dados para o período",
       "variableCosts": "Custos Variáveis",
       "fixedCosts": "Custos Fixos",
+      "marketingSpend": "Marketing",
       "remainingMargin": "Sobra / Margem"
     },
     "costsImpact": {
@@ -258,9 +265,12 @@
       "variableLabel": "Custos Variáveis",
       "variableSub": "sobre {value} em receita",
       "variableTooltip": "Custos calculados como percentual da receita — taxas de gateway, comissões de marketplace, impostos. Crescem proporcionalmente às vendas.",
+      "marketingLabel": "Gastos de Marketing",
+      "marketingSub": "investimento em anúncios",
+      "marketingTooltip": "Soma dos gastos com anúncios pagos (Google Ads, Meta Ads, etc.) no período selecionado. Registre na aba Gastos de Marketing.",
       "totalLabel": "Custo Total",
-      "totalSub": "fixos + variáveis",
-      "totalTooltip": "Soma de todos os custos do período (fixos + variáveis). É o total que precisa ser coberto pela receita para o negócio ser lucrativo.",
+      "totalSub": "fixos + variáveis + marketing",
+      "totalTooltip": "Soma de todos os custos do período (fixos + variáveis + marketing). É o total que precisa ser coberto pela receita para o negócio ser lucrativo.",
       "marginImpactLabel": "Impacto na Margem",
       "marginImpactSub": "margem líquida: {value}%",
       "marginImpactTooltip": "Percentual da receita bruta consumido pelos custos totais. Acima de 50% é preocupante — significa que mais da metade do que entra já vai para despesas.",
@@ -279,6 +289,50 @@
       "showMore": "Ver análise completa",
       "connectionError": "Erro ao conectar com IA",
       "apiKeyError": "Erro ao obter análise. Verifique a configuração do GEMINI_API_KEY."
+    },
+    "marketingSpend": {
+      "title": "Gastos de Marketing",
+      "subtitle": "Registre investimentos em anúncios pagos por canal",
+      "add": "Adicionar Gasto",
+      "emptyTitle": "Nenhum gasto registrado",
+      "emptyDescription": "Registre seus gastos com Google Ads, Meta Ads e outros canais pagos para calcular o ROI por canal.",
+      "addFirst": "Adicionar primeiro gasto",
+      "totalLabel": "Total no período",
+      "filterBySource": "Todos os canais",
+      "columnDate": "Data",
+      "columnSource": "Canal",
+      "columnDescription": "Descrição",
+      "columnAmount": "Valor",
+      "columnActions": "",
+      "toastCreated": "Gasto de marketing adicionado!",
+      "toastUpdated": "Gasto de marketing atualizado!",
+      "toastDeleted": "Gasto de marketing removido!",
+      "formAdd": "Adicionar Gasto de Marketing",
+      "formEdit": "Editar Gasto de Marketing",
+      "formDescription": "Registre o valor investido em um canal de anúncios no período.",
+      "sourceLabel": "Canal",
+      "sourcePlaceholder": "Selecione o canal...",
+      "sourceOther": "Outro",
+      "sourceOtherKeyLabel": "Identificador do canal",
+      "sourceOtherKeyPlaceholder": "Ex: taboola, outbrain...",
+      "sourceOtherLabelField": "Nome de exibição",
+      "sourceOtherLabelPlaceholder": "Ex: Taboola, Outbrain...",
+      "amountLabel": "Valor Investido",
+      "amountPlaceholder": "R$ 0,00",
+      "dateLabel": "Data do Gasto",
+      "descriptionLabel": "Descrição (opcional)",
+      "descriptionPlaceholder": "Ex: Campanha Black Friday...",
+      "cancel": "Cancelar",
+      "saving": "Salvando...",
+      "save": "Salvar",
+      "validation": {
+        "sourceRequired": "Canal é obrigatório",
+        "sourceLabelRequired": "Nome do canal é obrigatório",
+        "sourceKeyRequired": "Identificador é obrigatório",
+        "amountRequired": "Valor é obrigatório",
+        "amountMustBePositive": "Valor deve ser positivo",
+        "dateRequired": "Data é obrigatória"
+      }
     }
   }
 }

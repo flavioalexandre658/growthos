@@ -79,6 +79,7 @@ export function RevenueLineChart({ data, pl, isLoading }: RevenueLineChartProps)
   const totalEventCosts = pl?.eventCostsInCents ?? 0;
   const totalVariableCosts = pl?.totalVariableCostsInCents ?? 0;
   const totalFixedCosts = pl?.totalFixedCostsInCents ?? 0;
+  const totalMarketingCosts = pl?.marketingSpendInCents ?? 0;
 
   const chartData = rows.map((d) => {
     const gross = (d.revenue ?? 0) / 100;
@@ -86,8 +87,9 @@ export function RevenueLineChart({ data, pl, isLoading }: RevenueLineChartProps)
     const eventCostDay = (totalEventCosts * share) / 100;
     const variableCostDay = (totalVariableCosts * share) / 100;
     const fixedCostDay = (totalFixedCosts * share) / 100;
+    const marketingCostDay = (totalMarketingCosts * share) / 100;
     const operatingProfit = gross - eventCostDay - variableCostDay;
-    const netProfit = operatingProfit - fixedCostDay;
+    const netProfit = operatingProfit - fixedCostDay - marketingCostDay;
 
     return {
       label: formatDateLabel(d.date),

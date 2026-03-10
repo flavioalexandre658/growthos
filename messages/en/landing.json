@@ -1,12 +1,13 @@
 {
   "landing": {
     "hero": {
-      "badge": "Now in early access",
+      "badge": "Free up to $15k/month in revenue",
       "badgeSuffix": " · Stripe integration available",
       "headline1": "From funnel to real profit.",
       "headline2": "Everything in one place.",
-      "subheadline": "MRR, acquisition channels, real P&L and AI analysis — connected in a single dashboard. Built for SaaS founders who want to grow with clarity.",
-      "disclaimer": "No credit card · Free during beta",
+      "subheadline": "Connect your Stripe in 2 minutes and see exactly where every dollar of your revenue comes from — channel, campaign, landing page and real margin. All together, no spreadsheet.",
+      "disclaimer": "No credit card · Free up to $15k/month in revenue",
+      "socialProof": "Used by {count}+ SaaS founders",
       "mockupLabel": "groware.io / overview",
       "overview": "Overview",
       "overviewSub": "Consolidated period performance",
@@ -26,27 +27,27 @@
     "problem": {
       "label": "// the problem",
       "headline1": "Your data is scattered everywhere,",
-      "headline2": "nothing is connected.",
-      "description": "MRR in Stripe. Costs in a spreadsheet. Acquisition in Google Analytics. P&L in Excel. Nothing talks to each other — and you spend hours connecting the dots manually.",
+      "headline2": "except where you need it.",
+      "description": "MRR in Stripe. Costs in a spreadsheet. Acquisition in Google Analytics. Nothing talks to each other — and you discover your real margin a month late, if you ever do.",
       "items": [
         {
           "icon": "📊",
           "title": "Stripe Dashboard",
-          "desc": "Shows revenue — but not where it came from, what it cost, or what your real margin is."
+          "desc": "Shows what came in. Not where it came from, what it cost to acquire, or whether you actually made a profit."
         },
         {
           "icon": "📋",
           "title": "Spreadsheets",
-          "desc": "Manual updates, broken formulas, always a month behind. Nobody trusts the numbers."
+          "desc": "You update it on Friday. By Monday it's already wrong. And when a formula breaks, nobody knows how long it's been broken."
         },
         {
           "icon": "📉",
           "title": "Google Analytics",
-          "desc": "Pageviews and sessions — but zero connection to revenue, subscriptions, or real business results."
+          "desc": "You know how many sessions came from Google. You don't know if any of them paid."
         }
       ],
       "solutionTitle": "Groware connects all of it.",
-      "solutionDesc": "One script. One webhook. Funnel → MRR → channels → costs → margin → AI insight — all in real time. Everything your growth team and CFO need, in one place."
+      "solutionDesc": "One script. One webhook. Funnel → MRR → channels → costs → real margin → AI — all together, in real time. Just you and the numbers that matter."
     },
     "features": {
       "label": "// features",
@@ -56,47 +57,84 @@
         {
           "title": "Overview",
           "desc": "Real-time funnel, KPIs with vs. prior period delta and daily chart. See visits → sign-ups → checkouts → revenue in one screen.",
-          "tags": ["funnel", "KPIs", "daily"]
+          "tags": [
+            "funnel",
+            "KPIs",
+            "daily"
+          ]
         },
         {
           "title": "Recurring Revenue (MRR)",
           "desc": "MRR, ARR, ARPU, LTV, Churn Rate, Revenue Churn. Subscriber flow Sankey and movement chart: New / Expansion / Contraction / Churn.",
-          "tags": ["MRR", "ARR", "LTV", "churn"]
+          "tags": [
+            "MRR",
+            "ARR",
+            "LTV",
+            "churn"
+          ]
         },
         {
           "title": "Financials",
           "desc": "Gross revenue, net revenue, discounts and average ticket. Breakdown by payment method (card, bank transfer) and product category.",
-          "tags": ["revenue", "ticket", "methods"]
+          "tags": [
+            "revenue",
+            "ticket",
+            "methods"
+          ]
         },
         {
           "title": "Costs & P&L",
           "desc": "Add fixed and variable costs (absolute or % of revenue). Real-time P&L: Gross Revenue → Gross Profit → Net Profit → Real Margin.",
-          "tags": ["P&L", "margin", "costs"]
+          "tags": [
+            "P&L",
+            "margin",
+            "costs"
+          ]
         },
         {
           "title": "Acquisition Channels",
           "desc": "Revenue, funnel stages, conversion rate and average ticket by source. Visual heatmap and sortable table by any column.",
-          "tags": ["UTMs", "source", "ROI"]
+          "tags": [
+            "UTMs",
+            "source",
+            "ROI"
+          ]
         },
         {
           "title": "Landing Pages",
           "desc": "Which entry pages generate the most revenue? Full funnel metrics by URL, with search, sorting and pagination.",
-          "tags": ["URL", "entry", "conversion"]
+          "tags": [
+            "URL",
+            "entry",
+            "conversion"
+          ]
         },
         {
           "title": "Events & Debug",
           "desc": "Real-time event table. Filter by type, billing model, date. Automatic alerts for IDs missing deduplication.",
-          "tags": ["real-time", "debug", "dedupe"]
+          "tags": [
+            "real-time",
+            "debug",
+            "dedupe"
+          ]
         },
         {
           "title": "Subscriptions",
           "desc": "Active, in trial, past due, canceled — with plan, interval, normalized monthly value and customer ID. Full history.",
-          "tags": ["status", "plans", "intervals"]
+          "tags": [
+            "status",
+            "plans",
+            "intervals"
+          ]
         },
         {
           "title": "Period Comparison",
           "desc": "Compare two date ranges — overview, channels, financials or landing pages. Side by side or AI summary.",
-          "tags": ["diff", "trends", "compare"]
+          "tags": [
+            "diff",
+            "trends",
+            "compare"
+          ]
         }
       ]
     },
@@ -143,7 +181,7 @@
         {
           "name": "Asaas",
           "desc": "PIX, bank slip, credit card. The dominant gateway for Brazilian SaaS — full native integration.",
-          "status": "soon"
+          "status": "live"
         },
         {
           "name": "Kiwify",
@@ -203,12 +241,30 @@
         }
       ],
       "mockupPlItems": [
-        { "label": "GROSS REVENUE", "value": "$48,240" },
-        { "label": "VARIABLE COSTS", "value": "- $7,120" },
-        { "label": "OPERATING INCOME", "value": "$41,120" },
-        { "label": "FIXED COSTS", "value": "- $11,400" },
-        { "label": "NET INCOME", "value": "$29,720" },
-        { "label": "REAL MARGIN", "value": "61.6%" }
+        {
+          "label": "GROSS REVENUE",
+          "value": "$48,240"
+        },
+        {
+          "label": "VARIABLE COSTS",
+          "value": "- $7,120"
+        },
+        {
+          "label": "OPERATING INCOME",
+          "value": "$41,120"
+        },
+        {
+          "label": "FIXED COSTS",
+          "value": "- $11,400"
+        },
+        {
+          "label": "NET INCOME",
+          "value": "$29,720"
+        },
+        {
+          "label": "REAL MARGIN",
+          "value": "61.6%"
+        }
       ],
       "mockupDiagnosisHeader": "## Diagnosis",
       "mockupDiagnosisLine": "Your real margin of <highlight>61.6%</highlight> is <above>above average</above> for B2C SaaS.",
@@ -236,15 +292,19 @@
         "revenue": "Revenue",
         "vs": "vs previous"
       },
-      "filters": ["Revenue", "Conversion", "Ticket"]
+      "filters": [
+        "Revenue",
+        "Conversion",
+        "Ticket"
+      ]
     },
     "ctaSection": {
-      "badge": "FREE DURING BETA",
+      "badge": "FREE UP TO $15K/MONTH IN REVENUE",
       "headline1": "Stop guessing.",
       "headline2": "Start",
       "headline3": "growing with clarity.",
-      "description": "Get early access to Groware and turn your scattered data into growth decisions — before your competitors do.",
-      "disclaimer": "Free during beta · No card · 5-minute setup"
+      "description": "Connect your Stripe, install the tracker and see where every dollar of your revenue comes from — channel, campaign, real margin. In under 5 minutes.",
+      "disclaimer": "No credit card · Free up to $15k/month in revenue · 5-minute setup"
     },
     "strip": [
       "MRR & ARR",
