@@ -16,6 +16,7 @@ import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
+import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
 import type { BillingInterval } from "@/utils/billing";
 
 const ASAAS_BASE_URL = "https://api.asaas.com/v3";
@@ -159,6 +160,10 @@ export async function syncAsaasHistory(
 
   if (!integration) throw new Error("Integração não encontrada.");
   if (integration.status === "disconnected") throw new Error("Integração desconectada.");
+
+  if (await isOrgOverRevenueLimit(organizationId)) {
+    throw new Error("Limite de receita do plano atingido. Faça upgrade para importar dados históricos.");
+  }
 
   const apiKey = decrypt(integration.accessToken);
   const orgCurrency = await getOrgCurrency(organizationId);

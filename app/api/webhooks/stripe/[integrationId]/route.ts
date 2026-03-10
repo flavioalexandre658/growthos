@@ -11,6 +11,7 @@ import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
 import { createNotification } from "@/utils/create-notification";
+import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
 
 function extractMetaCustomerId(metadata: Record<string, string> | null | undefined): string | null {
   if (!metadata) return null;
@@ -115,6 +116,11 @@ export async function POST(
   const orgId = integration.organizationId;
 
   const response = new NextResponse(null, { status: 200 });
+
+  if (await isOrgOverRevenueLimit(orgId)) {
+    console.warn("[stripe-webhook] revenue limit exceeded, skipping event", { orgId, eventType: event.type });
+    return response;
+  }
 
   await handleStripeEvent(orgId, event, stripe).catch((err) => {
     console.error("[stripe-webhook]", event.type, err);

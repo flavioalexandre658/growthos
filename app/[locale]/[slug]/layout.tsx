@@ -6,6 +6,7 @@ import { updateLastActivity } from "@/actions/emails/update-last-activity.action
 import { Sidebar } from "./_components/sidebar";
 import { Topbar } from "./_components/topbar";
 import { MobileChecklistBanner } from "./_components/mobile-checklist-banner";
+import { RevenueLimitBanner } from "./_components/revenue-limit-banner";
 
 interface OrgLayoutProps {
   children: React.ReactNode;
@@ -31,6 +32,7 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
       <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto">
         <Topbar slug={slug} />
         <div className="pt-14 md:pt-0">
+          <RevenueLimitBanner slug={slug} />
           <MobileChecklistBanner slug={slug} />
           {children}
         </div>

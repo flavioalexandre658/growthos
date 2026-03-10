@@ -14,6 +14,7 @@ import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
 import { createNotification } from "@/utils/create-notification";
+import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
 import type { BillingInterval } from "@/utils/billing";
 
 interface AsaasPaymentPayload {
@@ -134,6 +135,11 @@ export async function POST(
 
   const orgId = integration.organizationId;
   const asaasApiKey = decrypt(integration.accessToken);
+
+  if (await isOrgOverRevenueLimit(orgId)) {
+    console.warn("[asaas-webhook] revenue limit exceeded, skipping event", { orgId, event: body.event });
+    return new NextResponse(null, { status: 200 });
+  }
 
   await handleAsaasEvent(orgId, body, asaasApiKey).catch((err) => {
     console.error("[asaas-webhook]", body.event, err);

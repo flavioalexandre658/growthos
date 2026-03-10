@@ -117,6 +117,11 @@
       "ctaDefault": "Connect gateway",
       "ctaSelected": "Connect {name}",
       "skip": "Set up later"
+    },
+    "revenueLimitBanner": {
+      "title": "Revenue limit reached",
+      "description": "Your {plan} plan has a {limit}/mo limit. New events are being blocked.",
+      "upgrade": "Upgrade now"
     }
   }
 }

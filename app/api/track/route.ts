@@ -7,6 +7,7 @@ import { resolveExchangeRate as resolveRate } from "@/utils/resolve-exchange-rat
 import { checkRateLimit } from "@/utils/rate-limiter";
 import { insertPayment } from "@/utils/insert-payment";
 import { getOrgOwnerId } from "@/utils/get-plan-usage";
+import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
 import { upsertCustomer } from "@/utils/upsert-customer";
 import { extractGeo } from "@/utils/extract-geo";
 import { createNotification } from "@/utils/create-notification";
@@ -410,6 +411,14 @@ export async function POST(req: NextRequest) {
   const orgCurrency = org?.currency ?? "BRL";
 
   const ownerId = await getOrgOwnerId(apiKey.organizationId);
+
+  if (await isOrgOverRevenueLimit(apiKey.organizationId)) {
+    return jsonError(
+      "Revenue limit exceeded. Upgrade your plan to continue receiving data.",
+      402,
+      origin,
+    );
+  }
 
   if (eventType === "pageview") {
     await handlePageview(
