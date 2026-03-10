@@ -5,30 +5,21 @@ import { useTranslations } from "next-intl";
 import { IconCheck } from "@tabler/icons-react";
 import { GrowareLogo } from "@/components/groware-logo";
 import { cn } from "@/lib/utils";
-import { StepCreateOrg } from "./step-create-org";
-import { StepRegionalConfig } from "./step-regional-config";
+import { StepOrganization } from "./step-organization";
 import { StepFunnelConfig } from "./step-funnel-config";
-import { StepApiKey } from "./step-api-key";
-import { StepVerifyEvent } from "./step-verify-event";
-import { StepTour } from "./step-tour";
+import { StepInstallTracker } from "./step-install-tracker";
 import type { IOrganization } from "@/interfaces/organization.interface";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
-const STEP_KEYS = ["organization", "regional", "funnel", "apiKey", "verify", "dashboard"] as const;
-
-const LS_KEY = "groware_onboarding_step";
+const STEP_KEYS = ["organization", "funnel", "install"] as const;
 
 function calcInitialStep(
   existingOrg: IOrganization | null,
-  existingApiKey: string | null
+  existingApiKey: string | null,
 ): number {
   if (!existingOrg) return 1;
-  if (!existingApiKey) return 3;
-  if (typeof window !== "undefined") {
-    const saved = window.localStorage.getItem(LS_KEY);
-    if (saved === "6") return 6;
-  }
-  return 5;
+  if (existingApiKey) return 3;
+  return 2;
 }
 
 interface OnboardingWizardProps {
@@ -44,26 +35,15 @@ export function OnboardingWizard({
 }: OnboardingWizardProps) {
   const t = useTranslations("onboarding.wizard");
   const [currentStep, setCurrentStep] = useState(() =>
-    calcInitialStep(existingOrg, existingApiKey)
+    calcInitialStep(existingOrg, existingApiKey),
   );
   const [org, setOrg] = useState<IOrganization | null>(existingOrg);
-  const [apiKey, setApiKey] = useState<string>(existingApiKey ?? "");
   const [funnelSteps, setFunnelSteps] = useState<IFunnelStepConfig[]>(
-    existingOrg?.funnelSteps ?? []
+    existingOrg?.funnelSteps ?? [],
   );
-  const [verified, setVerified] = useState(false);
 
   const advance = () => {
-    setCurrentStep((s) => {
-      const next = Math.min(s + 1, 6);
-      if (next === 6) {
-        try {
-          localStorage.setItem(LS_KEY, "6");
-        } catch {
-        }
-      }
-      return next;
-    });
+    setCurrentStep((s) => Math.min(s + 1, 3));
   };
 
   return (
@@ -96,20 +76,20 @@ export function OnboardingWizard({
                     isDone
                       ? "bg-emerald-600 border-emerald-600 text-white"
                       : isActive
-                      ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/30"
-                      : "bg-zinc-950 border-zinc-800 text-zinc-600"
+                        ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-600/30"
+                        : "bg-zinc-950 border-zinc-800 text-zinc-600",
                   )}
                 >
                   {isDone ? <IconCheck size={14} /> : number}
                 </div>
                 <span
                   className={cn(
-                    "text-[10px] font-semibold whitespace-nowrap hidden sm:block",
+                    "text-[10px] font-semibold whitespace-nowrap",
                     isDone
                       ? "text-emerald-500"
                       : isActive
-                      ? "text-indigo-400"
-                      : "text-zinc-700"
+                        ? "text-indigo-400"
+                        : "text-zinc-700",
                   )}
                 >
                   {t(`steps.${key}`)}
@@ -122,7 +102,7 @@ export function OnboardingWizard({
 
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 backdrop-blur-sm shadow-xl shadow-black/30">
         {currentStep === 1 && (
-          <StepCreateOrg
+          <StepOrganization
             onComplete={(createdOrg) => {
               setOrg(createdOrg);
               advance();
@@ -131,13 +111,6 @@ export function OnboardingWizard({
         )}
 
         {currentStep === 2 && org && (
-          <StepRegionalConfig
-            organizationId={org.id}
-            onComplete={advance}
-          />
-        )}
-
-        {currentStep === 3 && org && (
           <StepFunnelConfig
             organizationId={org.id}
             onComplete={(steps) => {
@@ -147,42 +120,15 @@ export function OnboardingWizard({
           />
         )}
 
-        {currentStep === 4 && org && (
-          <StepApiKey
+        {currentStep === 3 && org && (
+          <StepInstallTracker
             organizationId={org.id}
             organizationName={org.name}
+            slug={org.slug}
             currency={org.currency ?? "BRL"}
             hasRecurringRevenue={org.hasRecurringRevenue}
             funnelSteps={funnelSteps}
             existingKey={existingApiKey ?? undefined}
-            onComplete={(key) => {
-              setApiKey(key);
-              advance();
-            }}
-          />
-        )}
-
-        {currentStep === 5 && org && (
-          <StepVerifyEvent
-            organizationId={org.id}
-            apiKey={apiKey}
-            onComplete={(didVerify) => {
-              setVerified(didVerify);
-              advance();
-            }}
-          />
-        )}
-
-        {currentStep === 6 && org && (
-          <StepTour
-            slug={org.slug}
-            userName={userName}
-            verified={verified}
-            currency={org.currency ?? "BRL"}
-            funnelSteps={funnelSteps}
-            hasRecurringRevenue={org.hasRecurringRevenue}
-            apiKey={apiKey}
-            onGoBack={() => setCurrentStep(5)}
           />
         )}
       </div>
@@ -190,7 +136,6 @@ export function OnboardingWizard({
       <p className="text-center text-xs text-zinc-700">
         {t("stepProgress", { current: currentStep, total: STEP_KEYS.length })}
       </p>
-
     </div>
   );
 }

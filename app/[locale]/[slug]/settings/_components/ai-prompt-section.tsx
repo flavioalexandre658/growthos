@@ -255,7 +255,7 @@ Cole este script no <head> de TODAS as páginas (ou no layout raiz):
 
 <script
   async
-  src="${baseUrl}/tracker.js"
+  src="${baseUrl}/tracker.min.js"
   data-key="${apiKey}"
 ></script>
 
@@ -315,7 +315,7 @@ VALIDAÇÃO — COMO CONFIRMAR QUE FUNCIONOU
 3. Abra DevTools → Network e confirme POST /api/track com status 204
 4. Acesse Groware → Dados → Eventos e verifique os eventos aparecendo
 5. Para diagnóstico adicional adicione data-debug="true" no script:
-   <script async src="${baseUrl}/tracker.js" data-key="${apiKey}" data-debug="true"></script>
+   <script async src="${baseUrl}/tracker.min.js" data-key="${apiKey}" data-debug="true"></script>
    e verifique os logs [Groware] no console do browser
 
 Se tiver dúvidas sobre algum evento ou campo, consulte a documentação:

@@ -5,11 +5,29 @@
       "stepProgress": "Passo {current} de {total}",
       "steps": {
         "organization": "Organização",
-        "regional": "Regional",
         "funnel": "Funil",
-        "apiKey": "API Key",
-        "verify": "Verificar",
-        "dashboard": "Dashboard"
+        "install": "Instalar"
+      }
+    },
+    "stepOrganization": {
+      "title": "Criar organização",
+      "subtitle": "Nome, slug e configurações regionais em um só lugar",
+      "nameLabel": "Nome",
+      "namePlaceholder": "Ex: Minha Loja Online",
+      "slugLabel": "Slug (identificador único)",
+      "slugPlaceholder": "minha-loja",
+      "slugHint": "Identificador único:",
+      "localeLabel": "Localização",
+      "currencyLabel": "Moeda base",
+      "timezoneLabel": "Fuso horário",
+      "submitting": "Criando...",
+      "submit": "Continuar",
+      "successToast": "Organização criada!",
+      "errorToast": "Erro ao criar organização.",
+      "validation": {
+        "nameMinLength": "Nome deve ter pelo menos 2 caracteres",
+        "slugMinLength": "Slug deve ter pelo menos 2 caracteres",
+        "slugPattern": "Apenas letras minúsculas, números e hífens"
       }
     },
     "stepCreateOrg": {
@@ -105,7 +123,9 @@
       "copy": "Copiar",
       "copiedToast": "Copiado!",
       "keyWarning": "Esta key autentica todos os eventos de {orgName}. Não commite no Git — use variável de ambiente (NEXT_PUBLIC_GROWARE_KEY).",
-      "snippetHint": "Cole no <head> de qualquer página. O tracker captura UTMs, device, referrer e pageviews automaticamente.",
+      "snippetHint": "Cole no &lt;head&gt; de qualquer página. O tracker captura UTMs, device, referrer e pageviews automaticamente.",
+      "identifyTitle": "Identificação de usuários",
+      "identifyDescription": "Após o login, vincule a sessão anônima ao perfil do usuário. Isso habilita atribuição por cliente, histórico de sessões e análise de comportamento por segmento.",
       "trackFunnelTitle": "Como rastrear seu funil",
       "stepsConfigured": "{count, plural, =1 {# etapa configurada} other {# etapas configuradas}}",
       "noStepsConfigured": "Nenhuma etapa de funil configurada. Volte ao passo anterior para definir seu funil.",
@@ -114,6 +134,32 @@
         "description": "Se o seu fluxo tem um checkout (modal, redirecionamento ou página separada), adicione este evento antes do purchase. Ele habilita a análise de abandono de checkout — quantos usuários chegaram até aqui mas não converteram. O tracker detecta o abandono automaticamente via beforeunload."
       },
       "submit": "Continuar — Verificar instalação"
+    },
+    "stepInstallTracker": {
+      "title": "Instalar tracker",
+      "subtitle": "API key, snippet e verificação em tempo real",
+      "welcomeToast": "Bem-vindo ao Groware!",
+      "errorToast": "Erro ao finalizar onboarding.",
+      "finishing": "Entrando...",
+      "goToDashboard": "Ir para o Dashboard",
+      "skipToDashboard": "Ir para o Dashboard"
+    },
+    "stepGateway": {
+      "title": "Conectar gateway de pagamento",
+      "subtitle": "Vincule sua receita ao canal de aquisição — de onde veio cada cliente",
+      "calloutTitle": "Tracker + Gateway = visão completa",
+      "calloutDescription": "O tracker captura UTMs, canal e funil. O gateway traz receita real. Juntos, você vê quanto cada canal gerou em R$.",
+      "availableLabel": "Disponível",
+      "comingSoonLabel": "Em breve",
+      "connectedBadge": "Conectado",
+      "disconnectedBadge": "Desconectado",
+      "connectButton": "Conectar",
+      "connecting": "Conectando...",
+      "skip": "Pular, configurar depois",
+      "submit": "Continuar",
+      "connectedToast": "Gateway conectado!",
+      "errorToast": "Erro ao conectar. Verifique a chave.",
+      "mercadoPagoDescription": "Pagamentos no Brasil via Mercado Pago"
     },
     "stepVerifyEvent": {
       "titleDetected": "Evento detectado!",

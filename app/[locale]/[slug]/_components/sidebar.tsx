@@ -441,7 +441,7 @@ function SidebarContent({
       </div>
 
       <div className="relative flex-1 min-h-0">
-        <nav ref={navRef} className="h-full space-y-0.5 overflow-y-auto px-3 py-1">
+        <nav ref={navRef} className="h-full space-y-0.5 overflow-y-auto scrollbar-thin px-3 py-1">
           <Suspense>
             {sections.map((section) => (
               <div key={section.title}>

@@ -5,11 +5,29 @@
       "stepProgress": "Step {current} of {total}",
       "steps": {
         "organization": "Organization",
-        "regional": "Regional",
         "funnel": "Funnel",
-        "apiKey": "API Key",
-        "verify": "Verify",
-        "dashboard": "Dashboard"
+        "install": "Install"
+      }
+    },
+    "stepOrganization": {
+      "title": "Create organization",
+      "subtitle": "Name, slug and regional settings in one place",
+      "nameLabel": "Name",
+      "namePlaceholder": "E.g.: My Online Store",
+      "slugLabel": "Slug (unique identifier)",
+      "slugPlaceholder": "my-store",
+      "slugHint": "Unique identifier:",
+      "localeLabel": "Location",
+      "currencyLabel": "Base currency",
+      "timezoneLabel": "Timezone",
+      "submitting": "Creating...",
+      "submit": "Continue",
+      "successToast": "Organization created!",
+      "errorToast": "Error creating organization.",
+      "validation": {
+        "nameMinLength": "Name must be at least 2 characters",
+        "slugMinLength": "Slug must be at least 2 characters",
+        "slugPattern": "Only lowercase letters, numbers and hyphens"
       }
     },
     "stepCreateOrg": {
@@ -105,7 +123,9 @@
       "copy": "Copy",
       "copiedToast": "Copied!",
       "keyWarning": "This key authenticates all events for {orgName}. Do not commit to Git — use an environment variable (NEXT_PUBLIC_GROWARE_KEY).",
-      "snippetHint": "Paste in the <head> of any page. The tracker captures UTMs, device, referrer and pageviews automatically.",
+      "snippetHint": "Paste in the &lt;head&gt; of any page. The tracker captures UTMs, device, referrer and pageviews automatically.",
+      "identifyTitle": "User identification",
+      "identifyDescription": "After login, link the anonymous session to the user profile. This enables per-customer attribution, session history and behavioral analysis by segment.",
       "trackFunnelTitle": "How to track your funnel",
       "stepsConfigured": "{count, plural, =1 {# step configured} other {# steps configured}}",
       "noStepsConfigured": "No funnel steps configured. Go back to the previous step to define your funnel.",
@@ -114,6 +134,32 @@
         "description": "If your flow has a checkout (modal, redirect or separate page), add this event before purchase. It enables checkout abandonment analysis — how many users got here but didn't convert. The tracker detects abandonment automatically via beforeunload."
       },
       "submit": "Continue — Verify installation"
+    },
+    "stepInstallTracker": {
+      "title": "Install tracker",
+      "subtitle": "API key, snippet and real-time verification",
+      "welcomeToast": "Welcome to Groware!",
+      "errorToast": "Error completing onboarding.",
+      "finishing": "Entering...",
+      "goToDashboard": "Go to Dashboard",
+      "skipToDashboard": "Go to Dashboard"
+    },
+    "stepGateway": {
+      "title": "Connect payment gateway",
+      "subtitle": "Link your revenue to the acquisition channel — see where each customer came from",
+      "calloutTitle": "Tracker + Gateway = complete picture",
+      "calloutDescription": "The tracker captures UTMs, channel and funnel. The gateway brings real revenue. Together, you see how much each channel generated.",
+      "availableLabel": "Available",
+      "comingSoonLabel": "Coming soon",
+      "connectedBadge": "Connected",
+      "disconnectedBadge": "Disconnected",
+      "connectButton": "Connect",
+      "connecting": "Connecting...",
+      "skip": "Skip, configure later",
+      "submit": "Continue",
+      "connectedToast": "Gateway connected!",
+      "errorToast": "Error connecting. Check the key.",
+      "mercadoPagoDescription": "Payments in Brazil via Mercado Pago"
     },
     "stepVerifyEvent": {
       "titleDetected": "Event detected!",

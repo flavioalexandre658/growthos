@@ -91,6 +91,19 @@
       "payments": "Payments",
       "noPayments": "No payments",
       "empty": "No customers found"
+    },
+    "gatewayModal": {
+      "title": "Connect payment gateway",
+      "description": "Automatically import revenue and cross-reference with your acquisition channels.",
+      "selectLabel": "Select gateway",
+      "infoStrip": "You will need a restricted API key. History will be imported automatically.",
+      "infoStripHighlight": "restricted API key",
+      "comingSoon": "Coming soon",
+      "stripeDesc": "Global payments",
+      "asaasDesc": "Brazilian gateway",
+      "ctaDefault": "Connect gateway",
+      "ctaSelected": "Connect {name}",
+      "skip": "Set up later"
     }
   }
 }

@@ -91,6 +91,19 @@
       "payments": "Pagamentos",
       "noPayments": "Sem pagamentos",
       "empty": "Nenhum cliente encontrado"
+    },
+    "gatewayModal": {
+      "title": "Conectar gateway de pagamento",
+      "description": "Importe receita automaticamente e cruze com seus canais de aquisição.",
+      "selectLabel": "Selecione o gateway",
+      "infoStrip": "Você precisará de uma chave de API restrita. O histórico será importado automaticamente.",
+      "infoStripHighlight": "chave de API restrita",
+      "comingSoon": "Em breve",
+      "stripeDesc": "Pagamentos globais",
+      "asaasDesc": "Gateway brasileiro",
+      "ctaDefault": "Conectar gateway",
+      "ctaSelected": "Conectar {name}",
+      "skip": "Configurar depois"
     }
   }
 }

@@ -23,6 +23,7 @@ import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
 import { IconCreditCard, IconCode, IconX } from "@tabler/icons-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { GatewayPromptModal } from "./gateway-prompt-modal";
 
 interface OverviewContentProps {
   filter: IDateFilter;
@@ -229,6 +230,8 @@ export function OverviewContent({ filter }: OverviewContentProps) {
 
   return (
     <div className="space-y-4">
+      <GatewayPromptModal />
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>
