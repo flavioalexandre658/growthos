@@ -49,7 +49,10 @@
       "noRevenue": "no revenue",
       "hide": "Hide",
       "showNoRevenue": "+{count} without revenue",
-      "emptyState": "No attribution data in the period"
+      "emptyState": "No attribution data in the period",
+      "groupLabel": "Group",
+      "groupInvestment": "Investment",
+      "groupCustomers": "Customers"
     },
     "campaigns": {
       "title": "Top Campaigns",

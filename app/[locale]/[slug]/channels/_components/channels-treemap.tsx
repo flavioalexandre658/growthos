@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal, fmtInt } from "@/utils/format";
+import { fmtBRLDecimal, fmtBRLCompact, fmtInt } from "@/utils/format";
 import { getChannelColor, getChannelName } from "@/utils/channel-colors";
 import type { IChannelData } from "@/interfaces/dashboard.interface";
 
@@ -342,6 +342,11 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
           >
             <defs>
               {rects.map((rect) => (
+                <clipPath key={`clip-${rect.channel}`} id={`clip-${rect.channel}`}>
+                  <rect x={rect.x} y={rect.y} width={rect.w} height={rect.h} rx={R} />
+                </clipPath>
+              ))}
+              {rects.map((rect) => (
                 <linearGradient
                   key={`lg-${rect.channel}`}
                   id={`tmg-${rect.channel}`}
@@ -381,11 +386,15 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
                   ? name.slice(0, Math.max(2, maxChars - 1)) + "…"
                   : name;
 
+              const revenueCompact = fmtBRLCompact(rect.revenue / 100);
+              const revenueDecimal = fmtBRLDecimal(rect.revenue / 100);
+
               return (
                 <g
                   key={rect.channel}
                   opacity={isDim ? 0.2 : 1}
                   style={{ transition: "opacity 0.2s ease-out" }}
+                  clipPath={`url(#clip-${rect.channel})`}
                   onMouseEnter={(e) => handleMouseMove(rect.channel, rect, e)}
                   onMouseMove={(e) => handleMouseMove(rect.channel, rect, e)}
                   onMouseLeave={() => {
@@ -454,7 +463,7 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
                         fontFamily="ui-monospace, monospace"
                         fontWeight="700"
                       >
-                        {fmtBRLDecimal(rect.revenue / 100)}
+                        {revenueDecimal}
                       </text>
                       <text
                         x={rect.x + PAD}
@@ -501,7 +510,7 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
                         fontFamily="ui-monospace, monospace"
                         fontWeight="700"
                       >
-                        {fmtBRLDecimal(rect.revenue / 100)}
+                        {rect.w < 140 ? revenueCompact : revenueDecimal}
                       </text>
                       {rect.h >= 65 && (
                         <text
@@ -525,11 +534,11 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
                       y={rect.y + rect.h / 2 + 3}
                       textAnchor="middle"
                       fill="rgba(255,255,255,0.8)"
-                      fontSize="10"
+                      fontSize="9"
                       fontFamily="ui-monospace, monospace"
                       fontWeight="600"
                     >
-                      {fmtBRLDecimal(rect.revenue / 100)}
+                      {revenueCompact}
                     </text>
                   )}
                 </g>

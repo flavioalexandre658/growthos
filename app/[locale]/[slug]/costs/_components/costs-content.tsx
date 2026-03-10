@@ -11,6 +11,8 @@ import { CostsImpactCards } from "./costs-impact-cards";
 import { CostCompositionChart } from "./cost-composition-chart";
 import { useCostsSummary } from "@/hooks/queries/use-costs-summary";
 import { InlineBanner } from "@/components/ui/welcome-state";
+import { PeriodFilter } from "@/app/[locale]/[slug]/_components/period-filter";
+import type { IDateFilter } from "@/interfaces/dashboard.interface";
 
 function CostsPageSkeleton() {
   return (
@@ -55,7 +57,7 @@ function CostsPageSkeleton() {
   );
 }
 
-export function CostsContent() {
+export function CostsContent({ filter = {}, slug }: { filter?: IDateFilter; slug?: string }) {
   const t = useTranslations("finance.costsContent");
   const tTour = useTranslations("tour.welcome.costs");
   const { organization } = useOrganization();
@@ -125,7 +127,7 @@ export function CostsContent() {
         </TabsContent>
 
         <TabsContent value="marketing">
-          <MarketingSpendTable organizationId={orgId} />
+          <MarketingSpendTable organizationId={orgId} filter={filter} slug={slug} />
         </TabsContent>
       </Tabs>
     </div>

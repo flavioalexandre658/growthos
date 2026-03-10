@@ -49,6 +49,7 @@ interface ResponsiveTableProps<T> {
   serverPagination?: ServerPaginationConfig;
   initialPageSize?: number;
   pageSizeOptions?: number[];
+  expandedRowRender?: (row: T) => React.ReactNode;
 }
 
 const DEFAULT_PAGE_SIZES = [10, 25, 50];
@@ -142,11 +143,13 @@ export function ResponsiveTable<T>({
   serverPagination,
   initialPageSize = 25,
   pageSizeOptions = DEFAULT_PAGE_SIZES,
+  expandedRowRender,
 }: ResponsiveTableProps<T>) {
   const t = useTranslations("commonUi.responsiveTable");
   const resolvedEmptyMessage = emptyMessage ?? <span>{t("noDataFound")}</span>;
   const [clientPage, setClientPage] = useState(1);
   const [clientPageSize, setClientPageSize] = useState(initialPageSize);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const isServer = !!serverPagination;
 
@@ -226,6 +229,7 @@ export function ResponsiveTable<T>({
                   </th>
                 );
               })}
+              {expandedRowRender && <th className="w-6 px-3" />}
             </tr>
           </thead>
           <tbody>
@@ -237,6 +241,7 @@ export function ResponsiveTable<T>({
                         <Skeleton className="h-4 w-full bg-zinc-800" />
                       </td>
                     ))}
+                    {expandedRowRender && <td className="px-3 py-3 w-6" />}
                   </tr>
                 ))
               : rows.length === 0
@@ -250,24 +255,53 @@ export function ResponsiveTable<T>({
                   </td>
                 </tr>
               )
-              : rows.map((row) => (
-                  <tr
-                    key={getRowKey(row)}
-                    className="border-b border-zinc-800/60 hover:bg-zinc-800/30 transition-colors"
-                  >
-                    {columns.map((col) => (
-                      <td
-                        key={col.key}
+              : rows.map((row) => {
+                  const key = getRowKey(row);
+                  const isExpanded = expandedKey === key;
+                  return (
+                    <>
+                      <tr
+                        key={key}
+                        onClick={expandedRowRender ? () => setExpandedKey(isExpanded ? null : key) : undefined}
                         className={cn(
-                          "px-4 py-3",
-                          col.align === "right" && "text-right"
+                          "border-b border-zinc-800/60 transition-colors",
+                          expandedRowRender ? "cursor-pointer hover:bg-zinc-800/40" : "hover:bg-zinc-800/30",
+                          isExpanded && "bg-zinc-800/30 border-zinc-700/60"
                         )}
                       >
-                        {col.render(row)}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                  {columns.map((col) => (
+                    <td
+                      key={col.key}
+                      className={cn(
+                        "px-4 py-3",
+                        col.align === "right" && "text-right"
+                      )}
+                    >
+                      {col.render(row)}
+                    </td>
+                  ))}
+                  {expandedRowRender && (
+                    <td className="px-3 py-3 w-6 text-right">
+                      <IconChevronRight
+                        size={14}
+                        className={cn(
+                          "text-zinc-600 transition-transform duration-200 ml-auto",
+                          isExpanded && "rotate-90 text-zinc-400"
+                        )}
+                      />
+                    </td>
+                  )}
+                      </tr>
+                      {expandedRowRender && isExpanded && (
+                        <tr key={`${key}-expanded`} className="border-b border-zinc-700/40 bg-zinc-800/20">
+                          <td colSpan={columns.length + 1} className="px-4 py-3">
+                            {expandedRowRender(row)}
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  );
+                })}
           </tbody>
         </table>
       </div>
@@ -291,28 +325,54 @@ export function ResponsiveTable<T>({
               {resolvedEmptyMessage}
             </div>
           )
-          : rows.map((row) => (
-              <div
-                key={getRowKey(row)}
-                className="border-b border-zinc-800/60 p-4 last:border-b-0"
-              >
-                <div className="mb-3">
-                  {(primaryCol.mobileRender ?? primaryCol.render)(row)}
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                  {mobileDetailCols.map((col) => (
-                    <div key={col.key} className="min-w-0 overflow-hidden">
-                      <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-600 mb-0.5 truncate">
-                        {col.header}
-                      </p>
-                      <div className="min-w-0 overflow-hidden">
-                        {(col.mobileRender ?? col.render)(row)}
+          : rows.map((row) => {
+              const key = getRowKey(row);
+              const isExpanded = expandedKey === key;
+              return (
+                <div key={key}>
+                  <div
+                    onClick={expandedRowRender ? () => setExpandedKey(isExpanded ? null : key) : undefined}
+                    className={cn(
+                      "border-b border-zinc-800/60 p-4",
+                      expandedRowRender && "cursor-pointer active:bg-zinc-800/40",
+                      isExpanded && "bg-zinc-800/20 border-zinc-700/50"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <div className="flex-1 min-w-0">
+                        {(primaryCol.mobileRender ?? primaryCol.render)(row)}
                       </div>
+                      {expandedRowRender && (
+                        <IconChevronRight
+                          size={14}
+                          className={cn(
+                            "text-zinc-600 shrink-0 mt-0.5 transition-transform duration-200",
+                            isExpanded && "rotate-90 text-zinc-400"
+                          )}
+                        />
+                      )}
                     </div>
-                  ))}
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                      {mobileDetailCols.map((col) => (
+                        <div key={col.key} className="min-w-0 overflow-hidden">
+                          <p className="text-[10px] font-medium uppercase tracking-wider text-zinc-600 mb-0.5 truncate">
+                            {col.header}
+                          </p>
+                          <div className="min-w-0 overflow-hidden">
+                            {(col.mobileRender ?? col.render)(row)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {expandedRowRender && isExpanded && (
+                    <div className="border-b border-zinc-700/40 bg-zinc-800/10 px-4 py-3">
+                      {expandedRowRender(row)}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
       </div>
 
       {/* ── Pagination ── */}

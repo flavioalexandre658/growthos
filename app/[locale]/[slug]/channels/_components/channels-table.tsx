@@ -70,6 +70,77 @@ interface ChannelsTableProps {
   onPageSizeChange: (size: number) => void;
 }
 
+function ExpandedChannelRow({ c, t }: { c: ChannelRow; t: ReturnType<typeof useTranslations<"channels.table">> }) {
+  const hasInvestment = c.investment !== undefined && c.investment !== null;
+  const hasLtv = c.avgLtv !== undefined && c.avgLtv > 0;
+  const hasChurn = !!c.churnRate;
+  const hasCustomers = c.customersCount !== undefined;
+  const hasCac = c.cac != null;
+  const hasPayback = c.paybackMonths != null;
+
+  const churnN = hasChurn ? parseFloat(c.churnRate!) : 0;
+  const churnColor = churnN >= 10 ? "text-red-400" : churnN >= 5 ? "text-amber-400" : churnN > 0 ? "text-zinc-300" : "text-emerald-400";
+  const cacColor = hasCac && c.cac! > 50000 ? "text-red-400" : hasCac && c.cac! > 20000 ? "text-amber-400" : "text-zinc-300";
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {hasInvestment && (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">{t("colInvestment")}</span>
+          <span className="font-mono text-sm text-violet-400">{fmtBRLDecimal(c.investment! / 100)}</span>
+        </div>
+      )}
+      {c.roi !== undefined && c.roi !== null && (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">{t("colRoi")}</span>
+          <span className={cn("font-mono text-sm font-semibold", roiColor(c.roi))}>
+            {c.roi >= 0 ? "+" : ""}{c.roi}%
+          </span>
+        </div>
+      )}
+      {hasCac && (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">{t("colCac")}</span>
+          <span className={cn("font-mono text-sm font-semibold", cacColor)}>{fmtBRLDecimal(c.cac! / 100)}</span>
+        </div>
+      )}
+      {hasPayback && (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">{t("colPayback")}</span>
+          {c.paybackMonths === 0
+            ? <span className="font-mono text-sm text-emerald-400">{t("instant")}</span>
+            : <span className="font-mono text-sm text-zinc-300">{t("months", { value: c.paybackMonths ?? 0 })}</span>
+          }
+        </div>
+      )}
+      {hasCustomers && (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">{t("colCustomers")}</span>
+          <span className="font-mono text-sm text-zinc-400">{fmtInt(c.customersCount!)}</span>
+        </div>
+      )}
+      {hasLtv && (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">{t("colAvgLtv")}</span>
+          <span className="font-mono text-sm text-emerald-400">{fmtBRLDecimal(c.avgLtv! / 100)}</span>
+        </div>
+      )}
+      {hasChurn && (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">{t("colChurn")}</span>
+          <span className={cn("font-mono text-sm font-semibold", churnColor)}>{c.churnRate}</span>
+        </div>
+      )}
+      {c.ticket_medio > 0 && (
+        <div className="flex flex-col gap-0.5">
+          <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">{t("colAvgTicket")}</span>
+          <span className="font-mono text-sm text-zinc-300">{fmtBRLDecimal(c.ticket_medio / 100)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ChannelsTable({
   data,
   stepMeta,
@@ -120,21 +191,15 @@ export function ChannelsTable({
     pageSizeOptions: [10, 30, 50],
   };
 
-  const fixedSortOptions: { key: string; label: string }[] = [
+  const sortOptions: { key: string; label: string }[] = [
     { key: "revenue", label: t("sortRevenue") },
     { key: "conversion_rate", label: t("sortConversion") },
-    { key: "ticket_medio", label: t("sortTicket") },
     { key: "customersCount", label: t("sortCustomers") },
     { key: "avgLtv", label: t("sortLtv") },
     { key: "churnRate", label: t("sortChurn") },
+    { key: "ticket_medio", label: t("sortTicket") },
+    ...stepMeta.map((s) => ({ key: s.key, label: s.label })),
   ];
-
-  const stepSortOptions: { key: string; label: string }[] = stepMeta.map((s) => ({
-    key: s.key,
-    label: s.label,
-  }));
-
-  const allSortOptions = [...stepSortOptions, ...fixedSortOptions];
 
   const stepColumns: TableColumn<ChannelRow>[] = stepMeta.map((step) => ({
     key: step.key,
@@ -202,95 +267,6 @@ export function ChannelsTable({
         </div>
       ),
     },
-    {
-      key: "investment",
-      header: t("colInvestment"),
-      align: "right",
-      render: (c) => (
-        <span className="font-mono text-sm text-violet-400">
-          {c.investment !== undefined ? fmtBRLDecimal(c.investment / 100) : <span className="text-zinc-600">—</span>}
-        </span>
-      ),
-    },
-    {
-      key: "roi",
-      header: t("colRoi"),
-      align: "right",
-      render: (c) => {
-        if (c.investment === undefined || c.roi === undefined || c.roi === null) {
-          return <span className="text-zinc-600 text-sm">—</span>;
-        }
-        return (
-          <span className={cn("font-mono text-sm font-semibold", roiColor(c.roi))}>
-            {c.roi >= 0 ? "+" : ""}{c.roi}%
-          </span>
-        );
-      },
-    },
-    {
-      key: "customersCount",
-      header: t("colCustomers"),
-      align: "right",
-      render: (c) => (
-        <span className="font-mono text-sm text-zinc-400">
-          {c.customersCount !== undefined ? fmtInt(c.customersCount) : <span className="text-zinc-700">—</span>}
-        </span>
-      ),
-    },
-    {
-      key: "cac",
-      header: t("colCac"),
-      align: "right",
-      render: (c) => {
-        if (c.cac == null || c.cac === undefined) return <span className="text-zinc-600 text-sm">—</span>;
-        return (
-          <span className={cn("font-mono text-sm font-semibold", c.cac > 50000 ? "text-red-400" : c.cac > 20000 ? "text-amber-400" : "text-zinc-300")}>
-            {fmtBRLDecimal(c.cac / 100)}
-          </span>
-        );
-      },
-    },
-    {
-      key: "avgLtv",
-      header: t("colAvgLtv"),
-      align: "right",
-      render: (c) => (
-        <span className="font-mono text-sm text-emerald-400">
-          {c.avgLtv !== undefined && c.avgLtv > 0 ? fmtBRLDecimal(c.avgLtv / 100) : <span className="text-zinc-700">—</span>}
-        </span>
-      ),
-    },
-    {
-      key: "churnRate",
-      header: t("colChurn"),
-      align: "right",
-      render: (c) => {
-        if (!c.churnRate) return <span className="text-zinc-600 text-sm">—</span>;
-        const n = parseFloat(c.churnRate);
-        const color = n >= 10 ? "text-red-400" : n >= 5 ? "text-amber-400" : n > 0 ? "text-zinc-300" : "text-emerald-400";
-        return <span className={cn("font-mono text-sm font-semibold", color)}>{c.churnRate}</span>;
-      },
-    },
-    {
-      key: "paybackMonths",
-      header: t("colPayback"),
-      align: "right",
-      render: (c) => {
-        if (c.paybackMonths == null || c.paybackMonths === undefined) return <span className="text-zinc-600 text-sm">—</span>;
-        if (c.paybackMonths === 0) return <span className="text-emerald-400 text-sm font-mono">{t("instant")}</span>;
-        return <span className="font-mono text-sm text-zinc-300">{t("months", { value: c.paybackMonths })}</span>;
-      },
-    },
-    {
-      key: "ticket_medio",
-      header: t("colAvgTicket"),
-      align: "right",
-      render: (c) => (
-        <span className="font-mono text-sm text-zinc-300">
-          {c.ticket_medio > 0 ? fmtBRLDecimal(c.ticket_medio / 100) : <span className="text-zinc-600">—</span>}
-        </span>
-      ),
-    },
   ];
 
   const tableHeader = (
@@ -316,7 +292,7 @@ export function ChannelsTable({
             {showNoRevenue ? t("hide") : t("showNoRevenue", { count: noRevenue.length })}
           </button>
         )}
-        {allSortOptions.map((s) => {
+        {sortOptions.map((s) => {
           const isActive = orderBy === s.key;
           return (
             <button
@@ -352,6 +328,7 @@ export function ChannelsTable({
       serverPagination={serverPagination}
       emptyMessage={t("emptyState")}
       header={tableHeader}
+      expandedRowRender={(c) => <ExpandedChannelRow c={c} t={t} />}
     />
   );
 }

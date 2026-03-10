@@ -49,7 +49,10 @@
       "noRevenue": "sem receita",
       "hide": "Ocultar",
       "showNoRevenue": "+{count} sem receita",
-      "emptyState": "Sem dados de attribution no período"
+      "emptyState": "Sem dados de attribution no período",
+      "groupLabel": "Grupo",
+      "groupInvestment": "Investimento",
+      "groupCustomers": "Clientes"
     },
     "campaigns": {
       "title": "Top Campanhas",

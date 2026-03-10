@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { IconPlus, IconPencil, IconTrash, IconSpeakerphone } from "@tabler/icons-react";
+import { IconPlus, IconPencil, IconTrash, IconSpeakerphone, IconSearch, IconX } from "@tabler/icons-react";
+import { NumericFormat } from "react-number-format";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -14,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { ResponsiveTable, type TableColumn } from "@/components/ui/responsive-table";
 import { MarketingSpendFormDialog } from "./marketing-spend-form-dialog";
+import { PeriodFilter } from "@/app/[locale]/[slug]/_components/period-filter";
 import { useMarketingSpends } from "@/hooks/queries/use-marketing-spends";
 import { useCreateMarketingSpend } from "@/hooks/mutations/use-create-marketing-spend";
 import { useUpdateMarketingSpend } from "@/hooks/mutations/use-update-marketing-spend";
@@ -22,17 +25,28 @@ import { fmtBRLDecimal } from "@/utils/format";
 import { MARKETING_SOURCE_OPTIONS, getMarketingSourceLabel } from "@/utils/marketing-sources";
 import type { IMarketingSpend } from "@/interfaces/cost.interface";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
+import type { IGetMarketingSpendsParams } from "@/actions/costs/get-marketing-spends.action";
 import toast from "react-hot-toast";
 import dayjs from "dayjs";
 
 interface MarketingSpendTableProps {
   organizationId: string;
   filter?: IDateFilter;
+  slug?: string;
 }
 
 const ALL_SOURCES = "__all__";
 
-export function MarketingSpendTable({ organizationId, filter = {} }: MarketingSpendTableProps) {
+function useDebounced<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
+export function MarketingSpendTable({ organizationId, filter = {}, slug }: MarketingSpendTableProps) {
   const t = useTranslations("finance.marketingSpend");
   const locale = useLocale();
 
@@ -40,13 +54,29 @@ export function MarketingSpendTable({ organizationId, filter = {} }: MarketingSp
   const [editing, setEditing] = useState<IMarketingSpend | null>(null);
   const [sourceFilter, setSourceFilter] = useState<string>(ALL_SOURCES);
   const [page, setPage] = useState(1);
+  const [sortKey, setSortKey] = useState<IGetMarketingSpendsParams["sortKey"]>("spentAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [searchInput, setSearchInput] = useState("");
+  const [minAmountInput, setMinAmountInput] = useState<number | undefined>(undefined);
+  const [maxAmountInput, setMaxAmountInput] = useState<number | undefined>(undefined);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const debouncedSearch = useDebounced(searchInput, 300);
+  const debouncedMin = useDebounced(minAmountInput, 400);
+  const debouncedMax = useDebounced(maxAmountInput, 400);
+
   const limit = 20;
 
-  const params = {
+  const params: IGetMarketingSpendsParams = {
     ...filter,
     source: sourceFilter === ALL_SOURCES ? undefined : sourceFilter,
     page,
     limit,
+    sortKey,
+    sortDir,
+    search: debouncedSearch || undefined,
+    minAmountInCents: debouncedMin !== undefined ? Math.round(debouncedMin * 100) : undefined,
+    maxAmountInCents: debouncedMax !== undefined ? Math.round(debouncedMax * 100) : undefined,
   };
 
   const { data: result, isLoading } = useMarketingSpends(organizationId, params);
@@ -57,6 +87,27 @@ export function MarketingSpendTable({ organizationId, filter = {} }: MarketingSp
   const rows = result?.data ?? [];
   const pagination = result?.pagination ?? { page: 1, limit, total: 0, total_pages: 0 };
   const totalAmountInCents = result?.totalAmountInCents ?? 0;
+
+  function handleSort(key: string) {
+    if (key === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key as IGetMarketingSpendsParams["sortKey"]);
+      setSortDir("desc");
+    }
+    setPage(1);
+  }
+
+  function handleSourceChange(v: string) {
+    setSourceFilter(v);
+    setPage(1);
+  }
+
+  function handleSearchClear() {
+    setSearchInput("");
+    setPage(1);
+    searchRef.current?.focus();
+  }
 
   const handleOpenCreate = () => {
     setEditing(null);
@@ -94,6 +145,10 @@ export function MarketingSpendTable({ organizationId, filter = {} }: MarketingSp
     {
       key: "spentAt",
       header: t("columnDate"),
+      sortKey: "spentAt",
+      onSort: handleSort,
+      currentSortKey: sortKey,
+      currentSortDir: sortDir,
       render: (row) => (
         <span className="font-mono text-xs text-zinc-400">
           {dayjs(row.spentAt).format("DD/MM/YYYY")}
@@ -120,6 +175,10 @@ export function MarketingSpendTable({ organizationId, filter = {} }: MarketingSp
       key: "amountInCents",
       header: t("columnAmount"),
       align: "right",
+      sortKey: "amountInCents",
+      onSort: handleSort,
+      currentSortKey: sortKey,
+      currentSortDir: sortDir,
       render: (row) => (
         <span className="font-mono text-sm font-bold text-violet-400">
           {fmtBRLDecimal(row.amountInCents / 100)}
@@ -175,18 +234,35 @@ export function MarketingSpendTable({ organizationId, filter = {} }: MarketingSp
   );
 
   const tableHeader = (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-      <div>
-        <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
-        <p className="text-xs text-zinc-500">{t("subtitle")}</p>
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-sm font-bold text-zinc-100">{t("title")}</h3>
+          <p className="text-xs text-zinc-500">{t("subtitle")}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {totalAmountInCents > 0 && (
+            <Badge variant="outline" className="text-xs border-violet-700 bg-violet-600/10 text-violet-300 font-mono">
+              {t("totalLabel")}: {fmtBRLDecimal(totalAmountInCents / 100)}
+            </Badge>
+          )}
+          <Button
+            size="sm"
+            onClick={handleOpenCreate}
+            className="bg-indigo-600 hover:bg-indigo-500 text-white h-8 gap-1.5"
+          >
+            <IconPlus size={14} />
+            <span className="hidden sm:inline">{t("add")}</span>
+          </Button>
+        </div>
       </div>
-      <div className="flex flex-wrap items-center gap-2 shrink-0">
-        {totalAmountInCents > 0 && (
-          <Badge variant="outline" className="text-xs border-violet-700 bg-violet-600/10 text-violet-300 font-mono">
-            {t("totalLabel")}: {fmtBRLDecimal(totalAmountInCents / 100)}
-          </Badge>
+
+      <div className="flex flex-wrap items-center gap-2">
+        {slug && (
+          <PeriodFilter filter={filter} />
         )}
-        <Select value={sourceFilter} onValueChange={(v) => { setSourceFilter(v); setPage(1); }}>
+
+        <Select value={sourceFilter} onValueChange={handleSourceChange}>
           <SelectTrigger className="h-8 w-40 bg-zinc-900 border-zinc-700 text-zinc-300 text-xs">
             <SelectValue />
           </SelectTrigger>
@@ -201,14 +277,49 @@ export function MarketingSpendTable({ organizationId, filter = {} }: MarketingSp
             ))}
           </SelectContent>
         </Select>
-        <Button
-          size="sm"
-          onClick={handleOpenCreate}
-          className="bg-indigo-600 hover:bg-indigo-500 text-white h-8 gap-1.5"
-        >
-          <IconPlus size={14} />
-          <span className="hidden sm:inline">{t("add")}</span>
-        </Button>
+
+        <div className="relative flex items-center">
+          <IconSearch size={13} className="absolute left-2.5 text-zinc-500 pointer-events-none" />
+          <Input
+            ref={searchRef}
+            value={searchInput}
+            onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
+            placeholder={t("searchPlaceholder")}
+            className="h-8 w-44 pl-7 pr-7 bg-zinc-900 border-zinc-700 text-zinc-300 text-xs placeholder:text-zinc-600"
+          />
+          {searchInput && (
+            <button
+              onClick={handleSearchClear}
+              className="absolute right-2 text-zinc-500 hover:text-zinc-300 transition-colors"
+            >
+              <IconX size={12} />
+            </button>
+          )}
+        </div>
+
+        <NumericFormat
+          value={minAmountInput ?? ""}
+          onValueChange={(values) => { setMinAmountInput(values.floatValue); setPage(1); }}
+          thousandSeparator="."
+          decimalSeparator=","
+          prefix="R$ "
+          decimalScale={2}
+          placeholder={t("minAmountPlaceholder")}
+          customInput={Input}
+          className="h-8 w-28 bg-zinc-900 border-zinc-700 text-zinc-300 text-xs placeholder:text-zinc-600"
+        />
+
+        <NumericFormat
+          value={maxAmountInput ?? ""}
+          onValueChange={(values) => { setMaxAmountInput(values.floatValue); setPage(1); }}
+          thousandSeparator="."
+          decimalSeparator=","
+          prefix="R$ "
+          decimalScale={2}
+          placeholder={t("maxAmountPlaceholder")}
+          customInput={Input}
+          className="h-8 w-28 bg-zinc-900 border-zinc-700 text-zinc-300 text-xs placeholder:text-zinc-600"
+        />
       </div>
     </div>
   );

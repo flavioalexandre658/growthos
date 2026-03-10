@@ -19,6 +19,13 @@ export function fmtBRLDecimal(value: number | string | null | undefined): string
   return `R$ ${PT_BR_DEC2.format(n)}`;
 }
 
+export function fmtBRLCompact(value: number): string {
+  if (value >= 1_000_000) return `R$${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 10_000) return `R$${(value / 1_000).toFixed(0)}k`;
+  if (value >= 1_000) return `R$${(value / 1_000).toFixed(1)}k`;
+  return `R$${Math.round(value)}`;
+}
+
 export function fmtCurrency(
   value: number | string | null | undefined,
   locale: string,

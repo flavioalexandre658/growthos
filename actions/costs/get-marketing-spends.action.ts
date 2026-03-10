@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
+import { eq, and, gte, lte, desc, asc, sql, ilike, or, gte as gteAmt, lte as lteAmt } from "drizzle-orm";
 import { db } from "@/db";
 import { marketingSpends, organizations } from "@/db/schema";
 import { resolveDateRange } from "@/utils/resolve-date-range";
@@ -12,6 +12,11 @@ export interface IGetMarketingSpendsParams extends IDateFilter {
   source?: string;
   page?: number;
   limit?: number;
+  sortKey?: "spentAt" | "amountInCents";
+  sortDir?: "asc" | "desc";
+  search?: string;
+  minAmountInCents?: number;
+  maxAmountInCents?: number;
 }
 
 export interface IGetMarketingSpendsResult {
@@ -38,19 +43,42 @@ export async function getMarketingSpends(
   const limit = params.limit ?? 20;
   const offset = (page - 1) * limit;
 
-  const baseCondition = and(
+  const conditions = [
     eq(marketingSpends.organizationId, organizationId),
     gte(marketingSpends.spentAt, startStr),
     lte(marketingSpends.spentAt, endStr),
-    ...(params.source ? [eq(marketingSpends.source, params.source)] : [])
-  );
+    ...(params.source ? [eq(marketingSpends.source, params.source)] : []),
+    ...(params.search
+      ? [
+          or(
+            ilike(marketingSpends.sourceLabel, `%${params.search}%`),
+            ilike(marketingSpends.description, `%${params.search}%`)
+          ),
+        ]
+      : []),
+    ...(params.minAmountInCents !== undefined
+      ? [gteAmt(marketingSpends.amountInCents, params.minAmountInCents)]
+      : []),
+    ...(params.maxAmountInCents !== undefined
+      ? [lteAmt(marketingSpends.amountInCents, params.maxAmountInCents)]
+      : []),
+  ];
+
+  const baseCondition = and(...conditions);
+
+  const sortDir = params.sortDir ?? "desc";
+  const sortFn = sortDir === "asc" ? asc : desc;
+  const orderByClause =
+    params.sortKey === "amountInCents"
+      ? [sortFn(marketingSpends.amountInCents), desc(marketingSpends.createdAt)]
+      : [sortFn(marketingSpends.spentAt), desc(marketingSpends.createdAt)];
 
   const [rows, countRow, sumRow] = await Promise.all([
     db
       .select()
       .from(marketingSpends)
       .where(baseCondition)
-      .orderBy(desc(marketingSpends.spentAt), desc(marketingSpends.createdAt))
+      .orderBy(...orderByClause)
       .limit(limit)
       .offset(offset),
     db

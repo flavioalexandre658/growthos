@@ -122,13 +122,15 @@ function notificationIcon(type: NotificationType) {
   }
 }
 
+const SALE_NOTIFICATION_TYPES = new Set<NotificationType>(["purchase", "renewal", "refund"]);
+
 function NotificationItem({
   notification,
   onRead,
   onEmailClick,
 }: {
   notification: NotificationRow;
-  onRead: (id: string, linkUrl: string | null) => void;
+  onRead: (notification: NotificationRow) => void;
   onEmailClick: (notification: NotificationRow) => void;
 }) {
   const hasEmailHtml = notification.type === "email_sequence" &&
@@ -140,7 +142,7 @@ function NotificationItem({
         if (hasEmailHtml) {
           onEmailClick(notification);
         } else {
-          onRead(notification.id, notification.linkUrl);
+          onRead(notification);
         }
       }}
       className={cn(
@@ -244,9 +246,14 @@ function NotificationsPopover() {
   const { mutate: markRead } = useMarkNotificationRead(orgId ?? "");
   const { mutate: markAllRead, isPending: markingAll } = useMarkAllNotificationsRead(orgId ?? "");
 
-  function handleRead(id: string, linkUrl: string | null) {
-    markRead({ id });
-    if (linkUrl) router.push(linkUrl as Parameters<typeof router.push>[0]);
+  function handleRead(notification: NotificationRow) {
+    markRead({ id: notification.id });
+    const metadata = notification.metadata as Record<string, unknown> | null;
+    if (SALE_NOTIFICATION_TYPES.has(notification.type) && metadata?.customerId && organization?.slug) {
+      router.push(`/${organization.slug}/customers/${metadata.customerId}` as Parameters<typeof router.push>[0]);
+    } else if (notification.linkUrl) {
+      router.push(notification.linkUrl as Parameters<typeof router.push>[0]);
+    }
   }
 
   function handleEmailClick(notification: NotificationRow) {
