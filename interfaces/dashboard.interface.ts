@@ -1,4 +1,17 @@
-export type DashboardPeriod = "today" | "yesterday" | "3d" | "7d" | "this_month" | "30d" | "90d";
+export type DashboardPeriod =
+  | "today"
+  | "yesterday"
+  | "3d"
+  | "7d"
+  | "14d"
+  | "30d"
+  | "90d"
+  | "this_week"
+  | "last_week"
+  | "this_month"
+  | "last_month"
+  | "this_year"
+  | "all_time";
 export type OrderDirection = "ASC" | "DESC";
 
 export interface IStepMeta {
