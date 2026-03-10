@@ -3,8 +3,8 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
-import { customers, payments, subscriptions, events } from "@/db/schema";
-import { eq, and, inArray, sum, count, asc } from "drizzle-orm";
+import { customers, payments, subscriptions } from "@/db/schema";
+import { eq, and, inArray, sum, count } from "drizzle-orm";
 import type { ICustomer } from "@/interfaces/customer.interface";
 
 export interface ICustomerSummary {
@@ -51,7 +51,7 @@ export async function getCustomerSummary(
 
   const PURCHASE_TYPES = ["purchase", "renewal"];
 
-  const [revenueResult, paymentsResult, subscriptionRow, firstEventRow] =
+  const [revenueResult, paymentsResult, subscriptionRow] =
     await Promise.all([
       db
         .select({ total: sum(payments.baseGrossValueInCents) })
@@ -93,31 +93,11 @@ export async function getCustomerSummary(
           )
         )
         .limit(1),
-
-      db
-        .select({
-          source: events.source,
-          medium: events.medium,
-          campaign: events.campaign,
-          landingPage: events.landingPage,
-          device: events.device,
-          createdAt: events.createdAt,
-        })
-        .from(events)
-        .where(
-          and(
-            eq(events.organizationId, organizationId),
-            eq(events.customerId, customerId)
-          )
-        )
-        .orderBy(asc(events.createdAt))
-        .limit(1),
     ]);
 
   const ltvInCents = Number(revenueResult[0]?.total ?? 0);
   const paymentsCount = Number(paymentsResult[0]?.cnt ?? 0);
   const activeSubscription = subscriptionRow[0] ?? null;
-  const firstEvent = firstEventRow[0];
 
   return {
     customer: customerRow as ICustomer,
@@ -134,12 +114,12 @@ export async function getCustomerSummary(
         }
       : null,
     acquisition: {
-      source: firstEvent?.source ?? null,
-      medium: firstEvent?.medium ?? null,
-      campaign: firstEvent?.campaign ?? null,
-      landingPage: firstEvent?.landingPage ?? null,
-      device: firstEvent?.device ?? null,
-      firstEventAt: firstEvent?.createdAt ?? null,
+      source: customerRow.firstSource ?? null,
+      medium: customerRow.firstMedium ?? null,
+      campaign: customerRow.firstCampaign ?? null,
+      landingPage: customerRow.firstLandingPage ?? null,
+      device: customerRow.firstDevice ?? null,
+      firstEventAt: customerRow.firstSeenAt ?? null,
     },
   };
 }

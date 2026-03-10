@@ -19,6 +19,13 @@ export async function upsertCustomer(input: IUpsertCustomerInput): Promise<void>
       city: input.city ?? null,
       avatarUrl: input.avatarUrl ?? null,
       metadata: input.metadata ?? null,
+      firstSource: input.firstSource ?? null,
+      firstMedium: input.firstMedium ?? null,
+      firstCampaign: input.firstCampaign ?? null,
+      firstContent: input.firstContent ?? null,
+      firstLandingPage: input.firstLandingPage ?? null,
+      firstReferrer: input.firstReferrer ?? null,
+      firstDevice: input.firstDevice ?? null,
       firstSeenAt: now,
       lastSeenAt: now,
     })
@@ -35,6 +42,13 @@ export async function upsertCustomer(input: IUpsertCustomerInput): Promise<void>
         metadata: input.metadata
           ? sql`${customers.metadata}::jsonb || ${JSON.stringify(input.metadata)}::jsonb`
           : customers.metadata,
+        firstSource: sql`COALESCE(${customers.firstSource}, ${input.firstSource ?? null})`,
+        firstMedium: sql`COALESCE(${customers.firstMedium}, ${input.firstMedium ?? null})`,
+        firstCampaign: sql`COALESCE(${customers.firstCampaign}, ${input.firstCampaign ?? null})`,
+        firstContent: sql`COALESCE(${customers.firstContent}, ${input.firstContent ?? null})`,
+        firstLandingPage: sql`COALESCE(${customers.firstLandingPage}, ${input.firstLandingPage ?? null})`,
+        firstReferrer: sql`COALESCE(${customers.firstReferrer}, ${input.firstReferrer ?? null})`,
+        firstDevice: sql`COALESCE(${customers.firstDevice}, ${input.firstDevice ?? null})`,
         lastSeenAt: now,
         updatedAt: now,
       },

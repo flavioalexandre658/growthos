@@ -10,6 +10,13 @@ export interface ICustomer {
   city: string | null;
   avatarUrl: string | null;
   metadata: Record<string, unknown> | null;
+  firstSource: string | null;
+  firstMedium: string | null;
+  firstCampaign: string | null;
+  firstContent: string | null;
+  firstLandingPage: string | null;
+  firstReferrer: string | null;
+  firstDevice: string | null;
   firstSeenAt: Date;
   lastSeenAt: Date;
   createdAt: Date;
@@ -46,5 +53,12 @@ export interface IUpsertCustomerInput {
   city?: string | null;
   avatarUrl?: string | null;
   metadata?: Record<string, unknown> | null;
+  firstSource?: string | null;
+  firstMedium?: string | null;
+  firstCampaign?: string | null;
+  firstContent?: string | null;
+  firstLandingPage?: string | null;
+  firstReferrer?: string | null;
+  firstDevice?: string | null;
   eventTimestamp?: Date;
 }

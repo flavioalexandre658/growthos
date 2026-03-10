@@ -3,7 +3,7 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
-import { customers, payments, events } from "@/db/schema";
+import { customers, payments } from "@/db/schema";
 import { eq, and, isNotNull, sum, count, desc, sql } from "drizzle-orm";
 
 export type TopCustomerSortBy = "ltv" | "payments" | "lastSeen";
@@ -35,8 +35,6 @@ export async function getTopCustomers(
   const limit = params.limit ?? 50;
   const sortBy = params.sortBy ?? "ltv";
 
-  const PURCHASE_TYPES = ["purchase", "renewal"];
-
   const customerRows = await db
     .select({
       customerId: customers.customerId,
@@ -46,6 +44,9 @@ export async function getTopCustomers(
       city: customers.city,
       lastSeenAt: customers.lastSeenAt,
       firstSeenAt: customers.firstSeenAt,
+      firstSource: customers.firstSource,
+      firstCampaign: customers.firstCampaign,
+      firstMedium: customers.firstMedium,
     })
     .from(customers)
     .where(eq(customers.organizationId, organizationId));
@@ -54,48 +55,27 @@ export async function getTopCustomers(
 
   const customerIds = customerRows.map((c) => c.customerId);
 
-  const [revenueRows, firstEventRows] = await Promise.all([
-    db
-      .select({
-        customerId: payments.customerId,
-        ltvInCents: sum(payments.baseGrossValueInCents),
-        paymentsCount: count(),
-      })
-      .from(payments)
-      .where(
-        and(
-          eq(payments.organizationId, organizationId),
-          isNotNull(payments.customerId),
-          sql`${payments.eventType} = ANY(${sql.raw(`ARRAY['purchase','renewal']`)}::text[])`,
-          sql`${payments.customerId} = ANY(${sql.raw(`ARRAY[${customerIds.map((id) => `'${id.replace(/'/g, "''")}'`).join(",")}]`)})`
-        )
+  const revenueRows = await db
+    .select({
+      customerId: payments.customerId,
+      ltvInCents: sum(payments.baseGrossValueInCents),
+      paymentsCount: count(),
+    })
+    .from(payments)
+    .where(
+      and(
+        eq(payments.organizationId, organizationId),
+        isNotNull(payments.customerId),
+        sql`${payments.eventType} = ANY(${sql.raw(`ARRAY['purchase','renewal']`)}::text[])`,
+        sql`${payments.customerId} = ANY(${sql.raw(`ARRAY[${customerIds.map((id) => `'${id.replace(/'/g, "''")}'`).join(",")}]`)})`
       )
-      .groupBy(payments.customerId),
-
-    db
-      .select({
-        customerId: events.customerId,
-        source: sql<string | null>`MIN(CASE WHEN ${events.source} IS NOT NULL THEN ${events.source} END)`,
-        campaign: sql<string | null>`MIN(CASE WHEN ${events.campaign} IS NOT NULL THEN ${events.campaign} END)`,
-        medium: sql<string | null>`MIN(CASE WHEN ${events.medium} IS NOT NULL THEN ${events.medium} END)`,
-      })
-      .from(events)
-      .where(
-        and(
-          eq(events.organizationId, organizationId),
-          isNotNull(events.customerId),
-          sql`${events.customerId} = ANY(${sql.raw(`ARRAY[${customerIds.map((id) => `'${id.replace(/'/g, "''")}'`).join(",")}]`)})`
-        )
-      )
-      .groupBy(events.customerId),
-  ]);
+    )
+    .groupBy(payments.customerId);
 
   const revenueMap = new Map(revenueRows.map((r) => [r.customerId, r]));
-  const eventMap = new Map(firstEventRows.map((e) => [e.customerId, e]));
 
   const result: ITopCustomer[] = customerRows.map((c) => {
     const rev = revenueMap.get(c.customerId);
-    const ev = eventMap.get(c.customerId);
     return {
       customerId: c.customerId,
       name: c.name,
@@ -106,9 +86,9 @@ export async function getTopCustomers(
       firstSeenAt: c.firstSeenAt,
       ltvInCents: Number(rev?.ltvInCents ?? 0),
       paymentsCount: Number(rev?.paymentsCount ?? 0),
-      firstSource: ev?.source ?? null,
-      firstCampaign: ev?.campaign ?? null,
-      firstMedium: ev?.medium ?? null,
+      firstSource: c.firstSource ?? null,
+      firstCampaign: c.firstCampaign ?? null,
+      firstMedium: c.firstMedium ?? null,
     };
   });
 

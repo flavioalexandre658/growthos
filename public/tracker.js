@@ -40,6 +40,7 @@
     "subscription_changed",
   ];
   var ENTRY_KEY = "groware_entry";
+  var FIRST_TOUCH_KEY = "groware_first_touch";
   var FAILED_KEY = "groware_failed_events";
   var FAILED_MAX = 50;
   var FAILED_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -300,6 +301,54 @@
     }
   }
 
+  function getFirstTouch() {
+    try {
+      var stored = localStorage.getItem(FIRST_TOUCH_KEY);
+      if (stored) return JSON.parse(stored);
+
+      var params = new URLSearchParams(window.location.search);
+      var clickId = detectClickId(params);
+      var utmSource = params.get("utm_source");
+      var rawReferrer = document.referrer || null;
+      var externalReferrer = rawReferrer && !isSameSite(rawReferrer) ? rawReferrer : null;
+
+      var source =
+        utmSource ||
+        (clickId && clickId.source) ||
+        inferSourceFromReferrer(externalReferrer);
+
+      var medium =
+        params.get("utm_medium") ||
+        (clickId && clickId.medium) ||
+        inferMediumFromReferrer(externalReferrer);
+
+      var device =
+        /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent,
+        )
+          ? "mobile"
+          : "desktop";
+
+      var firstTouch = {
+        source: source,
+        medium: medium,
+        campaign: params.get("utm_campaign") || null,
+        content: params.get("utm_content") || null,
+        landing_page: window.location.pathname,
+        referrer: rawReferrer,
+        device: device,
+      };
+
+      try {
+        localStorage.setItem(FIRST_TOUCH_KEY, JSON.stringify(firstTouch));
+      } catch (_) {}
+
+      return firstTouch;
+    } catch (_) {
+      return null;
+    }
+  }
+
   function getStoredCustomer() {
     if (currentCustomer) return currentCustomer;
     try {
@@ -369,6 +418,17 @@
       device: device,
       session_id: getSessionId(),
     };
+
+    var firstTouch = getFirstTouch();
+    if (firstTouch) {
+      ctx.first_source = firstTouch.source;
+      ctx.first_medium = firstTouch.medium;
+      ctx.first_campaign = firstTouch.campaign;
+      ctx.first_content = firstTouch.content;
+      ctx.first_landing_page = firstTouch.landing_page;
+      ctx.first_referrer = firstTouch.referrer;
+      ctx.first_device = firstTouch.device;
+    }
 
     if (customerCtx) {
       if (customerCtx.customer_id) ctx.customer_id = customerCtx.customer_id;

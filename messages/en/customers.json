@@ -22,6 +22,7 @@
       "customer": "Customer",
       "customerId": "Customer ID",
       "location": "Location",
+      "source": "Source",
       "firstSeen": "First seen",
       "lastSeen": "Last seen"
     },

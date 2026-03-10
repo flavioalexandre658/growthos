@@ -627,6 +627,13 @@ export async function POST(req: NextRequest) {
       country: geo.country,
       region: geo.region,
       city: geo.city,
+      firstSource: toString(body.first_source),
+      firstMedium: toString(body.first_medium),
+      firstCampaign: toString(body.first_campaign),
+      firstContent: toString(body.first_content),
+      firstLandingPage: toString(body.first_landing_page),
+      firstReferrer: toString(body.first_referrer),
+      firstDevice: toString(body.first_device),
       eventTimestamp: createdAt,
     }).catch((err) => {
       console.error("[Groware] upsertCustomer failed", {

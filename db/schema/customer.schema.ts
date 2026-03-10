@@ -17,6 +17,13 @@ export const customers = pgTable(
     city: text("city"),
     avatarUrl: text("avatar_url"),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    firstSource: text("first_source"),
+    firstMedium: text("first_medium"),
+    firstCampaign: text("first_campaign"),
+    firstContent: text("first_content"),
+    firstLandingPage: text("first_landing_page"),
+    firstReferrer: text("first_referrer"),
+    firstDevice: text("first_device"),
     firstSeenAt: timestamp("first_seen_at").notNull().defaultNow(),
     lastSeenAt: timestamp("last_seen_at").notNull().defaultNow(),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -26,5 +33,6 @@ export const customers = pgTable(
     uniqueIndex("customers_org_customer_idx").on(table.organizationId, table.customerId),
     index("customers_org_email_idx").on(table.organizationId, table.email),
     index("customers_org_last_seen_idx").on(table.organizationId, table.lastSeenAt),
+    index("customers_org_first_source_idx").on(table.organizationId, table.firstSource),
   ]
 );

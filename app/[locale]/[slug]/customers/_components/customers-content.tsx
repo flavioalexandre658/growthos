@@ -105,9 +105,10 @@ function AllCustomersList() {
       </div>
 
       <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/30 overflow-hidden">
-        <div className="hidden sm:grid grid-cols-[1fr_180px_130px_130px] px-4 py-2 border-b border-zinc-800/60 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
+        <div className="hidden sm:grid grid-cols-[1fr_150px_110px_100px_100px] px-4 py-2 border-b border-zinc-800/60 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
           <span>{t("table.customer")}</span>
           <span>{t("table.location")}</span>
+          <span>{t("table.source")}</span>
           <span>{t("table.firstSeen")}</span>
           <span>{t("table.lastSeen")}</span>
         </div>
@@ -140,7 +141,7 @@ function AllCustomersList() {
               <Link
                 key={customer.id}
                 href={`/${slug}/customers/${customer.customerId}`}
-                className="flex sm:grid sm:grid-cols-[1fr_180px_130px_130px] items-center gap-3 px-4 py-3 hover:bg-zinc-800/30 transition-colors group"
+                className="flex sm:grid sm:grid-cols-[1fr_150px_110px_100px_100px] items-center gap-3 px-4 py-3 hover:bg-zinc-800/30 transition-colors group"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={cn(
@@ -180,6 +181,10 @@ function AllCustomersList() {
                       : ([customer.city, customer.country].filter(Boolean).join(", ") || "—")}
                   </span>
                 </div>
+
+                <span className="hidden sm:block text-xs text-zinc-500 truncate">
+                  {customer.firstSource ?? <span className="text-zinc-700">—</span>}
+                </span>
 
                 <span className="hidden sm:block text-xs text-zinc-500">
                   {formatDate(customer.firstSeenAt, timezone, "DD/MM/YY")}
