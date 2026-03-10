@@ -521,7 +521,7 @@ export function Sidebar({ slug }: { slug: string }) {
           </Sheet>
           <GrowareLogo size="sm" />
         </div>
-        <MobileTopbarActions slug={slug} />
+        <MobileTopbarActions />
       </div>
     </>
   );

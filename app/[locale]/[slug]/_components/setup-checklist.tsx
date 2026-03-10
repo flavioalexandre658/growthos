@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/routing";
 import {
@@ -73,11 +73,11 @@ export function SetupChecklist({ slug, organizationId, collapsed }: SetupCheckli
     }
   });
 
-  const handleDismiss = () => {
+  const handleDismiss = useCallback(() => {
     try { localStorage.setItem("groware_checklist_dismissed", "1"); } catch {}
     updateTourState({ checklistDismissedAt: new Date().toISOString() });
     setDismissed(true);
-  };
+  }, [updateTourState]);
 
   useEffect(() => {
     if (!progress || progress.checklistDismissed || celebrating || dismissed) return;
