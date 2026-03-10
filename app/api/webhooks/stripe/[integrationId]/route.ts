@@ -301,7 +301,7 @@ async function handleCheckoutSessionCompleted(
     });
   });
 
-  const customerLabel = session.customer_details?.name ?? session.customer_details?.email ?? customerId;
+  const customerLabel = session.customer_details?.name ?? session.customer_details?.email ?? "Cliente";
   const valueLabel = session.amount_total
     ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: (session.currency ?? "brl").toUpperCase() }).format(session.amount_total / 100)
     : null;
@@ -310,7 +310,7 @@ async function handleCheckoutSessionCompleted(
     type: "purchase",
     title: customerLabel,
     body: valueLabel ?? undefined,
-    metadata: { customerId, valueInCents: session.amount_total, currency: session.currency },
+    metadata: { customerId, customerName: session.customer_details?.name ?? null, valueInCents: session.amount_total, currency: session.currency },
   }).catch(() => {});
 }
 
@@ -449,7 +449,7 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventTi
     });
   }
 
-  const invoiceCustomerLabel = invoice.customer_name ?? invoice.customer_email ?? customerId ?? "Cliente";
+  const invoiceCustomerLabel = invoice.customer_name ?? invoice.customer_email ?? "Cliente";
   const invoiceValueLabel = invoice.amount_paid
     ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: eventCurrency }).format(invoice.amount_paid / 100)
     : null;
@@ -458,7 +458,7 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventTi
     type: eventType,
     title: invoiceCustomerLabel,
     body: invoiceValueLabel ?? undefined,
-    metadata: { customerId, valueInCents: invoice.amount_paid, currency: eventCurrency },
+    metadata: { customerId, customerName: invoice.customer_name ?? null, valueInCents: invoice.amount_paid, currency: eventCurrency },
   }).catch(() => {});
 }
 

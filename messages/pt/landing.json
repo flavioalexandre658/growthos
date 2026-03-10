@@ -2,10 +2,10 @@
   "landing": {
     "hero": {
       "badge": "Grátis até R$15k de receita/mês",
-      "badgeSuffix": " · Integração com Stripe disponível",
+      "badgeSuffix": " · Asaas e Stripe disponíveis",
       "headline1": "Do funil ao lucro real.",
       "headline2": "Tudo num só lugar.",
-      "subheadline": "Conecte seu Stripe em 2 minutos e veja de onde vem cada real da sua receita — canal, campanha, landing page e margem real. Tudo junto, sem planilha.",
+      "subheadline": "Conecte seu Asaas ou Stripe em 2 minutos e veja de onde vem cada real da sua receita — canal, campanha, landing page e margem real. Tudo junto, sem planilha.",
       "disclaimer": "Sem cartão de crédito · Grátis até R$15k de receita/mês",
       "socialProof": "Usado por {count}+ founders de SaaS brasileiros",
       "mockupLabel": "groware.io / visão-geral",
@@ -28,7 +28,7 @@
       "label": "// o problema",
       "headline1": "Seus dados estão em todo lugar,",
       "headline2": "menos onde você precisa.",
-      "description": "MRR no Stripe. Custos numa planilha. Aquisição no Google Analytics. Nada conversa entre si — e você descobre sua margem real com um mês de atraso, se descobre.",
+      "description": "MRR no Stripe ou Asaas. Custos numa planilha. Aquisição no Google Analytics. Nada conversa entre si — e você descobre sua margem real com um mês de atraso, se descobre.",
       "items": [
         {
           "icon": "📊",
@@ -160,7 +160,7 @@
         },
         {
           "title": "Conecte seu gateway",
-          "desc": "Cole sua Chave Restrita do Stripe. O Groware importa o histórico completo e começa a receber webhooks automaticamente.",
+          "desc": "Cole sua chave do Asaas ou Chave Restrita do Stripe. O Groware importa o histórico completo e começa a receber webhooks automaticamente.",
           "time": "~2 min"
         }
       ]
@@ -303,7 +303,7 @@
       "headline1": "Pare de adivinhar.",
       "headline2": "Comece a",
       "headline3": "crescer com clareza.",
-      "description": "Conecte seu Stripe, instale o tracker e veja de onde vem cada real da sua receita — canal, campanha, margem real. Em menos de 5 minutos.",
+      "description": "Conecte seu Asaas ou Stripe, instale o tracker e veja de onde vem cada real da sua receita — canal, campanha, margem real. Em menos de 5 minutos.",
       "disclaimer": "Sem cartão de crédito · Grátis até R$15k de receita/mês · Configuração em 5 minutos"
     },
     "strip": [

@@ -332,9 +332,9 @@ async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload
   createNotification({
     organizationId: orgId,
     type: isRecurring ? "renewal" : "purchase",
-    title: customerId,
+    title: "Cliente",
     body: asaasValueLabel ?? undefined,
-    metadata: { customerId, valueInCents: Math.round((payment.value ?? 0) * 100), currency: "BRL" },
+    metadata: { customerId, customerName: null, valueInCents: Math.round((payment.value ?? 0) * 100), currency: "BRL" },
   }).catch(() => {});
 }
 

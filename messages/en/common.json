@@ -18,7 +18,7 @@
     }
   },
   "cta": {
-    "submitHero": "Connect my Stripe for free →",
+    "submitHero": "Connect my gateway for free →",
     "submitCta": "Get started for free →"
   },
   "sensitiveMode": {

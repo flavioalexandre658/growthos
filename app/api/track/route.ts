@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq, and, sql } from "drizzle-orm";
 import { createHash } from "crypto";
 import { db } from "@/db";
-import { apiKeys, events, subscriptions, organizations, pageviewAggregates, usageMonthly } from "@/db/schema";
+import { apiKeys, events, subscriptions, organizations, pageviewAggregates, usageMonthly, notifications } from "@/db/schema";
 import { resolveExchangeRate as resolveRate } from "@/utils/resolve-exchange-rate";
 import { checkRateLimit } from "@/utils/rate-limiter";
 import { insertPayment } from "@/utils/insert-payment";
@@ -659,6 +659,35 @@ export async function POST(req: NextRequest) {
             });
           });
       }
+
+      const customerName = toString(body.customer_name);
+      if (customerName) {
+        db.update(notifications)
+          .set({
+            title: customerName,
+            metadata: sql`jsonb_set(
+              COALESCE(${notifications.metadata}, '{}'::jsonb),
+              '{customerName}',
+              to_jsonb(${customerName}::text)
+            )`,
+          })
+          .where(
+            and(
+              eq(notifications.organizationId, apiKey.organizationId),
+              sql`${notifications.metadata}->>'customerId' = ${customerId}`,
+              sql`${notifications.metadata}->>'customerName' IS NULL`,
+              sql`${notifications.createdAt} > now() - interval '24 hours'`
+            )
+          )
+          .execute()
+          .catch((err) => {
+            console.error("[Groware] retroactive notification enrichment failed", {
+              orgId: apiKey.organizationId,
+              customerId,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          });
+      }
     }
   }
 
@@ -734,7 +763,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (eventType === "purchase" || eventType === "renewal") {
-      const customerLabel = toString(body.customer_name) || toString(body.customer_id) || "Cliente";
+      const customerLabel = toString(body.customer_name) || "Cliente";
       const valueLabel = grossValueInCents
         ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: eventCurrency ?? "BRL" }).format(grossValueInCents / 100)
         : null;
