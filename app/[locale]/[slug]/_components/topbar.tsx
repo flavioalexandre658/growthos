@@ -335,7 +335,7 @@ export function Topbar({ slug }: TopbarProps) {
   );
 }
 
-export function MobileTopbarActions({ slug: _slug }: { slug: string }) {
+export function MobileTopbarActions(_props: { slug: string }) {
   return (
     <TooltipProvider delayDuration={150}>
       <div className="flex items-center gap-0.5">

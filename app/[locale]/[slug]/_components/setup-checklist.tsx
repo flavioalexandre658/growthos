@@ -89,7 +89,7 @@ export function SetupChecklist({ slug, organizationId, collapsed }: SetupCheckli
       }, 2500);
       return () => clearTimeout(timer);
     }
-  }, [progress, celebrating, dismissed, visibleItems]);
+  }, [progress, celebrating, dismissed, visibleItems, handleDismiss]);
 
   if (isLoading || !progress || progress.checklistDismissed || dismissed) return null;
 

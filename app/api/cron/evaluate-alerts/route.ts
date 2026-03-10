@@ -109,8 +109,6 @@ async function evaluateRevenueDrop(
   const thirtyDaysAgo = dayjs().subtract(30, "days").toDate();
   const sixtyDaysAgo = dayjs().subtract(60, "days").toDate();
 
-  const REVENUE_TYPES = ["purchase", "renewal"] as const;
-
   const [current] = await db
     .select({ total: sql<number>`coalesce(sum(gross_value_in_cents), 0)::int` })
     .from(payments)
