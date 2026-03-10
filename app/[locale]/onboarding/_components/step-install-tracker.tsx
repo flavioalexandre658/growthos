@@ -21,6 +21,7 @@ import { createApiKey } from "@/actions/api-keys/create-api-key.action";
 import { checkEvents } from "@/actions/dashboard/check-events.action";
 import { completeOnboarding } from "@/actions/auth/complete-onboarding.action";
 import { AiPromptSection } from "@/app/[locale]/[slug]/settings/_components/ai-prompt-section";
+import { pushDataLayerEvent } from "@/utils/datalayer";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -178,6 +179,7 @@ export function StepInstallTracker({
       if (result.count > 0 && !hasFired) {
         setHasFired(true);
         toast.success(tVerify("firstEventToast"));
+        pushDataLayerEvent("TrackerInstalled");
       }
       return result;
     },
@@ -215,6 +217,7 @@ export function StepInstallTracker({
     setIsFinishing(true);
     try {
       await completeOnboarding();
+      pushDataLayerEvent("SignUp");
       await update({ onboardingCompleted: true });
       toast.success(t("welcomeToast"));
       window.location.href = slug ? `/${slug}` : "/organizations";

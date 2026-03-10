@@ -7,6 +7,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { OrganizationProvider } from "@/components/providers/organization-provider";
 import { ToasterProvider } from "@/components/providers/toaster-provider";
 import { SensitiveModeProvider } from "@/components/providers/sensitive-mode-provider";
+import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/tracking/google-tag-manager";
 import { routing } from "../../i18n/routing";
 import { notFound } from "next/navigation";
 
@@ -107,6 +108,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${bricolageGrotesque.variable} font-sans antialiased`}
       >
+        <GoogleTagManagerNoScript />
         <NextIntlClientProvider messages={messages}>
           <SessionProvider>
             <QueryProvider>
@@ -114,6 +116,7 @@ export default async function LocaleLayout({ children, params }: Props) {
                 <SensitiveModeProvider>
                   {children}
                   <ToasterProvider />
+                  <GoogleTagManager />
                 </SensitiveModeProvider>
               </OrganizationProvider>
             </QueryProvider>
