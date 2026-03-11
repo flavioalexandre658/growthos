@@ -168,7 +168,155 @@
           "optional": "opcional"
         },
         "docsHint": "Para mais detalhes sobre eventos e propriedades, consulte a",
-        "docsLink": "documentação completa"
+        "docsLink": "documentação completa",
+        "sdks": {
+          "common": {
+            "addEnvVar": "Adicionar variável de ambiente",
+            "addEnvVarDesc": "Armazene sua API key como variável de ambiente. Nunca a coloque diretamente no código-fonte.",
+            "installScript": "Instalar o script do tracker",
+            "createHook": "Criar o hook useTracker",
+            "createHookDesc": "Um hook tipado que encapsula o window.Groware com segurança. Usa requestIdleCallback para que o rastreamento nunca bloqueie interações do usuário.",
+            "identifyUsers": "Identificar usuários após login",
+            "identifyUsersDesc": "Chame identify() assim que o usuário autenticar para vincular a sessão anônima ao perfil dele. Chame reset() no logout.",
+            "trackFunnelEvents": "Rastrear eventos do funil",
+            "trackFunnelEventsDesc": "Chame track() em cada etapa do seu funil, nos exatos server actions ou componentes onde cada ação acontece.",
+            "enableDebug": "Ativar modo debug",
+            "enableDebugDesc": "Adicione data-debug='true' para ver todos os eventos do Groware no console do navegador. Remova antes de publicar em produção.",
+            "validateInstall": "Validar a instalação",
+            "validateInstallDesc": "Teste se os eventos estão chegando corretamente antes de ir ao ar.",
+            "validateWithCurl": "Validar com cURL",
+            "calloutAutoCapture": "Eventos capturados automaticamente",
+            "calloutAutoCaptureBody": "O tracker captura automaticamente: pageview em cada mudança de rota, UTMs da URL, tipo de device, referrer e session ID. Nenhum código extra necessário.",
+            "calloutIdentifyWarning": "Importante: nunca use e-mail como customer_id",
+            "calloutIdentifyWarningBody": "O customer_id deve ser seu UUID interno. E-mail, CPF ou nome nunca devem ser usados como identificadores. Passe-os para identify() como traits.",
+            "calloutDebug": "Saída do debug",
+            "calloutDebugBody": "Abra DevTools → Console e procure por logs [Groware]. Você verá cada evento disparado, incluindo pageviews e dados UTM capturados automaticamente.",
+            "calloutValidateChecklist": "Checklist",
+            "calloutValidateChecklistBody": "1. Abra seu site com ?utm_source=test&utm_medium=cpc na URL\n2. DevTools → Network → filtre por '/api/track'\n3. Navegue pelas páginas — você deve ver requisições POST retornando 204\n4. Conclua uma ação do funil (signup, checkout, etc.)\n5. Volte para esta página de onboarding — o card de verificação abaixo mostrará 'Evento detectado!'",
+            "trackClientEvents": "Rastrear eventos client-side",
+            "trackClientEventsDesc": "Use o hook criado no passo anterior para disparar eventos em cada etapa-chave do funil, diretamente nos seus componentes.",
+            "trackServerEvents": "Rastrear eventos server-side (compras)",
+            "trackServerEventsDesc": "Para eventos de pagamento, use sempre o server-side via fetch POST para garantir que o evento não seja bloqueado pelo navegador e seja processado uma única vez com dedupe_id.",
+            "calloutClientVsServer": "Client-side vs Server-side",
+            "calloutClientVsServerBody": "Use track() client-side para eventos de UI (signup, checkout_started, page_view). Use fetch server-side para eventos financeiros (purchase, subscription) — isso garante que mesmo com AdBlock ou erro de JS o pagamento seja registrado.",
+            "calloutResetOnLogout": "Lembre-se do reset() no logout",
+            "calloutResetOnLogoutBody": "Sempre chame reset() quando o usuário fizer logout. Isso limpa a sessão anônima e evita que eventos futuros sejam atribuídos ao usuário anterior.",
+            "bindServiceProvider": "Registrar no ServiceProvider",
+            "bindServiceProviderDesc": "Registre o GrowareService como singleton para ser compartilhado ao longo do ciclo de vida da requisição."
+          },
+          "nextjs": {
+            "installScriptDesc": "Adicione o script ao layout raiz usando next/script com strategy afterInteractive. Isso garante que o tracker carregue após a página estar interativa sem bloquear a renderização.",
+            "createHookDesc": "Crie um hook tipado que encapsula window.Groware com segurança. Usa requestIdleCallback para que o rastreamento nunca bloqueie interações do usuário.",
+            "identifyUsersDesc": "Chame identify() logo após o usuário autenticar para vincular a sessão anônima ao perfil dele. Chame reset() no logout.",
+            "trackClientEventsDesc": "Use o useTracker hook nos seus Client Components para disparar eventos em cada etapa do funil. Coloque as chamadas track() no exato momento em que a ação acontece.",
+            "trackFunnelEventsDesc": "Para eventos de pagamento, use sempre server-side via fetch POST. Nunca confie em eventos de pagamento client-side — eles podem ser bloqueados por AdBlock ou falhar silenciosamente."
+          },
+          "react": {
+            "installScriptDesc": "Adicione a tag script ao index.html antes do fechamento do body. Para Vite, referencie a variável de ambiente como atributo data em um script no main.tsx.",
+            "envVarDesc": "Armazene sua API key como variável de ambiente. Projetos React com Vite usam o prefixo VITE_; com Create React App use REACT_APP_.",
+            "createHookDesc": "Um hook React tipado que encapsula window.Groware com segurança usando requestIdleCallback para não bloquear a thread principal.",
+            "identifyUsersDesc": "Chame identify() quando o usuário fizer login para vincular a sessão anônima ao perfil dele.",
+            "trackClientEventsDesc": "Use o useTracker hook nos seus componentes para disparar eventos client-side em cada etapa do funil: signup, checkout_started e outros eventos de UI.",
+            "trackFunnelEventsDesc": "Para compras, envie o evento server-side no webhook de pagamento. Eventos financeiros devem sempre vir do servidor para evitar bloqueio por AdBlock.",
+            "calloutViteEnvDesc": "Se precisar da key via env, carregue dinamicamente no main.tsx: document.querySelector('script[data-groware]')?.setAttribute('data-key', import.meta.env.VITE_GROWARE_KEY)",
+            "calloutViteEnvTitle": "Usando variáveis de ambiente no Vite"
+          },
+          "html": {
+            "installScriptDesc": "Cole este script no <head> de todas as páginas. Carregue cedo para capturar UTMs da URL inicial.",
+            "calloutAutoPageLoadTitle": "Capturado automaticamente em cada carregamento",
+            "calloutAutoPageLoadBody": "pageview, utm_source, utm_medium, utm_campaign, referrer, device (mobile/desktop) e session ID são capturados automaticamente sem nenhum código extra.",
+            "identifyUsersDesc": "Chame após o login ser concluído. No logout, chame reset() para limpar a sessão.",
+            "trackPurchaseDesc": "Dispare este evento quando uma compra for confirmada. O campo dedupe previne a dupla contagem ao recarregar a página.",
+            "trackOtherFunnelDesc": "Dispare em cada etapa-chave do seu funil.",
+            "enableDebugDesc": "Substitua sua tag script pela versão debug para ver os eventos no console."
+          },
+          "vue": {
+            "createComposableTitle": "Criar o composable useGroware",
+            "createComposableDesc": "Um composable Vue 3 que encapsula window.Groware com segurança para uso em todos os componentes.",
+            "identifyUsersDesc": "Chame identify() na action de login da Pinia store.",
+            "trackFunnelEventsDesc": "Use o composable nos seus componentes para disparar eventos client-side: signup após cadastro, checkout_started quando o checkout abre e purchase na confirmação."
+          },
+          "angular": {
+            "createServiceTitle": "Criar GrowareService",
+            "createServiceDesc": "Um Angular service injectable que encapsula o window.Groware. Injete em qualquer lugar da sua aplicação.",
+            "identifyUsersDesc": "Injete o GrowareService no AuthService e chame identify após o login.",
+            "trackFunnelEventsDesc": "Injete o GrowareService nos seus componentes e chame track nos eventos do funil: signup, checkout_started e purchase."
+          },
+          "svelte": {
+            "createUtilTitle": "Criar o utilitário groware.ts",
+            "createUtilDesc": "Um módulo Svelte tipado que encapsula window.Groware com segurança. Importe e use em qualquer lugar da aplicação.",
+            "identifyUsersDesc": "Chame groware.identify() após o login.",
+            "trackFunnelEventsDesc": "Use o módulo nas suas rotas para disparar eventos client-side: signup após cadastro, checkout_started quando a página de checkout carrega e purchase na confirmação."
+          },
+          "wordpress": {
+            "installScriptDesc": "Este é o método recomendado. Adicione ao functions.php do seu tema ou a um plugin personalizado. O tracker vai carregar em todas as páginas.",
+            "calloutPluginTitle": "Alternativa: use um plugin",
+            "calloutPluginBody": "Você também pode usar um plugin de injeção de header/footer como 'Insert Headers and Footers' para colar a tag script sem tocar no código.",
+            "identifyUsersDesc": "Se os usuários estiverem logados, identifique-os após o tracker carregar para que seus eventos sejam atribuídos.",
+            "calloutUserIdTitle": "Privacidade do ID do usuário",
+            "calloutUserIdBody": "Passe $user->ID (ID inteiro do WordPress), nunca o endereço de e-mail, como primeiro argumento para identify().",
+            "trackWooTitle": "Rastrear compras do WooCommerce",
+            "trackWooDesc": "Conecte-se à página de obrigado do WooCommerce para disparar o evento de compra.",
+            "enableDebugDesc": "Adicione temporariamente data-debug='true' para ver eventos no console do navegador. Remova antes de publicar."
+          },
+          "gtm": {
+            "createTagTitle": "Criar uma Custom HTML Tag",
+            "createTagDesc": "No GTM: Tags → Novo → Configuração da tag → HTML personalizado. Cole o script abaixo. Configure o acionador como 'Todas as páginas'.",
+            "calloutTagOrderTitle": "Ordem de disparo da tag",
+            "calloutTagOrderBody": "Configure esta tag para disparar antes de todas as outras (Sequenciamento de tags). Isso garante que os UTMs da URL sejam capturados antes de qualquer outra tag.",
+            "configureTriggerTitle": "Configurar o acionador",
+            "configureTriggerDesc": "Defina o acionador como 'Todas as páginas - Page View' para que o tracker carregue em cada página imediatamente.",
+            "calloutTriggerSettingsTitle": "Configurações do acionador",
+            "calloutTriggerSettingsBody": "Vá em Acionamento → Todas as páginas. Isso dispara o tracker em cada carregamento de página e navegações SPA capturadas pelo GTM.",
+            "createEventTagTitle": "Criar uma Custom HTML Tag para compras",
+            "createEventTagDesc": "Crie uma Custom HTML Tag separada acionada por um evento personalizado (ex: 'groware_purchase') enviado ao dataLayer pelo seu app.",
+            "pushFromAppTitle": "Enviar eventos do seu app",
+            "pushFromAppDesc": "No código frontend, envie ao dataLayer para acionar as tags do GTM.",
+            "createVariablesTitle": "Criar variáveis no GTM",
+            "createVariablesDesc": "Crie Variáveis de Camada de Dados para cada campo usado nas tags: DL - Invoice ID, DL - Order Total, DL - Customer ID, DL - Product ID.",
+            "calloutVariablesTitle": "Configuração das variáveis",
+            "calloutVariablesBody": "Variáveis → Novo → Variável de Camada de Dados. Defina o nome para corresponder às chaves do dataLayer (ex: 'invoiceId' para DL - Invoice ID). Elas mapeiam os valores do dataLayer para seus templates de tag.",
+            "previewPublishTitle": "Preview e publicação",
+            "previewPublishDesc": "Use o modo Preview do GTM para verificar se os eventos disparam corretamente antes de publicar.",
+            "calloutPreviewTitle": "Passos para teste",
+            "calloutPreviewBody": "1. Clique em Preview no GTM → insira a URL do seu site\n2. Navegue pelas páginas — verifique se a tag do Groware dispara em 'Todas as páginas'\n3. Conclua uma compra — verifique se a tag de compra dispara\n4. Verifique no DevTools Network se há POST /api/track retornando 204\n5. Publique o container"
+          },
+          "server": {
+            "addEnvVarDesc": "Armazene sua API key como variável de ambiente.",
+            "createModuleDesc": "Um módulo auxiliar reutilizável para não repetir o boilerplate fetch em todo lugar. Coloque numa pasta de utilitários ou serviços compartilhados.",
+            "trackPurchaseDesc": "Chame no handler do webhook de pagamento. Use sempre dedupe_id para prevenir a dupla contagem.",
+            "trackRecurringTitle": "Rastrear assinaturas recorrentes",
+            "trackRecurringDesc": "Para SaaS com receita recorrente, rastreie renovações e cancelamentos server-side nos handlers de webhook.",
+            "calloutValidateTitle": "Checklist",
+            "calloutValidateBody": "Resposta esperada: HTTP 204 No Content"
+          },
+          "nodejs": {
+            "createModuleTitle": "Criar o módulo cliente Groware",
+            "createModuleDesc": "Um módulo auxiliar tipado para não repetir o boilerplate do fetch. Coloque em uma pasta de utilitários compartilhados."
+          },
+          "python": {
+            "createModuleTitle": "Criar o módulo groware.py",
+            "createModuleDesc": "Um módulo Python reutilizável usando requests (síncrono) ou httpx (assíncrono). Coloque no diretório utils ou services do seu projeto.",
+            "asyncVariantTitle": "Variante assíncrona (httpx)",
+            "asyncVariantDesc": "Para frameworks assíncronos como FastAPI ou Django Async, use httpx ao invés de requests."
+          },
+          "php": {
+            "createModuleTitle": "Criar a classe Groware.php",
+            "createModuleDesc": "Uma classe PHP reutilizável usando cURL. Coloque no diretório Services ou Helpers da sua aplicação."
+          },
+          "go": {
+            "createModuleTitle": "Criar o pacote groware.go",
+            "createModuleDesc": "Um pacote Go tipado que lida com a requisição HTTP. Importe de qualquer handler."
+          },
+          "ruby": {
+            "createModuleTitle": "Criar o módulo Groware",
+            "createModuleDesc": "Um módulo Ruby reutilizável. Coloque em lib/ ou app/services/ dependendo do seu framework."
+          },
+          "laravel": {
+            "createServiceTitle": "Criar o GrowareService",
+            "createServiceDesc": "Um service Laravel tipado usando o Http facade. Registre em um service provider ou use injeção de dependência."
+          }
+        }
       }
     },
     "stepGateway": {

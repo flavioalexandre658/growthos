@@ -168,7 +168,155 @@
           "optional": "optional"
         },
         "docsHint": "For more details on events and properties, check the",
-        "docsLink": "full documentation"
+        "docsLink": "full documentation",
+        "sdks": {
+          "common": {
+            "addEnvVar": "Add environment variable",
+            "addEnvVarDesc": "Store your API key as an environment variable. Never hardcode it in source files.",
+            "installScript": "Install the tracker script",
+            "createHook": "Create a useTracker hook",
+            "createHookDesc": "A typed hook that wraps window.Groware safely. It uses requestIdleCallback so tracking never blocks user interactions.",
+            "identifyUsers": "Identify users after login",
+            "identifyUsersDesc": "Call identify() right after the user authenticates to link their anonymous session to their profile. Call reset() on logout.",
+            "trackFunnelEvents": "Track funnel events",
+            "trackFunnelEventsDesc": "Call track() at each step of your funnel. Place these calls in the exact server actions or client components where each action happens.",
+            "enableDebug": "Enable debug mode",
+            "enableDebugDesc": "Add data-debug='true' to see all Groware events logged in the browser console. Remove before deploying to production.",
+            "validateInstall": "Validate the installation",
+            "validateInstallDesc": "Test that events are arriving correctly before going live.",
+            "validateWithCurl": "Validate with cURL",
+            "calloutAutoCapture": "Auto-captured events",
+            "calloutAutoCaptureBody": "The tracker automatically captures: pageview on every route change (App Router compatible), UTMs from the URL, device type, referrer, and session ID. No extra code needed for these.",
+            "calloutIdentifyWarning": "Important: never use email as customer_id",
+            "calloutIdentifyWarningBody": "customer_id must be your internal UUID. Email, CPF, or name must never be used as identifiers. Pass them to identify() as traits instead.",
+            "calloutDebug": "Debug output",
+            "calloutDebugBody": "Open DevTools → Console and look for [Groware] logs. You'll see each event as it fires, including auto-captured pageviews and UTM data.",
+            "calloutValidateChecklist": "Checklist",
+            "calloutValidateChecklistBody": "1. Open your site with ?utm_source=test&utm_medium=cpc in the URL\n2. Open DevTools → Network → filter by '/api/track'\n3. Navigate pages — you should see POST requests returning 204\n4. Complete a funnel action (signup, checkout, etc.)\n5. Come back to this onboarding page — the verification card below will show 'Event detected!'",
+            "trackClientEvents": "Track client-side events",
+            "trackClientEventsDesc": "Use the hook created in the previous step to fire events at each key funnel step, directly inside your components.",
+            "trackServerEvents": "Track server-side events (purchases)",
+            "trackServerEventsDesc": "For payment events, always use server-side via fetch POST to ensure the event is never blocked by the browser and is processed exactly once with dedupe_id.",
+            "calloutClientVsServer": "Client-side vs Server-side",
+            "calloutClientVsServerBody": "Use track() client-side for UI events (signup, checkout_started, page_view). Use server-side fetch for financial events (purchase, subscription) — this ensures that even with AdBlock or JS errors, payments are still recorded.",
+            "calloutResetOnLogout": "Remember reset() on logout",
+            "calloutResetOnLogoutBody": "Always call reset() when the user logs out. This clears the anonymous session and prevents future events from being attributed to the previous user.",
+            "bindServiceProvider": "Register in ServiceProvider",
+            "bindServiceProviderDesc": "Register GrowareService as a singleton so it's shared across the request lifecycle."
+          },
+          "nextjs": {
+            "installScriptDesc": "Add the script to your root layout using next/script with strategy afterInteractive. This ensures the tracker loads after the page is interactive without blocking rendering.",
+            "createHookDesc": "Create a typed hook that wraps window.Groware safely. It uses requestIdleCallback so tracking never blocks user interactions.",
+            "identifyUsersDesc": "Call identify() right after the user authenticates to link their anonymous session to their profile. Call reset() on logout.",
+            "trackClientEventsDesc": "Use the useTracker hook in your Client Components to fire events at each funnel step. Place track() calls at the exact moment the action happens.",
+            "trackFunnelEventsDesc": "For payment events, always use server-side via fetch POST. Never rely on client-side payment events — they can be blocked by AdBlock or fail silently."
+          },
+          "react": {
+            "installScriptDesc": "Add the script tag to your index.html before the closing body tag. For Vite, reference the env var as a data attribute using a script in main.tsx instead.",
+            "envVarDesc": "Store your API key as an environment variable. For Vite-based React projects use VITE_ prefix; for Create React App use REACT_APP_.",
+            "createHookDesc": "A typed React hook that safely wraps window.Groware with requestIdleCallback to avoid blocking the main thread.",
+            "identifyUsersDesc": "Call identify() when the user logs in to link the anonymous session to their profile.",
+            "trackClientEventsDesc": "Use the useTracker hook in your components to fire client-side events at each funnel step: signup, checkout_started, and other UI-triggered events.",
+            "trackFunnelEventsDesc": "For purchases, send the event server-side in your payment webhook. Financial events should always come from the server to avoid AdBlock blocking.",
+            "calloutViteEnvDesc": "If you need the key from env, load it dynamically in main.tsx: document.querySelector('script[data-groware]')?.setAttribute('data-key', import.meta.env.VITE_GROWARE_KEY)",
+            "calloutViteEnvTitle": "Using Vite env vars"
+          },
+          "html": {
+            "installScriptDesc": "Paste this script in the <head> of every page. Load it early to capture UTMs from the initial URL.",
+            "calloutAutoPageLoadTitle": "Auto-captured on every page load",
+            "calloutAutoPageLoadBody": "pageview, utm_source, utm_medium, utm_campaign, referrer, device (mobile/desktop), and session ID are captured automatically with no extra code.",
+            "identifyUsersDesc": "Call this right after your login logic completes. On logout, call reset() to clear the session.",
+            "trackPurchaseDesc": "Fire this event when a purchase is confirmed. The dedupe field prevents double-counting if the page is reloaded.",
+            "trackOtherFunnelDesc": "Fire these at each key step of your funnel.",
+            "enableDebugDesc": "Replace your script tag with the debug version to log events in the console."
+          },
+          "vue": {
+            "createComposableTitle": "Create a useGroware composable",
+            "createComposableDesc": "A Vue 3 composable that wraps window.Groware safely for use across your components.",
+            "identifyUsersDesc": "Call identify() in the Pinia store login action.",
+            "trackFunnelEventsDesc": "Use the composable in your components to fire client-side events: signup after registration, checkout_started when checkout opens, and purchase on confirmation."
+          },
+          "angular": {
+            "createServiceTitle": "Create GrowareService",
+            "createServiceDesc": "An injectable Angular service that wraps window.Groware. Inject it anywhere in your app.",
+            "identifyUsersDesc": "Inject GrowareService into AuthService and call identify after login.",
+            "trackFunnelEventsDesc": "Inject GrowareService into your components and call track on funnel events: signup, checkout_started, and purchase."
+          },
+          "svelte": {
+            "createUtilTitle": "Create a groware.ts utility",
+            "createUtilDesc": "A typed Svelte module that safely wraps window.Groware. Import and use anywhere in your app.",
+            "identifyUsersDesc": "Call groware.identify() after login.",
+            "trackFunnelEventsDesc": "Use the module in your routes to fire client-side events: signup after registration, checkout_started when the checkout page loads, and purchase on confirmation."
+          },
+          "wordpress": {
+            "installScriptDesc": "This is the recommended method. Add it to your theme's functions.php or a custom plugin. The tracker will load on all pages.",
+            "calloutPluginTitle": "Alternative: use a plugin",
+            "calloutPluginBody": "You can also use a header/footer injection plugin like 'Insert Headers and Footers' to paste the script tag without touching code.",
+            "identifyUsersDesc": "If users are logged in, identify them after the tracker loads so their events are attributed.",
+            "calloutUserIdTitle": "User ID privacy",
+            "calloutUserIdBody": "Pass $user->ID (WordPress integer ID), never the email address, as the first argument to identify().",
+            "trackWooTitle": "Track WooCommerce purchases",
+            "trackWooDesc": "Hook into WooCommerce's thank you page to fire the purchase event.",
+            "enableDebugDesc": "Temporarily add data-debug='true' to see events in the browser console. Remove before going live."
+          },
+          "gtm": {
+            "createTagTitle": "Create a Custom HTML Tag",
+            "createTagDesc": "In GTM: Tags → New → Tag Configuration → Custom HTML. Paste the script below. Set trigger to 'All Pages'.",
+            "calloutTagOrderTitle": "Tag firing order",
+            "calloutTagOrderBody": "Set this tag to fire before all other tags (Tag Sequencing). This ensures UTMs from the URL are captured before any other tag runs.",
+            "configureTriggerTitle": "Configure the trigger",
+            "configureTriggerDesc": "Set the trigger to 'All Pages - Page View' so the tracker loads on every page immediately.",
+            "calloutTriggerSettingsTitle": "Trigger settings",
+            "calloutTriggerSettingsBody": "Go to Triggering → All Pages. This fires the tracker on every page load and SPA navigation captured by GTM.",
+            "createEventTagTitle": "Create a Custom Event Tag for purchases",
+            "createEventTagDesc": "Create a separate Custom HTML Tag triggered by a custom event (e.g. 'groware_purchase') pushed to dataLayer from your app.",
+            "pushFromAppTitle": "Push events from your app",
+            "pushFromAppDesc": "In your frontend code, push to dataLayer to trigger the GTM tags.",
+            "createVariablesTitle": "Create GTM Variables",
+            "createVariablesDesc": "Create Data Layer Variables for each field used in the tags: DL - Invoice ID, DL - Order Total, DL - Customer ID, DL - Product ID.",
+            "calloutVariablesTitle": "Variable setup",
+            "calloutVariablesBody": "Variables → New → Data Layer Variable. Set the name to match the dataLayer keys (e.g. 'invoiceId' for DL - Invoice ID). These map dataLayer values to your tag templates.",
+            "previewPublishTitle": "Preview and publish",
+            "previewPublishDesc": "Use GTM Preview mode to verify events fire correctly before publishing.",
+            "calloutPreviewTitle": "Testing steps",
+            "calloutPreviewBody": "1. Click Preview in GTM → enter your site URL\n2. Navigate pages — verify the Groware tag fires on 'All Pages'\n3. Complete a purchase — verify the purchase tag fires\n4. Check DevTools Network for POST /api/track returning 204\n5. Publish the container"
+          },
+          "server": {
+            "addEnvVarDesc": "Store your API key as an environment variable.",
+            "createModuleDesc": "A reusable helper module so you don't repeat the fetch boilerplate everywhere. Place it in a shared utilities folder.",
+            "trackPurchaseDesc": "Call in your payment webhook handler. Always use dedupe_id to prevent double-counting.",
+            "trackRecurringTitle": "Track recurring subscriptions",
+            "trackRecurringDesc": "For SaaS with recurring revenue, track renewals and cancellations server-side from webhook handlers.",
+            "calloutValidateTitle": "Checklist",
+            "calloutValidateBody": "Expected response: HTTP 204 No Content"
+          },
+          "nodejs": {
+            "createModuleTitle": "Create a Groware client module",
+            "createModuleDesc": "A typed helper module so you don't repeat the fetch boilerplate everywhere. Place it in a shared utilities folder."
+          },
+          "python": {
+            "createModuleTitle": "Create a groware.py module",
+            "createModuleDesc": "A reusable module using requests (sync) or httpx (async). Place in your project's utils or services directory.",
+            "asyncVariantTitle": "Async variant (httpx)",
+            "asyncVariantDesc": "For async frameworks like FastAPI or Django Async, use httpx instead of requests."
+          },
+          "php": {
+            "createModuleTitle": "Create a Groware.php class",
+            "createModuleDesc": "A reusable PHP class using cURL. Place it in your app's Services or Helpers directory."
+          },
+          "go": {
+            "createModuleTitle": "Create a groware.go package",
+            "createModuleDesc": "A typed Go package that handles the HTTP request. Import it from any handler."
+          },
+          "ruby": {
+            "createModuleTitle": "Create a Groware module",
+            "createModuleDesc": "A reusable Ruby module. Place it in lib/ or app/services/ depending on your framework."
+          },
+          "laravel": {
+            "createServiceTitle": "Create GrowareService",
+            "createServiceDesc": "A typed Laravel service using Http facade. Register it in a service provider or use dependency injection."
+          }
+        }
       }
     },
     "stepGateway": {

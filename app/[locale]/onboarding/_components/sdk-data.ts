@@ -62,31 +62,34 @@ export function getSdksByCategory(category: SdkCategory): SdkDefinition[] {
 interface TutorialContext {
   apiKey: string;
   baseUrl: string;
+  t: (key: string) => string;
 }
 
 export function getTutorialSteps(
   sdkId: string,
   ctx: TutorialContext,
 ): TutorialStep[] {
-  const { apiKey, baseUrl } = ctx;
+  const { apiKey, baseUrl, t } = ctx;
   const scriptTag = `<script async src="${baseUrl}/tracker.min.js" data-key="${apiKey}"></script>`;
   const debugTag = `<script async src="${baseUrl}/tracker.min.js" data-key="${apiKey}" data-debug="true"></script>`;
+
+  const c = (key: string) => t(`sdks.common.${key}`);
 
   switch (sdkId) {
     case "nextjs":
       return [
         {
-          title: "Add environment variable",
+          title: c("addEnvVar"),
           badge: "required",
-          description: "Store your API key as an environment variable. Never hardcode it in source files.",
+          description: c("addEnvVarDesc"),
           file: ".env.local",
           language: "bash",
           code: `NEXT_PUBLIC_GROWARE_KEY=${apiKey}`,
         },
         {
-          title: "Install the tracker script",
+          title: c("installScript"),
           badge: "required",
-          description: "Add the script to your root layout using next/script with strategy afterInteractive. This ensures the tracker loads after the page is interactive without blocking rendering.",
+          description: t("sdks.nextjs.installScriptDesc"),
           file: "app/layout.tsx",
           language: "tsx",
           code: `import Script from 'next/script'
@@ -106,14 +109,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   )
 }`,
           callout: {
-            title: "Auto-captured events",
-            body: "The tracker automatically captures: pageview on every route change (App Router compatible), UTMs from the URL, device type, referrer, and session ID. No extra code needed for these.",
+            title: c("calloutAutoCapture"),
+            body: c("calloutAutoCaptureBody"),
           },
         },
         {
-          title: "Create a useTracker hook",
+          title: c("createHook"),
           badge: "recommended",
-          description: "Create a typed hook that wraps window.Groware safely. It uses requestIdleCallback so tracking never blocks user interactions.",
+          description: t("sdks.nextjs.createHookDesc"),
           file: "hooks/use-tracker.ts",
           language: "ts",
           code: `'use client'
@@ -152,9 +155,9 @@ export function useTracker() {
 }`,
         },
         {
-          title: "Identify users after login",
+          title: c("identifyUsers"),
           badge: "recommended",
-          description: "Call identify() right after the user authenticates to link their anonymous session to their profile. Call reset() on logout.",
+          description: t("sdks.nextjs.identifyUsersDesc"),
           file: "components/auth-handler.tsx",
           language: "tsx",
           code: `'use client'
@@ -181,37 +184,92 @@ export function AuthHandler() {
   return null
 }`,
           callout: {
-            title: "Important: never use email as customer_id",
-            body: "customer_id must be your internal UUID. Email, CPF, or name must never be used as identifiers. Pass them to identify() as traits instead.",
+            title: c("calloutIdentifyWarning"),
+            body: c("calloutIdentifyWarningBody"),
           },
         },
         {
-          title: "Track funnel events",
+          title: c("trackClientEvents"),
           badge: "required",
-          description: "Call track() at each step of your funnel. Place these calls in the exact server actions or client components where each action happens.",
+          description: t("sdks.nextjs.trackClientEventsDesc"),
+          file: "components/signup-form.tsx",
+          language: "tsx",
+          code: `'use client'
+
+import { useTracker } from '@/hooks/use-tracker'
+
+export function SignupForm() {
+  const { track } = useTracker()
+
+  const handleSignup = async (formData: FormData) => {
+    const user = await createUser(formData)
+
+    // Fire signup event immediately after account creation
+    track('signup', {
+      dedupe: true,            // 1 signup per session (24h dedup)
+      customer_id: user.id,
+      customer_type: 'new',
+    })
+  }
+
+  return <form action={handleSignup}>{/* form fields */}</form>
+}
+
+// In checkout page component:
+export function CheckoutPage({ product, user }: Props) {
+  const { track } = useTracker()
+
+  // Fire when user initiates checkout (not on completion)
+  useEffect(() => {
+    track('checkout_started', {
+      gross_value: product.price,
+      currency: 'BRL',
+      product_id: product.id,
+      customer_id: user.id,
+      // abandonment auto-detected on page unload
+    })
+  }, [])
+
+  return <div>{/* checkout form */}</div>
+}`,
+          callout: {
+            title: c("calloutResetOnLogout"),
+            body: c("calloutResetOnLogoutBody"),
+          },
+        },
+        {
+          title: c("trackServerEvents"),
+          badge: "required",
+          description: t("sdks.nextjs.trackFunnelEventsDesc"),
           file: "app/checkout/actions.ts",
           language: "ts",
           code: `'use server'
-// Server-side purchase event (webhooks, checkout completion)
+// Server-side purchase event — call this from your payment webhook
+// or in a server action after confirming payment
 await fetch('${baseUrl}/api/track', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     key: process.env.GROWARE_API_KEY,
     event_type: 'purchase',
-    dedupe_id: 'purchase:' + invoice.id, // prevents duplicates
+    dedupe_id: 'purchase:' + invoice.id, // prevents duplicates on retries
+    event_time: invoice.paid_at,         // ISO 8601 — real payment time
     gross_value: invoice.amount,
     currency: 'BRL',
     customer_id: user.id,
     product_id: product.id,
-    payment_method: 'pix',
+    payment_method: 'pix',               // pix | credit_card | boleto
   }),
 })`,
+          callout: {
+            title: c("calloutClientVsServer"),
+            body: c("calloutClientVsServerBody"),
+          },
         },
         {
-          title: "Enable debug mode",
+          title: c("enableDebug"),
           badge: "optional",
-          description: "Add data-debug='true' to see all Groware events logged in the browser console. Remove before deploying to production.",
+          description: c("enableDebugDesc"),
           file: "app/layout.tsx",
           language: "tsx",
           code: `<Script
@@ -221,17 +279,17 @@ await fetch('${baseUrl}/api/track', {
   strategy="afterInteractive"
 />`,
           callout: {
-            title: "Debug output",
-            body: "Open DevTools → Console and look for [Groware] logs. You'll see each event as it fires, including auto-captured pageviews and UTM data.",
+            title: c("calloutDebug"),
+            body: c("calloutDebugBody"),
           },
         },
         {
-          title: "Validate the installation",
+          title: c("validateInstall"),
           badge: "recommended",
-          description: "Test that events are arriving correctly before going live.",
+          description: c("validateInstallDesc"),
           callout: {
-            title: "Checklist",
-            body: "1. Open your site with ?utm_source=test&utm_medium=cpc in the URL\n2. Open DevTools → Network → filter by '/api/track'\n3. Navigate pages — you should see POST requests returning 204\n4. Complete a funnel action (signup, checkout, etc.)\n5. Come back to this onboarding page — the verification card below will show 'Event detected!'",
+            title: c("calloutValidateChecklist"),
+            body: c("calloutValidateChecklistBody"),
           },
         },
       ];
@@ -239,9 +297,9 @@ await fetch('${baseUrl}/api/track', {
     case "react":
       return [
         {
-          title: "Add environment variable",
+          title: c("addEnvVar"),
           badge: "required",
-          description: "Store your API key as an environment variable. For Vite-based React projects use VITE_ prefix; for Create React App use REACT_APP_.",
+          description: t("sdks.react.envVarDesc"),
           file: ".env.local",
           language: "bash",
           code: `# Vite (recommended)
@@ -251,9 +309,9 @@ VITE_GROWARE_KEY=${apiKey}
 REACT_APP_GROWARE_KEY=${apiKey}`,
         },
         {
-          title: "Add the tracker script",
+          title: c("installScript"),
           badge: "required",
-          description: "Add the script tag to your index.html before the closing body tag. For Vite, reference the env var as a data attribute using a script in main.tsx instead.",
+          description: t("sdks.react.installScriptDesc"),
           file: "index.html",
           language: "html",
           code: `<!DOCTYPE html>
@@ -268,14 +326,14 @@ REACT_APP_GROWARE_KEY=${apiKey}`,
 </body>
 </html>`,
           callout: {
-            title: "Using Vite env vars",
-            body: "If you need the key from env, load it dynamically in main.tsx: document.querySelector('script[data-groware]')?.setAttribute('data-key', import.meta.env.VITE_GROWARE_KEY)",
+            title: t("sdks.react.calloutViteEnvTitle"),
+            body: t("sdks.react.calloutViteEnvDesc"),
           },
         },
         {
-          title: "Create a useTracker hook",
+          title: c("createHook"),
           badge: "recommended",
-          description: "A typed React hook that safely wraps window.Groware with requestIdleCallback to avoid blocking the main thread.",
+          description: t("sdks.react.createHookDesc"),
           file: "src/hooks/use-tracker.ts",
           language: "ts",
           code: `import { useCallback } from 'react'
@@ -312,9 +370,9 @@ export function useTracker() {
 }`,
         },
         {
-          title: "Identify users after login",
+          title: c("identifyUsers"),
           badge: "recommended",
-          description: "Call identify() when the user logs in to link the anonymous session to their profile.",
+          description: t("sdks.react.identifyUsersDesc"),
           file: "src/components/AuthProvider.tsx",
           language: "tsx",
           code: `import { useEffect } from 'react'
@@ -335,13 +393,30 @@ export function AuthProvider({ user, children }: { user: User | null, children: 
 }`,
         },
         {
-          title: "Track funnel events",
+          title: c("trackClientEvents"),
           badge: "required",
-          description: "Use the hook in your components to fire events at each funnel step.",
-          file: "src/components/CheckoutButton.tsx",
+          description: t("sdks.react.trackClientEventsDesc"),
+          file: "src/components/FunnelEvents.tsx",
           language: "tsx",
-          code: `import { useTracker } from '../hooks/use-tracker'
+          code: `import { useEffect } from 'react'
+import { useTracker } from '../hooks/use-tracker'
 
+// After signup
+export function SignupSuccess({ user }: { user: User }) {
+  const { track } = useTracker()
+
+  useEffect(() => {
+    track('signup', {
+      dedupe: true,           // 1 signup per session (24h dedup)
+      customer_id: user.id,
+      customer_type: 'new',
+    })
+  }, [])
+
+  return null
+}
+
+// When checkout starts
 export function CheckoutButton({ product, user }: Props) {
   const { track } = useTracker()
 
@@ -351,19 +426,57 @@ export function CheckoutButton({ product, user }: Props) {
       currency: 'BRL',
       product_id: product.id,
       customer_id: user.id,
+      // abandonment auto-detected on page unload
     })
-    // navigate to checkout
+    // navigate to checkout...
   }
 
   return <button onClick={handleCheckout}>Comprar</button>
 }`,
+          callout: {
+            title: c("calloutResetOnLogout"),
+            body: c("calloutResetOnLogoutBody"),
+          },
         },
         {
-          title: "Validate the installation",
+          title: c("trackServerEvents"),
+          badge: "required",
+          description: t("sdks.react.trackFunnelEventsDesc"),
+          file: "src/api/webhooks/payment.ts",
+          language: "ts",
+          code: `// In your payment webhook handler (Express/Fastify/etc.)
+export async function handlePaymentWebhook(req: Request, res: Response) {
+  const invoice = parseWebhook(req)
+
+  await fetch('${baseUrl}/api/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      key: process.env.GROWARE_API_KEY,
+      event_type: 'purchase',
+      dedupe_id: 'purchase:' + invoice.id, // prevents duplicates
+      event_time: invoice.paid_at,          // ISO 8601
+      gross_value: invoice.amount,
+      currency: 'BRL',
+      customer_id: invoice.customer_id,
+      product_id: invoice.product_id,
+      payment_method: invoice.payment_method,
+    }),
+  })
+
+  res.status(200).json({ received: true })
+}`,
+          callout: {
+            title: c("calloutClientVsServer"),
+            body: c("calloutClientVsServerBody"),
+          },
+        },
+        {
+          title: c("validateInstall"),
           badge: "recommended",
           callout: {
-            title: "Checklist",
-            body: "1. Open your app with ?utm_source=test in the URL\n2. DevTools → Network → filter '/api/track' — should see 204 responses\n3. Complete a funnel action\n4. Return here and check the verification card below",
+            title: c("calloutValidateChecklist"),
+            body: c("calloutValidateChecklistBody"),
           },
         },
       ];
@@ -371,9 +484,9 @@ export function CheckoutButton({ product, user }: Props) {
     case "html":
       return [
         {
-          title: "Add the tracker script",
+          title: c("installScript"),
           badge: "required",
-          description: "Paste this script in the <head> of every page. Load it early to capture UTMs from the initial URL.",
+          description: t("sdks.html.installScriptDesc"),
           file: "index.html",
           language: "html",
           code: `<head>
@@ -381,14 +494,14 @@ export function CheckoutButton({ product, user }: Props) {
   ${scriptTag}
 </head>`,
           callout: {
-            title: "Auto-captured on every page load",
-            body: "pageview, utm_source, utm_medium, utm_campaign, referrer, device (mobile/desktop), and session ID are captured automatically with no extra code.",
+            title: t("sdks.html.calloutAutoPageLoadTitle"),
+            body: t("sdks.html.calloutAutoPageLoadBody"),
           },
         },
         {
-          title: "Identify users after login",
+          title: c("identifyUsers"),
           badge: "recommended",
-          description: "Call this right after your login logic completes. On logout, call reset() to clear the session.",
+          description: t("sdks.html.identifyUsersDesc"),
           file: "login.js",
           language: "js",
           code: `// After successful login
@@ -402,9 +515,9 @@ window.Groware.identify(user.id, {
 window.Groware.reset()`,
         },
         {
-          title: "Track purchase events",
+          title: c("trackFunnelEvents"),
           badge: "required",
-          description: "Fire this event when a purchase is confirmed. The dedupe field prevents double-counting if the page is reloaded.",
+          description: t("sdks.html.trackPurchaseDesc"),
           file: "checkout.js",
           language: "js",
           code: `window.Groware.track('purchase', {
@@ -419,9 +532,9 @@ window.Groware.reset()`,
 })`,
         },
         {
-          title: "Track other funnel events",
+          title: c("trackFunnelEvents"),
           badge: "required",
-          description: "Fire these at each key step of your funnel.",
+          description: t("sdks.html.trackOtherFunnelDesc"),
           file: "app.js",
           language: "js",
           code: `// User signup
@@ -441,9 +554,9 @@ window.Groware.track('checkout_started', {
 })`,
         },
         {
-          title: "Enable debug mode",
+          title: c("enableDebug"),
           badge: "optional",
-          description: "Replace your script tag with the debug version to log events in the console.",
+          description: t("sdks.html.enableDebugDesc"),
           file: "index.html",
           language: "html",
           code: debugTag,
@@ -453,16 +566,15 @@ window.Groware.track('checkout_started', {
     case "vue":
       return [
         {
-          title: "Add environment variable",
+          title: c("addEnvVar"),
           badge: "required",
           file: ".env.local",
           language: "bash",
           code: `VITE_GROWARE_KEY=${apiKey}`,
         },
         {
-          title: "Add the tracker script",
+          title: c("installScript"),
           badge: "required",
-          description: "Add to index.html. For Nuxt, use the useHead composable in app.vue.",
           file: "index.html",
           language: "html",
           code: `<head>
@@ -471,9 +583,9 @@ window.Groware.track('checkout_started', {
 </head>`,
         },
         {
-          title: "Create a useGroware composable",
+          title: t("sdks.vue.createComposableTitle"),
           badge: "recommended",
-          description: "A Vue 3 composable that wraps window.Groware safely for use across your components.",
+          description: t("sdks.vue.createComposableDesc"),
           file: "src/composables/useGroware.ts",
           language: "ts",
           code: `import { getCurrentInstance } from 'vue'
@@ -508,8 +620,9 @@ export function useGroware() {
 }`,
         },
         {
-          title: "Identify users after login",
+          title: c("identifyUsers"),
           badge: "recommended",
+          description: t("sdks.vue.identifyUsersDesc"),
           file: "src/stores/auth.ts",
           language: "ts",
           code: `import { defineStore } from 'pinia'
@@ -531,8 +644,9 @@ export const useAuthStore = defineStore('auth', {
 })`,
         },
         {
-          title: "Track funnel events",
+          title: c("trackClientEvents"),
           badge: "required",
+          description: t("sdks.vue.trackFunnelEventsDesc"),
           file: "src/components/CheckoutForm.vue",
           language: "vue",
           code: `<script setup lang="ts">
@@ -540,6 +654,26 @@ import { useGroware } from '@/composables/useGroware'
 const { track } = useGroware()
 const props = defineProps<{ product: Product; user: User }>()
 
+// After signup
+function handleSignupSuccess(user: User) {
+  track('signup', {
+    dedupe: true,
+    customer_id: user.id,
+    customer_type: 'new',
+  })
+}
+
+// When checkout starts
+function handleCheckoutStart(invoice: Invoice) {
+  track('checkout_started', {
+    gross_value: props.product.price,
+    currency: 'BRL',
+    product_id: props.product.id,
+    customer_id: props.user.id,
+  })
+}
+
+// On confirmed purchase (client-side, e.g. PIX QR displayed)
 function handlePurchase(invoice: Invoice) {
   track('purchase', {
     dedupe: invoice.id,
@@ -550,13 +684,17 @@ function handlePurchase(invoice: Invoice) {
   })
 }
 </script>`,
+          callout: {
+            title: c("calloutClientVsServer"),
+            body: c("calloutClientVsServerBody"),
+          },
         },
         {
-          title: "Validate the installation",
+          title: c("validateInstall"),
           badge: "recommended",
           callout: {
-            title: "Checklist",
-            body: "1. Open your app with ?utm_source=test in the URL\n2. DevTools → Network → filter '/api/track'\n3. Navigate — pageview events should appear (204 responses)\n4. Complete a funnel action and return here",
+            title: c("calloutValidateChecklist"),
+            body: c("calloutValidateChecklistBody"),
           },
         },
       ];
@@ -564,7 +702,7 @@ function handlePurchase(invoice: Invoice) {
     case "angular":
       return [
         {
-          title: "Add environment variable",
+          title: c("addEnvVar"),
           badge: "required",
           file: "src/environments/environment.ts",
           language: "ts",
@@ -574,9 +712,8 @@ function handlePurchase(invoice: Invoice) {
 }`,
         },
         {
-          title: "Add the tracker script",
+          title: c("installScript"),
           badge: "required",
-          description: "Add to src/index.html in the <head>. The tracker will auto-capture pageviews on Angular Router navigation.",
           file: "src/index.html",
           language: "html",
           code: `<!doctype html>
@@ -591,9 +728,9 @@ function handlePurchase(invoice: Invoice) {
 </html>`,
         },
         {
-          title: "Create GrowareService",
+          title: t("sdks.angular.createServiceTitle"),
           badge: "recommended",
-          description: "An injectable Angular service that wraps window.Groware. Inject it anywhere in your app.",
+          description: t("sdks.angular.createServiceDesc"),
           file: "src/app/core/groware.service.ts",
           language: "ts",
           code: `import { Injectable } from '@angular/core'
@@ -626,8 +763,9 @@ export class GrowareService {
 }`,
         },
         {
-          title: "Identify users after login",
+          title: c("identifyUsers"),
           badge: "recommended",
+          description: t("sdks.angular.identifyUsersDesc"),
           file: "src/app/auth/auth.service.ts",
           language: "ts",
           code: `import { Injectable } from '@angular/core'
@@ -647,17 +785,38 @@ export class AuthService {
 }`,
         },
         {
-          title: "Track funnel events",
+          title: c("trackClientEvents"),
           badge: "required",
+          description: t("sdks.angular.trackFunnelEventsDesc"),
           file: "src/app/checkout/checkout.component.ts",
           language: "ts",
-          code: `import { Component } from '@angular/core'
+          code: `import { Component, OnInit } from '@angular/core'
 import { GrowareService } from '../core/groware.service'
 
 @Component({ selector: 'app-checkout', templateUrl: './checkout.component.html' })
-export class CheckoutComponent {
+export class CheckoutComponent implements OnInit {
   constructor(private groware: GrowareService) {}
 
+  // After signup
+  onSignup(user: User) {
+    this.groware.track('signup', {
+      dedupe: true,
+      customer_id: user.id,
+      customer_type: 'new',
+    })
+  }
+
+  // When checkout starts
+  ngOnInit() {
+    this.groware.track('checkout_started', {
+      gross_value: this.product.price,
+      currency: 'BRL',
+      product_id: this.product.id,
+      customer_id: this.user.id,
+    })
+  }
+
+  // On confirmed purchase
   onPurchaseComplete(invoice: Invoice, user: User) {
     this.groware.track('purchase', {
       dedupe: invoice.id,
@@ -667,13 +826,17 @@ export class CheckoutComponent {
     })
   }
 }`,
+          callout: {
+            title: c("calloutClientVsServer"),
+            body: c("calloutClientVsServerBody"),
+          },
         },
         {
-          title: "Validate the installation",
+          title: c("validateInstall"),
           badge: "recommended",
           callout: {
-            title: "Checklist",
-            body: "1. Open your app with ?utm_source=test\n2. DevTools → Network → filter '/api/track'\n3. Angular Router navigation should trigger pageview events\n4. Complete a funnel action and return here to verify",
+            title: c("calloutValidateChecklist"),
+            body: c("calloutValidateChecklistBody"),
           },
         },
       ];
@@ -681,16 +844,15 @@ export class CheckoutComponent {
     case "svelte":
       return [
         {
-          title: "Add environment variable",
+          title: c("addEnvVar"),
           badge: "required",
           file: ".env",
           language: "bash",
           code: `PUBLIC_GROWARE_KEY=${apiKey}`,
         },
         {
-          title: "Add the tracker script",
+          title: c("installScript"),
           badge: "required",
-          description: "Add to src/app.html for SvelteKit. Place it in <head> so UTMs are captured on the initial page load.",
           file: "src/app.html",
           language: "html",
           code: `<!doctype html>
@@ -706,9 +868,9 @@ export class CheckoutComponent {
 </html>`,
         },
         {
-          title: "Create a groware.ts utility",
+          title: t("sdks.svelte.createUtilTitle"),
           badge: "recommended",
-          description: "A typed Svelte module that safely wraps window.Groware. Import and use anywhere in your app.",
+          description: t("sdks.svelte.createUtilDesc"),
           file: "src/lib/groware.ts",
           language: "ts",
           code: `declare global {
@@ -737,8 +899,9 @@ export const groware = {
 }`,
         },
         {
-          title: "Identify users after login",
+          title: c("identifyUsers"),
           badge: "recommended",
+          description: t("sdks.svelte.identifyUsersDesc"),
           file: "src/routes/auth/+page.svelte",
           language: "svelte",
           code: `<script lang="ts">
@@ -755,15 +918,29 @@ export const groware = {
 </script>`,
         },
         {
-          title: "Track funnel events",
+          title: c("trackClientEvents"),
           badge: "required",
+          description: t("sdks.svelte.trackFunnelEventsDesc"),
           file: "src/routes/checkout/+page.svelte",
           language: "svelte",
           code: `<script lang="ts">
+  import { onMount } from 'svelte'
   import { groware } from '$lib/groware'
   import type { PageData } from './$types'
   export let data: PageData
 
+  // Fire checkout_started when page mounts
+  onMount(() => {
+    groware.track('checkout_started', {
+      gross_value: data.product.price,
+      currency: 'BRL',
+      product_id: data.product.id,
+      customer_id: data.user.id,
+      // abandonment auto-detected on page unload
+    })
+  })
+
+  // Fire purchase on confirmation
   function handlePurchase(invoice: Invoice) {
     groware.track('purchase', {
       dedupe: invoice.id,
@@ -773,14 +950,31 @@ export const groware = {
       product_id: data.product.id,
     })
   }
+</script>
+
+<!-- After signup (+page.svelte) -->
+<script lang="ts">
+  import { groware } from '$lib/groware'
+  export let user: User
+
+  // Fire signup event once
+  groware.track('signup', {
+    dedupe: true,
+    customer_id: user.id,
+    customer_type: 'new',
+  })
 </script>`,
+          callout: {
+            title: c("calloutClientVsServer"),
+            body: c("calloutClientVsServerBody"),
+          },
         },
         {
-          title: "Validate the installation",
+          title: c("validateInstall"),
           badge: "recommended",
           callout: {
-            title: "Checklist",
-            body: "1. Open your app with ?utm_source=test\n2. DevTools → Network → filter '/api/track'\n3. SvelteKit client-side navigation triggers pageview automatically\n4. Fire a funnel event and return here",
+            title: c("calloutValidateChecklist"),
+            body: c("calloutValidateChecklistBody"),
           },
         },
       ];
@@ -788,9 +982,9 @@ export const groware = {
     case "wordpress":
       return [
         {
-          title: "Add the tracker via functions.php",
+          title: c("installScript"),
           badge: "required",
-          description: "This is the recommended method. Add it to your theme's functions.php or a custom plugin. The tracker will load on all pages.",
+          description: t("sdks.wordpress.installScriptDesc"),
           file: "functions.php",
           language: "php",
           code: `<?php
@@ -799,14 +993,14 @@ function groware_tracker_script() {
 }
 add_action('wp_head', 'groware_tracker_script', 1); // priority 1 = loads early`,
           callout: {
-            title: "Alternative: use a plugin",
-            body: "You can also use a header/footer injection plugin like 'Insert Headers and Footers' to paste the script tag without touching code.",
+            title: t("sdks.wordpress.calloutPluginTitle"),
+            body: t("sdks.wordpress.calloutPluginBody"),
           },
         },
         {
-          title: "Identify logged-in users",
+          title: c("identifyUsers"),
           badge: "recommended",
-          description: "If users are logged in, identify them after the tracker loads so their events are attributed.",
+          description: t("sdks.wordpress.identifyUsersDesc"),
           file: "functions.php",
           language: "php",
           code: `<?php
@@ -826,14 +1020,14 @@ function groware_identify_user() {
 }
 add_action('wp_footer', 'groware_identify_user');`,
           callout: {
-            title: "User ID privacy",
-            body: "Pass $user->ID (WordPress integer ID), never the email address, as the first argument to identify().",
+            title: t("sdks.wordpress.calloutUserIdTitle"),
+            body: t("sdks.wordpress.calloutUserIdBody"),
           },
         },
         {
-          title: "Track WooCommerce purchases",
+          title: t("sdks.wordpress.trackWooTitle"),
           badge: "recommended",
-          description: "Hook into WooCommerce's thank you page to fire the purchase event.",
+          description: t("sdks.wordpress.trackWooDesc"),
           file: "functions.php",
           language: "php",
           code: `<?php
@@ -855,9 +1049,9 @@ function groware_track_woo_purchase($order_id) {
 add_action('woocommerce_thankyou', 'groware_track_woo_purchase');`,
         },
         {
-          title: "Enable debug mode",
+          title: c("enableDebug"),
           badge: "optional",
-          description: "Temporarily add data-debug='true' to see events in the browser console. Remove before going live.",
+          description: t("sdks.wordpress.enableDebugDesc"),
           file: "functions.php",
           language: "php",
           code: `<?php
@@ -871,30 +1065,30 @@ function groware_tracker_script() {
     case "gtm":
       return [
         {
-          title: "Create a Custom HTML Tag",
+          title: t("sdks.gtm.createTagTitle"),
           badge: "required",
-          description: "In GTM: Tags → New → Tag Configuration → Custom HTML. Paste the script below. Set trigger to 'All Pages'.",
+          description: t("sdks.gtm.createTagDesc"),
           file: "GTM → Tags → New Tag",
           language: "html",
           code: `<script async src="${baseUrl}/tracker.min.js" data-key="${apiKey}"></script>`,
           callout: {
-            title: "Tag firing order",
-            body: "Set this tag to fire before all other tags (Tag Sequencing). This ensures UTMs from the URL are captured before any other tag runs.",
+            title: t("sdks.gtm.calloutTagOrderTitle"),
+            body: t("sdks.gtm.calloutTagOrderBody"),
           },
         },
         {
-          title: "Configure the trigger",
+          title: t("sdks.gtm.configureTriggerTitle"),
           badge: "required",
-          description: "Set the trigger to 'All Pages - Page View' so the tracker loads on every page immediately.",
+          description: t("sdks.gtm.configureTriggerDesc"),
           callout: {
-            title: "Trigger settings",
-            body: "Go to Triggering → All Pages. This fires the tracker on every page load and SPA navigation captured by GTM.",
+            title: t("sdks.gtm.calloutTriggerSettingsTitle"),
+            body: t("sdks.gtm.calloutTriggerSettingsBody"),
           },
         },
         {
-          title: "Create a Custom Event Tag for purchases",
+          title: t("sdks.gtm.createEventTagTitle"),
           badge: "required",
-          description: "Create a separate Custom HTML Tag triggered by a custom event (e.g. 'groware_purchase') pushed to dataLayer from your app.",
+          description: t("sdks.gtm.createEventTagDesc"),
           file: "GTM → Tags → New Tag (Purchase)",
           language: "html",
           code: `<script>
@@ -910,9 +1104,9 @@ function groware_tracker_script() {
 </script>`,
         },
         {
-          title: "Push events from your app",
+          title: t("sdks.gtm.pushFromAppTitle"),
           badge: "required",
-          description: "In your frontend code, push to dataLayer to trigger the GTM tags.",
+          description: t("sdks.gtm.pushFromAppDesc"),
           file: "checkout.js",
           language: "js",
           code: `window.dataLayer = window.dataLayer || [];
@@ -927,21 +1121,21 @@ window.dataLayer.push({
 });`,
         },
         {
-          title: "Create GTM Variables",
+          title: t("sdks.gtm.createVariablesTitle"),
           badge: "required",
-          description: "Create Data Layer Variables for each field used in the tags: DL - Invoice ID, DL - Order Total, DL - Customer ID, DL - Product ID.",
+          description: t("sdks.gtm.createVariablesDesc"),
           callout: {
-            title: "Variable setup",
-            body: "Variables → New → Data Layer Variable. Set the name to match the dataLayer keys (e.g. 'invoiceId' for DL - Invoice ID). These map dataLayer values to your tag templates.",
+            title: t("sdks.gtm.calloutVariablesTitle"),
+            body: t("sdks.gtm.calloutVariablesBody"),
           },
         },
         {
-          title: "Preview and publish",
+          title: t("sdks.gtm.previewPublishTitle"),
           badge: "required",
-          description: "Use GTM Preview mode to verify events fire correctly before publishing.",
+          description: t("sdks.gtm.previewPublishDesc"),
           callout: {
-            title: "Testing steps",
-            body: "1. Click Preview in GTM → enter your site URL\n2. Navigate pages — verify the Groware tag fires on 'All Pages'\n3. Complete a purchase — verify the purchase tag fires\n4. Check DevTools Network for POST /api/track returning 204\n5. Publish the container",
+            title: t("sdks.gtm.calloutPreviewTitle"),
+            body: t("sdks.gtm.calloutPreviewBody"),
           },
         },
       ];
@@ -949,7 +1143,7 @@ window.dataLayer.push({
     case "nodejs":
       return [
         {
-          title: "Add environment variable",
+          title: c("addEnvVar"),
           badge: "required",
           file: ".env",
           language: "bash",
@@ -957,9 +1151,9 @@ window.dataLayer.push({
 GROWARE_BASE_URL=${baseUrl}`,
         },
         {
-          title: "Create a Groware client module",
+          title: t("sdks.nodejs.createModuleTitle"),
           badge: "recommended",
-          description: "A typed helper module so you don't repeat the fetch boilerplate everywhere. Place it in a shared utilities folder.",
+          description: t("sdks.nodejs.createModuleDesc"),
           file: "src/lib/groware.ts",
           language: "ts",
           code: `const GROWARE_URL = process.env.GROWARE_BASE_URL + '/api/track'
@@ -995,9 +1189,9 @@ export async function growareTrack(payload: TrackPayload): Promise<void> {
 }`,
         },
         {
-          title: "Track purchase events",
+          title: c("trackFunnelEvents"),
           badge: "required",
-          description: "Call growareTrack() in your payment webhook handler. Always use dedupe_id to prevent double-counting.",
+          description: t("sdks.server.trackPurchaseDesc"),
           file: "src/routes/webhooks/payment.ts",
           language: "ts",
           code: `import { growareTrack } from '../../lib/groware'
@@ -1020,9 +1214,9 @@ export async function handlePaymentWebhook(req: Request) {
 }`,
         },
         {
-          title: "Track recurring subscriptions",
+          title: t("sdks.server.trackRecurringTitle"),
           badge: "recommended",
-          description: "For SaaS with recurring revenue, track renewals and cancellations server-side from webhook handlers.",
+          description: t("sdks.server.trackRecurringDesc"),
           file: "src/routes/webhooks/subscription.ts",
           language: "ts",
           code: `import { growareTrack } from '../../lib/groware'
@@ -1055,23 +1249,20 @@ await growareTrack({
 })`,
         },
         {
-          title: "Validate with cURL",
+          title: c("validateWithCurl"),
           badge: "recommended",
-          description: "Test your API key with a manual cURL request before deploying.",
           file: "terminal",
           language: "bash",
           code: `curl -X POST ${baseUrl}/api/track \\
   -H "Content-Type: application/json" \\
-  -d '{"key":"${apiKey}","event_type":"pageview"}'
-
-# Expected response: HTTP 204 No Content`,
+  -d '{"key":"${apiKey}","event_type":"pageview"}'`,
         },
       ];
 
     case "python":
       return [
         {
-          title: "Add environment variable",
+          title: c("addEnvVar"),
           badge: "required",
           file: ".env",
           language: "bash",
@@ -1079,9 +1270,9 @@ await growareTrack({
 GROWARE_BASE_URL=${baseUrl}`,
         },
         {
-          title: "Create a groware.py module",
+          title: t("sdks.python.createModuleTitle"),
           badge: "recommended",
-          description: "A reusable module using requests (sync) or httpx (async). Place in your project's utils or services directory.",
+          description: t("sdks.python.createModuleDesc"),
           file: "app/services/groware.py",
           language: "python",
           code: `import os
@@ -1120,9 +1311,9 @@ def groware_track(
         logger.warning('Groware tracking failed: %s', e)`,
         },
         {
-          title: "Track purchase events",
+          title: c("trackFunnelEvents"),
           badge: "required",
-          description: "Call groware_track() in your payment webhook view. Use dedupe_id to prevent double-counting from webhook retries.",
+          description: t("sdks.server.trackPurchaseDesc"),
           file: "app/views/webhooks.py",
           language: "python",
           code: `from app.services.groware import groware_track
@@ -1144,7 +1335,7 @@ def payment_webhook(request):
     return HttpResponse(status=200)`,
         },
         {
-          title: "Track recurring subscriptions",
+          title: t("sdks.server.trackRecurringTitle"),
           badge: "recommended",
           file: "app/views/webhooks.py",
           language: "python",
@@ -1175,9 +1366,9 @@ groware_track(
 )`,
         },
         {
-          title: "Async variant (httpx)",
+          title: t("sdks.python.asyncVariantTitle"),
           badge: "optional",
-          description: "For async frameworks like FastAPI or Django Async, use httpx instead of requests.",
+          description: t("sdks.python.asyncVariantDesc"),
           file: "app/services/groware_async.py",
           language: "python",
           code: `import httpx
@@ -1195,7 +1386,7 @@ async def groware_track_async(event_type: str, **kwargs) -> None:
         pass  # never raise`,
         },
         {
-          title: "Validate with cURL",
+          title: c("validateWithCurl"),
           badge: "recommended",
           file: "terminal",
           language: "bash",
@@ -1208,7 +1399,7 @@ async def groware_track_async(event_type: str, **kwargs) -> None:
     case "php":
       return [
         {
-          title: "Add environment variable",
+          title: c("addEnvVar"),
           badge: "required",
           file: ".env",
           language: "bash",
@@ -1216,9 +1407,9 @@ async def groware_track_async(event_type: str, **kwargs) -> None:
 GROWARE_BASE_URL=${baseUrl}`,
         },
         {
-          title: "Create a Groware.php class",
+          title: t("sdks.php.createModuleTitle"),
           badge: "recommended",
-          description: "A reusable class using cURL. Place it in your app's Services or Helpers directory.",
+          description: t("sdks.php.createModuleDesc"),
           file: "app/Services/Groware.php",
           language: "php",
           code: `<?php
@@ -1256,8 +1447,9 @@ class Groware
 }`,
         },
         {
-          title: "Track purchase events",
+          title: c("trackFunnelEvents"),
           badge: "required",
+          description: t("sdks.server.trackPurchaseDesc"),
           file: "app/Controllers/WebhookController.php",
           language: "php",
           code: `<?php
@@ -1286,7 +1478,7 @@ class WebhookController
 }`,
         },
         {
-          title: "Track recurring subscriptions",
+          title: t("sdks.server.trackRecurringTitle"),
           badge: "recommended",
           file: "app/Controllers/WebhookController.php",
           language: "php",
@@ -1316,7 +1508,7 @@ $groware->track('subscription_canceled', [
 ]);`,
         },
         {
-          title: "Validate with cURL",
+          title: c("validateWithCurl"),
           badge: "recommended",
           file: "terminal",
           language: "bash",
@@ -1329,7 +1521,7 @@ $groware->track('subscription_canceled', [
     case "go":
       return [
         {
-          title: "Add environment variable",
+          title: c("addEnvVar"),
           badge: "required",
           file: ".env",
           language: "bash",
@@ -1337,9 +1529,9 @@ $groware->track('subscription_canceled', [
 GROWARE_BASE_URL=${baseUrl}`,
         },
         {
-          title: "Create a groware.go package",
+          title: t("sdks.go.createModuleTitle"),
           badge: "recommended",
-          description: "A typed Go package that handles the HTTP request. Import it from any handler.",
+          description: t("sdks.go.createModuleDesc"),
           file: "internal/groware/groware.go",
           language: "go",
           code: `package groware
@@ -1376,8 +1568,9 @@ func Track(eventType string, payload Payload) {
 }`,
         },
         {
-          title: "Track purchase events",
+          title: c("trackFunnelEvents"),
           badge: "required",
+          description: t("sdks.server.trackPurchaseDesc"),
           file: "internal/handlers/webhook.go",
           language: "go",
           code: `package handlers
@@ -1404,7 +1597,7 @@ func HandlePaymentWebhook(w http.ResponseWriter, r *http.Request) {
 }`,
         },
         {
-          title: "Track recurring subscriptions",
+          title: t("sdks.server.trackRecurringTitle"),
           badge: "recommended",
           file: "internal/handlers/subscription_webhook.go",
           language: "go",
@@ -1421,7 +1614,7 @@ func HandlePaymentWebhook(w http.ResponseWriter, r *http.Request) {
 })`,
         },
         {
-          title: "Validate with cURL",
+          title: c("validateWithCurl"),
           badge: "recommended",
           file: "terminal",
           language: "bash",
@@ -1434,7 +1627,7 @@ func HandlePaymentWebhook(w http.ResponseWriter, r *http.Request) {
     case "ruby":
       return [
         {
-          title: "Add environment variable",
+          title: c("addEnvVar"),
           badge: "required",
           file: ".env",
           language: "bash",
@@ -1442,9 +1635,9 @@ func HandlePaymentWebhook(w http.ResponseWriter, r *http.Request) {
 GROWARE_BASE_URL=${baseUrl}`,
         },
         {
-          title: "Create a Groware module",
+          title: t("sdks.ruby.createModuleTitle"),
           badge: "recommended",
-          description: "A reusable Ruby module. Place it in lib/ or app/services/ depending on your framework.",
+          description: t("sdks.ruby.createModuleDesc"),
           file: "lib/groware.rb",
           language: "ruby",
           code: `require 'net/http'
@@ -1473,8 +1666,9 @@ module Groware
 end`,
         },
         {
-          title: "Track purchase events",
+          title: c("trackFunnelEvents"),
           badge: "required",
+          description: t("sdks.server.trackPurchaseDesc"),
           file: "app/controllers/webhooks_controller.rb",
           language: "ruby",
           code: `class WebhooksController < ApplicationController
@@ -1496,7 +1690,7 @@ end`,
 end`,
         },
         {
-          title: "Track recurring subscriptions",
+          title: t("sdks.server.trackRecurringTitle"),
           badge: "recommended",
           file: "app/controllers/webhooks_controller.rb",
           language: "ruby",
@@ -1514,7 +1708,7 @@ Groware.track('purchase',
 )`,
         },
         {
-          title: "Validate with cURL",
+          title: c("validateWithCurl"),
           badge: "recommended",
           file: "terminal",
           language: "bash",
@@ -1527,7 +1721,7 @@ Groware.track('purchase',
     case "laravel":
       return [
         {
-          title: "Add environment variable",
+          title: c("addEnvVar"),
           badge: "required",
           file: ".env",
           language: "bash",
@@ -1535,9 +1729,9 @@ Groware.track('purchase',
 GROWARE_BASE_URL=${baseUrl}`,
         },
         {
-          title: "Create GrowareService",
+          title: t("sdks.laravel.createServiceTitle"),
           badge: "recommended",
-          description: "A typed Laravel service using Http facade. Register it in a service provider or use dependency injection.",
+          description: t("sdks.laravel.createServiceDesc"),
           file: "app/Services/GrowareService.php",
           language: "php",
           code: `<?php
@@ -1572,9 +1766,9 @@ class GrowareService
 }`,
         },
         {
-          title: "Bind in AppServiceProvider",
+          title: c("bindServiceProvider"),
           badge: "recommended",
-          description: "Register GrowareService as a singleton so it's shared across the request lifecycle.",
+          description: c("bindServiceProviderDesc"),
           file: "app/Providers/AppServiceProvider.php",
           language: "php",
           code: `<?php
@@ -1587,9 +1781,9 @@ public function register(): void
 }`,
         },
         {
-          title: "Track purchase events",
+          title: c("trackFunnelEvents"),
           badge: "required",
-          description: "Inject GrowareService into your webhook controller and call track() on payment confirmation.",
+          description: t("sdks.server.trackPurchaseDesc"),
           file: "app/Http/Controllers/WebhookController.php",
           language: "php",
           code: `<?php
@@ -1622,7 +1816,7 @@ class WebhookController extends Controller
 }`,
         },
         {
-          title: "Track recurring subscriptions",
+          title: t("sdks.server.trackRecurringTitle"),
           badge: "recommended",
           file: "app/Http/Controllers/WebhookController.php",
           language: "php",
@@ -1652,7 +1846,7 @@ $this->groware->track('subscription_canceled', [
 ]);`,
         },
         {
-          title: "Validate with cURL",
+          title: c("validateWithCurl"),
           badge: "recommended",
           file: "terminal",
           language: "bash",
@@ -1665,7 +1859,7 @@ $this->groware->track('subscription_canceled', [
     default:
       return [
         {
-          title: "Add the tracker script",
+          title: c("installScript"),
           badge: "required",
           file: "index.html",
           language: "html",

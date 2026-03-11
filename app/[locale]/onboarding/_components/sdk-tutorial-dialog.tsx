@@ -174,8 +174,16 @@ export function SdkTutorialDialog({
   );
 
   const tutorialSteps = useMemo(
-    () => (sdk ? getTutorialSteps(sdk.id, { apiKey, baseUrl }) : []),
-    [sdk, apiKey, baseUrl],
+    () =>
+      sdk
+        ? getTutorialSteps(sdk.id, {
+            apiKey,
+            baseUrl,
+            t: (key: string) => t(key),
+          })
+        : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sdk?.id, apiKey, baseUrl],
   );
 
   const handleCopyPrompt = () => {
