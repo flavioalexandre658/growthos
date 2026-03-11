@@ -430,7 +430,7 @@ export function Topbar({ slug }: TopbarProps) {
             <IconHelp size={16} />
           </TopbarIconButton>
         </Link>
-        <Link href={`/${slug}/settings/installation`} className="contents">
+        <Link href={`/${slug}/settings/organization`} className="contents">
           <TopbarIconButton tooltip={t("settings")}>
             <IconSettings size={16} />
           </TopbarIconButton>

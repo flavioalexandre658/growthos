@@ -54,7 +54,9 @@ function buildDashboardUrl(orgSlug: string): string {
   return `${APP_URL}/dashboard`;
 }
 
-function buildOnboardingUrl(step?: string): string {
+function buildOnboardingUrl(step?: string, orgSlug?: string): string {
+  if (orgSlug && step) return `${APP_URL}/onboarding/${orgSlug}?step=${step}`;
+  if (orgSlug) return `${APP_URL}/onboarding/${orgSlug}`;
   return step ? `${APP_URL}/onboarding?step=${step}` : `${APP_URL}/onboarding`;
 }
 
@@ -82,7 +84,7 @@ function renderEmailHtml(emailId: string, data: IEmailDynamicData, userId: strin
       userName: data.userName,
       orgName: data.orgName,
       currentStep: data.onboardingStep,
-      onboardingUrl: buildOnboardingUrl(data.onboardingStep),
+      onboardingUrl: buildOnboardingUrl(data.onboardingStep, data.orgSlug),
       unsubscribeUrl,
       locale,
     });

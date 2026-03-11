@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { IconCheck } from "@tabler/icons-react";
 import { GrowareLogo } from "@/components/groware-logo";
 import { cn } from "@/lib/utils";
@@ -14,11 +15,23 @@ import type { IOrganization } from "@/interfaces/organization.interface";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
 const STEP_KEYS = ["organization", "funnel", "install"] as const;
+const STEP_MAP: Record<string, number> = {
+  organization: 1,
+  funnel: 2,
+  install: 3,
+};
 
 function calcInitialStep(
   existingOrg: IOrganization | null,
   existingApiKey: string | null,
+  stepParam: string | null,
 ): number {
+  if (stepParam && STEP_MAP[stepParam]) {
+    const requested = STEP_MAP[stepParam];
+    if (requested === 3 && existingOrg) return 3;
+    if (requested === 2 && existingOrg) return 2;
+    return requested;
+  }
   if (!existingOrg) return 1;
   if (existingApiKey) return 3;
   return 2;
@@ -28,22 +41,41 @@ interface OnboardingWizardProps {
   userName: string;
   existingOrg: IOrganization | null;
   existingApiKey: string | null;
+  initialStepParam?: string | null;
 }
 
 export function OnboardingWizard({
   userName,
   existingOrg,
   existingApiKey,
+  initialStepParam,
 }: OnboardingWizardProps) {
   const t = useTranslations("onboarding.wizard");
   const { data: session } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(() =>
-    calcInitialStep(existingOrg, existingApiKey),
+    calcInitialStep(existingOrg, existingApiKey, initialStepParam ?? null),
   );
   const [org, setOrg] = useState<IOrganization | null>(existingOrg);
   const [funnelSteps, setFunnelSteps] = useState<IFunnelStepConfig[]>(
     existingOrg?.funnelSteps ?? [],
   );
+
+  const syncStepToUrl = useCallback(
+    (step: number) => {
+      if (step === 1) return;
+      const stepKey = STEP_KEYS[step - 1];
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("step", stepKey);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams],
+  );
+
+  useEffect(() => {
+    syncStepToUrl(currentStep);
+  }, [currentStep, syncStepToUrl]);
 
   useEffect(() => {
     const userId = session?.user?.id;
@@ -117,7 +149,7 @@ export function OnboardingWizard({
           <StepOrganization
             onComplete={(createdOrg) => {
               setOrg(createdOrg);
-              advance();
+              router.push(`/onboarding/${createdOrg.slug}?step=funnel`);
             }}
           />
         )}

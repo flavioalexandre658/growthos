@@ -265,7 +265,7 @@ export function OverviewContent({ filter }: OverviewContentProps) {
               {tTour("ctaGateway")}
             </Link>
             <Link
-              href={`/${slug}/settings/installation`}
+              href={`/onboarding/${slug}?step=install`}
               className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-800/60 px-3 py-1.5 text-[11px] font-semibold text-zinc-400 ring-1 ring-inset ring-zinc-700/40 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
             >
               <IconCode size={12} />

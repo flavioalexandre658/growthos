@@ -42,7 +42,8 @@ export default async function middleware(req: NextRequest) {
     }
 
     const isNewOrg = req.nextUrl.searchParams.get("new-org") === "1";
-    if (pathname.includes("/onboarding") && token.onboardingCompleted && !isNewOrg) {
+    const hasStepParam = req.nextUrl.searchParams.has("step");
+    if (pathname.includes("/onboarding") && token.onboardingCompleted && !isNewOrg && !hasStepParam) {
       const localeMatch = pathname.match(/^\/([a-z]{2})(\/.*)?$/);
       const locale = localeMatch ? localeMatch[1] : routing.defaultLocale;
       return NextResponse.redirect(new URL(`/${locale}/organizations`, req.url));

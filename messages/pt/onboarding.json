@@ -142,7 +142,34 @@
       "errorToast": "Erro ao finalizar onboarding.",
       "finishing": "Entrando...",
       "goToDashboard": "Ir para o Dashboard",
-      "skipToDashboard": "Ir para o Dashboard"
+      "skipToDashboard": "Ir para o Dashboard",
+      "skipNow": "Pular agora",
+      "sdkGridTitle": "Escolha sua plataforma",
+      "sdkGridDescription": "Selecione o framework ou linguagem do seu projeto para ver o tutorial de instalação personalizado.",
+      "sdkGrid": {
+        "tabs": {
+          "web": "Web",
+          "server": "Server"
+        }
+      },
+      "tutorial": {
+        "title": "Integrar com {sdk}",
+        "descriptionWeb": "Instale o tracker no seu projeto e comece a capturar eventos automaticamente.",
+        "descriptionServer": "Envie eventos server-side via HTTP POST para a API do Groware.",
+        "aiPromptTitle": "Use nosso prompt e deixe a IA fazer tudo",
+        "aiPromptDescription": "Cole este prompt no seu assistente de IA (Cursor, ChatGPT, Copilot) e ele fará toda a integração automaticamente.",
+        "copyPrompt": "Copiar prompt",
+        "copied": "Copiado!",
+        "promptCopied": "Prompt copiado!",
+        "manualTitle": "Instalação manual",
+        "badges": {
+          "required": "obrigatório",
+          "recommended": "recomendado",
+          "optional": "opcional"
+        },
+        "docsHint": "Para mais detalhes sobre eventos e propriedades, consulte a",
+        "docsLink": "documentação completa"
+      }
     },
     "stepGateway": {
       "title": "Conectar gateway de pagamento",

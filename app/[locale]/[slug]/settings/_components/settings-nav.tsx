@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
-  IconCode,
   IconWorld,
   IconFilter,
   IconBrain,
@@ -25,13 +24,12 @@ export interface SettingsSection {
 }
 
 export const SETTINGS_SECTIONS: SettingsSection[] = [
-  { id: "installation", labelKey: "installation", icon: <IconCode size={14} /> },
-  { id: "funnel", labelKey: "funnel", icon: <IconFilter size={14} /> },
   {
     id: "organization",
     labelKey: "organization",
     icon: <IconBuilding size={14} />,
   },
+  { id: "funnel", labelKey: "funnel", icon: <IconFilter size={14} /> },
   { id: "integrations", labelKey: "integrations", icon: <IconPlug size={14} /> },
   { id: "billing", labelKey: "billing", icon: <IconCreditCard size={14} /> },
   { id: "team", labelKey: "team", icon: <IconUsers size={14} /> },

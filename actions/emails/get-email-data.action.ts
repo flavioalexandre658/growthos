@@ -17,6 +17,7 @@ export interface IEmailDynamicData {
   userName: string;
   userEmail: string;
   orgName: string;
+  orgSlug?: string;
   locale: "pt" | "en";
   onboardingStep?: string;
   revenueFormatted?: string;
@@ -53,7 +54,7 @@ export async function getEmailDynamicData(
   if (!user) return null;
 
   const [org] = await db
-    .select({ name: organizations.name })
+    .select({ name: organizations.name, slug: organizations.slug })
     .from(organizations)
     .where(eq(organizations.id, organizationId))
     .limit(1);
@@ -66,6 +67,7 @@ export async function getEmailDynamicData(
     userName: user.name,
     userEmail: user.email,
     orgName: org?.name ?? "",
+    orgSlug: org?.slug,
     locale,
   };
 

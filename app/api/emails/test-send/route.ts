@@ -60,7 +60,7 @@ function renderTestHtml(emailId: string, locale: Locale): string | null {
       userName: "Flavio",
       orgName: "Groware Demo",
       currentStep: "2",
-      onboardingUrl: `${APP_URL}/onboarding?step=2`,
+      onboardingUrl: `${APP_URL}/onboarding/groware-demo?step=funnel`,
       unsubscribeUrl,
       locale,
     });

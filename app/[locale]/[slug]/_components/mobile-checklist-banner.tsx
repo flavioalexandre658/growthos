@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/routing";
 import { IconCheck, IconChevronRight, IconChevronDown } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { CHECKLIST_ITEMS } from "@/lib/checklist-items";
+import { getChecklistItems } from "@/lib/checklist-items";
 import { useTourProgress } from "@/hooks/queries/use-tour-progress";
 import { useUpdateTourState } from "@/hooks/mutations/use-update-tour-state";
 import { useBilling } from "@/hooks/queries/use-billing";
@@ -31,7 +31,7 @@ export function MobileChecklistBanner({ slug }: MobileChecklistBannerProps) {
   const { data: billing } = useBilling();
   const hasAi = billing?.plan.hasAiAnalysis ?? false;
 
-  const visibleItems = CHECKLIST_ITEMS.filter((item) => {
+  const visibleItems = getChecklistItems(slug).filter((item) => {
     if (item.id === "aiExplored" && !hasAi) return false;
     return true;
   });
@@ -70,7 +70,7 @@ export function MobileChecklistBanner({ slug }: MobileChecklistBannerProps) {
 
   const handleCta = (href: string) => {
     setOpen(false);
-    router.push(`/${slug}/${href}` as never);
+    router.push((href.startsWith("/") ? href : `/${slug}/${href}`) as never);
   };
 
   return (

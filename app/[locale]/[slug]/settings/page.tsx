@@ -6,5 +6,5 @@ interface SettingsPageProps {
 
 export default async function SettingsPage({ params }: SettingsPageProps) {
   const { slug } = await params;
-  redirect(`/${slug}/settings/installation`);
+  redirect(`/${slug}/settings/organization`);
 }

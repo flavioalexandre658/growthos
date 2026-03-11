@@ -135,7 +135,7 @@ function buildFooterNav(slug: string, t: (key: string) => string): FooterNavSect
   return {
     items: [
       { href: "/docs", label: t("nav.docs"), icon: IconBook, exact: false },
-      { href: `/${slug}/settings/installation`, label: t("nav.settings"), icon: IconSettings, exact: false, activePrefix: `/${slug}/settings` },
+      { href: `/${slug}/settings/organization`, label: t("nav.settings"), icon: IconSettings, exact: false, activePrefix: `/${slug}/settings` },
     ],
   };
 }

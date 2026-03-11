@@ -75,6 +75,7 @@
       "step2Desc": "Um único script captura pageviews, UTMs, device e referrer automaticamente",
       "step3Label": "3. Dispare eventos manuais",
       "step3Desc": "Use Groware.track() para enviar dados de eventos como compras e conversões",
+      "apiKeysTitle": "API Keys",
       "apiKeysDescription": "API keys para autenticar o tracker.js",
       "expiryNever": "Nunca",
       "expiry30Days": "30 dias",

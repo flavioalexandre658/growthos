@@ -11,7 +11,7 @@ import {
   IconX,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { CHECKLIST_ITEMS } from "@/lib/checklist-items";
+import { getChecklistItems } from "@/lib/checklist-items";
 import { useTourProgress } from "@/hooks/queries/use-tour-progress";
 import { useUpdateTourState } from "@/hooks/mutations/use-update-tour-state";
 import { useBilling } from "@/hooks/queries/use-billing";
@@ -53,7 +53,7 @@ export function SetupChecklist({ slug, organizationId, collapsed }: SetupCheckli
   const { data: billing } = useBilling();
   const hasAi = billing?.plan.hasAiAnalysis ?? false;
 
-  const visibleItems = CHECKLIST_ITEMS.filter((item) => {
+  const visibleItems = getChecklistItems(slug).filter((item) => {
     if (item.id === "aiExplored" && !hasAi) return false;
     return true;
   });
@@ -218,7 +218,7 @@ export function SetupChecklist({ slug, organizationId, collapsed }: SetupCheckli
                 </p>
                 {isNext && !isDone && item.href && item.ctaKey && (
                   <button
-                    onClick={() => router.push(`/${slug}/${item.href}` as never)}
+                    onClick={() => router.push((item.href!.startsWith("/") ? item.href! : `/${slug}/${item.href}`) as never)}
                     className="shrink-0 flex items-center gap-0.5 rounded bg-indigo-600/20 px-1.5 py-0.5 text-[9px] font-semibold text-indigo-300 hover:bg-indigo-600/30 transition-colors"
                   >
                     {t(item.ctaKey)}

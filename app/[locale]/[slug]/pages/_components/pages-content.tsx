@@ -241,7 +241,7 @@ export function PagesContent({ filter }: PagesContentProps) {
           title={tTour("title")}
           description={tTour("description")}
           ctaLabel={tTour("cta")}
-          ctaHref={`/${slug}/settings/installation`}
+          ctaHref={`/onboarding/${slug}?step=install`}
           className="min-h-[320px]"
         />
       ) : (

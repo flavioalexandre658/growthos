@@ -66,7 +66,7 @@ export function StepTour({
       if (destination === "gateway") {
         window.location.href = slug ? `/${slug}/settings/integrations` : "/organizations";
       } else if (destination === "tracker") {
-        window.location.href = slug ? `/${slug}/settings/installation` : "/organizations";
+        window.location.href = `/onboarding/${slug}?step=install`;
       } else {
         window.location.href = slug ? `/${slug}` : "/organizations";
       }
