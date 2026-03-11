@@ -11,7 +11,6 @@ import { CostsImpactCards } from "./costs-impact-cards";
 import { CostCompositionChart } from "./cost-composition-chart";
 import { useCostsSummary } from "@/hooks/queries/use-costs-summary";
 import { InlineBanner } from "@/components/ui/welcome-state";
-import { PeriodFilter } from "@/app/[locale]/[slug]/_components/period-filter";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 
 function CostsPageSkeleton() {
