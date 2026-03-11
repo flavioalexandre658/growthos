@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBilling } from "@/hooks/queries/use-billing";
 import { BillingCurrentPlan } from "./_components/billing-current-plan";
 import { BillingPlansGrid } from "./_components/billing-plans-grid";
+import { growareTrack } from "@/utils/groware";
 import type { PlanSlug } from "@/utils/plans";
 
 type Currency = "brl" | "usd";
@@ -14,6 +16,7 @@ type BillingInterval = "monthly" | "annual";
 
 export default function BillingPage() {
   const t = useTranslations("settings.billing.page");
+  const { data: session } = useSession();
   const { data: billing, isLoading } = useBilling();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
@@ -39,6 +42,10 @@ export default function BillingPage() {
 
   async function handleSelectPlan(slug: PlanSlug) {
     setIsLoadingCheckout(true);
+    growareTrack("gateway", {
+      product_id: slug,
+      customer_id: session?.user?.id,
+    });
     try {
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
@@ -47,6 +54,12 @@ export default function BillingPage() {
       });
       const data = await res.json();
       if (data.url) {
+        growareTrack("checkout_started", {
+          gross_value: undefined,
+          currency: currency.toUpperCase(),
+          product_id: slug,
+          customer_id: session?.user?.id,
+        });
         window.location.href = data.url;
       } else {
         toast.error(data.error ?? t("errorCheckout"));

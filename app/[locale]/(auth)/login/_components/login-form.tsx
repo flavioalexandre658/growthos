@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { growareIdentify } from "@/utils/groware";
 
 export function LoginForm() {
   const t = useTranslations("auth.login");
@@ -51,6 +52,13 @@ export function LoginForm() {
     setIsLoading(false);
 
     if (result?.ok) {
+      const session = await getSession();
+      if (session?.user?.id) {
+        growareIdentify(session.user.id, {
+          name: session.user.name ?? undefined,
+          email: session.user.email ?? undefined,
+        });
+      }
       toast.success(t("welcomeBack"));
       router.push("/organizations");
       router.refresh();

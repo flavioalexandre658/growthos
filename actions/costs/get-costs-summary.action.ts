@@ -97,7 +97,7 @@ export async function getCostsSummary(organizationId: string): Promise<ICostsSum
     grossRevenue,
     orgFixedCosts,
     orgVariableCosts,
-    periodDays,
+    30,
     revenueBySegment,
     totalDiscounts,
     marketingBreakdown

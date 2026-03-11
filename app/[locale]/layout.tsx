@@ -105,6 +105,13 @@ export default async function LocaleLayout({ children, params }: Props) {
       className="dark"
       suppressHydrationWarning
     >
+      <head>
+        <script
+          async
+          src="https://groware.io/tracker.min.js"
+          data-key={process.env.NEXT_PUBLIC_GROWARE_KEY}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${bricolageGrotesque.variable} font-sans antialiased`}
       >

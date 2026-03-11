@@ -8,6 +8,7 @@ import { useTranslations } from "next-intl";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/pt-br";
+import { growareReset } from "@/utils/groware";
 import {
   IconBell,
   IconBellOff,
@@ -402,7 +403,10 @@ function UserMenu() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator className="bg-zinc-800/60" />
         <DropdownMenuItem
-          onClick={() => signOut({ callbackUrl: "/login" })}
+          onClick={() => {
+            growareReset();
+            signOut({ callbackUrl: "/login" });
+          }}
           className="gap-2 px-3 py-2 text-zinc-400 focus:bg-zinc-900 focus:text-red-400 cursor-pointer"
         >
           <IconLogout size={15} />

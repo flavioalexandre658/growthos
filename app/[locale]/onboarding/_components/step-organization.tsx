@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
+import { useSession } from "next-auth/react";
 import { IconBuilding, IconLoader2, IconArrowRight } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { createOrganization } from "@/actions/organizations/create-organization.action";
 import { updateOrganizationRegional } from "@/actions/organizations/update-organization-regional.action";
 import { pushDataLayerEvent } from "@/utils/datalayer";
+import { growareTrack } from "@/utils/groware";
 import {
   TIMEZONE_OPTIONS,
   CURRENCY_OPTIONS,
@@ -42,6 +44,7 @@ const selectClass =
 
 export function StepOrganization({ onComplete }: StepOrganizationProps) {
   const t = useTranslations("onboarding.stepOrganization");
+  const { data: session } = useSession();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [slugEdited, setSlugEdited] = useState(false);
@@ -128,6 +131,10 @@ export function StepOrganization({ onComplete }: StepOrganizationProps) {
 
       toast.success(t("successToast"));
       pushDataLayerEvent("OrganizationCreated");
+      growareTrack("organization", {
+        product_id: org.id,
+        customer_id: session?.user?.id,
+      });
       onComplete({ ...org, timezone, currency, locale, country, language });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t("errorToast");

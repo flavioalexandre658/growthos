@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { GrowareLogo } from "@/components/groware-logo";
 import { useBilling } from "@/hooks/queries/use-billing";
 import { formatRevenueLimit } from "@/utils/plans";
+import { growareReset } from "@/utils/groware";
 import type { IOrgStats } from "@/actions/organizations/get-organizations-with-stats.action";
 import type { IBillingData } from "@/actions/billing/get-billing.action";
 
@@ -209,7 +210,10 @@ export function OrganizationsContent({
             </Link>
           )}
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={() => {
+              growareReset();
+              signOut({ callbackUrl: "/login" });
+            }}
             className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
           >
             <IconLogout size={14} />

@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { register as registerUser } from "@/actions/auth/register.action";
+import { growareIdentify, growareTrack } from "@/utils/groware";
 import { cn } from "@/lib/utils";
 
 export function RegisterForm() {
@@ -59,7 +60,7 @@ export function RegisterForm() {
     setErrorMessage(null);
 
     try {
-      await registerUser({ ...data, locale: locale as "pt" | "en" });
+      const user = await registerUser({ ...data, locale: locale as "pt" | "en" });
 
       const result = await signIn("credentials", {
         email: data.email,
@@ -68,6 +69,12 @@ export function RegisterForm() {
       });
 
       if (result?.ok) {
+        growareIdentify(user.id, { name: user.name, email: user.email });
+        growareTrack("signup", {
+          dedupe: true,
+          customer_type: "new",
+          customer_id: user.id,
+        });
         toast.success(t("successToast"));
         router.push("/onboarding");
       } else {

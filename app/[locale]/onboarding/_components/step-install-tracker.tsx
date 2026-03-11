@@ -22,6 +22,7 @@ import { checkEvents } from "@/actions/dashboard/check-events.action";
 import { completeOnboarding } from "@/actions/auth/complete-onboarding.action";
 import { AiPromptSection } from "@/app/[locale]/[slug]/settings/_components/ai-prompt-section";
 import { pushDataLayerEvent } from "@/utils/datalayer";
+import { growareTrack } from "@/utils/groware";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -136,7 +137,7 @@ export function StepInstallTracker({
   const tVerify = useTranslations("onboarding.stepVerifyEvent");
   const locale = useLocale();
   const dayjsLocale = locale === "pt" ? "pt-br" : locale;
-  const { update } = useSession();
+  const { update, data: session } = useSession();
 
   const [apiKey, setApiKey] = useState<string | null>(existingKey ?? null);
   const [isGenerating, setIsGenerating] = useState(!existingKey);
@@ -180,6 +181,10 @@ export function StepInstallTracker({
         setHasFired(true);
         toast.success(tVerify("firstEventToast"));
         pushDataLayerEvent("TrackerInstalled");
+        growareTrack("tracker", {
+          product_id: organizationId,
+          customer_id: session?.user?.id,
+        });
       }
       return result;
     },
@@ -218,6 +223,10 @@ export function StepInstallTracker({
     try {
       await completeOnboarding();
       pushDataLayerEvent("OnboardingCompleted");
+      growareTrack("onboarding", {
+        product_id: organizationId,
+        customer_id: session?.user?.id,
+      });
       await update({ onboardingCompleted: true });
       toast.success(t("welcomeToast"));
       window.location.href = slug ? `/${slug}` : "/organizations";

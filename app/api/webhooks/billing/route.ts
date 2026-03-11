@@ -49,6 +49,30 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     currentPeriodEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
     stripeCustomerId: session.customer as string,
   }).where(eq(users.id, userId));
+
+  const apiKey = process.env.GROWARE_API_KEY;
+  if (apiKey && session.amount_total && session.currency) {
+    await fetch("https://groware.io/api/track", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        event_type: "purchase",
+        dedupe: session.id,
+        gross_value: session.amount_total / 100,
+        currency: session.currency.toUpperCase(),
+        payment_method: "credit_card",
+        product_id: planSlug,
+        product_name: planSlug,
+        customer_id: userId,
+        customer_type: "new",
+      }),
+    }).catch((err) => {
+      console.error("[groware-purchase]", err);
+    });
+  }
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
