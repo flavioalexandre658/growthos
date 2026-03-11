@@ -500,7 +500,7 @@ export function Sidebar({ slug }: { slug: string }) {
     <>
       <aside
         className={cn(
-          "hidden md:flex flex-col h-screen sticky top-0 transition-all duration-200 shrink-0",
+          "hidden md:flex flex-col h-dvh sticky top-0 transition-all duration-200 shrink-0",
           collapsed ? "w-16" : "w-56",
         )}
       >

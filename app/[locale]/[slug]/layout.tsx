@@ -27,9 +27,9 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
   void updateLastActivity(org.id);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-950">
+    <div className="flex h-dvh overflow-hidden bg-zinc-950">
       <Sidebar slug={slug} />
-      <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto">
+      <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto overscroll-none">
         <Topbar slug={slug} />
         <div className="pt-14 md:pt-0">
           <RevenueLimitBanner slug={slug} />
