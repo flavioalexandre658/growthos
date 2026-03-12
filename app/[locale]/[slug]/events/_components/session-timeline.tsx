@@ -159,7 +159,7 @@ export function SessionTimeline({
                       </span>
                     )}
                     <span className="text-[10px] font-mono text-zinc-600 shrink-0">
-                      {formatDate(event.createdAt, tz, "HH:mm:ss")}
+                      {formatDate(event.createdAt, tz, "DD/MM/YYYY HH:mm:ss")}
                     </span>
                     <span className="ml-auto shrink-0 text-zinc-700">
                       {isExpanded ? (

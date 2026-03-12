@@ -68,7 +68,7 @@ function groupBySession(
     if (!seen.has(key)) {
       const firstEvent = event;
       const label = event.sessionId
-        ? formatSessionLabel(formatDate(firstEvent.createdAt, tz, "DD/MM HH:mm"))
+        ? formatSessionLabel(formatDate(firstEvent.createdAt, tz, "DD/MM/YYYY HH:mm"))
         : noSessionLabel;
       const group: SessionGroup = { sessionId: event.sessionId, label, events: [] };
       seen.set(key, group);
@@ -228,7 +228,7 @@ export function CustomerTimeline({
                             </span>
                           )}
                           <span className="text-[10px] font-mono text-zinc-600 shrink-0">
-                            {formatDate(event.createdAt, tz, "DD/MM HH:mm:ss")}
+                            {formatDate(event.createdAt, tz, "DD/MM/YYYY HH:mm:ss")}
                           </span>
                           <span className="ml-auto shrink-0 text-zinc-700">
                             {isExpanded ? (
