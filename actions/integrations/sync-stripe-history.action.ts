@@ -15,6 +15,40 @@ import { upsertCustomer } from "@/utils/upsert-customer";
 import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
 import type { BillingInterval } from "@/utils/billing";
 
+const BATCH_SIZE = 3;
+
+async function processBatch<T>(
+  iterator: AsyncIterable<T>,
+  handler: (item: T) => Promise<void>,
+  batchSize = BATCH_SIZE,
+): Promise<{ succeeded: number; failed: number }> {
+  let succeeded = 0;
+  let failed = 0;
+  let batch: Promise<void>[] = [];
+
+  for await (const item of iterator) {
+    batch.push(handler(item));
+    if (batch.length >= batchSize) {
+      const results = await Promise.allSettled(batch);
+      for (const r of results) {
+        if (r.status === "fulfilled") succeeded++;
+        else failed++;
+      }
+      batch = [];
+    }
+  }
+
+  if (batch.length > 0) {
+    const results = await Promise.allSettled(batch);
+    for (const r of results) {
+      if (r.status === "fulfilled") succeeded++;
+      else failed++;
+    }
+  }
+
+  return { succeeded, failed };
+}
+
 function mapStripeStatus(
   s: Stripe.Subscription.Status,
 ): "active" | "canceled" | "past_due" | "trialing" {
@@ -116,95 +150,158 @@ export async function syncStripeHistory(
   const subIntervalMap = new Map<string, BillingInterval>();
 
   try {
-    for await (const sub of stripe.subscriptions.list({ limit: 100, status: "all" })) {
-      const rawCustomerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
-      const metaCustomerId = extractMetaCustomerId(sub.metadata as Record<string, string> | null);
-      const customerId = metaCustomerId ?? rawCustomerId;
+    const subResult = await processBatch(
+      stripe.subscriptions.list({ limit: 100, status: "all" }),
+      async (sub) => {
+        const rawCustomerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+        const metaCustomerId = extractMetaCustomerId(sub.metadata as Record<string, string> | null);
+        const customerId = metaCustomerId ?? rawCustomerId;
 
-      const item = sub.items.data[0];
-      const interval = item?.price.recurring?.interval ?? "month";
-      const intervalCount = item?.price.recurring?.interval_count ?? 1;
-      const billingInterval = mapBillingInterval(interval, intervalCount);
+        const item = sub.items.data[0];
+        const interval = item?.price.recurring?.interval ?? "month";
+        const intervalCount = item?.price.recurring?.interval_count ?? 1;
+        const billingInterval = mapBillingInterval(interval, intervalCount);
 
-      subIntervalMap.set(sub.id, billingInterval);
+        subIntervalMap.set(sub.id, billingInterval);
 
-      const eventCurrency = sub.currency.toUpperCase();
-      const valueInCents = item?.price.unit_amount ?? 0;
-      const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
-        organizationId,
-        eventCurrency,
-        orgCurrency,
-        valueInCents,
-      );
-
-      await db
-        .insert(subscriptions)
-        .values({
+        const eventCurrency = sub.currency.toUpperCase();
+        const valueInCents = item?.price.unit_amount ?? 0;
+        const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
           organizationId,
-          subscriptionId: sub.id,
-          customerId,
-          planId: item?.price.id ?? "unknown",
-          planName: item?.price.nickname ?? item?.price.id ?? "Plano",
-          status: mapStripeStatus(sub.status),
+          eventCurrency,
+          orgCurrency,
           valueInCents,
-          currency: eventCurrency,
-          baseCurrency,
-          exchangeRate,
-          baseValueInCents,
-          billingInterval,
-          startedAt: new Date(sub.start_date * 1000),
-          canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
-        })
-        .onConflictDoUpdate({
-          target: [subscriptions.subscriptionId],
-          set: {
+        );
+
+        await db
+          .insert(subscriptions)
+          .values({
+            organizationId,
+            subscriptionId: sub.id,
+            customerId,
+            planId: item?.price.id ?? "unknown",
+            planName: item?.price.nickname ?? item?.price.id ?? "Plano",
             status: mapStripeStatus(sub.status),
-            canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
+            valueInCents,
+            currency: eventCurrency,
             baseCurrency,
             exchangeRate,
             baseValueInCents,
-            updatedAt: new Date(),
-          },
-        });
+            billingInterval,
+            startedAt: new Date(sub.start_date * 1000),
+            canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
+          })
+          .onConflictDoUpdate({
+            target: [subscriptions.subscriptionId],
+            set: {
+              status: mapStripeStatus(sub.status),
+              canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
+              baseCurrency,
+              exchangeRate,
+              baseValueInCents,
+              updatedAt: new Date(),
+            },
+          });
 
-      subscriptionsSynced++;
+        subscriptionsSynced++;
+      },
+    );
+
+    if (subResult.failed > 0) {
+      console.error("[stripe-sync] batch failures (subscriptions)", { failed: subResult.failed });
     }
 
-    for await (const invoice of stripe.invoices.list({ limit: 100, status: "paid" })) {
-      if (!invoice.amount_paid) continue;
+    const invoiceLinkedIds = new Set<string>();
 
-      const rawCustomerId =
-        typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
-      const metaCustomerId = extractMetaCustomerId(
-        invoice.metadata as Record<string, string> | null,
-      );
-      const customerId = metaCustomerId ?? rawCustomerId;
+    for await (const ip of stripe.invoicePayments.list({ status: "paid" })) {
+      const p = ip.payment;
+      if (p.type === "payment_intent" && p.payment_intent) {
+        const piId = typeof p.payment_intent === "string" ? p.payment_intent : p.payment_intent.id;
+        invoiceLinkedIds.add(`pi:${piId}`);
+      } else if (p.type === "charge" && p.charge) {
+        const chId = typeof p.charge === "string" ? p.charge : p.charge.id;
+        invoiceLinkedIds.add(`ch:${chId}`);
+      }
+    }
 
-      const acq = customerId ? await lookupAcquisitionContext(organizationId, customerId) : null;
+    const invoiceResult = await processBatch(
+      stripe.invoices.list({ limit: 100, status: "paid" }),
+      async (invoice) => {
+        if (!invoice.amount_paid) return;
 
-      const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
-      const isRecurring = !!subscriptionId;
-      const billingInterval = isRecurring
-        ? (subIntervalMap.get(subscriptionId!) ?? "monthly")
-        : undefined;
-      const billingReason = invoice.billing_reason ?? null;
-      const eventType =
-        isRecurring && billingReason === "subscription_cycle" ? "renewal" : "purchase";
-      const paidAt = invoice.status_transitions?.paid_at ?? invoice.created;
+        const rawCustomerId =
+          typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
+        const metaCustomerId = extractMetaCustomerId(
+          invoice.metadata as Record<string, string> | null,
+        );
+        const customerId = metaCustomerId ?? rawCustomerId;
 
-      const eventCurrency = invoice.currency.toUpperCase();
-      const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
-        organizationId,
-        eventCurrency,
-        orgCurrency,
-        invoice.amount_paid,
-      );
+        const acq = customerId ? await lookupAcquisitionContext(organizationId, customerId) : null;
 
-      const eventHash = stripeEventHash(organizationId, invoice.id);
+        const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
+        const isRecurring = !!subscriptionId;
+        const billingInterval = isRecurring
+          ? (subIntervalMap.get(subscriptionId!) ?? "monthly")
+          : undefined;
+        const billingReason = invoice.billing_reason ?? null;
+        const eventType =
+          isRecurring && billingReason === "subscription_cycle" ? "renewal" : "purchase";
+        const paidAt = invoice.status_transitions?.paid_at ?? invoice.created;
 
-      await db
-        .insert(events)
-        .values({
+        const eventCurrency = invoice.currency.toUpperCase();
+        const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
+          organizationId,
+          eventCurrency,
+          orgCurrency,
+          invoice.amount_paid,
+        );
+
+        const eventHash = stripeEventHash(organizationId, invoice.id);
+
+        await db
+          .insert(events)
+          .values({
+            organizationId,
+            eventType,
+            grossValueInCents: invoice.amount_paid,
+            currency: eventCurrency,
+            baseCurrency,
+            exchangeRate,
+            baseGrossValueInCents: baseValueInCents,
+            billingType: isRecurring ? "recurring" : "one_time",
+            billingReason,
+            billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
+            subscriptionId,
+            customerId: customerId || undefined,
+            paymentMethod: "credit_card",
+            provider: "stripe",
+            eventHash,
+            createdAt: new Date(paidAt * 1000),
+            source: acq?.source ?? null,
+            medium: acq?.medium ?? null,
+            campaign: acq?.campaign ?? null,
+            content: acq?.content ?? null,
+            landingPage: acq?.landingPage ?? null,
+            entryPage: acq?.entryPage ?? null,
+            sessionId: acq?.sessionId ?? null,
+          })
+          .onConflictDoUpdate({
+            target: [events.organizationId, events.eventHash],
+            set: {
+              eventType,
+              billingType: isRecurring ? "recurring" : "one_time",
+              billingReason,
+              billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
+              subscriptionId,
+              currency: eventCurrency,
+              baseCurrency,
+              exchangeRate,
+              baseGrossValueInCents: baseValueInCents,
+              createdAt: new Date(paidAt * 1000),
+            },
+          });
+
+        await insertPayment({
           organizationId,
           eventType,
           grossValueInCents: invoice.amount_paid,
@@ -228,119 +325,108 @@ export async function syncStripeHistory(
           landingPage: acq?.landingPage ?? null,
           entryPage: acq?.entryPage ?? null,
           sessionId: acq?.sessionId ?? null,
-        })
-        .onConflictDoUpdate({
-          target: [events.organizationId, events.eventHash],
-          set: {
+        }).catch((err) => {
+          console.error("[stripe-sync] insertPayment failed (invoice)", {
+            orgId: organizationId,
             eventType,
-            billingType: isRecurring ? "recurring" : "one_time",
-            billingReason,
-            billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
-            subscriptionId,
+            eventHash,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
+
+        if (isRecurring) {
+          invoicesSynced++;
+        } else {
+          oneTimePurchasesSynced++;
+        }
+
+        if (customerId) {
+          await upsertCustomer({
+            organizationId,
+            customerId,
+            name: invoice.customer_name ?? null,
+            email: invoice.customer_email ?? null,
+            eventTimestamp: new Date(paidAt * 1000),
+          }).catch(() => {});
+        }
+      },
+    );
+
+    if (invoiceResult.failed > 0) {
+      console.error("[stripe-sync] batch failures (invoices)", { failed: invoiceResult.failed });
+    }
+
+    const chargeResult = await processBatch(
+      stripe.charges.list({ limit: 100 }),
+      async (charge) => {
+        if (charge.status !== "succeeded") return;
+        if (!charge.amount) return;
+
+        const chargePaymentIntentId = typeof charge.payment_intent === "string"
+          ? charge.payment_intent
+          : charge.payment_intent?.id ?? null;
+        if (chargePaymentIntentId && invoiceLinkedIds.has(`pi:${chargePaymentIntentId}`)) return;
+        if (invoiceLinkedIds.has(`ch:${charge.id}`)) return;
+
+        const rawCustomerId =
+          typeof charge.customer === "string" ? charge.customer : charge.customer?.id ?? null;
+        const metaCustomerId = extractMetaCustomerId(
+          charge.metadata as Record<string, string> | null,
+        );
+        const customerId = metaCustomerId ?? rawCustomerId;
+
+        const acq = customerId ? await lookupAcquisitionContext(organizationId, customerId) : null;
+
+        const pm = charge.payment_method_details?.type ?? "credit_card";
+        const eventCurrency = charge.currency.toUpperCase();
+        const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
+          organizationId,
+          eventCurrency,
+          orgCurrency,
+          charge.amount,
+        );
+
+        const eventHash = stripeEventHash(organizationId, charge.id);
+
+        await db
+          .insert(events)
+          .values({
+            organizationId,
+            eventType: "purchase",
+            grossValueInCents: charge.amount,
             currency: eventCurrency,
             baseCurrency,
             exchangeRate,
             baseGrossValueInCents: baseValueInCents,
-            createdAt: new Date(paidAt * 1000),
-          },
-        });
+            billingType: "one_time",
+            billingReason: null,
+            billingInterval: null,
+            subscriptionId: null,
+            customerId: customerId ?? undefined,
+            paymentMethod: pm,
+            provider: "stripe",
+            eventHash,
+            createdAt: new Date(charge.created * 1000),
+            source: acq?.source ?? null,
+            medium: acq?.medium ?? null,
+            campaign: acq?.campaign ?? null,
+            content: acq?.content ?? null,
+            landingPage: acq?.landingPage ?? null,
+            entryPage: acq?.entryPage ?? null,
+            sessionId: acq?.sessionId ?? null,
+          })
+          .onConflictDoUpdate({
+            target: [events.organizationId, events.eventHash],
+            set: {
+              currency: eventCurrency,
+              baseCurrency,
+              exchangeRate,
+              baseGrossValueInCents: baseValueInCents,
+              createdAt: new Date(charge.created * 1000),
+            },
+          });
 
-      await insertPayment({
-        organizationId,
-        eventType,
-        grossValueInCents: invoice.amount_paid,
-        currency: eventCurrency,
-        baseCurrency,
-        exchangeRate,
-        baseGrossValueInCents: baseValueInCents,
-        billingType: isRecurring ? "recurring" : "one_time",
-        billingReason,
-        billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
-        subscriptionId,
-        customerId: customerId || undefined,
-        paymentMethod: "credit_card",
-        provider: "stripe",
-        eventHash,
-        createdAt: new Date(paidAt * 1000),
-        source: acq?.source ?? null,
-        medium: acq?.medium ?? null,
-        campaign: acq?.campaign ?? null,
-        content: acq?.content ?? null,
-        landingPage: acq?.landingPage ?? null,
-        entryPage: acq?.entryPage ?? null,
-        sessionId: acq?.sessionId ?? null,
-      }).catch((err) => {
-        console.error("[stripe-sync] insertPayment failed (invoice)", {
-          orgId: organizationId,
-          eventType,
-          eventHash,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      });
-
-      if (isRecurring) {
-        invoicesSynced++;
-      } else {
-        oneTimePurchasesSynced++;
-      }
-
-      if (customerId) {
-        await upsertCustomer({
-          organizationId,
-          customerId,
-          name: invoice.customer_name ?? null,
-          email: invoice.customer_email ?? null,
-          eventTimestamp: new Date(paidAt * 1000),
-        }).catch(() => {});
-      }
-    }
-
-    const invoiceLinkedIds = new Set<string>();
-
-    for await (const ip of stripe.invoicePayments.list({ status: "paid" })) {
-      const p = ip.payment;
-      if (p.type === "payment_intent" && p.payment_intent) {
-        const piId = typeof p.payment_intent === "string" ? p.payment_intent : p.payment_intent.id;
-        invoiceLinkedIds.add(`pi:${piId}`);
-      } else if (p.type === "charge" && p.charge) {
-        const chId = typeof p.charge === "string" ? p.charge : p.charge.id;
-        invoiceLinkedIds.add(`ch:${chId}`);
-      }
-    }
-
-    for await (const charge of stripe.charges.list({ limit: 100 })) {
-      if (charge.status !== "succeeded") continue;
-      if (!charge.amount) continue;
-
-      const chargePaymentIntentId = typeof charge.payment_intent === "string"
-        ? charge.payment_intent
-        : charge.payment_intent?.id ?? null;
-      if (chargePaymentIntentId && invoiceLinkedIds.has(`pi:${chargePaymentIntentId}`)) continue;
-      if (invoiceLinkedIds.has(`ch:${charge.id}`)) continue;
-
-      const rawCustomerId =
-        typeof charge.customer === "string" ? charge.customer : charge.customer?.id ?? null;
-      const metaCustomerId = extractMetaCustomerId(
-        charge.metadata as Record<string, string> | null,
-      );
-      const customerId = metaCustomerId ?? rawCustomerId;
-
-      const acq = customerId ? await lookupAcquisitionContext(organizationId, customerId) : null;
-
-      const pm = charge.payment_method_details?.type ?? "credit_card";
-      const eventCurrency = charge.currency.toUpperCase();
-      const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
-        organizationId,
-        eventCurrency,
-        orgCurrency,
-        charge.amount,
-      );
-
-      const eventHash = stripeEventHash(organizationId, charge.id);
-
-      await db
-        .insert(events)
-        .values({
+        await insertPayment({
           organizationId,
           eventType: "purchase",
           grossValueInCents: charge.amount,
@@ -364,63 +450,32 @@ export async function syncStripeHistory(
           landingPage: acq?.landingPage ?? null,
           entryPage: acq?.entryPage ?? null,
           sessionId: acq?.sessionId ?? null,
-        })
-        .onConflictDoUpdate({
-          target: [events.organizationId, events.eventHash],
-          set: {
-            currency: eventCurrency,
-            baseCurrency,
-            exchangeRate,
-            baseGrossValueInCents: baseValueInCents,
-            createdAt: new Date(charge.created * 1000),
-          },
+        }).catch((err) => {
+          console.error("[stripe-sync] insertPayment failed (charge)", {
+            orgId: organizationId,
+            eventType: "purchase",
+            eventHash,
+            error: err instanceof Error ? err.message : String(err),
+          });
         });
 
-      await insertPayment({
-        organizationId,
-        eventType: "purchase",
-        grossValueInCents: charge.amount,
-        currency: eventCurrency,
-        baseCurrency,
-        exchangeRate,
-        baseGrossValueInCents: baseValueInCents,
-        billingType: "one_time",
-        billingReason: null,
-        billingInterval: null,
-        subscriptionId: null,
-        customerId: customerId ?? undefined,
-        paymentMethod: pm,
-        provider: "stripe",
-        eventHash,
-        createdAt: new Date(charge.created * 1000),
-        source: acq?.source ?? null,
-        medium: acq?.medium ?? null,
-        campaign: acq?.campaign ?? null,
-        content: acq?.content ?? null,
-        landingPage: acq?.landingPage ?? null,
-        entryPage: acq?.entryPage ?? null,
-        sessionId: acq?.sessionId ?? null,
-      }).catch((err) => {
-        console.error("[stripe-sync] insertPayment failed (charge)", {
-          orgId: organizationId,
-          eventType: "purchase",
-          eventHash,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      });
+        if (customerId) {
+          await upsertCustomer({
+            organizationId,
+            customerId,
+            name: charge.billing_details?.name ?? null,
+            email: charge.billing_details?.email ?? null,
+            phone: charge.billing_details?.phone ?? null,
+            eventTimestamp: new Date(charge.created * 1000),
+          }).catch(() => {});
+        }
 
-      if (customerId) {
-        await upsertCustomer({
-          organizationId,
-          customerId,
-          name: charge.billing_details?.name ?? null,
-          email: charge.billing_details?.email ?? null,
-          phone: charge.billing_details?.phone ?? null,
-          eventTimestamp: new Date(charge.created * 1000),
-        }).catch(() => {});
-      }
+        oneTimePurchasesSynced++;
+      },
+    );
 
-      oneTimePurchasesSynced++;
+    if (chargeResult.failed > 0) {
+      console.error("[stripe-sync] batch failures (charges)", { failed: chargeResult.failed });
     }
 
     await db

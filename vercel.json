@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "app/**": {
+      "maxDuration": 300
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/email-sequences",

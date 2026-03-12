@@ -21,6 +21,39 @@ import type { BillingInterval } from "@/utils/billing";
 
 const ASAAS_BASE_URL = "https://api.asaas.com/v3";
 const PAGE_SIZE = 100;
+const BATCH_SIZE = 3;
+
+async function processBatch<T>(
+  iterator: AsyncIterable<T>,
+  handler: (item: T) => Promise<void>,
+  batchSize = BATCH_SIZE,
+): Promise<{ succeeded: number; failed: number }> {
+  let succeeded = 0;
+  let failed = 0;
+  let batch: Promise<void>[] = [];
+
+  for await (const item of iterator) {
+    batch.push(handler(item));
+    if (batch.length >= batchSize) {
+      const results = await Promise.allSettled(batch);
+      for (const r of results) {
+        if (r.status === "fulfilled") succeeded++;
+        else failed++;
+      }
+      batch = [];
+    }
+  }
+
+  if (batch.length > 0) {
+    const results = await Promise.allSettled(batch);
+    for (const r of results) {
+      if (r.status === "fulfilled") succeeded++;
+      else failed++;
+    }
+  }
+
+  return { succeeded, failed };
+}
 
 interface AsaasSubscription {
   id: string;
@@ -200,86 +233,135 @@ export async function syncAsaasHistory(
   }
 
   try {
-    for await (const sub of paginateAsaas<AsaasSubscription>("/subscriptions", apiKey)) {
-      const customerId = sub.externalReference ?? sub.customer;
-      const billingInterval = mapAsaasBillingInterval(sub.cycle);
-      subIntervalMap.set(sub.id, billingInterval);
+    const subResult = await processBatch(
+      paginateAsaas<AsaasSubscription>("/subscriptions", apiKey),
+      async (sub) => {
+        const customerId = sub.externalReference ?? sub.customer;
+        const billingInterval = mapAsaasBillingInterval(sub.cycle);
+        subIntervalMap.set(sub.id, billingInterval);
 
-      const valueInCents = Math.round(sub.value * 100);
-      const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
-        organizationId,
-        "BRL",
-        orgCurrency,
-        valueInCents,
-      );
-
-      await db
-        .insert(subscriptions)
-        .values({
+        const valueInCents = Math.round(sub.value * 100);
+        const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
           organizationId,
-          subscriptionId: sub.id,
-          customerId,
-          planId: sub.id,
-          planName: sub.description ?? sub.id,
-          status: mapAsaasSubscriptionStatus(sub.status),
+          "BRL",
+          orgCurrency,
           valueInCents,
-          currency: "BRL",
-          baseCurrency,
-          exchangeRate,
-          baseValueInCents,
-          billingInterval,
-          startedAt: new Date(sub.dateCreated),
-        })
-        .onConflictDoUpdate({
-          target: [subscriptions.subscriptionId],
-          set: {
+        );
+
+        await db
+          .insert(subscriptions)
+          .values({
+            organizationId,
+            subscriptionId: sub.id,
+            customerId,
+            planId: sub.id,
+            planName: sub.description ?? sub.id,
             status: mapAsaasSubscriptionStatus(sub.status),
+            valueInCents,
+            currency: "BRL",
             baseCurrency,
             exchangeRate,
             baseValueInCents,
-            updatedAt: new Date(),
-          },
-        });
+            billingInterval,
+            startedAt: new Date(sub.dateCreated),
+          })
+          .onConflictDoUpdate({
+            target: [subscriptions.subscriptionId],
+            set: {
+              status: mapAsaasSubscriptionStatus(sub.status),
+              baseCurrency,
+              exchangeRate,
+              baseValueInCents,
+              updatedAt: new Date(),
+            },
+          });
 
-      subscriptionsSynced++;
+        subscriptionsSynced++;
+      },
+    );
+
+    if (subResult.failed > 0) {
+      console.error("[asaas-sync] batch failures (subscriptions)", { failed: subResult.failed });
     }
 
-    for await (const payment of paginateAsaas<AsaasPayment>(
-      "/payments?status=RECEIVED,CONFIRMED",
-      apiKey,
-    )) {
-      if (!payment.value) continue;
+    const paymentResult = await processBatch(
+      paginateAsaas<AsaasPayment>("/payments?status=RECEIVED,CONFIRMED", apiKey),
+      async (payment) => {
+        if (!payment.value) return;
 
-      const customerId = payment.externalReference ?? payment.customer;
-      const acq = await lookupAcquisitionContext(organizationId, customerId);
+        const customerId = payment.externalReference ?? payment.customer;
+        const acq = await lookupAcquisitionContext(organizationId, customerId);
 
-      const isRecurring = !!payment.subscription;
-      const billingInterval = isRecurring
-        ? (subIntervalMap.get(payment.subscription!) ?? "monthly")
-        : undefined;
+        const isRecurring = !!payment.subscription;
+        const billingInterval = isRecurring
+          ? (subIntervalMap.get(payment.subscription!) ?? "monthly")
+          : undefined;
 
-      const paidAt = payment.paymentDate
-        ? new Date(payment.paymentDate)
-        : new Date(payment.dateCreated);
+        const paidAt = payment.paymentDate
+          ? new Date(payment.paymentDate)
+          : new Date(payment.dateCreated);
 
-      const billingReason = isRecurring ? "subscription_cycle" : null;
-      const eventType = isRecurring ? "renewal" : "purchase";
+        const billingReason = isRecurring ? "subscription_cycle" : null;
+        const eventType = isRecurring ? "renewal" : "purchase";
 
-      const grossValueInCents = Math.round(payment.value * 100);
-      const netValueInCents = Math.round(payment.netValue * 100);
-      const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
-        organizationId,
-        "BRL",
-        orgCurrency,
-        grossValueInCents,
-      );
+        const grossValueInCents = Math.round(payment.value * 100);
+        const netValueInCents = Math.round(payment.netValue * 100);
+        const { baseCurrency, exchangeRate, baseValueInCents } = await computeBaseValue(
+          organizationId,
+          "BRL",
+          orgCurrency,
+          grossValueInCents,
+        );
 
-      const paymentMethod = mapAsaasBillingType(payment.billingType);
-      const eventHash = asaasEventHash(organizationId, payment.id);
+        const paymentMethod = mapAsaasBillingType(payment.billingType);
+        const eventHash = asaasEventHash(organizationId, payment.id);
 
-      await db
-        .insert(events)
-        .values({
+        await db
+          .insert(events)
+          .values({
+            organizationId,
+            eventType,
+            grossValueInCents,
+            currency: "BRL",
+            baseCurrency,
+            exchangeRate,
+            baseGrossValueInCents: baseValueInCents,
+            baseNetValueInCents: Math.round(netValueInCents * exchangeRate),
+            billingType: isRecurring ? "recurring" : "one_time",
+            billingReason,
+            billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
+            subscriptionId: payment.subscription,
+            customerId,
+            paymentMethod,
+            provider: "asaas",
+            eventHash,
+            createdAt: paidAt,
+            source: acq?.source ?? null,
+            medium: acq?.medium ?? null,
+            campaign: acq?.campaign ?? null,
+            content: acq?.content ?? null,
+            landingPage: acq?.landingPage ?? null,
+            entryPage: acq?.entryPage ?? null,
+            sessionId: acq?.sessionId ?? null,
+          })
+          .onConflictDoUpdate({
+            target: [events.organizationId, events.eventHash],
+            set: {
+              eventType,
+              billingType: isRecurring ? "recurring" : "one_time",
+              billingReason,
+              billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
+              subscriptionId: payment.subscription,
+              currency: "BRL",
+              baseCurrency,
+              exchangeRate,
+              baseGrossValueInCents: baseValueInCents,
+              baseNetValueInCents: Math.round(netValueInCents * exchangeRate),
+              createdAt: paidAt,
+            },
+          });
+
+        await insertPayment({
           organizationId,
           eventType,
           grossValueInCents,
@@ -304,75 +386,37 @@ export async function syncAsaasHistory(
           landingPage: acq?.landingPage ?? null,
           entryPage: acq?.entryPage ?? null,
           sessionId: acq?.sessionId ?? null,
-        })
-        .onConflictDoUpdate({
-          target: [events.organizationId, events.eventHash],
-          set: {
+        }).catch((err) => {
+          console.error("[asaas-sync] insertPayment failed", {
+            orgId: organizationId,
             eventType,
-            billingType: isRecurring ? "recurring" : "one_time",
-            billingReason,
-            billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
-            subscriptionId: payment.subscription,
-            currency: "BRL",
-            baseCurrency,
-            exchangeRate,
-            baseGrossValueInCents: baseValueInCents,
-            baseNetValueInCents: Math.round(netValueInCents * exchangeRate),
-            createdAt: paidAt,
-          },
+            eventHash,
+            error: err instanceof Error ? err.message : String(err),
+          });
         });
 
-      await insertPayment({
-        organizationId,
-        eventType,
-        grossValueInCents,
-        currency: "BRL",
-        baseCurrency,
-        exchangeRate,
-        baseGrossValueInCents: baseValueInCents,
-        baseNetValueInCents: Math.round(netValueInCents * exchangeRate),
-        billingType: isRecurring ? "recurring" : "one_time",
-        billingReason,
-        billingInterval: (billingInterval as BillingInterval | undefined) ?? null,
-        subscriptionId: payment.subscription,
-        customerId,
-        paymentMethod,
-        provider: "asaas",
-        eventHash,
-        createdAt: paidAt,
-        source: acq?.source ?? null,
-        medium: acq?.medium ?? null,
-        campaign: acq?.campaign ?? null,
-        content: acq?.content ?? null,
-        landingPage: acq?.landingPage ?? null,
-        entryPage: acq?.entryPage ?? null,
-        sessionId: acq?.sessionId ?? null,
-      }).catch((err) => {
-        console.error("[asaas-sync] insertPayment failed", {
-          orgId: organizationId,
-          eventType,
-          eventHash,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      });
+        if (isRecurring) {
+          paymentsSynced++;
+        } else {
+          oneTimePurchasesSynced++;
+        }
 
-      if (isRecurring) {
-        paymentsSynced++;
-      } else {
-        oneTimePurchasesSynced++;
-      }
+        const asaasCustomerData = await getAsaasCustomer(payment.customer);
+        if (asaasCustomerData) {
+          await upsertCustomer({
+            organizationId,
+            customerId,
+            name: asaasCustomerData.name,
+            email: asaasCustomerData.email,
+            phone: asaasCustomerData.phone,
+            eventTimestamp: paidAt,
+          }).catch(() => {});
+        }
+      },
+    );
 
-      const asaasCustomerData = await getAsaasCustomer(payment.customer);
-      if (asaasCustomerData) {
-        await upsertCustomer({
-          organizationId,
-          customerId,
-          name: asaasCustomerData.name,
-          email: asaasCustomerData.email,
-          phone: asaasCustomerData.phone,
-          eventTimestamp: paidAt,
-        }).catch(() => {});
-      }
+    if (paymentResult.failed > 0) {
+      console.error("[asaas-sync] batch failures (payments)", { failed: paymentResult.failed });
     }
 
     await db
