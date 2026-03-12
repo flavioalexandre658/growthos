@@ -72,30 +72,6 @@ async function collectInvoices(stripe: Stripe, job: Job, since?: number): Promis
   return all;
 }
 
-async function collectInvoiceLinkedIds(stripe: Stripe, job: Job, since?: number): Promise<Set<string>> {
-  const ids = new Set<string>();
-  let count = 0;
-  const params: Stripe.InvoicePaymentListParams = {
-    status: "paid",
-    ...(since ? { created: { gte: since } } : {}),
-  };
-  for await (const ip of stripe.invoicePayments.list(params)) {
-    const p = ip.payment;
-    if (p.type === "payment_intent" && p.payment_intent) {
-      const piId = typeof p.payment_intent === "string" ? p.payment_intent : p.payment_intent.id;
-      ids.add(`pi:${piId}`);
-    } else if (p.type === "charge" && p.charge) {
-      const chId = typeof p.charge === "string" ? p.charge : p.charge.id;
-      ids.add(`ch:${chId}`);
-    }
-    count++;
-    if (count % 500 === 0) {
-      report(job, { phase: "fetching", current: count, total: 0, message: `${count} invoice payments processados...` });
-    }
-  }
-  return ids;
-}
-
 async function collectCharges(stripe: Stripe, job: Job, since?: number): Promise<Stripe.Charge[]> {
   const all: Stripe.Charge[] = [];
   const params: Stripe.ChargeListParams = {
@@ -104,6 +80,7 @@ async function collectCharges(stripe: Stripe, job: Job, since?: number): Promise
   };
   for await (const ch of stripe.charges.list(params)) {
     if (ch.status !== "succeeded" || !ch.amount) continue;
+    if ((ch as unknown as { invoice: string | null }).invoice) continue;
     all.push(ch);
     if (all.length % 100 === 0) {
       report(job, { phase: "fetching", current: all.length, total: 0, message: `${all.length} charges...` });
@@ -153,17 +130,11 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
     message: isReSync ? "Buscando atualizações do Stripe..." : "Buscando dados do Stripe...",
   });
 
-  const [allSubs, allInvoices, invoiceLinkedIds, rawCharges] = await Promise.all([
+  const [allSubs, allInvoices, allCharges] = await Promise.all([
     collectSubscriptions(stripe, job),
     collectInvoices(stripe, job, sinceTimestamp),
-    collectInvoiceLinkedIds(stripe, job, sinceTimestamp),
     collectCharges(stripe, job, sinceTimestamp),
   ]);
-
-  const allCharges = rawCharges.filter((ch) => {
-    const piId = typeof ch.payment_intent === "string" ? ch.payment_intent : ch.payment_intent?.id ?? null;
-    return !(piId && invoiceLinkedIds.has(`pi:${piId}`)) && !invoiceLinkedIds.has(`ch:${ch.id}`);
-  });
 
   const totalItems = allSubs.length + allInvoices.length + allCharges.length;
 
