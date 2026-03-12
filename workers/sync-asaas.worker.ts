@@ -63,7 +63,11 @@ async function asaasFetch<T>(path: string, apiKey: string): Promise<AsaasListRes
   return res.json() as Promise<AsaasListResponse<T>>;
 }
 
-async function fetchAllAsaas<T>(basePath: string, apiKey: string): Promise<T[]> {
+async function fetchAllAsaas<T>(
+  basePath: string,
+  apiKey: string,
+  onPage?: (count: number) => void,
+): Promise<T[]> {
   const all: T[] = [];
   let offset = 0;
   let hasMore = true;
@@ -74,6 +78,7 @@ async function fetchAllAsaas<T>(basePath: string, apiKey: string): Promise<T[]> 
     all.push(...page.data);
     hasMore = page.hasMore;
     offset += PAGE_SIZE;
+    onPage?.(all.length);
   }
 
   return all;
@@ -143,7 +148,9 @@ export async function processAsaasSyncJob(job: Job<SyncJobData>): Promise<{
 
   report(job, { phase: "fetching", current: 0, total: 0, message: "Buscando subscriptions do Asaas..." });
 
-  const allSubs = await fetchAllAsaas<AsaasSubscription>("/subscriptions", apiKey);
+  const allSubs = await fetchAllAsaas<AsaasSubscription>("/subscriptions", apiKey, (count) => {
+    report(job, { phase: "fetching", current: count, total: 0, message: `${count} subscriptions encontradas...` });
+  });
 
   report(job, {
     phase: "fetching",
@@ -152,7 +159,9 @@ export async function processAsaasSyncJob(job: Job<SyncJobData>): Promise<{
     message: `${allSubs.length} subscriptions. Buscando pagamentos...`,
   });
 
-  const allPayments = await fetchAllAsaas<AsaasPayment>("/payments?status=RECEIVED,CONFIRMED", apiKey);
+  const allPayments = await fetchAllAsaas<AsaasPayment>("/payments?status=RECEIVED,CONFIRMED", apiKey, (count) => {
+    report(job, { phase: "fetching", current: count, total: 0, message: `${count} pagamentos encontrados...` });
+  });
 
   report(job, {
     phase: "fetching",

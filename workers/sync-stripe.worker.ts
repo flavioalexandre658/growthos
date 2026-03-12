@@ -79,6 +79,9 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
   const allSubs: Stripe.Subscription[] = [];
   for await (const sub of stripe.subscriptions.list({ limit: 100, status: "all" })) {
     allSubs.push(sub);
+    if (allSubs.length % 100 === 0) {
+      report(job, { phase: "fetching", current: allSubs.length, total: 0, message: `${allSubs.length} subscriptions encontradas...` });
+    }
   }
 
   report(job, { phase: "fetching", current: allSubs.length, total: 0, message: `${allSubs.length} subscriptions encontradas. Buscando invoices...` });
@@ -86,6 +89,9 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
   const allInvoices: Stripe.Invoice[] = [];
   for await (const inv of stripe.invoices.list({ limit: 100, status: "paid" })) {
     allInvoices.push(inv);
+    if (allInvoices.length % 100 === 0) {
+      report(job, { phase: "fetching", current: allInvoices.length, total: 0, message: `${allInvoices.length} invoices encontradas...` });
+    }
   }
 
   report(job, {
@@ -96,6 +102,7 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
   });
 
   const invoiceLinkedIds = new Set<string>();
+  let ipCount = 0;
   for await (const ip of stripe.invoicePayments.list({ status: "paid" })) {
     const p = ip.payment;
     if (p.type === "payment_intent" && p.payment_intent) {
@@ -104,6 +111,10 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
     } else if (p.type === "charge" && p.charge) {
       const chId = typeof p.charge === "string" ? p.charge : p.charge.id;
       invoiceLinkedIds.add(`ch:${chId}`);
+    }
+    ipCount++;
+    if (ipCount % 500 === 0) {
+      report(job, { phase: "fetching", current: ipCount, total: 0, message: `${ipCount} invoice payments processados...` });
     }
   }
 
@@ -121,6 +132,9 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
     if (piId && invoiceLinkedIds.has(`pi:${piId}`)) continue;
     if (invoiceLinkedIds.has(`ch:${ch.id}`)) continue;
     allCharges.push(ch);
+    if (allCharges.length % 100 === 0) {
+      report(job, { phase: "fetching", current: allCharges.length, total: 0, message: `${allCharges.length} charges encontradas...` });
+    }
   }
 
   const totalItems = allSubs.length + allInvoices.length + allCharges.length;

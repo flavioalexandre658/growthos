@@ -65,6 +65,8 @@ export function startWorkers(): void {
     {
       connection,
       concurrency: 2,
+      stalledInterval: 120_000,
+      maxStalledCount: 3,
     },
   );
 
