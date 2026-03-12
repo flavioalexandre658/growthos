@@ -269,6 +269,13 @@ export async function syncStripeHistory(
         landingPage: acq?.landingPage ?? null,
         entryPage: acq?.entryPage ?? null,
         sessionId: acq?.sessionId ?? null,
+      }).catch((err) => {
+        console.error("[stripe-sync] insertPayment failed (invoice)", {
+          orgId: organizationId,
+          eventType,
+          eventHash,
+          error: err instanceof Error ? err.message : String(err),
+        });
       });
 
       if (isRecurring) {
@@ -393,6 +400,13 @@ export async function syncStripeHistory(
         landingPage: acq?.landingPage ?? null,
         entryPage: acq?.entryPage ?? null,
         sessionId: acq?.sessionId ?? null,
+      }).catch((err) => {
+        console.error("[stripe-sync] insertPayment failed (charge)", {
+          orgId: organizationId,
+          eventType: "purchase",
+          eventHash,
+          error: err instanceof Error ? err.message : String(err),
+        });
       });
 
       if (customerId) {
@@ -423,7 +437,7 @@ export async function syncStripeHistory(
       .update(integrations)
       .set({
         status: "error",
-        syncError: String(err),
+        syncError: err instanceof Error ? err.message : String(err),
         updatedAt: new Date(),
       })
       .where(eq(integrations.id, integrationId));
