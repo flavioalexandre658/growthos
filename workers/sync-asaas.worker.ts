@@ -17,6 +17,7 @@ import type { BillingInterval } from "@/utils/billing";
 
 const ASAAS_BASE_URL = "https://api.asaas.com/v3";
 const PAGE_SIZE = 100;
+const CUSTOMER_CONCURRENCY = 10;
 
 interface AsaasSubscription {
   id: string;
@@ -104,6 +105,35 @@ async function fetchAsaasCustomerData(
   }
 }
 
+async function fetchCustomersInParallel(
+  customerIds: string[],
+  apiKey: string,
+  job: Job,
+  total: number,
+): Promise<Map<string, { name: string | null; email: string | null; phone: string | null } | null>> {
+  const cache = new Map<string, { name: string | null; email: string | null; phone: string | null } | null>();
+  let fetched = 0;
+
+  for (let i = 0; i < customerIds.length; i += CUSTOMER_CONCURRENCY) {
+    const batch = customerIds.slice(i, i + CUSTOMER_CONCURRENCY);
+    const results = await Promise.all(batch.map((id) => fetchAsaasCustomerData(id, apiKey)));
+    results.forEach((data, idx) => {
+      cache.set(batch[idx], data);
+    });
+    fetched += batch.length;
+    if (fetched % 50 === 0 || fetched === total) {
+      report(job, {
+        phase: "fetching",
+        current: fetched,
+        total,
+        message: `Buscando clientes (${fetched}/${total})...`,
+      });
+    }
+  }
+
+  return cache;
+}
+
 async function getOrgCurrency(organizationId: string): Promise<string> {
   const [org] = await db
     .select({ currency: organizations.currency })
@@ -146,56 +176,61 @@ export async function processAsaasSyncJob(job: Job<SyncJobData>): Promise<{
   const orgCurrency = await getOrgCurrency(organizationId);
   const caches = new SyncCaches();
 
-  report(job, { phase: "fetching", current: 0, total: 0, message: "Buscando subscriptions do Asaas..." });
-
-  const allSubs = await fetchAllAsaas<AsaasSubscription>("/subscriptions", apiKey, (count) => {
-    report(job, { phase: "fetching", current: count, total: 0, message: `${count} subscriptions encontradas...` });
-  });
+  const isReSync = !!integration.historySyncedAt;
+  const sinceDate = isReSync
+    ? new Date(integration.historySyncedAt!.getTime() - 86400_000)
+      .toISOString()
+      .slice(0, 10)
+    : undefined;
 
   report(job, {
     phase: "fetching",
-    current: allSubs.length,
+    current: 0,
     total: 0,
-    message: `${allSubs.length} subscriptions. Buscando pagamentos...`,
+    message: isReSync ? "Buscando atualizações do Asaas..." : "Buscando dados do Asaas...",
   });
 
-  const allPayments = await fetchAllAsaas<AsaasPayment>("/payments?status=RECEIVED,CONFIRMED", apiKey, (count) => {
-    report(job, { phase: "fetching", current: count, total: 0, message: `${count} pagamentos encontrados...` });
-  });
+  const paymentsPath = sinceDate
+    ? `/payments?status=RECEIVED,CONFIRMED&dateCreated[ge]=${sinceDate}`
+    : "/payments?status=RECEIVED,CONFIRMED";
+
+  const [allSubs, allPayments] = await Promise.all([
+    fetchAllAsaas<AsaasSubscription>("/subscriptions", apiKey, (count) => {
+      report(job, { phase: "fetching", current: count, total: 0, message: `${count} subscriptions encontradas...` });
+    }),
+    fetchAllAsaas<AsaasPayment>(paymentsPath, apiKey, (count) => {
+      report(job, { phase: "fetching", current: count, total: 0, message: `${count} pagamentos encontrados...` });
+    }),
+  ]);
 
   report(job, {
     phase: "fetching",
     current: allSubs.length + allPayments.length,
     total: 0,
-    message: `${allPayments.length} pagamentos. Buscando dados de clientes...`,
+    message: `${allSubs.length} subscriptions, ${allPayments.length} pagamentos. Buscando clientes...`,
   });
 
-  const uniqueCustomerIds = new Set<string>();
-  for (const p of allPayments) uniqueCustomerIds.add(p.customer);
-  for (const s of allSubs) uniqueCustomerIds.add(s.customer);
+  const uniqueCustomerIds = Array.from(new Set([
+    ...allPayments.map((p) => p.customer),
+    ...allSubs.map((s) => s.customer),
+  ]));
 
-  const asaasCustomerCache = new Map<string, { name: string | null; email: string | null; phone: string | null } | null>();
-  let customersFetched = 0;
-  for (const cid of uniqueCustomerIds) {
-    const data = await fetchAsaasCustomerData(cid, apiKey);
-    asaasCustomerCache.set(cid, data);
-    customersFetched++;
-    if (customersFetched % 20 === 0) {
-      report(job, {
-        phase: "fetching",
-        current: customersFetched,
-        total: uniqueCustomerIds.size,
-        message: `Buscando clientes (${customersFetched}/${uniqueCustomerIds.size})...`,
-      });
-    }
-  }
+  const asaasCustomerCache = await fetchCustomersInParallel(
+    uniqueCustomerIds,
+    apiKey,
+    job,
+    uniqueCustomerIds.length,
+  );
 
   const totalItems = allSubs.length + allPayments.length;
 
-  report(job, { phase: "deleting", current: 0, total: totalItems, message: "Limpando dados anteriores do Asaas..." });
+  if (!isReSync) {
+    report(job, { phase: "deleting", current: 0, total: totalItems, message: "Limpando dados anteriores do Asaas..." });
+    await db.delete(events).where(and(eq(events.organizationId, organizationId), eq(events.provider, "asaas")));
+    await db.delete(payments).where(and(eq(payments.organizationId, organizationId), eq(payments.provider, "asaas")));
+  }
 
-  await db.delete(events).where(and(eq(events.organizationId, organizationId), eq(events.provider, "asaas")));
-  await db.delete(payments).where(and(eq(payments.organizationId, organizationId), eq(payments.provider, "asaas")));
+  await caches.preloadAcquisitions(organizationId);
 
   report(job, { phase: "processing", current: 0, total: totalItems, message: "Processando subscriptions..." });
 

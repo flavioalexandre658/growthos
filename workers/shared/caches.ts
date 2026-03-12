@@ -122,6 +122,45 @@ export class SyncCaches {
     };
   }
 
+  async preloadAcquisitions(organizationId: string): Promise<void> {
+    const rows = await db
+      .select({
+        customerId: events.customerId,
+        source: events.source,
+        medium: events.medium,
+        campaign: events.campaign,
+        content: events.content,
+        landingPage: events.landingPage,
+        entryPage: events.entryPage,
+        sessionId: events.sessionId,
+      })
+      .from(events)
+      .where(
+        and(
+          eq(events.organizationId, organizationId),
+          isNotNull(events.customerId),
+          isNotNull(events.source),
+        ),
+      )
+      .orderBy(asc(events.createdAt));
+
+    for (const row of rows) {
+      if (!row.customerId) continue;
+      const key = `${organizationId}:${row.customerId}`;
+      if (!this.acquisitionCache.has(key)) {
+        this.acquisitionCache.set(key, {
+          source: row.source,
+          medium: row.medium,
+          campaign: row.campaign,
+          content: row.content,
+          landingPage: row.landingPage,
+          entryPage: row.entryPage,
+          sessionId: row.sessionId,
+        });
+      }
+    }
+  }
+
   clear(): void {
     this.exchangeRateCache.clear();
     this.acquisitionCache.clear();

@@ -2,7 +2,7 @@ import { db } from "@/db";
 import { payments, events, customers, subscriptions } from "@/db/schema";
 import { sql } from "drizzle-orm";
 
-const CHUNK_SIZE = 50;
+const CHUNK_SIZE = 200;
 
 function chunks<T>(arr: T[], size: number): T[][] {
   const result: T[][] = [];

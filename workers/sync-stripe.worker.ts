@@ -45,6 +45,73 @@ function report(job: Job, progress: SyncJobProgress): void {
   job.updateProgress(progress).catch(() => {});
 }
 
+async function collectSubscriptions(stripe: Stripe, job: Job): Promise<Stripe.Subscription[]> {
+  const all: Stripe.Subscription[] = [];
+  for await (const sub of stripe.subscriptions.list({ limit: 100, status: "all" })) {
+    all.push(sub);
+    if (all.length % 100 === 0) {
+      report(job, { phase: "fetching", current: all.length, total: 0, message: `${all.length} subscriptions...` });
+    }
+  }
+  return all;
+}
+
+async function collectInvoices(stripe: Stripe, job: Job, since?: number): Promise<Stripe.Invoice[]> {
+  const all: Stripe.Invoice[] = [];
+  const params: Stripe.InvoiceListParams = {
+    limit: 100,
+    status: "paid",
+    ...(since ? { created: { gte: since } } : {}),
+  };
+  for await (const inv of stripe.invoices.list(params)) {
+    all.push(inv);
+    if (all.length % 100 === 0) {
+      report(job, { phase: "fetching", current: all.length, total: 0, message: `${all.length} invoices...` });
+    }
+  }
+  return all;
+}
+
+async function collectInvoiceLinkedIds(stripe: Stripe, job: Job, since?: number): Promise<Set<string>> {
+  const ids = new Set<string>();
+  let count = 0;
+  const params: Stripe.InvoicePaymentListParams = {
+    status: "paid",
+    ...(since ? { created: { gte: since } } : {}),
+  };
+  for await (const ip of stripe.invoicePayments.list(params)) {
+    const p = ip.payment;
+    if (p.type === "payment_intent" && p.payment_intent) {
+      const piId = typeof p.payment_intent === "string" ? p.payment_intent : p.payment_intent.id;
+      ids.add(`pi:${piId}`);
+    } else if (p.type === "charge" && p.charge) {
+      const chId = typeof p.charge === "string" ? p.charge : p.charge.id;
+      ids.add(`ch:${chId}`);
+    }
+    count++;
+    if (count % 500 === 0) {
+      report(job, { phase: "fetching", current: count, total: 0, message: `${count} invoice payments processados...` });
+    }
+  }
+  return ids;
+}
+
+async function collectCharges(stripe: Stripe, job: Job, since?: number): Promise<Stripe.Charge[]> {
+  const all: Stripe.Charge[] = [];
+  const params: Stripe.ChargeListParams = {
+    limit: 100,
+    ...(since ? { created: { gte: since } } : {}),
+  };
+  for await (const ch of stripe.charges.list(params)) {
+    if (ch.status !== "succeeded" || !ch.amount) continue;
+    all.push(ch);
+    if (all.length % 100 === 0) {
+      report(job, { phase: "fetching", current: all.length, total: 0, message: `${all.length} charges...` });
+    }
+  }
+  return all;
+}
+
 export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
   subscriptionsSynced: number;
   invoicesSynced: number;
@@ -74,79 +141,44 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
   const orgCurrency = await getOrgCurrency(organizationId);
   const caches = new SyncCaches();
 
-  report(job, { phase: "fetching", current: 0, total: 0, message: "Buscando subscriptions..." });
-
-  const allSubs: Stripe.Subscription[] = [];
-  for await (const sub of stripe.subscriptions.list({ limit: 100, status: "all" })) {
-    allSubs.push(sub);
-    if (allSubs.length % 100 === 0) {
-      report(job, { phase: "fetching", current: allSubs.length, total: 0, message: `${allSubs.length} subscriptions encontradas...` });
-    }
-  }
-
-  report(job, { phase: "fetching", current: allSubs.length, total: 0, message: `${allSubs.length} subscriptions encontradas. Buscando invoices...` });
-
-  const allInvoices: Stripe.Invoice[] = [];
-  for await (const inv of stripe.invoices.list({ limit: 100, status: "paid" })) {
-    allInvoices.push(inv);
-    if (allInvoices.length % 100 === 0) {
-      report(job, { phase: "fetching", current: allInvoices.length, total: 0, message: `${allInvoices.length} invoices encontradas...` });
-    }
-  }
-
-  report(job, {
-    phase: "fetching",
-    current: allInvoices.length,
-    total: 0,
-    message: `${allInvoices.length} invoices. Buscando invoice payments para dedup...`,
-  });
-
-  const invoiceLinkedIds = new Set<string>();
-  let ipCount = 0;
-  for await (const ip of stripe.invoicePayments.list({ status: "paid" })) {
-    const p = ip.payment;
-    if (p.type === "payment_intent" && p.payment_intent) {
-      const piId = typeof p.payment_intent === "string" ? p.payment_intent : p.payment_intent.id;
-      invoiceLinkedIds.add(`pi:${piId}`);
-    } else if (p.type === "charge" && p.charge) {
-      const chId = typeof p.charge === "string" ? p.charge : p.charge.id;
-      invoiceLinkedIds.add(`ch:${chId}`);
-    }
-    ipCount++;
-    if (ipCount % 500 === 0) {
-      report(job, { phase: "fetching", current: ipCount, total: 0, message: `${ipCount} invoice payments processados...` });
-    }
-  }
+  const isReSync = !!integration.historySyncedAt;
+  const sinceTimestamp = isReSync
+    ? Math.floor(integration.historySyncedAt!.getTime() / 1000) - 86400
+    : undefined;
 
   report(job, {
     phase: "fetching",
     current: 0,
     total: 0,
-    message: "Buscando charges...",
+    message: isReSync ? "Buscando atualizações do Stripe..." : "Buscando dados do Stripe...",
   });
 
-  const allCharges: Stripe.Charge[] = [];
-  for await (const ch of stripe.charges.list({ limit: 100 })) {
-    if (ch.status !== "succeeded" || !ch.amount) continue;
+  const [allSubs, allInvoices, invoiceLinkedIds, rawCharges] = await Promise.all([
+    collectSubscriptions(stripe, job),
+    collectInvoices(stripe, job, sinceTimestamp),
+    collectInvoiceLinkedIds(stripe, job, sinceTimestamp),
+    collectCharges(stripe, job, sinceTimestamp),
+  ]);
+
+  const allCharges = rawCharges.filter((ch) => {
     const piId = typeof ch.payment_intent === "string" ? ch.payment_intent : ch.payment_intent?.id ?? null;
-    if (piId && invoiceLinkedIds.has(`pi:${piId}`)) continue;
-    if (invoiceLinkedIds.has(`ch:${ch.id}`)) continue;
-    allCharges.push(ch);
-    if (allCharges.length % 100 === 0) {
-      report(job, { phase: "fetching", current: allCharges.length, total: 0, message: `${allCharges.length} charges encontradas...` });
-    }
-  }
+    return !(piId && invoiceLinkedIds.has(`pi:${piId}`)) && !invoiceLinkedIds.has(`ch:${ch.id}`);
+  });
 
   const totalItems = allSubs.length + allInvoices.length + allCharges.length;
-  report(job, {
-    phase: "deleting",
-    current: 0,
-    total: totalItems,
-    message: `Limpando dados anteriores do Stripe...`,
-  });
 
-  await db.delete(events).where(and(eq(events.organizationId, organizationId), eq(events.provider, "stripe")));
-  await db.delete(payments).where(and(eq(payments.organizationId, organizationId), eq(payments.provider, "stripe")));
+  if (!isReSync) {
+    report(job, {
+      phase: "deleting",
+      current: 0,
+      total: totalItems,
+      message: "Limpando dados anteriores do Stripe...",
+    });
+    await db.delete(events).where(and(eq(events.organizationId, organizationId), eq(events.provider, "stripe")));
+    await db.delete(payments).where(and(eq(payments.organizationId, organizationId), eq(payments.provider, "stripe")));
+  }
+
+  await caches.preloadAcquisitions(organizationId);
 
   let processed = 0;
   const subIntervalMap = new Map<string, BillingInterval>();
