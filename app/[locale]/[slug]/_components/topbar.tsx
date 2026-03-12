@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "@/i18n/routing";
+import { useRouter as useNextRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import dayjs from "dayjs";
@@ -243,6 +244,7 @@ function NotificationsPopover() {
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const router = useRouter();
+  const nextRouter = useNextRouter();
   const [emailNotification, setEmailNotification] = useState<NotificationRow | null>(null);
 
   const { data: notifications = [], isLoading } = useNotifications(orgId);
@@ -256,7 +258,7 @@ function NotificationsPopover() {
     if (SALE_NOTIFICATION_TYPES.has(notification.type) && metadata?.customerId && organization?.slug) {
       router.push(`/${organization.slug}/customers/${metadata.customerId}` as Parameters<typeof router.push>[0]);
     } else if (notification.linkUrl) {
-      router.push(notification.linkUrl as Parameters<typeof router.push>[0]);
+      nextRouter.push(notification.linkUrl);
     }
   }
 

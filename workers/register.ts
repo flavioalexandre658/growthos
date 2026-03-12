@@ -9,13 +9,15 @@ import { eq } from "drizzle-orm";
 import { createNotification } from "@/utils/create-notification";
 import { sanitizeSyncError } from "@/utils/sanitize-sync-error";
 
-async function resolveOrgSlug(organizationId: string): Promise<string | null> {
+async function resolveOrgInfo(organizationId: string): Promise<{ slug: string; locale: string } | null> {
   const [org] = await db
-    .select({ slug: organizations.slug })
+    .select({ slug: organizations.slug, locale: organizations.locale })
     .from(organizations)
     .where(eq(organizations.id, organizationId))
     .limit(1);
-  return org?.slug ?? null;
+  if (!org) return null;
+  const appLocale = org.locale?.startsWith("pt") ? "pt" : "en";
+  return { slug: org.slug, locale: appLocale };
 }
 
 export function startWorkers(): void {
@@ -50,13 +52,13 @@ export function startWorkers(): void {
           .where(eq(integrations.id, job.data.integrationId))
           .catch(() => {});
 
-        const failSlug = await resolveOrgSlug(job.data.organizationId).catch(() => null);
+        const failOrg = await resolveOrgInfo(job.data.organizationId).catch(() => null);
         await createNotification({
           organizationId: job.data.organizationId,
           type: "sync",
           title: `Falha na sincronização ${job.data.provider === "stripe" ? "Stripe" : "Asaas"}`,
           body: safeMsg,
-          linkUrl: failSlug ? `/${failSlug}/settings/integrations` : undefined,
+          linkUrl: failOrg ? `/${failOrg.locale}/${failOrg.slug}/settings/integrations` : undefined,
         }).catch(() => {});
 
         throw err;
@@ -84,13 +86,13 @@ export function startWorkers(): void {
     const payments = (result?.invoicesSynced ?? result?.paymentsSynced ?? 0) + (result?.oneTimePurchasesSynced ?? 0);
     const subs = result?.subscriptionsSynced ?? 0;
 
-    const okSlug = await resolveOrgSlug(job.data.organizationId).catch(() => null);
+    const okOrg = await resolveOrgInfo(job.data.organizationId).catch(() => null);
     await createNotification({
       organizationId: job.data.organizationId,
       type: "sync",
       title: `Sincronização ${providerLabel} concluída`,
       body: `${subs} assinatura${subs !== 1 ? "s" : ""} e ${payments} pagamento${payments !== 1 ? "s" : ""} sincronizados.`,
-      linkUrl: okSlug ? `/${okSlug}/settings/integrations` : undefined,
+      linkUrl: okOrg ? `/${okOrg.locale}/${okOrg.slug}/settings/integrations` : undefined,
     }).catch(() => {});
   });
 
