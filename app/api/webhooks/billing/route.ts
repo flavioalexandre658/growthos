@@ -4,19 +4,15 @@ import { eq } from "drizzle-orm";
 import { stripe } from "@/lib/stripe";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import type { PlanSlug } from "@/utils/plans";
+import { PLANS, type PlanSlug } from "@/utils/plans";
 
 function resolveGrowarePlanSlug(priceId: string): PlanSlug {
-  const priceToSlug: Record<string, PlanSlug> = {
-    "price_1T84jELEMla6y3l2HGzZd4Pf": "starter",
-    "price_1T84jFLEMla6y3l2pH9PrugY": "starter",
-    "price_1T84jFLEMla6y3l2tYkehFAS": "pro",
-    "price_1T84jGLEMla6y3l2hRXqgx5z": "pro",
-    "price_1T84jHLEMla6y3l2UBMueu5s": "scale",
-    "price_1T84jHLEMla6y3l2z7j3nhcX": "scale",
-  };
-
-  return priceToSlug[priceId] ?? "free";
+  for (const plan of Object.values(PLANS)) {
+    if (plan.stripePriceId.brl === priceId || plan.stripePriceId.usd === priceId) {
+      return plan.slug;
+    }
+  }
+  return "free";
 }
 
 async function findUserByStripeCustomer(customerId: string): Promise<string | null> {
@@ -30,17 +26,25 @@ async function findUserByStripeCustomer(customerId: string): Promise<string | nu
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  if (session.mode !== "subscription" || !session.customer || !session.subscription) return;
+  if (session.mode !== "subscription" || !session.customer || !session.subscription) {
+    console.log("[billing-webhook] checkout.session.completed skipped", { mode: session.mode, hasCustomer: !!session.customer, hasSubscription: !!session.subscription });
+    return;
+  }
 
   const userId =
     (session.metadata?.groware_user_id as string | undefined) ??
     (await findUserByStripeCustomer(session.customer as string));
 
-  if (!userId) return;
+  if (!userId) {
+    console.error("[billing-webhook] handleCheckoutCompleted: userId not found", { customerId: session.customer, metadata: session.metadata });
+    return;
+  }
 
   const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
   const priceId = subscription.items.data[0]?.price.id ?? "";
   const planSlug = resolveGrowarePlanSlug(priceId);
+
+  console.log("[billing-webhook] handleCheckoutCompleted: updating plan", { userId, priceId, planSlug, subscriptionId: subscription.id });
 
   await db.update(users).set({
     planSlug,
@@ -49,6 +53,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     currentPeriodEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
     stripeCustomerId: session.customer as string,
   }).where(eq(users.id, userId));
+
+  console.log("[billing-webhook] handleCheckoutCompleted: done", { userId, planSlug });
 
   const apiKey = process.env.GROWARE_API_KEY;
   if (apiKey && session.amount_total && session.currency) {
@@ -78,10 +84,16 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
   const userId = await findUserByStripeCustomer(customerId);
-  if (!userId) return;
+
+  if (!userId) {
+    console.error("[billing-webhook] handleSubscriptionUpdated: userId not found", { customerId });
+    return;
+  }
 
   const priceId = subscription.items.data[0]?.price.id ?? "";
   const planSlug = resolveGrowarePlanSlug(priceId);
+
+  console.log("[billing-webhook] handleSubscriptionUpdated: updating plan", { userId, priceId, planSlug, status: subscription.status });
 
   await db.update(users).set({
     planSlug,
@@ -133,6 +145,8 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: "Invalid webhook signature" }, { status: 400 });
   }
+
+  console.log("[billing-webhook] event received", { type: event.type, id: event.id });
 
   switch (event.type) {
     case "checkout.session.completed":

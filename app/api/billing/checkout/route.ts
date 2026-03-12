@@ -94,11 +94,6 @@ export async function POST(req: NextRequest) {
         plan_slug: planSlug,
       },
     },
-    payment_intent_data: {
-      metadata: {
-        groware_customer_id: userRow.id,
-      },
-    },
   });
 
   return NextResponse.json({ url: checkoutSession.url });
