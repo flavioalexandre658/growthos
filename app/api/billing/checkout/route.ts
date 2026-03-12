@@ -8,6 +8,8 @@ import { users } from "@/db/schema";
 import { stripe } from "@/lib/stripe";
 import { getPlan } from "@/utils/plans";
 
+export const dynamic = "force-dynamic";
+
 const schema = z.object({
   planSlug: z.enum(["starter", "pro", "scale"]),
   currency: z.enum(["brl", "usd"]).default("brl"),

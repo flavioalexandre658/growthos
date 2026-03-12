@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
+
+export const dynamic = "force-dynamic";
 import { organizations, integrations } from "@/db/schema";
 import { getPublicMetrics } from "@/actions/public/get-public-metrics.action";
 import { getPublicMrrHistory } from "@/actions/public/get-public-mrr-history.action";

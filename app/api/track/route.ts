@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and, sql } from "drizzle-orm";
 import { createHash } from "crypto";
+
+export const dynamic = "force-dynamic";
 import { db } from "@/db";
 import { apiKeys, events, subscriptions, organizations, pageviewAggregates, usageMonthly, notifications } from "@/db/schema";
 import { resolveExchangeRate as resolveRate } from "@/utils/resolve-exchange-rate";

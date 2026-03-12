@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/db";
+
+export const dynamic = "force-dynamic";
 import { integrations, events, subscriptions, organizations } from "@/db/schema";
 import { decrypt } from "@/lib/crypto";
 import { eq } from "drizzle-orm";

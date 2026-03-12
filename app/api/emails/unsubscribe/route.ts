@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { orgMembers } from "@/db/schema";
+
+export const dynamic = "force-dynamic";
 import { and, eq } from "drizzle-orm";
 import dayjs from "dayjs";
 import type { IEmailSequenceState } from "@/interfaces/email-sequence.interface";

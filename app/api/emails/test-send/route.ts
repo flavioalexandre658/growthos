@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email";
 import type { Locale } from "@/lib/email-templates/base-layout";
+
+export const dynamic = "force-dynamic";
 import type { OnboardingIncompleteEmailId } from "@/lib/email-templates/sequence-onboarding-incomplete";
 import type { DashboardEmptyEmailId } from "@/lib/email-templates/sequence-dashboard-empty";
 import type { GatewayOnlyEmailId } from "@/lib/email-templates/sequence-gateway-only";

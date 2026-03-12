@@ -2,6 +2,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextRequest } from "next/server";
 import type { IAnalysisResult, IComparisonResult } from "@/interfaces/ai.interface";
 
+export const dynamic = "force-dynamic";
+
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const ANALYSIS_JSON_SCHEMA = `{

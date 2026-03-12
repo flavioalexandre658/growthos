@@ -3,6 +3,8 @@ import { db } from "@/db";
 import { orgMembers, users, organizations, emailLogs } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import dayjs from "dayjs";
+
+export const dynamic = "force-dynamic";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { getEmailDynamicData } from "@/actions/emails/get-email-data.action";

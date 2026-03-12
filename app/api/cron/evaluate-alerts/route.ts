@@ -17,6 +17,8 @@ import { alertNotificationEmail } from "@/lib/email-templates/alert-notification
 import type { AlertType } from "@/db/schema/alert-config.schema";
 import type { NotificationType } from "@/db/schema/notification.schema";
 
+export const dynamic = "force-dynamic";
+
 const ALERT_NOTIFICATION_TYPE: Record<AlertType, NotificationType> = {
   no_events: "alert_no_events",
   churn_rate: "alert_churn_rate",

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { integrations, events, subscriptions, organizations } from "@/db/schema";
+
+export const dynamic = "force-dynamic";
 import { decrypt } from "@/lib/crypto";
 import { eq } from "drizzle-orm";
 import {

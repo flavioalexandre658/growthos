@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { orgMembers, users, organizations, emailLogs } from "@/db/schema";
+
+export const dynamic = "force-dynamic";
 import { eq, and } from "drizzle-orm";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
