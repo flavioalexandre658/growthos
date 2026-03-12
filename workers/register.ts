@@ -4,10 +4,19 @@ import type { SyncJobData } from "@/lib/queue";
 import { processStripeSyncJob } from "./sync-stripe.worker";
 import { processAsaasSyncJob } from "./sync-asaas.worker";
 import { db } from "@/db";
-import { integrations } from "@/db/schema";
+import { integrations, organizations } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { createNotification } from "@/utils/create-notification";
 import { sanitizeSyncError } from "@/utils/sanitize-sync-error";
+
+async function resolveOrgSlug(organizationId: string): Promise<string | null> {
+  const [org] = await db
+    .select({ slug: organizations.slug })
+    .from(organizations)
+    .where(eq(organizations.id, organizationId))
+    .limit(1);
+  return org?.slug ?? null;
+}
 
 export function startWorkers(): void {
   const connection = getConnectionOptions();
@@ -41,12 +50,13 @@ export function startWorkers(): void {
           .where(eq(integrations.id, job.data.integrationId))
           .catch(() => {});
 
+        const failSlug = await resolveOrgSlug(job.data.organizationId).catch(() => null);
         await createNotification({
           organizationId: job.data.organizationId,
           type: "sync",
           title: `Falha na sincronização ${job.data.provider === "stripe" ? "Stripe" : "Asaas"}`,
           body: safeMsg,
-          linkUrl: "settings/integrations",
+          linkUrl: failSlug ? `/${failSlug}/settings/integrations` : undefined,
         }).catch(() => {});
 
         throw err;
@@ -72,12 +82,13 @@ export function startWorkers(): void {
     const payments = (result?.invoicesSynced ?? result?.paymentsSynced ?? 0) + (result?.oneTimePurchasesSynced ?? 0);
     const subs = result?.subscriptionsSynced ?? 0;
 
+    const okSlug = await resolveOrgSlug(job.data.organizationId).catch(() => null);
     await createNotification({
       organizationId: job.data.organizationId,
       type: "sync",
       title: `Sincronização ${providerLabel} concluída`,
       body: `${subs} assinatura${subs !== 1 ? "s" : ""} e ${payments} pagamento${payments !== 1 ? "s" : ""} sincronizados.`,
-      linkUrl: "settings/integrations",
+      linkUrl: okSlug ? `/${okSlug}/settings/integrations` : undefined,
     }).catch(() => {});
   });
 
