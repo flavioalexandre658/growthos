@@ -50,7 +50,7 @@ export function startWorkers(): void {
             updatedAt: new Date(),
           })
           .where(eq(integrations.id, job.data.integrationId))
-          .catch(() => {});
+          .catch(() => { });
 
         const failOrg = await resolveOrgInfo(job.data.organizationId).catch(() => null);
         await createNotification({
@@ -59,7 +59,7 @@ export function startWorkers(): void {
           title: `Falha na sincronização ${job.data.provider === "stripe" ? "Stripe" : "Asaas"}`,
           body: safeMsg,
           linkUrl: failOrg ? `/${failOrg.locale}/${failOrg.slug}/settings/integrations` : undefined,
-        }).catch(() => {});
+        }).catch(() => { });
 
         throw err;
       }
@@ -69,6 +69,8 @@ export function startWorkers(): void {
       concurrency: 2,
       stalledInterval: 120_000,
       maxStalledCount: 3,
+      lockDuration: 300_000,    // ← 5 minutos (estava 30s por padrão)
+      lockRenewTime: 120_000   // ← renova a cada 2 min (era a cada 15s)
     },
   );
 
@@ -93,7 +95,7 @@ export function startWorkers(): void {
       title: `Sincronização ${providerLabel} concluída`,
       body: `${subs} assinatura${subs !== 1 ? "s" : ""} e ${payments} pagamento${payments !== 1 ? "s" : ""} sincronizados.`,
       linkUrl: okOrg ? `/${okOrg.locale}/${okOrg.slug}/settings/integrations` : undefined,
-    }).catch(() => {});
+    }).catch(() => { });
   });
 
   syncWorker.on("failed", (job, err) => {
