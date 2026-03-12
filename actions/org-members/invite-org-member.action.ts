@@ -10,6 +10,7 @@ import { orgInvites, orgMembers, organizations, users } from "@/db/schema";
 import { sendEmail } from "@/lib/email";
 import { teamInviteEmail } from "@/lib/email-templates/team-invite";
 import { getPlan } from "@/utils/plans";
+import { isPlatformAdmin } from "@/utils/is-platform-admin";
 
 const schema = z.object({
   organizationId: z.string().uuid(),
@@ -23,18 +24,20 @@ export async function inviteOrgMember(input: z.infer<typeof schema>) {
 
   const data = schema.parse(input);
 
-  const [ownerMembership] = await db
-    .select({ role: orgMembers.role })
-    .from(orgMembers)
-    .where(
-      and(
-        eq(orgMembers.organizationId, data.organizationId),
-        eq(orgMembers.userId, session.user.id),
-      ),
-    )
-    .limit(1);
+  if (!isPlatformAdmin(session.user.email)) {
+    const [ownerMembership] = await db
+      .select({ role: orgMembers.role })
+      .from(orgMembers)
+      .where(
+        and(
+          eq(orgMembers.organizationId, data.organizationId),
+          eq(orgMembers.userId, session.user.id),
+        ),
+      )
+      .limit(1);
 
-  if (!ownerMembership) throw new Error("Você não é membro desta organização.");
+    if (!ownerMembership) throw new Error("Você não é membro desta organização.");
+  }
 
   const [userRow] = await db
     .select({ planSlug: users.planSlug })

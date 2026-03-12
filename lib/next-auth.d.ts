@@ -10,6 +10,7 @@ declare module "next-auth" {
       locale: string;
       onboardingCompleted: boolean;
       authProvider: string;
+      isPlatformAdmin: boolean;
     };
   }
 

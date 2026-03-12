@@ -4,7 +4,8 @@ import { sql } from "drizzle-orm";
 import type { IUpsertCustomerInput } from "@/interfaces/customer.interface";
 
 export async function upsertCustomer(input: IUpsertCustomerInput): Promise<void> {
-  const now = input.eventTimestamp ?? new Date();
+  const rawNow = input.eventTimestamp ?? new Date();
+  const now = rawNow instanceof Date && !isNaN(rawNow.getTime()) ? rawNow : new Date();
 
   await db
     .insert(customers)

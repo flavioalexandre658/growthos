@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { integrations, events, fixedCosts, variableCosts, orgMembers, organizations, pageviewAggregates } from "@/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import type { ITourProgress } from "@/interfaces/tour.interface";
+import { isPlatformAdmin } from "@/utils/is-platform-admin";
 
 export async function getTourProgress(organizationId: string): Promise<ITourProgress | null> {
   const session = await getServerSession(authOptions);
@@ -80,7 +81,7 @@ export async function getTourProgress(organizationId: string): Promise<ITourProg
       .limit(1),
   ]);
 
-  const tourState = memberRow[0]?.tourState ?? null;
+  const tourState = isPlatformAdmin(session.user.email) ? null : (memberRow[0]?.tourState ?? null);
 
   const gatewayConnected = activeIntegration.length > 0;
   const trackerInstalled = pageviewEvent.length > 0;

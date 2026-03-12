@@ -7,6 +7,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { sendEmail } from "@/lib/email";
 import { welcomeEmail } from "@/lib/email-templates/welcome";
+import { isPlatformAdmin } from "@/utils/is-platform-admin";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -170,6 +171,7 @@ export const authOptions: NextAuthOptions = {
         locale: token.locale,
         onboardingCompleted: token.onboardingCompleted,
         authProvider: token.authProvider ?? "credentials",
+        isPlatformAdmin: isPlatformAdmin(token.email),
       };
       return session;
     },

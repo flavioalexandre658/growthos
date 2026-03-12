@@ -6,6 +6,7 @@ import { db } from "@/db";
 import { orgMembers } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import type { ITourState } from "@/interfaces/tour.interface";
+import { isPlatformAdmin } from "@/utils/is-platform-admin";
 
 export async function updateTourState(
   organizationId: string,
@@ -13,6 +14,10 @@ export async function updateTourState(
 ): Promise<{ data: true } | { error: string }> {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return { error: "Unauthorized" };
+
+  if (isPlatformAdmin(session.user.email)) {
+    return { data: true };
+  }
 
   const existing = await db
     .select({ tourState: orgMembers.tourState })

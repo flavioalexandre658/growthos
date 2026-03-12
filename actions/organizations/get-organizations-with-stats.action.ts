@@ -7,6 +7,7 @@ import { organizations, orgMembers, payments, events, pageviewAggregates } from 
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { authOptions } from "@/lib/auth-options";
 import dayjs from "@/utils/dayjs";
+import { isPlatformAdmin } from "@/utils/is-platform-admin";
 
 export interface IOrgStats {
   id: string;
@@ -22,14 +23,20 @@ export async function getOrganizationsWithStats(): Promise<IOrgStats[]> {
   const session = await getServerSession(authOptions);
   if (!session?.user) return [];
 
-  const rows = await db
-    .select({ org: organizations })
-    .from(organizations)
-    .innerJoin(orgMembers, eq(orgMembers.organizationId, organizations.id))
-    .where(eq(orgMembers.userId, session.user.id))
-    .orderBy(organizations.name);
+  let orgs: (typeof organizations.$inferSelect)[];
 
-  const orgs = rows.map((r) => r.org);
+  if (isPlatformAdmin(session.user.email)) {
+    orgs = await db.select().from(organizations).orderBy(organizations.name);
+  } else {
+    const rows = await db
+      .select({ org: organizations })
+      .from(organizations)
+      .innerJoin(orgMembers, eq(orgMembers.organizationId, organizations.id))
+      .where(eq(orgMembers.userId, session.user.id))
+      .orderBy(organizations.name);
+    orgs = rows.map((r) => r.org);
+  }
+
   if (orgs.length === 0) return [];
 
   const orgIds = orgs.map((o) => o.id);

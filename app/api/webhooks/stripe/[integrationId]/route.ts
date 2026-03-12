@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { db } from "@/db";
 import { integrations, events, subscriptions, organizations } from "@/db/schema";
 import { decrypt } from "@/lib/crypto";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { extractSubscriptionIdFromInvoice, mapBillingInterval, stripeEventHash } from "@/utils/stripe-helpers";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
@@ -242,7 +242,7 @@ async function handleCheckoutSessionCompleted(
     .onConflictDoUpdate({
       target: [events.organizationId, events.eventHash],
       set: {
-        customerId: sql`CASE WHEN ${customerId} NOT LIKE 'cus_%' THEN ${customerId} WHEN ${events.customerId} IS NOT NULL AND ${events.customerId} NOT LIKE 'cus_%' THEN ${events.customerId} ELSE ${customerId} END`,
+        customerId,
         grossValueInCents: session.amount_total,
         currency: eventCurrency,
         baseCurrency,
