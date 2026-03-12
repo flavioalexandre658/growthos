@@ -417,6 +417,7 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
   await db
     .update(integrations)
     .set({
+      status: "active",
       historySyncedAt: new Date(),
       lastSyncedAt: new Date(),
       syncError: null,

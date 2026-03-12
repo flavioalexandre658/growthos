@@ -382,6 +382,7 @@ export async function processAsaasSyncJob(job: Job<SyncJobData>): Promise<{
   await db
     .update(integrations)
     .set({
+      status: "active",
       historySyncedAt: new Date(),
       lastSyncedAt: new Date(),
       syncError: null,
