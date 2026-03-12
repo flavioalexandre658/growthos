@@ -362,7 +362,18 @@
         "webhookSuccessToast": "Webhook configurado com sucesso!",
         "webhookErrorToast": "Erro ao salvar configuração do webhook.",
         "trackerCallout": "Pagamentos chegam automaticamente via webhook. O tracker.js continua necessário para UTMs, funil e pageviews.",
-        "trackerCalloutDismiss": "Entendi"
+        "trackerCalloutDismiss": "Entendi",
+        "syncStarted": "Sincronização iniciada em segundo plano",
+        "syncCompleted": "Sincronização concluída!",
+        "syncFailed": "Falha na sincronização",
+        "syncPhaseDeleting": "Limpando dados anteriores...",
+        "syncPhaseFetching": "Buscando dados da API...",
+        "syncPhaseProcessing": "Processando registros...",
+        "syncPhaseFinalizing": "Finalizando...",
+        "syncPhaseCompleted": "Concluído!",
+        "syncPhaseError": "Erro na sincronização",
+        "syncProgress": "{current} de {total}",
+        "syncRetrying": "Tentativa {attempt} de 3"
       },
       "stripe": {
         "connectVia": "Restricted Key (somente leitura)",

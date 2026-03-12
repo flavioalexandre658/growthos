@@ -362,7 +362,18 @@
         "webhookSuccessToast": "Webhook configured successfully!",
         "webhookErrorToast": "Error saving webhook configuration.",
         "trackerCallout": "Payments arrive automatically via webhook. tracker.js is still needed for UTMs, funnel events, and pageviews.",
-        "trackerCalloutDismiss": "Got it"
+        "trackerCalloutDismiss": "Got it",
+        "syncStarted": "Sync started in background",
+        "syncCompleted": "Sync completed!",
+        "syncFailed": "Sync failed",
+        "syncPhaseDeleting": "Cleaning previous data...",
+        "syncPhaseFetching": "Fetching data from API...",
+        "syncPhaseProcessing": "Processing records...",
+        "syncPhaseFinalizing": "Finalizing...",
+        "syncPhaseCompleted": "Completed!",
+        "syncPhaseError": "Sync error",
+        "syncProgress": "{current} of {total}",
+        "syncRetrying": "Attempt {attempt} of 3"
       },
       "stripe": {
         "connectVia": "Restricted Key (read-only)",

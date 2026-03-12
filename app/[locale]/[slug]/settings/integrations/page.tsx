@@ -81,13 +81,6 @@ export default function IntegrationsPage() {
               webhookWarning: tStripe("webhookWarning"),
               toastId: "stripe-sync",
               disconnectConfirm: tStripe("disconnectConfirm"),
-              importingToast: tStripe("importingToast"),
-              importSuccessToast: (r) =>
-                tStripe("importSuccessToast", {
-                  subscriptions: r.subscriptionsSynced ?? 0,
-                  invoices: r.invoicesSynced ?? 0,
-                  oneTime: r.oneTimePurchasesSynced ?? 0,
-                }),
               connectedToast: tStripe("connectedToast"),
               connectErrorToast: tStripe("connectErrorToast"),
               disconnectedToast: tStripe("disconnectedToast"),
@@ -124,13 +117,6 @@ export default function IntegrationsPage() {
               webhookWarning: tAsaas("webhookWarning"),
               toastId: "asaas-sync",
               disconnectConfirm: tAsaas("disconnectConfirm"),
-              importingToast: tAsaas("importingToast"),
-              importSuccessToast: (r) =>
-                tAsaas("importSuccessToast", {
-                  subscriptions: r.subscriptionsSynced ?? 0,
-                  payments: r.paymentsSynced ?? 0,
-                  oneTime: r.oneTimePurchasesSynced ?? 0,
-                }),
               connectedToast: tAsaas("connectedToast"),
               connectErrorToast: tAsaas("connectErrorToast"),
               disconnectedToast: tAsaas("disconnectedToast"),

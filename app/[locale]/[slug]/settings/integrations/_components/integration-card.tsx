@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import {
   IconAlertCircle,
@@ -20,6 +20,7 @@ import {
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,14 +32,13 @@ import { IntegrationStatusBadge } from "./integration-status-badge";
 import { saveWebhookSecret } from "@/actions/integrations/save-webhook-secret.action";
 import { useIntegrations } from "@/hooks/queries/use-integrations";
 import { useDisconnectIntegration } from "@/hooks/mutations/use-disconnect-integration";
+import { useSyncProgress } from "@/hooks/queries/use-sync-progress";
 import { useQueryClient } from "@tanstack/react-query";
 import { getIntegrationsQueryKey } from "@/hooks/queries/use-integrations";
 import toast from "react-hot-toast";
 import dayjs from "@/utils/dayjs";
 import { cn } from "@/lib/utils";
 import type { IIntegration, IntegrationProvider } from "@/interfaces/integration.interface";
-
-type SyncResult = Record<string, number>;
 
 interface IntegrationCardConfig {
   provider: IntegrationProvider;
@@ -60,13 +60,11 @@ interface IntegrationCardConfig {
   webhookWarning: string;
   toastId: string;
   disconnectConfirm: string;
-  importingToast: string;
-  importSuccessToast: (result: SyncResult) => string;
   connectedToast: string;
   connectErrorToast: string;
   disconnectedToast: string;
   onConnect: (organizationId: string, credential: string) => Promise<IIntegration>;
-  onSync: (organizationId: string, integrationId: string) => Promise<SyncResult>;
+  onSync: (organizationId: string, integrationId: string) => Promise<{ jobId: string }>;
 }
 
 interface IntegrationCardProps {
@@ -201,6 +199,58 @@ function DisconnectedCard({
   );
 }
 
+function SyncProgressBar({
+  jobId,
+  onCompleted,
+  onFailed,
+}: {
+  jobId: string;
+  onCompleted: () => void;
+  onFailed: (reason: string) => void;
+}) {
+  const tc = useTranslations("settings.integrations.common");
+  const { data } = useSyncProgress(jobId);
+
+  const phaseLabels: Record<string, string> = {
+    deleting: tc("syncPhaseDeleting"),
+    fetching: tc("syncPhaseFetching"),
+    processing: tc("syncPhaseProcessing"),
+    finalizing: tc("syncPhaseFinalizing"),
+    completed: tc("syncPhaseCompleted"),
+    error: tc("syncPhaseError"),
+  };
+
+  useEffect(() => {
+    if (data?.state === "completed") onCompleted();
+    if (data?.state === "failed") onFailed(data.failedReason ?? tc("syncFailed"));
+  }, [data?.state, data?.failedReason, onCompleted, onFailed, tc]);
+
+  const progress = data?.progress;
+  const pct = progress && progress.total > 0
+    ? Math.round((progress.current / progress.total) * 100)
+    : undefined;
+  const phaseLabel = progress ? (phaseLabels[progress.phase] ?? progress.phase) : tc("syncPhaseFetching");
+  const message = progress?.message ?? "";
+
+  return (
+    <div className="space-y-2 px-4 pb-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium text-zinc-300">{phaseLabel}</span>
+        {pct !== undefined && (
+          <span className="text-xs text-zinc-500">{pct}%</span>
+        )}
+      </div>
+      <Progress
+        value={pct ?? 0}
+        className="h-1.5 bg-zinc-800"
+      />
+      {message && (
+        <p className="text-[11px] text-zinc-500 truncate">{message}</p>
+      )}
+    </div>
+  );
+}
+
 function ConnectedCard({
   organizationId,
   integration,
@@ -214,27 +264,36 @@ function ConnectedCard({
   const queryClient = useQueryClient();
   const { mutateAsync: disconnect, isPending: isDisconnecting } =
     useDisconnectIntegration(organizationId);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [webhookOpen, setWebhookOpen] = useState(!integration.hasWebhookSecret);
 
+  const isSyncing = !!activeJobId;
   const isSyncPending = integration.status === "active" && !integration.historySyncedAt;
 
   const handleSync = async () => {
-    toast.loading(config.importingToast, { id: config.toastId });
-    setIsSyncing(true);
     try {
       const result = await config.onSync(organizationId, integration.id);
-      queryClient.invalidateQueries({ queryKey: getIntegrationsQueryKey(organizationId) });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-      toast.success(config.importSuccessToast(result), { id: config.toastId });
+      setActiveJobId(result.jobId);
+      toast.success(tc("syncStarted"), { id: config.toastId });
     } catch (err) {
       toast.error(
         err instanceof Error ? err.message : tc("importErrorToast"),
         { id: config.toastId },
       );
-    } finally {
-      setIsSyncing(false);
     }
+  };
+
+  const handleSyncCompleted = () => {
+    setActiveJobId(null);
+    queryClient.invalidateQueries({ queryKey: getIntegrationsQueryKey(organizationId) });
+    queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+    toast.success(tc("syncCompleted"), { id: config.toastId });
+  };
+
+  const handleSyncFailed = (reason: string) => {
+    setActiveJobId(null);
+    queryClient.invalidateQueries({ queryKey: getIntegrationsQueryKey(organizationId) });
+    toast.error(reason, { id: config.toastId });
   };
 
   const handleDisconnect = async () => {
@@ -351,7 +410,7 @@ function ConnectedCard({
           </div>
         </div>
 
-        {integration.status === "error" && integration.syncError && (
+        {integration.status === "error" && integration.syncError && !isSyncing && (
           <div className="flex items-start gap-2 rounded-lg bg-red-500/5 border border-red-500/20 p-3">
             <IconAlertCircle size={13} className="text-red-400 shrink-0 mt-0.5" />
             <p className="text-xs text-red-300/80 leading-relaxed">{integration.syncError}</p>
@@ -371,6 +430,14 @@ function ConnectedCard({
           </div>
         )}
       </div>
+
+      {activeJobId && (
+        <SyncProgressBar
+          jobId={activeJobId}
+          onCompleted={handleSyncCompleted}
+          onFailed={handleSyncFailed}
+        />
+      )}
 
       {webhookOpen && (
         <WebhookSection
