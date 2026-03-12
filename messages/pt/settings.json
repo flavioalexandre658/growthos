@@ -363,6 +363,7 @@
         "webhookErrorToast": "Erro ao salvar configuração do webhook.",
         "trackerCallout": "Pagamentos chegam automaticamente via webhook. O tracker.js continua necessário para UTMs, funil e pageviews.",
         "trackerCalloutDismiss": "Entendi",
+        "syncQueueWaiting": "Comunicando com {provider}...",
         "syncStarted": "Sincronização iniciada em segundo plano",
         "syncCompleted": "Sincronização concluída!",
         "syncFailed": "Falha na sincronização",

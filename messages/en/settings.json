@@ -363,6 +363,7 @@
         "webhookErrorToast": "Error saving webhook configuration.",
         "trackerCallout": "Payments arrive automatically via webhook. tracker.js is still needed for UTMs, funnel events, and pageviews.",
         "trackerCalloutDismiss": "Got it",
+        "syncQueueWaiting": "Connecting to {provider}...",
         "syncStarted": "Sync started in background",
         "syncCompleted": "Sync completed!",
         "syncFailed": "Sync failed",

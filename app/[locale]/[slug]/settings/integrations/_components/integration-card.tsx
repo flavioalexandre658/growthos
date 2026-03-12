@@ -13,14 +13,12 @@ import {
   IconCheck,
   IconDots,
   IconExternalLink,
-  IconLoader2,
   IconRefresh,
   IconUnlink,
   IconWebhook,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -201,10 +199,12 @@ function DisconnectedCard({
 
 function SyncProgressBar({
   jobId,
+  provider,
   onCompleted,
   onFailed,
 }: {
   jobId: string;
+  provider: string;
   onCompleted: () => void;
   onFailed: (reason: string) => void;
 }) {
@@ -225,27 +225,56 @@ function SyncProgressBar({
     if (data?.state === "failed") onFailed(data.failedReason ?? tc("syncFailed"));
   }, [data?.state, data?.failedReason, onCompleted, onFailed, tc]);
 
+  const isWaiting = !data || data.state === "waiting" || data.state === "delayed";
   const progress = data?.progress;
   const pct = progress && progress.total > 0
     ? Math.round((progress.current / progress.total) * 100)
     : undefined;
-  const phaseLabel = progress ? (phaseLabels[progress.phase] ?? progress.phase) : tc("syncPhaseFetching");
-  const message = progress?.message ?? "";
+
+  const isIndeterminate = isWaiting || progress?.phase === "fetching" || progress?.phase === "deleting";
+  const providerLabel = provider.charAt(0).toUpperCase() + provider.slice(1);
+
+  const phaseLabel = isWaiting
+    ? tc("syncQueueWaiting", { provider: providerLabel })
+    : (progress ? (phaseLabels[progress.phase] ?? progress.phase) : tc("syncPhaseFetching"));
+
+  const message = (!isWaiting && progress?.message) ? progress.message : "";
 
   return (
-    <div className="space-y-2 px-4 pb-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-zinc-300">{phaseLabel}</span>
+    <div className="mx-4 mb-4 rounded-lg border border-zinc-700/50 bg-zinc-800/30 p-3 space-y-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          {isWaiting ? (
+            <span className="relative flex h-1.5 w-1.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-zinc-500 opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-zinc-400" />
+            </span>
+          ) : (
+            <span className="relative flex h-1.5 w-1.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-400" />
+            </span>
+          )}
+          <span className="text-xs font-medium text-zinc-300 truncate">{phaseLabel}</span>
+        </div>
         {pct !== undefined && (
-          <span className="text-xs text-zinc-500">{pct}%</span>
+          <span className="text-[11px] tabular-nums text-zinc-400 shrink-0">{pct}%</span>
         )}
       </div>
-      <Progress
-        value={pct ?? 0}
-        className="h-1.5 bg-zinc-800"
-      />
+
+      <div className="relative h-[3px] w-full overflow-hidden rounded-full bg-zinc-700/60">
+        {isIndeterminate ? (
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-zinc-400/60 to-transparent animate-shimmer bg-[length:200%_100%]" />
+        ) : (
+          <div
+            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-500 ease-out"
+            style={{ width: `${pct ?? 0}%` }}
+          />
+        )}
+      </div>
+
       {message && (
-        <p className="text-[11px] text-zinc-500 truncate">{message}</p>
+        <p className="text-[11px] text-zinc-500 truncate leading-none">{message}</p>
       )}
     </div>
   );
@@ -365,9 +394,6 @@ function ConnectedCard({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            {isSyncing && (
-              <IconLoader2 size={14} className="animate-spin text-zinc-500" />
-            )}
             <Button
               variant="outline"
               size="sm"
@@ -434,6 +460,7 @@ function ConnectedCard({
       {activeJobId && (
         <SyncProgressBar
           jobId={activeJobId}
+          provider={integration.provider}
           onCompleted={handleSyncCompleted}
           onFailed={handleSyncFailed}
         />

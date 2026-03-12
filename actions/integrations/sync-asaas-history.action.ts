@@ -34,6 +34,12 @@ export async function syncAsaasHistory(
   }
 
   const queue = getSyncQueue();
+
+  if (integration.syncJobId) {
+    const existingJob = await queue.getJob(integration.syncJobId);
+    if (existingJob) await existingJob.remove().catch(() => {});
+  }
+
   const job = await queue.add(
     "sync-asaas",
     { organizationId, integrationId, provider: "asaas" as const },
