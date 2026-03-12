@@ -182,8 +182,18 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    let text: string;
+    try {
+      const result = await model.generateContent(prompt);
+      text = result.response.text();
+    } catch (err) {
+      console.error("[ai/analyze] Gemini API error (comparison):", err);
+      const message = err instanceof Error ? err.message : "Unknown AI error";
+      return new Response(
+        JSON.stringify({ error: message }),
+        { status: 502, headers: { "Content-Type": "application/json" } },
+      );
+    }
 
     let parsed: IComparisonResult;
     try {
@@ -217,8 +227,18 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
+  let text: string;
+  try {
+    const result = await model.generateContent(prompt);
+    text = result.response.text();
+  } catch (err) {
+    console.error("[ai/analyze] Gemini API error (analysis):", err);
+    const message = err instanceof Error ? err.message : "Unknown AI error";
+    return new Response(
+      JSON.stringify({ error: message }),
+      { status: 502, headers: { "Content-Type": "application/json" } },
+    );
+  }
 
   let parsed: IAnalysisResult;
   try {

@@ -84,12 +84,19 @@ export async function POST(req: NextRequest) {
     cancel_url: cancelUrl ?? `${origin}/organizations?billing=canceled`,
     metadata: {
       groware_user_id: userRow.id,
+      groware_customer_id: userRow.id,
       plan_slug: planSlug,
     },
     subscription_data: {
       metadata: {
         groware_user_id: userRow.id,
+        groware_customer_id: userRow.id,
         plan_slug: planSlug,
+      },
+    },
+    payment_intent_data: {
+      metadata: {
+        groware_customer_id: userRow.id,
       },
     },
   });
