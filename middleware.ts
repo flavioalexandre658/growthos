@@ -28,9 +28,15 @@ export default async function middleware(req: NextRequest) {
   const intlResponse = intlMiddleware(req);
 
   if (!isPublicPage(pathname)) {
+    const secureCookie = process.env.NODE_ENV === "production";
+    const cookieName = secureCookie
+      ? "__Secure-next-auth.session-token"
+      : "next-auth.session-token";
+
     const token = await getToken({
       req,
       secret: process.env.NEXTAUTH_SECRET,
+      cookieName,
     });
 
     if (!token) {

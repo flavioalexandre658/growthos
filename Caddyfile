@@ -1,0 +1,8 @@
+app.groware.io {
+	reverse_proxy app:3000
+
+	encode gzip
+
+	@static path /tracker*.js /tracker*.map /_next/static/*
+	header @static Cache-Control "public, max-age=3600, stale-while-revalidate=86400"
+}

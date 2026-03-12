@@ -1,0 +1,9 @@
+# Groware Cron Jobs
+# Install: crontab -e (paste lines below)
+# Requires: CRON_SECRET env var set in /etc/environment or ~/.bashrc
+# Domain: replace groware.io with actual domain
+
+0 * * * * curl -sf -H "Authorization: Bearer $CRON_SECRET" https://app.groware.io/api/cron/email-sequences > /dev/null 2>&1
+0 * * * * curl -sf -H "Authorization: Bearer $CRON_SECRET" https://app.groware.io/api/cron/evaluate-alerts > /dev/null 2>&1
+0 3 * * * curl -sf -H "Authorization: Bearer $CRON_SECRET" https://app.groware.io/api/cron/aggregate-and-cleanup > /dev/null 2>&1
+0 11 * * 1 curl -sf -H "Authorization: Bearer $CRON_SECRET" https://app.groware.io/api/cron/weekly-digest > /dev/null 2>&1
