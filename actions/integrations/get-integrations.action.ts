@@ -21,6 +21,7 @@ export async function getIntegrations(organizationId: string): Promise<IIntegrat
       lastSyncedAt: integrations.lastSyncedAt,
       historySyncedAt: integrations.historySyncedAt,
       syncError: integrations.syncError,
+      syncJobId: integrations.syncJobId,
       providerMeta: integrations.providerMeta,
       createdAt: integrations.createdAt,
       updatedAt: integrations.updatedAt,
@@ -30,6 +31,7 @@ export async function getIntegrations(organizationId: string): Promise<IIntegrat
 
   return rows.map(({ providerMeta, ...row }) => ({
     ...row,
+    syncJobId: row.syncJobId ?? null,
     hasWebhookSecret: !!providerMeta?.webhookSecret,
   })) as IIntegration[];
 }

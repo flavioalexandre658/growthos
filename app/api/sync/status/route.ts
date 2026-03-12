@@ -20,7 +20,16 @@ export async function GET(req: NextRequest) {
   const job = await queue.getJob(jobId);
 
   if (!job) {
-    return NextResponse.json({ error: "Job not found" }, { status: 404 });
+    return NextResponse.json({
+      jobId,
+      state: "not_found",
+      progress: null,
+      result: null,
+      failedReason: null,
+      attemptsMade: 0,
+      timestamp: null,
+      finishedOn: null,
+    });
   }
 
   const state = await job.getState();

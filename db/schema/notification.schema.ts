@@ -19,7 +19,8 @@ export type NotificationType =
   | "milestone"
   | "email_sequence"
   | "weekly_digest"
-  | "recommendation";
+  | "recommendation"
+  | "sync";
 
 export const notifications = pgTable(
   "notifications",
@@ -40,6 +41,7 @@ export const notifications = pgTable(
         "email_sequence",
         "weekly_digest",
         "recommendation",
+        "sync",
       ],
     })
       .notNull()

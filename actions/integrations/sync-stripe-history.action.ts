@@ -40,5 +40,10 @@ export async function syncStripeHistory(
     { jobId: `stripe-${organizationId}-${Date.now()}` },
   );
 
+  await db
+    .update(integrations)
+    .set({ syncJobId: job.id!, syncError: null, updatedAt: new Date() })
+    .where(eq(integrations.id, integrationId));
+
   return { jobId: job.id! };
 }

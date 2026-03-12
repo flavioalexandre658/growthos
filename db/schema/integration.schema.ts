@@ -29,6 +29,7 @@ export const integrations = pgTable(
     lastSyncedAt: timestamp("last_synced_at"),
     historySyncedAt: timestamp("history_synced_at"),
     syncError: text("sync_error"),
+    syncJobId: text("sync_job_id"),
 
     providerAccountId: text("provider_account_id"),
     providerMeta: jsonb("provider_meta").$type<IIntegrationMeta>(),

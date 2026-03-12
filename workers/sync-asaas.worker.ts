@@ -341,6 +341,7 @@ export async function processAsaasSyncJob(job: Job<SyncJobData>): Promise<{
       historySyncedAt: new Date(),
       lastSyncedAt: new Date(),
       syncError: null,
+      syncJobId: null,
       updatedAt: new Date(),
     })
     .where(eq(integrations.id, integrationId));

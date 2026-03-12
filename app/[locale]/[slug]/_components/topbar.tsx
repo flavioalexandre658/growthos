@@ -24,6 +24,7 @@ import {
   IconFileAnalytics,
   IconBulb,
   IconX,
+  IconRefreshDot,
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { SensitiveToggle } from "@/components/ui/sensitive-toggle";
@@ -120,6 +121,8 @@ function notificationIcon(type: NotificationType) {
       return <IconFileAnalytics size={14} className={cn(cls, "text-violet-400")} />;
     case "recommendation":
       return <IconBulb size={14} className={cn(cls, "text-orange-400")} />;
+    case "sync":
+      return <IconRefreshDot size={14} className={cn(cls, "text-blue-400")} />;
   }
 }
 

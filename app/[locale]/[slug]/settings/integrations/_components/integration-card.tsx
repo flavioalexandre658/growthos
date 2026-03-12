@@ -221,7 +221,7 @@ function SyncProgressBar({
   };
 
   useEffect(() => {
-    if (data?.state === "completed") onCompleted();
+    if (data?.state === "completed" || data?.state === "not_found") onCompleted();
     if (data?.state === "failed") onFailed(data.failedReason ?? tc("syncFailed"));
   }, [data?.state, data?.failedReason, onCompleted, onFailed, tc]);
 
@@ -264,7 +264,7 @@ function ConnectedCard({
   const queryClient = useQueryClient();
   const { mutateAsync: disconnect, isPending: isDisconnecting } =
     useDisconnectIntegration(organizationId);
-  const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [activeJobId, setActiveJobId] = useState<string | null>(integration.syncJobId ?? null);
   const [webhookOpen, setWebhookOpen] = useState(!integration.hasWebhookSecret);
 
   const isSyncing = !!activeJobId;

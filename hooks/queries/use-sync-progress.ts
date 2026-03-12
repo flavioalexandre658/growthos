@@ -3,12 +3,12 @@ import type { SyncJobProgress } from "@/lib/queue";
 
 interface SyncStatusResponse {
   jobId: string;
-  state: "waiting" | "active" | "completed" | "failed" | "delayed" | "paused";
+  state: "waiting" | "active" | "completed" | "failed" | "delayed" | "paused" | "not_found";
   progress: SyncJobProgress | null;
   result: Record<string, number> | null;
   failedReason: string | null;
   attemptsMade: number;
-  timestamp: number;
+  timestamp: number | null;
   finishedOn: number | null;
 }
 
@@ -25,7 +25,7 @@ export function useSyncProgress(jobId: string | null) {
     enabled: !!jobId,
     refetchInterval: (query) => {
       const state = query.state.data?.state;
-      if (state === "completed" || state === "failed") return false;
+      if (state === "completed" || state === "failed" || state === "not_found") return false;
       return 2000;
     },
   });

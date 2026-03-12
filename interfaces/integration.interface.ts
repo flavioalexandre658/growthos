@@ -11,6 +11,7 @@ export interface IIntegration {
   lastSyncedAt: Date | null;
   historySyncedAt: Date | null;
   syncError: string | null;
+  syncJobId: string | null;
   hasWebhookSecret: boolean;
   createdAt: Date;
   updatedAt: Date;
