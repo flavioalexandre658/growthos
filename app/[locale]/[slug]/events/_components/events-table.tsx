@@ -213,8 +213,16 @@ function EventCard({
   const { isSensitive, maskName } = useSensitiveMode();
 
   const handleDelete = async () => {
-    await deleteMutation.mutateAsync({ id: event.id, organizationId });
-    toast.success(t("eventDeleted"));
+    try {
+      const result = await deleteMutation.mutateAsync({ id: event.id, organizationId });
+      if (!result || (Array.isArray(result) && result.length === 0)) {
+        toast.error(t("deleteEventError"));
+        return;
+      }
+      toast.success(t("eventDeleted"));
+    } catch {
+      toast.error(t("deleteEventError"));
+    }
   };
 
   return (
@@ -370,8 +378,16 @@ function EventRow({
   const { isSensitive, maskName } = useSensitiveMode();
 
   const handleDelete = async () => {
-    await deleteMutation.mutateAsync({ id: event.id, organizationId });
-    toast.success(t("eventDeleted"));
+    try {
+      const result = await deleteMutation.mutateAsync({ id: event.id, organizationId });
+      if (!result || (Array.isArray(result) && result.length === 0)) {
+        toast.error(t("deleteEventError"));
+        return;
+      }
+      toast.success(t("eventDeleted"));
+    } catch {
+      toast.error(t("deleteEventError"));
+    }
   };
 
   return (

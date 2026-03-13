@@ -25,6 +25,7 @@
       "selectAll": "Select all",
       "emptyState": "No events found for the applied filters",
       "eventDeleted": "Event deleted",
+      "deleteEventError": "Error deleting event",
       "batchDeleted": "{count} event(s) deleted",
       "deleteEvent": "Delete event",
       "renewalBadge": "renewal",

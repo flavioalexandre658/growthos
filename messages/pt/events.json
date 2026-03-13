@@ -25,6 +25,7 @@
       "selectAll": "Selecionar todos",
       "emptyState": "Nenhum evento encontrado para os filtros aplicados",
       "eventDeleted": "Evento excluído",
+      "deleteEventError": "Erro ao excluir evento",
       "batchDeleted": "{count} evento(s) excluído(s)",
       "deleteEvent": "Excluir evento",
       "renewalBadge": "renovação",
