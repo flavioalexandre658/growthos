@@ -1,6 +1,6 @@
 services:
   app:
-    image: registry.digitalocean.com/groware/groware:latest
+    image: groware:latest
     restart: unless-stopped
     env_file: .env
     expose:

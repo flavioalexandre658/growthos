@@ -4,47 +4,41 @@ on:
   push:
     branches: [main]
 
-env:
-  IMAGE: registry.digitalocean.com/groware/groware
-
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
+      - name: Copy code to Droplet
+        uses: appleboy/scp-action@v0.1.7
         with:
-          token: ${{ secrets.DO_REGISTRY_TOKEN }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "."
+          target: "/opt/groware-src"
+          rm: true
 
-      - name: Log in to DOCR
-        run: doctl registry login --expiry-seconds 600
-
-      - name: Build Docker image
-        env:
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_GTM_ID: ${{ secrets.NEXT_PUBLIC_GTM_ID }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-          NEXT_PUBLIC_GROWARE_KEY: ${{ secrets.NEXT_PUBLIC_GROWARE_KEY }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
-        run: docker build --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" --build-arg NEXT_PUBLIC_GTM_ID="$NEXT_PUBLIC_GTM_ID" --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" --build-arg NEXT_PUBLIC_GROWARE_KEY="$NEXT_PUBLIC_GROWARE_KEY" --build-arg DATABASE_URL="$DATABASE_URL" --build-arg NEXTAUTH_SECRET="$NEXTAUTH_SECRET" --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" -t ${{ env.IMAGE }}:${{ github.sha }} -t ${{ env.IMAGE }}:latest .
-
-      - name: Push to DOCR
-        run: |
-          docker push ${{ env.IMAGE }}:${{ github.sha }}
-          docker push ${{ env.IMAGE }}:latest
-
-      - name: Deploy via SSH
+      - name: Build and deploy on Droplet
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          command_timeout: 30m
           script: |
+            set -a; source /opt/groware/.env; set +a
+            cd /opt/groware-src
+            docker build \
+              --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
+              --build-arg NEXT_PUBLIC_GTM_ID="$NEXT_PUBLIC_GTM_ID" \
+              --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY" \
+              --build-arg NEXT_PUBLIC_GROWARE_KEY="$NEXT_PUBLIC_GROWARE_KEY" \
+              --build-arg DATABASE_URL="$DATABASE_URL" \
+              --build-arg NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
+              --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" \
+              -t groware:latest .
             cd /opt/groware
-            docker compose pull app
             docker compose up -d --remove-orphans
             docker image prune -f
