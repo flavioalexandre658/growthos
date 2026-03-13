@@ -4,7 +4,7 @@ import { createHash } from "crypto";
 
 export const dynamic = "force-dynamic";
 import { db } from "@/db";
-import { apiKeys, events, subscriptions, organizations, pageviewAggregates, usageMonthly, notifications } from "@/db/schema";
+import { apiKeys, events, subscriptions, organizations, usageMonthly, notifications } from "@/db/schema";
 import { resolveExchangeRate as resolveRate } from "@/utils/resolve-exchange-rate";
 import { checkRateLimit } from "@/utils/rate-limiter";
 import { insertPayment } from "@/utils/insert-payment";
