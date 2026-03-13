@@ -17,6 +17,9 @@ import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
 import { createNotification } from "@/utils/create-notification";
 import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
+import { invalidateOrgDashboardCache } from "@/lib/cache";
+import { getWebhookQueue } from "@/lib/queue";
+import type { WebhookJobData } from "@/lib/queue";
 import type { BillingInterval } from "@/utils/billing";
 
 interface AsaasPaymentPayload {
@@ -143,14 +146,26 @@ export async function POST(
     return new NextResponse(null, { status: 200 });
   }
 
-  await handleAsaasEvent(orgId, body, asaasApiKey).catch((err) => {
-    console.error("[asaas-webhook]", body.event, err);
-  });
+  try {
+    await handleAsaasEvent(orgId, body, asaasApiKey);
+    invalidateOrgDashboardCache(orgId).catch(() => {});
+  } catch (err) {
+    console.error("[asaas-webhook] inline processing failed, enqueueing retry:", body.event, err);
+    const jobData: WebhookJobData = {
+      provider: "asaas",
+      integrationId,
+      organizationId: orgId,
+      payload: JSON.stringify(body),
+    };
+    await getWebhookQueue().add(`asaas-retry-${body.payment?.id ?? Date.now()}`, jobData).catch((qErr) => {
+      console.error("[asaas-webhook] failed to enqueue retry:", qErr);
+    });
+  }
 
   return new NextResponse(null, { status: 200 });
 }
 
-async function handleAsaasEvent(orgId: string, body: AsaasWebhookBody, asaasApiKey: string) {
+export async function handleAsaasEvent(orgId: string, body: AsaasWebhookBody, asaasApiKey: string) {
   let shouldCheckMilestones = false;
 
   switch (body.event) {

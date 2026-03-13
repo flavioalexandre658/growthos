@@ -14,6 +14,9 @@ import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
 import { createNotification } from "@/utils/create-notification";
 import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
+import { invalidateOrgDashboardCache } from "@/lib/cache";
+import { getWebhookQueue } from "@/lib/queue";
+import type { WebhookJobData } from "@/lib/queue";
 
 function extractMetaCustomerId(metadata: Record<string, string> | null | undefined): string | null {
   if (!metadata) return null;
@@ -124,14 +127,26 @@ export async function POST(
     return response;
   }
 
-  await handleStripeEvent(orgId, event, stripe).catch((err) => {
-    console.error("[stripe-webhook]", event.type, err);
-  });
+  try {
+    await handleStripeEvent(orgId, event, stripe);
+    invalidateOrgDashboardCache(orgId).catch(() => {});
+  } catch (err) {
+    console.error("[stripe-webhook] inline processing failed, enqueueing retry:", event.type, err);
+    const jobData: WebhookJobData = {
+      provider: "stripe",
+      integrationId,
+      organizationId: orgId,
+      payload: JSON.stringify(event),
+    };
+    await getWebhookQueue().add(`stripe-retry-${event.id}`, jobData).catch((qErr) => {
+      console.error("[stripe-webhook] failed to enqueue retry:", qErr);
+    });
+  }
 
   return response;
 }
 
-async function handleStripeEvent(orgId: string, event: Stripe.Event, stripe: Stripe) {
+export async function handleStripeEvent(orgId: string, event: Stripe.Event, stripe: Stripe) {
   let shouldCheckMilestones = false;
 
   switch (event.type) {

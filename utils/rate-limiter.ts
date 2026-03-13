@@ -1,22 +1,31 @@
-const WINDOW_MS = 60_000;
+import { getRedis } from "@/lib/redis";
+
+const WINDOW_MS = 60;
 const MAX_REQUESTS = 1000;
 
-interface WindowEntry {
-  count: number;
-  resetAt: number;
-}
+const memoryWindows = new Map<string, { count: number; resetAt: number }>();
 
-const windows = new Map<string, WindowEntry>();
-
-export function checkRateLimit(key: string): boolean {
+function checkMemoryFallback(key: string): boolean {
   const now = Date.now();
-  const entry = windows.get(key);
-
+  const entry = memoryWindows.get(key);
   if (!entry || now > entry.resetAt) {
-    windows.set(key, { count: 1, resetAt: now + WINDOW_MS });
+    memoryWindows.set(key, { count: 1, resetAt: now + WINDOW_MS * 1000 });
     return true;
   }
-
   entry.count++;
   return entry.count <= MAX_REQUESTS;
+}
+
+export async function checkRateLimit(key: string): Promise<boolean> {
+  try {
+    const redis = getRedis();
+    const redisKey = `ratelimit:${key}`;
+    const count = await redis.incr(redisKey);
+    if (count === 1) {
+      await redis.expire(redisKey, WINDOW_MS);
+    }
+    return count <= MAX_REQUESTS;
+  } catch {
+    return checkMemoryFallback(key);
+  }
 }

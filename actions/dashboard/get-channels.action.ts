@@ -18,6 +18,8 @@ import {
 } from "@/utils/build-funnel-steps";
 import { getChannelName } from "@/utils/channel-colors";
 import { getSourceForChannelKey, getChannelKeysForSource, isGroupedSource, getMarketingSourceLabel, SOURCE_GROUPS } from "@/utils/marketing-sources";
+import { cacheGet, cacheSet, dashboardCacheKey } from "@/lib/cache";
+import { hashParams } from "@/utils/hash-params";
 import type {
   IDateFilter,
   IChannelParams,
@@ -26,6 +28,8 @@ import type {
   IChannelInvestmentGroup,
 } from "@/interfaces/dashboard.interface";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
+
+const CACHE_TTL = 45;
 
 const SOURCE_ALIASES: Record<string, string> = {
   fb: "facebook",
@@ -78,6 +82,10 @@ export async function getChannels(
   const session = await getServerSession(authOptions);
   if (!session?.user) return EMPTY;
   const locale = urlLocale ?? session.user.locale ?? "pt";
+
+  const cacheKey = dashboardCacheKey(organizationId, "channels", hashParams({ params, locale }));
+  const cached = await cacheGet<IChannelsResult>(cacheKey);
+  if (cached) return cached;
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
@@ -478,7 +486,7 @@ export async function getChannels(
     })
     .filter((g): g is IChannelInvestmentGroup => g !== null);
 
-  return {
+  const result: IChannelsResult = {
     data,
     pagination: {
       page,
@@ -493,4 +501,7 @@ export async function getChannels(
     concentrationTop2,
     investmentGroups,
   };
+
+  await cacheSet(cacheKey, result, CACHE_TTL);
+  return result;
 }

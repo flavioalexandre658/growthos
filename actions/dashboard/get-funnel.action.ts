@@ -15,7 +15,11 @@ import {
   injectCheckoutSteps,
 } from "@/utils/build-funnel-steps";
 import { reconcilePayments } from "@/utils/reconcile-payments";
+import { cacheGet, cacheSet, dashboardCacheKey } from "@/lib/cache";
+import { hashParams } from "@/utils/hash-params";
 import type { IDateFilter, IGenericFunnelData } from "@/interfaces/dashboard.interface";
+
+const CACHE_TTL = 45;
 
 export async function getFunnel(
   organizationId: string,
@@ -25,6 +29,10 @@ export async function getFunnel(
   const session = await getServerSession(authOptions);
   if (!session?.user) return null;
   const locale = urlLocale ?? session.user.locale ?? "pt";
+
+  const cacheKey = dashboardCacheKey(organizationId, "funnel", hashParams({ filter, locale }));
+  const cached = await cacheGet<IGenericFunnelData>(cacheKey);
+  if (cached) return cached;
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
@@ -184,7 +192,7 @@ export async function getFunnel(
     return { key: step.eventType, value };
   });
 
-  return {
+  const result: IGenericFunnelData = {
     steps,
     rates,
     revenue: grossRevenue,
@@ -193,4 +201,7 @@ export async function getFunnel(
     previousSteps,
     previousRevenue,
   };
+
+  await cacheSet(cacheKey, result, CACHE_TTL);
+  return result;
 }

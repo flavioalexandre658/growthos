@@ -13,6 +13,9 @@ import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
 import { upsertCustomer } from "@/utils/upsert-customer";
 import { extractGeo } from "@/utils/extract-geo";
 import { createNotification } from "@/utils/create-notification";
+import { cacheGet, cacheSet, apiKeyCacheKey, orgConfigCacheKey, invalidateOrgDashboardCache } from "@/lib/cache";
+import { getRedis } from "@/lib/redis";
+import { bufferPageview } from "@/utils/pageview-buffer";
 import dayjs from "@/utils/dayjs";
 
 const MAX_PAYLOAD_BYTES = 64 * 1024;
@@ -201,33 +204,19 @@ async function handlePageview(
   const sessionId = toString(body.session_id) ?? "unknown";
   const localDate = dayjs().tz(tz).format("YYYY-MM-DD");
 
-  await db
-    .insert(pageviewAggregates)
-    .values({
-      organizationId,
-      date: localDate,
-      sessionId,
-      landingPage: toString(body.landing_page),
-      entryPage: toString(body.entry_page),
-      source: toString(body.source),
-      medium: toString(body.medium),
-      campaign: toString(body.campaign),
-      content: toString(body.content),
-      device: toString(body.device),
-      referrer: toString(body.referrer),
-      pageviews: 1,
-    })
-    .onConflictDoUpdate({
-      target: [
-        pageviewAggregates.organizationId,
-        pageviewAggregates.date,
-        pageviewAggregates.sessionId,
-        pageviewAggregates.landingPage,
-      ],
-      set: {
-        pageviews: sql`${pageviewAggregates.pageviews} + 1`,
-      },
-    });
+  await bufferPageview({
+    organizationId,
+    date: localDate,
+    sessionId,
+    landingPage: toString(body.landing_page),
+    entryPage: toString(body.entry_page),
+    source: toString(body.source),
+    medium: toString(body.medium),
+    campaign: toString(body.campaign),
+    content: toString(body.content),
+    device: toString(body.device),
+    referrer: toString(body.referrer),
+  });
 }
 
 async function resolveExchangeRate(
@@ -376,21 +365,41 @@ export async function POST(req: NextRequest) {
     return jsonError("Missing key or event_type", 400, origin);
   }
 
-  if (!checkRateLimit(key)) {
+  if (!(await checkRateLimit(key))) {
     return jsonError("Rate limit exceeded", 429, origin);
   }
 
-  const [apiKey] = await db
-    .select()
-    .from(apiKeys)
-    .where(eq(apiKeys.key, key))
-    .limit(1);
+  type CachedApiKey = {
+    id: string;
+    key: string;
+    organizationId: string;
+    isActive: boolean;
+    expiresAt: string | null;
+  };
+  let apiKey: CachedApiKey | null = await cacheGet<CachedApiKey>(apiKeyCacheKey(key));
+  if (!apiKey) {
+    const [row] = await db
+      .select()
+      .from(apiKeys)
+      .where(eq(apiKeys.key, key))
+      .limit(1);
+    if (row) {
+      apiKey = {
+        id: row.id,
+        key: row.key,
+        organizationId: row.organizationId,
+        isActive: row.isActive,
+        expiresAt: row.expiresAt ? row.expiresAt.toISOString() : null,
+      };
+      await cacheSet(apiKeyCacheKey(key), apiKey, 300);
+    }
+  }
 
   if (!apiKey || !apiKey.isActive) {
     return jsonError("Invalid API key", 401, origin);
   }
 
-  if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
+  if (apiKey.expiresAt && new Date(apiKey.expiresAt) < new Date()) {
     return jsonError("API key expired", 401, origin);
   }
 
@@ -400,17 +409,26 @@ export async function POST(req: NextRequest) {
     .execute()
     .catch(() => {});
 
-  const [org] = await db
-    .select({
-      timezone: organizations.timezone,
-      currency: organizations.currency,
-    })
-    .from(organizations)
-    .where(eq(organizations.id, apiKey.organizationId))
-    .limit(1);
+  type CachedOrgConfig = { timezone: string; currency: string };
+  let orgConfig = await cacheGet<CachedOrgConfig>(orgConfigCacheKey(apiKey.organizationId));
+  if (!orgConfig) {
+    const [org] = await db
+      .select({
+        timezone: organizations.timezone,
+        currency: organizations.currency,
+      })
+      .from(organizations)
+      .where(eq(organizations.id, apiKey.organizationId))
+      .limit(1);
+    orgConfig = {
+      timezone: org?.timezone ?? "America/Sao_Paulo",
+      currency: org?.currency ?? "BRL",
+    };
+    await cacheSet(orgConfigCacheKey(apiKey.organizationId), orgConfig, 300);
+  }
 
-  const orgTimezone = org?.timezone ?? "America/Sao_Paulo";
-  const orgCurrency = org?.currency ?? "BRL";
+  const orgTimezone = orgConfig.timezone;
+  const orgCurrency = orgConfig.currency;
 
   const ownerId = await getOrgOwnerId(apiKey.organizationId);
 
@@ -561,6 +579,18 @@ export async function POST(req: NextRequest) {
       subscriptionId: toString(body.subscription_id),
       timestamp: eventTimestamp,
     });
+  }
+
+  const dedupRedisKey = `dedup:${apiKey.organizationId}:${eventHash}`;
+  try {
+    const alreadySeen = await getRedis().set(dedupRedisKey, "1", "EX", 86400, "NX");
+    if (!alreadySeen) {
+      const responseHeaders: Record<string, string> = { ...buildCorsHeaders(origin) };
+      responseHeaders["X-Groware-Duplicate"] = "true";
+      return new NextResponse(null, { status: 204, headers: responseHeaders });
+    }
+  } catch {
+    // Redis dedup unavailable, fall through to DB dedup
   }
 
   const inserted = await db.insert(events).values({
@@ -806,6 +836,8 @@ export async function POST(req: NextRequest) {
     eventType,
     body as Record<string, unknown>
   );
+
+  invalidateOrgDashboardCache(apiKey.organizationId).catch(() => {});
 
   return new NextResponse(null, { status: 204, headers: responseHeaders });
 }

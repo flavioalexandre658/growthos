@@ -12,7 +12,7 @@ import {
 import { eq, and, desc, gte, lt, sql } from "drizzle-orm";
 import dayjs from "@/utils/dayjs";
 import { createNotification } from "@/utils/create-notification";
-import { sendEmail } from "@/lib/email";
+import { enqueueEmail } from "@/utils/enqueue-email";
 import { alertNotificationEmail } from "@/lib/email-templates/alert-notification";
 import type { AlertType } from "@/db/schema/alert-config.schema";
 import type { NotificationType } from "@/db/schema/notification.schema";
@@ -205,10 +205,10 @@ export async function GET(req: NextRequest) {
     if (config.channelEmail) {
       const owners = await getOrgOwnerEmails(config.organizationId);
       for (const owner of owners) {
-        await sendEmail({
+        await enqueueEmail({
           to: owner.email,
           subject: `[Groware] Alerta: ${labelMap[config.type]}`,
-          html: alertNotificationEmail({
+          htmlBody: alertNotificationEmail({
             orgName: config.orgName,
             alertType: config.type,
             threshold: config.threshold,

@@ -14,8 +14,12 @@ import {
   injectCheckoutSteps,
   buildExtendedStepMeta,
 } from "@/utils/build-funnel-steps";
+import { cacheGet, cacheSet, dashboardCacheKey } from "@/lib/cache";
+import { hashParams } from "@/utils/hash-params";
 import type { IDateFilter, IDailyData, IDailyResult } from "@/interfaces/dashboard.interface";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
+
+const CACHE_TTL = 45;
 
 export async function getDaily(
   organizationId: string,
@@ -25,6 +29,10 @@ export async function getDaily(
   const session = await getServerSession(authOptions);
   if (!session?.user) return { rows: [], stepMeta: [] };
   const locale = urlLocale ?? session.user.locale ?? "pt";
+
+  const cacheKey = dashboardCacheKey(organizationId, "daily", hashParams({ filter, locale }));
+  const cached = await cacheGet<IDailyResult>(cacheKey);
+  if (cached) return cached;
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
@@ -151,5 +159,7 @@ export async function getDaily(
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, data]) => ({ date, ...data }));
 
-  return { rows, stepMeta };
+  const result: IDailyResult = { rows, stepMeta };
+  await cacheSet(cacheKey, result, CACHE_TTL);
+  return result;
 }

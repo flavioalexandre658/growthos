@@ -14,12 +14,16 @@ import {
   injectCheckoutSteps,
   buildExtendedStepMeta,
 } from "@/utils/build-funnel-steps";
+import { cacheGet, cacheSet, dashboardCacheKey } from "@/lib/cache";
+import { hashParams } from "@/utils/hash-params";
 import type {
   ILandingPageParams,
   ILandingPageData,
   ILandingPagesResult,
   IPageScatterPoint,
 } from "@/interfaces/dashboard.interface";
+
+const CACHE_TTL = 45;
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
 export async function getLandingPages(
@@ -44,6 +48,10 @@ export async function getLandingPages(
     };
   }
   const locale = urlLocale ?? session.user.locale ?? "pt";
+
+  const cacheKey = dashboardCacheKey(organizationId, "landing-pages", hashParams({ params, locale }));
+  const cached = await cacheGet<ILandingPagesResult>(cacheKey);
+  if (cached) return cached;
 
   const [org] = await db
     .select({ funnelSteps: organizations.funnelSteps, timezone: organizations.timezone })
@@ -254,7 +262,7 @@ export async function getLandingPages(
   const offset = (page - 1) * limit;
   const data = sorted.slice(offset, offset + limit);
 
-  return {
+  const result: ILandingPagesResult = {
     data,
     pagination: {
       page,
@@ -272,4 +280,7 @@ export async function getLandingPages(
     biggestOpportunityVisits,
     scatterData,
   };
+
+  await cacheSet(cacheKey, result, CACHE_TTL);
+  return result;
 }

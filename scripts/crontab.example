@@ -1,4 +1,9 @@
 # Groware Cron Jobs
+#
+# NOTE: Cron jobs are now managed by BullMQ repeatable jobs via the worker container.
+# The external crontab below is kept as a FALLBACK only.
+# If the worker container is running, these are NOT needed.
+#
 # Install: crontab -e (paste lines below)
 # Requires: CRON_SECRET env var set in /etc/environment or ~/.bashrc
 # Domain: replace groware.io with actual domain

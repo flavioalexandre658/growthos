@@ -3,7 +3,7 @@
 import { db } from "@/db";
 import { emailLogs } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
-import { sendEmail } from "@/lib/email";
+import { enqueueEmail } from "@/utils/enqueue-email";
 import type { IEmailDynamicData } from "./get-email-data.action";
 import type { Locale } from "@/lib/email-templates/base-layout";
 
@@ -234,12 +234,11 @@ export async function sendSequenceEmail(
 
   const subject = getEmailSubject(emailId, data);
 
-  await sendEmail({
+  await enqueueEmail({
     to: userEmail,
     subject,
-    html,
+    htmlBody: html,
     from: "Flavio from Groware <flavio@groware.io>",
-    replyTo: "support@groware.io",
   });
 
   await db.insert(emailLogs).values({
