@@ -1,14 +1,9 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    if (process.env.DISABLE_WORKERS === "true") {
-      console.log("[instrumentation] Workers disabled (DISABLE_WORKERS=true). App-only mode.");
-      return;
-    }
-
     const { startWorkers, stopWorkers } = await import("./workers/register");
     const { startPageviewFlushTimer, stopPageviewFlushTimer, flushPageviewBuffer } = await import("./utils/pageview-buffer");
 
-    startWorkers();
+    await startWorkers();
     startPageviewFlushTimer();
 
     const shutdown = async () => {
