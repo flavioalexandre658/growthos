@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 import { integrations, events, subscriptions, organizations } from "@/db/schema";
 import { decrypt } from "@/lib/crypto";
 import { eq } from "drizzle-orm";
-import { extractSubscriptionIdFromInvoice, mapBillingInterval, stripeEventHash } from "@/utils/stripe-helpers";
+import { extractSubscriptionIdFromInvoice, extractPaymentIntentFromInvoice, mapBillingInterval, stripeEventHash } from "@/utils/stripe-helpers";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
 import { checkMilestones } from "@/utils/milestones";
@@ -181,10 +181,6 @@ export async function handleStripeEvent(orgId: string, event: Stripe.Event, stri
     case "invoice.payment_failed":
       await handlePaymentFailed(orgId, event.data.object as Stripe.Invoice);
       break;
-    case "payment_intent.succeeded":
-      await handlePaymentIntentSucceeded(orgId, event.data.object as Stripe.PaymentIntent, event.created, stripe);
-      shouldCheckMilestones = true;
-      break;
   }
 
   if (shouldCheckMilestones) {
@@ -349,7 +345,7 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventTi
   const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
   const isRecurring = !!subscriptionId;
   const billingReason = invoice.billing_reason ?? null;
-  const eventType = isRecurring && billingReason === "subscription_cycle" ? "renewal" : "purchase";
+  const eventType = isRecurring && billingReason !== "subscription_create" ? "renewal" : "purchase";
 
   let billingInterval: string | null = null;
   if (subscriptionId) {
@@ -371,7 +367,8 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventTi
     invoice.amount_paid,
   );
 
-  const eventHash = stripeEventHash(orgId, invoice.id);
+  const piId = extractPaymentIntentFromInvoice(invoice);
+  const eventHash = stripeEventHash(orgId, piId ?? invoice.id);
 
   await db
     .insert(events)
@@ -794,140 +791,6 @@ async function handleSubscriptionUpdated(
       error: err instanceof Error ? err.message : String(err),
     });
   });
-}
-
-async function handlePaymentIntentSucceeded(
-  orgId: string,
-  paymentIntent: Stripe.PaymentIntent,
-  eventTimestamp: number,
-  stripe: Stripe,
-) {
-  if ((paymentIntent as unknown as Record<string, unknown>).invoice) return;
-  if (!paymentIntent.amount_received) return;
-
-  const rawCustomerId =
-    typeof paymentIntent.customer === "string"
-      ? paymentIntent.customer
-      : paymentIntent.customer?.id ?? null;
-
-  const customerId = await resolveCustomerId(
-    stripe,
-    paymentIntent.metadata as Record<string, string> | null,
-    rawCustomerId,
-    paymentIntent.id,
-  );
-
-  const acq = customerId ? await lookupAcquisitionContext(orgId, customerId) : null;
-
-  const eventCurrency = paymentIntent.currency.toUpperCase();
-  const orgCurrency = await getOrgCurrency(orgId);
-  const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
-    orgId,
-    eventCurrency,
-    orgCurrency,
-    paymentIntent.amount_received,
-  );
-
-  const pm =
-    typeof paymentIntent.payment_method === "string"
-      ? "credit_card"
-      : (paymentIntent.payment_method?.type ?? "credit_card");
-
-  const eventHash = stripeEventHash(orgId, paymentIntent.id);
-
-  await db
-    .insert(events)
-    .values({
-      organizationId: orgId,
-      eventType: "purchase",
-      grossValueInCents: paymentIntent.amount_received,
-      currency: eventCurrency,
-      baseCurrency,
-      exchangeRate,
-      baseGrossValueInCents,
-      billingType: "one_time",
-      billingReason: null,
-      billingInterval: null,
-      subscriptionId: null,
-      customerId: customerId ?? undefined,
-      paymentMethod: pm,
-      provider: "stripe",
-      eventHash,
-      createdAt: new Date(eventTimestamp * 1000),
-      source: acq?.source ?? null,
-      medium: acq?.medium ?? null,
-      campaign: acq?.campaign ?? null,
-      content: acq?.content ?? null,
-      landingPage: acq?.landingPage ?? null,
-      entryPage: acq?.entryPage ?? null,
-      sessionId: acq?.sessionId ?? null,
-    })
-    .onConflictDoUpdate({
-      target: [events.organizationId, events.eventHash],
-      set: {
-        grossValueInCents: paymentIntent.amount_received,
-        currency: eventCurrency,
-        baseCurrency,
-        exchangeRate,
-        baseGrossValueInCents,
-        createdAt: new Date(eventTimestamp * 1000),
-      },
-    });
-
-  await insertPayment({
-    organizationId: orgId,
-    eventType: "purchase",
-    grossValueInCents: paymentIntent.amount_received,
-    currency: eventCurrency,
-    baseCurrency,
-    exchangeRate,
-    baseGrossValueInCents,
-    billingType: "one_time",
-    billingReason: null,
-    billingInterval: null,
-    subscriptionId: null,
-    customerId: customerId ?? undefined,
-    paymentMethod: pm,
-    provider: "stripe",
-    eventHash,
-    createdAt: new Date(eventTimestamp * 1000),
-    source: acq?.source ?? null,
-    medium: acq?.medium ?? null,
-    campaign: acq?.campaign ?? null,
-    content: acq?.content ?? null,
-    landingPage: acq?.landingPage ?? null,
-    entryPage: acq?.entryPage ?? null,
-    sessionId: acq?.sessionId ?? null,
-  }).catch((err) => {
-    console.error("[stripe-webhook] insertPayment failed", {
-      orgId,
-      eventType: "purchase",
-      eventHash,
-      error: err instanceof Error ? err.message : String(err),
-    });
-  });
-
-  if (customerId) {
-    const billingDetails = paymentIntent.latest_charge &&
-      typeof paymentIntent.latest_charge === "object"
-      ? (paymentIntent.latest_charge as Stripe.Charge).billing_details
-      : null;
-
-    upsertCustomer({
-      organizationId: orgId,
-      customerId,
-      name: billingDetails?.name ?? null,
-      email: billingDetails?.email ?? null,
-      phone: billingDetails?.phone ?? null,
-      eventTimestamp: new Date(eventTimestamp * 1000),
-    }).catch((err) => {
-      console.error("[stripe-webhook] upsertCustomer failed (payment_intent.succeeded)", {
-        orgId,
-        customerId,
-        error: err instanceof Error ? err.message : String(err),
-      });
-    });
-  }
 }
 
 async function handlePaymentFailed(orgId: string, invoice: Stripe.Invoice) {

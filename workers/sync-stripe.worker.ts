@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { integrations, events, payments, subscriptions, organizations } from "@/db/schema";
 import { decrypt } from "@/lib/crypto";
 import { eq, and } from "drizzle-orm";
-import { extractSubscriptionIdFromInvoice, mapBillingInterval, stripeEventHash } from "@/utils/stripe-helpers";
+import { extractSubscriptionIdFromInvoice, extractPaymentIntentFromInvoice, mapBillingInterval, stripeEventHash } from "@/utils/stripe-helpers";
 import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
 import { SyncCaches } from "./shared/caches";
 import { bulkUpsertPayments, bulkUpsertEvents, bulkUpsertSubscriptions, bulkUpsertCustomers } from "./shared/bulk-operations";
@@ -241,7 +241,7 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
     const isRecurring = !!subscriptionId;
     const billingInterval = isRecurring ? (subIntervalMap.get(subscriptionId!) ?? "monthly") : undefined;
     const billingReason = invoice.billing_reason ?? null;
-    const eventType = isRecurring && billingReason === "subscription_cycle" ? "renewal" : "purchase";
+    const eventType = isRecurring && billingReason !== "subscription_create" ? "renewal" : "purchase";
     const paidAt = invoice.status_transitions?.paid_at ?? invoice.created;
 
     const eventCurrency = invoice.currency.toUpperCase();
@@ -249,7 +249,8 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
       organizationId, eventCurrency, orgCurrency, invoice.amount_paid,
     );
 
-    const eventHash = stripeEventHash(organizationId, invoice.id);
+    const invoicePiId = extractPaymentIntentFromInvoice(invoice);
+    const eventHash = stripeEventHash(organizationId, invoicePiId ?? invoice.id);
 
     eventRows.push({
       organizationId,

@@ -19,6 +19,16 @@ export function extractSubscriptionIdFromInvoice(invoice: Stripe.Invoice): strin
   return null;
 }
 
+export function extractPaymentIntentFromInvoice(invoice: Stripe.Invoice): string | null {
+  const legacyRef = (invoice as unknown as Record<string, unknown>).payment_intent;
+  if (!legacyRef) return null;
+  if (typeof legacyRef === "string") return legacyRef;
+  if (typeof legacyRef === "object" && legacyRef !== null) {
+    return (legacyRef as { id: string }).id;
+  }
+  return null;
+}
+
 export function mapBillingInterval(interval: string, intervalCount = 1): BillingInterval {
   if (interval === "year") return "yearly";
   if (interval === "week") return "weekly";
