@@ -18,7 +18,7 @@ export async function deleteEventsBatch(input: z.infer<typeof schema>) {
 
   const data = schema.parse(input);
 
-  const deleted = await db
+  const deletedEvents = await db
     .delete(events)
     .where(
       and(
@@ -26,19 +26,45 @@ export async function deleteEventsBatch(input: z.infer<typeof schema>) {
         inArray(events.id, data.ids)
       )
     )
-    .returning({ eventHash: events.eventHash });
+    .returning({ id: events.id, eventHash: events.eventHash });
 
-  const hashes = deleted.map((r) => r.eventHash).filter(Boolean) as string[];
-  if (hashes.length > 0) {
+  const deletedEventIds = new Set(deletedEvents.map((r) => r.id));
+  const eventHashes = deletedEvents.map((r) => r.eventHash).filter(Boolean) as string[];
+  if (eventHashes.length > 0) {
     await db
       .delete(payments)
       .where(
         and(
           eq(payments.organizationId, data.organizationId),
-          inArray(payments.eventHash, hashes)
+          inArray(payments.eventHash, eventHashes)
         )
       );
   }
 
-  return deleted;
+  const remainingIds = data.ids.filter((id) => !deletedEventIds.has(id));
+  if (remainingIds.length > 0) {
+    const deletedPayments = await db
+      .delete(payments)
+      .where(
+        and(
+          eq(payments.organizationId, data.organizationId),
+          inArray(payments.id, remainingIds)
+        )
+      )
+      .returning({ eventHash: payments.eventHash });
+
+    const paymentHashes = deletedPayments.map((r) => r.eventHash).filter(Boolean) as string[];
+    if (paymentHashes.length > 0) {
+      await db
+        .delete(events)
+        .where(
+          and(
+            eq(events.organizationId, data.organizationId),
+            inArray(events.eventHash, paymentHashes)
+          )
+        );
+    }
+  }
+
+  return deletedEvents;
 }

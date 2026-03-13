@@ -3,7 +3,7 @@ import type { Job } from "bullmq";
 import { db } from "@/db";
 import { integrations, events, payments, subscriptions, organizations } from "@/db/schema";
 import { decrypt } from "@/lib/crypto";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { extractSubscriptionIdFromInvoice, extractPaymentIntentFromInvoice, mapBillingInterval, stripeEventHash } from "@/utils/stripe-helpers";
 import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
 import { SyncCaches } from "./shared/caches";
@@ -408,6 +408,36 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
   await bulkUpsertEvents(eventRows);
   await bulkUpsertPayments(paymentRows);
   await bulkUpsertCustomers(customerRows);
+
+  await db.execute(sql`
+    DELETE FROM events e1
+    WHERE e1.organization_id = ${organizationId}
+      AND e1.provider IS NULL
+      AND EXISTS (
+        SELECT 1 FROM events e2
+        WHERE e2.organization_id = e1.organization_id
+          AND e2.customer_id = e1.customer_id
+          AND e2.event_type = e1.event_type
+          AND e2.gross_value_in_cents = e1.gross_value_in_cents
+          AND e2.provider = 'stripe'
+          AND ABS(EXTRACT(EPOCH FROM (e2.created_at - e1.created_at))) < 30
+      )
+  `);
+
+  await db.execute(sql`
+    DELETE FROM payments p1
+    WHERE p1.organization_id = ${organizationId}
+      AND p1.provider IS NULL
+      AND EXISTS (
+        SELECT 1 FROM payments p2
+        WHERE p2.organization_id = p1.organization_id
+          AND p2.customer_id = p1.customer_id
+          AND p2.event_type = p1.event_type
+          AND p2.amount_in_cents = p1.amount_in_cents
+          AND p2.provider = 'stripe'
+          AND ABS(EXTRACT(EPOCH FROM (p2.created_at - p1.created_at))) < 30
+      )
+  `);
 
   report(job, { phase: "finalizing", current: totalItems, total: totalItems, message: "Finalizando..." });
 
