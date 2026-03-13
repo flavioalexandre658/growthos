@@ -20,7 +20,9 @@ const schema = z.object({
 });
 
 export async function register(input: z.infer<typeof schema>) {
-  const data = schema.parse(input);
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) return { error: "VALIDATION_ERROR" };
+  const data = parsed.data;
 
   const [existing] = await db
     .select({ id: users.id, authProvider: users.authProvider })

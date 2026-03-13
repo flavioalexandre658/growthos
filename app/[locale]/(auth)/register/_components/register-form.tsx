@@ -94,10 +94,9 @@ export function RegisterForm() {
       } else {
         setErrorMessage(t("loginAfterRegisterError"));
       }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t("genericError");
-      setErrorMessage(message);
-      toast.error(message);
+    } catch {
+      setErrorMessage(t("genericError"));
+      toast.error(t("genericError"));
     } finally {
       setIsLoading(false);
     }

@@ -16,7 +16,9 @@ const schema = z.object({
 });
 
 export async function resetPassword(input: z.infer<typeof schema>) {
-  const data = schema.parse(input);
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) return { error: "VALIDATION_ERROR" };
+  const data = parsed.data;
 
   const [reset] = await db
     .select()
@@ -24,9 +26,9 @@ export async function resetPassword(input: z.infer<typeof schema>) {
     .where(eq(passwordResets.token, data.token))
     .limit(1);
 
-  if (!reset) throw new Error("Token inválido ou expirado.");
-  if (reset.usedAt) throw new Error("Este link já foi utilizado.");
-  if (reset.expiresAt < new Date()) throw new Error("Token expirado. Solicite um novo link.");
+  if (!reset) return { error: "INVALID_TOKEN" };
+  if (reset.usedAt) return { error: "TOKEN_USED" };
+  if (reset.expiresAt < new Date()) return { error: "TOKEN_EXPIRED" };
 
   const passwordHash = await bcrypt.hash(data.password, 12);
 

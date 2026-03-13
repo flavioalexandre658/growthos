@@ -57,20 +57,32 @@ export function ResetPasswordForm() {
 
     setIsLoading(true);
 
-    const result = await resetPassword({
-      token,
-      password: data.password,
-      confirmPassword: data.confirmPassword,
-    }).catch((err: Error) => {
-      toast.error(err.message ?? t("resetError"));
-      setIsLoading(false);
-      return null;
-    });
+    try {
+      const result = await resetPassword({
+        token,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+      });
 
-    if (result?.success) {
+      if ("error" in result) {
+        const msg =
+          result.error === "INVALID_TOKEN"
+            ? t("tokenError")
+            : result.error === "TOKEN_USED"
+              ? t("tokenUsed")
+              : result.error === "TOKEN_EXPIRED"
+                ? t("tokenExpired")
+                : t("resetError");
+        toast.error(msg);
+        return;
+      }
+
       setDone(true);
-      setIsLoading(false);
       setTimeout(() => router.push("/login"), 2500);
+    } catch {
+      toast.error(t("resetError"));
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -13,7 +13,9 @@ const schema = z.object({
 });
 
 export async function requestPasswordReset(input: z.infer<typeof schema>) {
-  const data = schema.parse(input);
+  const parsed = schema.safeParse(input);
+  if (!parsed.success) return { success: true };
+  const data = parsed.data;
 
   const [user] = await db
     .select({ id: users.id, name: users.name, email: users.email, locale: users.locale })
