@@ -23,13 +23,18 @@ export async function register(input: z.infer<typeof schema>) {
   const data = schema.parse(input);
 
   const [existing] = await db
-    .select({ id: users.id })
+    .select({ id: users.id, authProvider: users.authProvider })
     .from(users)
     .where(eq(users.email, data.email))
     .limit(1);
 
   if (existing) {
-    throw new Error("Este email já está cadastrado.");
+    return {
+      error:
+        existing.authProvider === "google"
+          ? "EMAIL_REGISTERED_WITH_GOOGLE"
+          : "EMAIL_ALREADY_EXISTS",
+    };
   }
 
   const passwordHash = await bcrypt.hash(data.password, 12);
@@ -65,5 +70,5 @@ export async function register(input: z.infer<typeof schema>) {
     console.error("[welcome-email]", err);
   });
 
-  return user;
+  return { user };
 }

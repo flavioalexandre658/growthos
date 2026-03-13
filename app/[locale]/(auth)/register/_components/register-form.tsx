@@ -60,15 +60,29 @@ export function RegisterForm() {
     setErrorMessage(null);
 
     try {
-      const user = await registerUser({ ...data, locale: locale as "pt" | "en" });
+      const result = await registerUser({ ...data, locale: locale as "pt" | "en" });
 
-      const result = await signIn("credentials", {
+      if ("error" in result) {
+        const msg =
+          result.error === "EMAIL_REGISTERED_WITH_GOOGLE"
+            ? t("emailRegisteredWithGoogle")
+            : result.error === "EMAIL_ALREADY_EXISTS"
+              ? t("emailAlreadyExists")
+              : t("genericError");
+        setErrorMessage(msg);
+        toast.error(msg);
+        return;
+      }
+
+      const { user } = result;
+
+      const loginResult = await signIn("credentials", {
         email: data.email,
         password: data.password,
         redirect: false,
       });
 
-      if (result?.ok) {
+      if (loginResult?.ok) {
         growareIdentify(user.id, { name: user.name, email: user.email });
         growareTrack("signup", {
           dedupe: true,
@@ -81,8 +95,7 @@ export function RegisterForm() {
         setErrorMessage(t("loginAfterRegisterError"));
       }
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : t("genericError");
+      const message = err instanceof Error ? err.message : t("genericError");
       setErrorMessage(message);
       toast.error(message);
     } finally {
