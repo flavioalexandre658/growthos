@@ -180,6 +180,15 @@
     { pattern: /search\.brave/i, source: "brave" },
   ];
 
+  var IN_APP_BROWSERS = [
+    { pattern: /Pinterest/i, source: "pinterest" },
+    { pattern: /LinkedInApp/i, source: "linkedin" },
+    { pattern: /musical_ly|BytedanceWebview|TikTok/i, source: "tiktok" },
+    { pattern: /Twitter|X\/|x_twitter/i, source: "twitter" },
+    { pattern: /Snapchat/i, source: "snapchat" },
+    { pattern: /FBAV|FBAN/i, source: "facebook" },
+  ];
+
   function isSameSite(referrer) {
     if (!referrer) return false;
     try {
@@ -191,12 +200,23 @@
     }
   }
 
+  function inferSourceFromUserAgent() {
+    var ua = navigator.userAgent || "";
+    for (var i = 0; i < IN_APP_BROWSERS.length; i++) {
+      if (IN_APP_BROWSERS[i].pattern.test(ua)) {
+        var src = IN_APP_BROWSERS[i].source;
+        if (src === "facebook" && /Instagram/i.test(ua)) return "instagram";
+        return src;
+      }
+    }
+    return null;
+  }
+
   function inferSourceFromReferrer(referrer) {
     if (!referrer || isSameSite(referrer)) {
-      var ua = navigator.userAgent || "";
-      if (!referrer && /FBAV|FBAN/i.test(ua)) {
-        if (/Instagram/i.test(ua)) return "instagram";
-        return "facebook";
+      if (!referrer) {
+        var inAppSource = inferSourceFromUserAgent();
+        if (inAppSource) return inAppSource;
       }
       return "direct";
     }
@@ -214,7 +234,7 @@
 
   function inferMediumFromReferrer(referrer) {
     if (!referrer || isSameSite(referrer)) {
-      if (!referrer && /FBAV|FBAN/i.test(navigator.userAgent || "")) return "referral";
+      if (!referrer && inferSourceFromUserAgent()) return "referral";
       return "direct";
     }
     var source = inferSourceFromReferrer(referrer);
