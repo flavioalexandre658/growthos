@@ -139,3 +139,14 @@ export function getChannelName(channel: string, locale?: string): string {
   const map = locale === "en" ? CHANNEL_NAMES_EN : CHANNEL_NAMES;
   return map[channel] ?? formatChannelKey(channel);
 }
+
+const PAID_MEDIUMS = new Set(["cpc", "ppc", "paid", "ads", "paid_social", "display", "cpv", "cpm"]);
+
+export function deriveChannel(source: string | null, medium: string | null): string | null {
+  if (!source) return null;
+  const s = source.toLowerCase();
+  const m = (medium ?? "").toLowerCase();
+  if (s === "direct" && (m === "direct" || m === "(none)" || !m)) return "direct";
+  if (PAID_MEDIUMS.has(m)) return `${s}_paid`;
+  return `${s}_organic`;
+}

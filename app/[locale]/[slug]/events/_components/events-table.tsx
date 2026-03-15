@@ -46,6 +46,7 @@ import type { DetailFieldProps } from "./event-detail-field";
 import type { IEvent } from "@/interfaces/event.interface";
 import type { IPaginationMeta } from "@/interfaces/dashboard.interface";
 import { useSensitiveMode } from "@/hooks/use-sensitive-mode";
+import { ChannelBadge } from "@/components/ui/channel-badge";
 
 dayjs.extend(relativeTime);
 
@@ -295,7 +296,7 @@ function EventCard({
                 {formatEventValue(event)}
               </span>
             )}
-            {event.source && <span className="text-zinc-500">{event.source}</span>}
+            {event.source && <ChannelBadge source={event.source} medium={event.medium} size="xs" />}
             {event.productName && (
               <span className="text-zinc-400 truncate max-w-[140px]">{event.productName}</span>
             )}
@@ -497,9 +498,7 @@ function EventRow({
           )}
         </td>
         <td className="px-3 py-2.5">
-          <span className="text-xs text-zinc-400">
-            {event.source ?? <span className="text-zinc-700">—</span>}
-          </span>
+          <ChannelBadge source={event.source} medium={event.medium} size="xs" />
         </td>
         <td className="px-3 py-2.5 max-w-[160px]">
           {event.productName ? (

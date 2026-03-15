@@ -21,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { ChannelBadge } from "@/components/ui/channel-badge";
 import { useSensitiveMode } from "@/hooks/use-sensitive-mode";
 
 const MEDAL_COLORS = [
@@ -156,11 +157,11 @@ export function TopCustomersRanking() {
                 </span>
 
                 <div className="hidden sm:flex items-center justify-between gap-1">
-                  <span className="text-xs text-zinc-500 truncate">
-                    {[customer.firstSource, customer.firstCampaign]
-                      .filter(Boolean)
-                      .join(" / ") || "—"}
-                  </span>
+                  <ChannelBadge
+                    source={customer.firstSource}
+                    medium={customer.firstMedium}
+                    size="xs"
+                  />
                   <IconArrowNarrowRight size={12} className="text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0" />
                 </div>
               </Link>

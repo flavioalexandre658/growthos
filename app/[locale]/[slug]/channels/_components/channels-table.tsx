@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations } from "next-intl";
 import {
   IChannelData,
   IStepMeta,
@@ -11,7 +11,7 @@ import {
 import { ResponsiveTable, TableColumn, ServerPaginationConfig } from "@/components/ui/responsive-table";
 import { IconChevronDown, IconChevronUp, IconEye, IconEyeOff } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { getChannelName, getChannelColor } from "@/utils/channel-colors";
+import { ChannelBadge } from "@/components/ui/channel-badge";
 import { fmtInt, fmtBRLDecimal } from "@/utils/format";
 
 function roiColor(roi: number) {
@@ -154,7 +154,6 @@ export function ChannelsTable({
   onPageSizeChange,
 }: ChannelsTableProps) {
   const t = useTranslations("channels.table");
-  const locale = useLocale();
   const [showNoRevenue, setShowNoRevenue] = useState(false);
 
   const withRevenue = data.filter((c) => c.revenue > 0);
@@ -224,19 +223,11 @@ export function ChannelsTable({
       header: t("colChannel"),
       mobilePrimary: true,
       render: (c) => (
-        <div className="flex items-center gap-2.5">
-          <div
-            className="h-2.5 w-2.5 rounded-full shrink-0"
-            style={{ background: getChannelColor(c.channel, c.colorIndex) }}
-          />
-          <div className="flex flex-col">
-            <span className="font-semibold text-sm text-zinc-200">
-              {getChannelName(c.channel, locale)}
-            </span>
-            {!c.revenue && (
-              <span className="text-[10px] text-zinc-600">{t("noRevenue")}</span>
-            )}
-          </div>
+        <div className="flex items-center gap-1">
+          <ChannelBadge channel={c.channel} size="sm" linkToChannel={false} />
+          {!c.revenue && (
+            <span className="text-[10px] text-zinc-600 ml-1">{t("noRevenue")}</span>
+          )}
         </div>
       ),
     },

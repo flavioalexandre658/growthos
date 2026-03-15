@@ -12,6 +12,7 @@ import { useOrganization } from "@/components/providers/organization-provider";
 import { formatDate } from "@/utils/format-date";
 import { getEventTypeBadgeClass } from "./events-filters";
 import { DetailField } from "./event-detail-field";
+import { ChannelBadge } from "@/components/ui/channel-badge";
 import type { ICustomerEvent } from "@/interfaces/event.interface";
 import { useSensitiveMode } from "@/hooks/use-sensitive-mode";
 
@@ -221,6 +222,9 @@ export function CustomerTimeline({
                             <span className="rounded border border-violet-500/40 bg-violet-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-violet-400 shrink-0">
                               {t("currentBadge")}
                             </span>
+                          )}
+                          {event.source && (
+                            <ChannelBadge source={event.source} medium={event.medium} size="xs" />
                           )}
                           {value && (
                             <span className="text-[10px] font-mono font-semibold text-emerald-400 shrink-0">

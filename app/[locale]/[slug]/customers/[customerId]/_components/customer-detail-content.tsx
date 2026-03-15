@@ -18,6 +18,7 @@ import { useCustomerSummary } from "@/hooks/queries/use-customer-summary";
 import { useCustomerFunnel } from "@/hooks/queries/use-customer-funnel";
 import type { ICustomerSummary } from "@/actions/customers/get-customer-summary.action";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ChannelBadge } from "@/components/ui/channel-badge";
 import { CustomerTimeline } from "../../../events/_components/customer-timeline";
 import { FunnelSection } from "@/app/[locale]/[slug]/_components/funnel-section";
 import { StepVisibilityToggle } from "@/components/ui/step-visibility-toggle";
@@ -59,8 +60,11 @@ function AcquisitionCard({ summary }: {
 
   return (
     <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/30 overflow-hidden">
-      <div className="px-4 py-3 border-b border-zinc-800/40">
+      <div className="px-4 py-3 border-b border-zinc-800/40 flex items-center justify-between gap-2">
         <h3 className="text-xs font-semibold text-zinc-400">{ta("title")}</h3>
+        {acquisition.source && (
+          <ChannelBadge source={acquisition.source} medium={acquisition.medium} size="sm" />
+        )}
       </div>
       <div className="divide-y divide-zinc-800/30">
         {fields.filter((f) => f.value).map((f) => (

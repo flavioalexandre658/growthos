@@ -22,7 +22,7 @@
       "customer": "Cliente",
       "customerId": "ID do Cliente",
       "location": "Localização",
-      "source": "Fonte",
+      "channel": "Canal",
       "firstSeen": "Primeiro acesso",
       "lastSeen": "Último acesso"
     },

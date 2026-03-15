@@ -22,7 +22,7 @@
       "customer": "Customer",
       "customerId": "Customer ID",
       "location": "Location",
-      "source": "Source",
+      "channel": "Channel",
       "firstSeen": "First seen",
       "lastSeen": "Last seen"
     },

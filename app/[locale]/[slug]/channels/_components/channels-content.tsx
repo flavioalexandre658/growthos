@@ -20,16 +20,17 @@ const EMPTY_PAGINATION = { page: 1, limit: 30, total: 0, total_pages: 0 };
 
 interface ChannelsContentProps {
   filter: IDateFilter;
+  initialSearch?: string;
 }
 
-export function ChannelsContent({ filter }: ChannelsContentProps) {
+export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps) {
   const t = useTranslations("channels.content");
   const tTour = useTranslations("tour.welcome.channels");
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const slug = organization?.slug ?? "";
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialSearch ?? "");
   const debouncedSearch = useDebounce(search, 400);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(30);

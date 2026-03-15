@@ -10,6 +10,7 @@ interface ChannelsPageProps {
     period?: string;
     start_date?: string;
     end_date?: string;
+    search?: string;
   }>;
 }
 
@@ -24,7 +25,7 @@ export default async function ChannelsPage({
 
   return (
     <div className="p-5 lg:p-6">
-      <ChannelsContent filter={filter} />
+      <ChannelsContent filter={filter} initialSearch={params.search} />
     </div>
   );
 }

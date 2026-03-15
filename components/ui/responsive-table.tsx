@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
@@ -259,9 +259,8 @@ export function ResponsiveTable<T>({
                   const key = getRowKey(row);
                   const isExpanded = expandedKey === key;
                   return (
-                    <>
+                    <Fragment key={key}>
                       <tr
-                        key={key}
                         onClick={expandedRowRender ? () => setExpandedKey(isExpanded ? null : key) : undefined}
                         className={cn(
                           "border-b border-zinc-800/60 transition-colors",
@@ -299,7 +298,7 @@ export function ResponsiveTable<T>({
                           </td>
                         </tr>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
           </tbody>

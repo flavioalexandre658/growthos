@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { ChannelBadge } from "@/components/ui/channel-badge";
 import type { ICustomerListParams } from "@/interfaces/customer.interface";
 import { AtRiskCustomers } from "./at-risk-customers";
 import { TopCustomersRanking } from "./top-customers-ranking";
@@ -108,7 +109,7 @@ function AllCustomersList() {
         <div className="hidden sm:grid grid-cols-[1fr_150px_110px_100px_100px] px-4 py-2 border-b border-zinc-800/60 text-[10px] font-semibold uppercase tracking-wider text-zinc-600">
           <span>{t("table.customer")}</span>
           <span>{t("table.location")}</span>
-          <span>{t("table.source")}</span>
+          <span>{t("table.channel")}</span>
           <span>{t("table.firstSeen")}</span>
           <span>{t("table.lastSeen")}</span>
         </div>
@@ -182,8 +183,12 @@ function AllCustomersList() {
                   </span>
                 </div>
 
-                <span className="hidden sm:block text-xs text-zinc-500 truncate">
-                  {customer.firstSource ?? <span className="text-zinc-700">—</span>}
+                <span className="hidden sm:block truncate">
+                  <ChannelBadge
+                    source={customer.firstSource}
+                    medium={customer.firstMedium}
+                    size="xs"
+                  />
                 </span>
 
                 <span className="hidden sm:block text-xs text-zinc-500">
