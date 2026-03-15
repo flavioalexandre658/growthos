@@ -614,6 +614,8 @@ export async function POST(req: NextRequest) {
 
     source: toString(body.source),
     medium: toString(body.medium),
+    rawSource: toString(body.source),
+    rawMedium: toString(body.medium),
     campaign: toString(body.campaign),
     content: toString(body.content),
     landingPage: toString(body.landing_page),
@@ -784,6 +786,8 @@ export async function POST(req: NextRequest) {
       category: toString(body.category),
       source: toString(body.source),
       medium: toString(body.medium),
+      rawSource: toString(body.source),
+      rawMedium: toString(body.medium),
       campaign: toString(body.campaign),
       content: toString(body.content),
       landingPage: toString(body.landing_page),

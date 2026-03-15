@@ -42,6 +42,13 @@ const SOURCE_ALIASES: Record<string, string> = {
   x: "twitter",
   openai: "chatgpt",
   "chat.openai": "chatgpt",
+  insta: "instagram",
+  li: "linkedin",
+  pin: "pinterest",
+  snap: "snapchat",
+  sc: "snapchat",
+  tt: "tiktok",
+  bsky: "bluesky",
 };
 
 function normalizeSource(source: string): string {

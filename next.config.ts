@@ -19,7 +19,19 @@ const nextConfig: NextConfig = {
       headers: [
         {
           key: "Cache-Control",
-          value: "public, max-age=3600, stale-while-revalidate=86400",
+          value: "public, max-age=86400, stale-while-revalidate=604800",
+        },
+        {
+          key: "Content-Type",
+          value: "application/javascript; charset=utf-8",
+        },
+        {
+          key: "X-Content-Type-Options",
+          value: "nosniff",
+        },
+        {
+          key: "Timing-Allow-Origin",
+          value: "*",
         },
       ],
     },
@@ -28,7 +40,19 @@ const nextConfig: NextConfig = {
       headers: [
         {
           key: "Cache-Control",
-          value: "public, max-age=3600, stale-while-revalidate=86400",
+          value: "public, max-age=86400, stale-while-revalidate=604800",
+        },
+        {
+          key: "Content-Type",
+          value: "application/javascript; charset=utf-8",
+        },
+        {
+          key: "X-Content-Type-Options",
+          value: "nosniff",
+        },
+        {
+          key: "Timing-Allow-Origin",
+          value: "*",
         },
       ],
     },
@@ -37,7 +61,7 @@ const nextConfig: NextConfig = {
       headers: [
         {
           key: "Cache-Control",
-          value: "public, max-age=3600, stale-while-revalidate=86400",
+          value: "public, max-age=86400, stale-while-revalidate=604800",
         },
       ],
     },

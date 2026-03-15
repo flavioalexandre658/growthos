@@ -27,6 +27,8 @@ export const events = pgTable(
 
     source: text("source"),
     medium: text("medium"),
+    rawSource: text("raw_source"),
+    rawMedium: text("raw_medium"),
     campaign: text("campaign"),
     content: text("content"),
     landingPage: text("landing_page"),

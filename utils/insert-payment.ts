@@ -41,6 +41,8 @@ async function executeInsert(data: InsertPaymentData): Promise<void> {
         provider: data.provider,
         source: data.source,
         medium: data.medium,
+        rawSource: data.rawSource,
+        rawMedium: data.rawMedium,
         campaign: data.campaign,
         content: data.content,
         landingPage: data.landingPage,

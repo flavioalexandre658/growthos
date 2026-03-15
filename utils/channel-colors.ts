@@ -26,6 +26,13 @@ export const CHANNEL_COLORS: Record<string, string> = {
   gemini_organic: "#886efe",
   claude_organic: "#d97706",
   copilot_organic: "#0078d4",
+  reddit_organic: "#ff4500",
+  threads_organic: "#000000",
+  bluesky_organic: "#0085ff",
+  snapchat_organic: "#fffc00",
+  snapchat_paid: "#f5c518",
+  deepseek_organic: "#4d6bfe",
+  brave_organic: "#fb542b",
 };
 
 export const CHANNEL_NAMES: Record<string, string> = {
@@ -58,6 +65,13 @@ export const CHANNEL_NAMES: Record<string, string> = {
   gemini_organic: "Gemini",
   claude_organic: "Claude",
   copilot_organic: "Copilot",
+  reddit_organic: "Reddit",
+  threads_organic: "Threads",
+  bluesky_organic: "Bluesky",
+  snapchat_organic: "Snapchat",
+  snapchat_paid: "Snapchat Ads",
+  deepseek_organic: "DeepSeek",
+  brave_organic: "Brave Search",
 };
 
 export const CHANNEL_NAMES_EN: Record<string, string> = {
@@ -90,6 +104,13 @@ export const CHANNEL_NAMES_EN: Record<string, string> = {
   gemini_organic: "Gemini",
   claude_organic: "Claude",
   copilot_organic: "Copilot",
+  reddit_organic: "Reddit",
+  threads_organic: "Threads",
+  bluesky_organic: "Bluesky",
+  snapchat_organic: "Snapchat",
+  snapchat_paid: "Snapchat Ads",
+  deepseek_organic: "DeepSeek",
+  brave_organic: "Brave Search",
 };
 
 const COLOR_FALLBACKS = [

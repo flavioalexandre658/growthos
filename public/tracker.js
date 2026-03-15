@@ -144,6 +144,8 @@
     "gemini",
     "claude",
     "copilot",
+    "brave",
+    "deepseek",
   ];
 
   var SOURCE_PATTERNS = [
@@ -169,6 +171,13 @@
     { pattern: /perplexity/i, source: "perplexity" },
     { pattern: /claude\.ai/i, source: "claude" },
     { pattern: /copilot\.microsoft/i, source: "copilot" },
+    { pattern: /x\.com/i, source: "twitter" },
+    { pattern: /reddit/i, source: "reddit" },
+    { pattern: /threads\.net/i, source: "threads" },
+    { pattern: /bsky\.app|bluesky/i, source: "bluesky" },
+    { pattern: /snapchat/i, source: "snapchat" },
+    { pattern: /deepseek/i, source: "deepseek" },
+    { pattern: /search\.brave/i, source: "brave" },
   ];
 
   function isSameSite(referrer) {
@@ -183,7 +192,14 @@
   }
 
   function inferSourceFromReferrer(referrer) {
-    if (!referrer || isSameSite(referrer)) return "direct";
+    if (!referrer || isSameSite(referrer)) {
+      var ua = navigator.userAgent || "";
+      if (!referrer && /FBAV|FBAN/i.test(ua)) {
+        if (/Instagram/i.test(ua)) return "instagram";
+        return "facebook";
+      }
+      return "direct";
+    }
     for (var i = 0; i < SOURCE_PATTERNS.length; i++) {
       if (SOURCE_PATTERNS[i].pattern.test(referrer)) {
         return SOURCE_PATTERNS[i].source;
@@ -197,7 +213,10 @@
   }
 
   function inferMediumFromReferrer(referrer) {
-    if (!referrer || isSameSite(referrer)) return "direct";
+    if (!referrer || isSameSite(referrer)) {
+      if (!referrer && /FBAV|FBAN/i.test(navigator.userAgent || "")) return "referral";
+      return "direct";
+    }
     var source = inferSourceFromReferrer(referrer);
     for (var i = 0; i < SEARCH_ENGINES.length; i++) {
       if (source === SEARCH_ENGINES[i]) return "organic";
@@ -218,6 +237,11 @@
     { param: "pclid", source: "pinterest", medium: "paid_social" },
   ];
 
+  function resolveMetaSource(referrer) {
+    if (referrer && /instagram/i.test(referrer)) return "instagram";
+    return "facebook";
+  }
+
   function detectClickId(params) {
     for (var i = 0; i < CLICK_ID_MAP.length; i++) {
       if (params.get(CLICK_ID_MAP[i].param)) {
@@ -235,7 +259,7 @@
 
       if (clickId) {
         var utms = {
-          source: utmSource || clickId.source,
+          source: utmSource || (clickId.param === "fbclid" ? resolveMetaSource(document.referrer) : clickId.source),
           medium: params.get("utm_medium") || clickId.medium,
           campaign: params.get("utm_campaign") || null,
           content: params.get("utm_content") || null,
@@ -248,7 +272,7 @@
       if (utmSource) {
         var utms = {
           source: utmSource,
-          medium: params.get("utm_medium") || "cpc",
+          medium: params.get("utm_medium") || "referral",
           campaign: params.get("utm_campaign") || null,
           content: params.get("utm_content") || null,
           term: params.get("utm_term") || null,
@@ -314,7 +338,7 @@
 
       var source =
         utmSource ||
-        (clickId && clickId.source) ||
+        (clickId && (clickId.param === "fbclid" ? resolveMetaSource(rawReferrer) : clickId.source)) ||
         inferSourceFromReferrer(externalReferrer);
 
       var medium =
@@ -382,7 +406,7 @@
 
     var source =
       params.get("utm_source") ||
-      (clickId && clickId.source) ||
+      (clickId && (clickId.param === "fbclid" ? resolveMetaSource(document.referrer) : clickId.source)) ||
       (storedUtms && storedUtms.source) ||
       inferSourceFromReferrer(externalReferrer);
 
