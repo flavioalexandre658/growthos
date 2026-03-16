@@ -178,6 +178,10 @@ export async function handleStripeEvent(orgId: string, event: Stripe.Event, stri
       );
       shouldCheckMilestones = true;
       break;
+    case "payment_intent.succeeded":
+      await handlePaymentIntentSucceeded(orgId, event.data.object as Stripe.PaymentIntent, event.created, stripe);
+      shouldCheckMilestones = true;
+      break;
     case "invoice.payment_failed":
       await handlePaymentFailed(orgId, event.data.object as Stripe.Invoice);
       break;
@@ -791,6 +795,155 @@ async function handleSubscriptionUpdated(
       error: err instanceof Error ? err.message : String(err),
     });
   });
+}
+
+async function handlePaymentIntentSucceeded(
+  orgId: string,
+  paymentIntent: Stripe.PaymentIntent,
+  eventTimestamp: number,
+  stripe: Stripe,
+) {
+  if (paymentIntent.amount <= 0) return;
+  if (paymentIntent.status !== "succeeded") return;
+
+  const rawStripeCustomerId =
+    typeof paymentIntent.customer === "string"
+      ? paymentIntent.customer
+      : paymentIntent.customer?.id ?? null;
+  const customerId = await resolveCustomerId(
+    stripe,
+    paymentIntent.metadata as Record<string, string> | null,
+    rawStripeCustomerId,
+    paymentIntent.id,
+  );
+  if (!customerId) return;
+
+  const acq = await lookupAcquisitionContext(orgId, customerId);
+
+  const eventCurrency = paymentIntent.currency.toUpperCase();
+  const orgCurrency = await getOrgCurrency(orgId);
+  const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
+    orgId,
+    eventCurrency,
+    orgCurrency,
+    paymentIntent.amount,
+  );
+
+  const eventHash = stripeEventHash(orgId, paymentIntent.id);
+
+  await db
+    .insert(events)
+    .values({
+      organizationId: orgId,
+      eventType: "purchase",
+      grossValueInCents: paymentIntent.amount,
+      currency: eventCurrency,
+      baseCurrency,
+      exchangeRate,
+      baseGrossValueInCents,
+      billingType: "one_time",
+      billingReason: null,
+      billingInterval: null,
+      subscriptionId: null,
+      customerId,
+      paymentMethod: "credit_card",
+      provider: "stripe",
+      eventHash,
+      createdAt: new Date(eventTimestamp * 1000),
+      source: acq?.source ?? null,
+      medium: acq?.medium ?? null,
+      campaign: acq?.campaign ?? null,
+      content: acq?.content ?? null,
+      landingPage: acq?.landingPage ?? null,
+      entryPage: acq?.entryPage ?? null,
+      sessionId: acq?.sessionId ?? null,
+    })
+    .onConflictDoUpdate({
+      target: [events.organizationId, events.eventHash],
+      set: {
+        customerId,
+        grossValueInCents: paymentIntent.amount,
+        currency: eventCurrency,
+        baseCurrency,
+        exchangeRate,
+        baseGrossValueInCents,
+        source: acq?.source ?? null,
+        medium: acq?.medium ?? null,
+        campaign: acq?.campaign ?? null,
+        content: acq?.content ?? null,
+        landingPage: acq?.landingPage ?? null,
+        entryPage: acq?.entryPage ?? null,
+        sessionId: acq?.sessionId ?? null,
+        createdAt: new Date(eventTimestamp * 1000),
+      },
+    });
+
+  await insertPayment({
+    organizationId: orgId,
+    eventType: "purchase",
+    grossValueInCents: paymentIntent.amount,
+    currency: eventCurrency,
+    baseCurrency,
+    exchangeRate,
+    baseGrossValueInCents,
+    billingType: "one_time",
+    billingReason: null,
+    billingInterval: null,
+    subscriptionId: null,
+    customerId,
+    paymentMethod: "credit_card",
+    provider: "stripe",
+    eventHash,
+    createdAt: new Date(eventTimestamp * 1000),
+    source: acq?.source ?? null,
+    medium: acq?.medium ?? null,
+    campaign: acq?.campaign ?? null,
+    content: acq?.content ?? null,
+    landingPage: acq?.landingPage ?? null,
+    entryPage: acq?.entryPage ?? null,
+    sessionId: acq?.sessionId ?? null,
+  }).catch((err) => {
+    console.error("[stripe-webhook] insertPayment failed", {
+      orgId,
+      eventType: "purchase",
+      eventHash,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
+
+  if (rawStripeCustomerId?.startsWith("cus_")) {
+    try {
+      const customer = await stripe.customers.retrieve(rawStripeCustomerId);
+      if (customer && !customer.deleted) {
+        const stripeCustomer = customer as Stripe.Customer;
+        upsertCustomer({
+          organizationId: orgId,
+          customerId,
+          name: stripeCustomer.name ?? null,
+          email: stripeCustomer.email ?? null,
+          phone: stripeCustomer.phone ?? null,
+          eventTimestamp: new Date(eventTimestamp * 1000),
+        }).catch((err) => {
+          console.error("[stripe-webhook] upsertCustomer failed (payment_intent.succeeded)", {
+            orgId,
+            customerId,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        });
+      }
+    } catch {}
+  }
+
+  const valueLabel = paymentIntent.amount
+    ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: eventCurrency }).format(paymentIntent.amount / 100)
+    : null;
+  createNotification({
+    organizationId: orgId,
+    type: "purchase",
+    title: "Venda avulsa",
+    body: valueLabel ?? undefined,
+    metadata: { customerId, valueInCents: paymentIntent.amount, currency: eventCurrency },
+  }).catch(() => {});
 }
 
 async function handlePaymentFailed(orgId: string, invoice: Stripe.Invoice) {
