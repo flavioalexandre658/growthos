@@ -334,7 +334,10 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
       organizationId, eventCurrency, orgCurrency, charge.amount,
     );
 
-    const eventHash = stripeEventHash(organizationId, charge.id);
+    const piId = typeof charge.payment_intent === "string"
+      ? charge.payment_intent
+      : charge.payment_intent?.id ?? null;
+    const eventHash = stripeEventHash(organizationId, piId ?? charge.id);
 
     eventRows.push({
       organizationId,
