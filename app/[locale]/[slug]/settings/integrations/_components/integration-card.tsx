@@ -304,7 +304,7 @@ function ConnectedCard({
       const result = await config.onSync(organizationId, integration.id);
       setActiveJobId(result.jobId);
       toast.success(tc("syncStarted"), { id: config.toastId });
-    } catch (err) {
+    } catch {
       toast.error(tc("importErrorToast"), { id: config.toastId });
     }
   };

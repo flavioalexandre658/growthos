@@ -28,6 +28,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 30m
           script: |
+            set -e
             set -a; source /opt/groware/.env; set +a
             cd /opt/groware-src
             docker build \
