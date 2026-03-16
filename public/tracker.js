@@ -44,7 +44,7 @@
   var FAILED_KEY = "groware_failed_events";
   var FAILED_MAX = 50;
   var FAILED_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-  var FAILED_MAX_ATTEMPTS = 3;
+  var FAILED_MAX_ATTEMPTS = 10;
 
   var currentCustomer = null;
 
@@ -556,19 +556,24 @@
 
     var now = Date.now();
     var eligible = [];
-    var discarded = [];
+    var deferred = [];
 
     for (var i = 0; i < raw.length; i++) {
       var entry = normalizeFailedEntry(raw[i]);
       var age = now - entry.failedAt;
       if (age > FAILED_TTL_MS || entry.attempts >= FAILED_MAX_ATTEMPTS) {
-        discarded.push(entry);
+        continue;
+      }
+      var backoffMs = Math.min(30000 * Math.pow(2, entry.attempts), 300000);
+      var timeSinceFail = now - entry.failedAt;
+      if (entry.reason && entry.reason.indexOf("http_429") === 0 && timeSinceFail < backoffMs) {
+        deferred.push(entry);
       } else {
         eligible.push(entry);
       }
     }
 
-    writeFailed([]);
+    writeFailed(deferred);
 
     eligible.forEach(function (entry) {
       var retryPayload = Object.assign({}, entry.payload, {
@@ -583,7 +588,7 @@
         keepalive: true,
       })
         .then(function (res) {
-          if (!res.ok && res.status !== 429)
+          if (!res.ok)
             logFailedRetry(entry, "http_" + res.status);
         })
         .catch(function () {
@@ -602,7 +607,7 @@
       keepalive: true,
     })
       .then(function (res) {
-        if (!res.ok && res.status !== 429) {
+        if (!res.ok) {
           logFailedEvent(payload, "http_" + res.status);
         }
       })
@@ -834,6 +839,9 @@
 
   flushQueue();
   retryFailedEvents();
+
+  var _retryTimer = setInterval(function () { retryFailedEvents(); }, 5 * 60 * 1000);
+  window.addEventListener("beforeunload", function () { clearInterval(_retryTimer); });
 
   function init() {
     track("pageview", {});

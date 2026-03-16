@@ -16,6 +16,7 @@ import { createNotification } from "@/utils/create-notification";
 import { cacheGet, cacheSet, apiKeyCacheKey, orgConfigCacheKey, invalidateOrgDashboardCache } from "@/lib/cache";
 import { getRedis } from "@/lib/redis";
 import { bufferPageview } from "@/utils/pageview-buffer";
+import { bufferFailedEvent } from "@/utils/event-fail-buffer";
 import dayjs from "@/utils/dayjs";
 
 const MAX_PAYLOAD_BYTES = 64 * 1024;
@@ -593,7 +594,7 @@ export async function POST(req: NextRequest) {
     // Redis dedup unavailable, fall through to DB dedup
   }
 
-  const inserted = await db.insert(events).values({
+  const eventRow = {
     organizationId: apiKey.organizationId,
     eventType,
 
@@ -636,9 +637,37 @@ export async function POST(req: NextRequest) {
     metadata,
     eventHash,
     createdAt,
-  })
-    .onConflictDoNothing({ target: [events.organizationId, events.eventHash] })
-    .returning({ id: events.id });
+  };
+
+  let inserted: { id: string }[];
+  try {
+    inserted = await db.insert(events).values(eventRow)
+      .onConflictDoNothing({ target: [events.organizationId, events.eventHash] })
+      .returning({ id: events.id });
+  } catch (dbErr) {
+    const paymentRow = PAYMENT_EVENT_TYPES.has(eventType) ? { ...eventRow } : null;
+    const customerData = toString(body.customer_id) ? {
+      customerId: toString(body.customer_id)!,
+      name: toString(body.customer_name),
+      email: toString(body.customer_email),
+      phone: toString(body.customer_phone),
+      country: geo.country,
+      region: geo.region,
+      city: geo.city,
+    } : null;
+
+    await bufferFailedEvent({
+      organizationId: apiKey.organizationId,
+      eventRow,
+      paymentRow,
+      customerData,
+      error: dbErr instanceof Error ? dbErr.message : String(dbErr),
+      attempts: 0,
+      firstFailedAt: Date.now(),
+    });
+
+    return new NextResponse(null, { status: 204, headers: buildCorsHeaders(origin) });
+  }
 
   const responseHeaders: Record<string, string> = {
     ...buildCorsHeaders(origin),

@@ -13,6 +13,11 @@ export async function processCronJob(job: Job<CronJobData>) {
     throw new Error("CRON_SECRET not configured");
   }
 
+  if (cronName === "flush-failed-events") {
+    const { flushFailedEventBuffer } = await import("@/utils/event-fail-buffer");
+    return await flushFailedEventBuffer();
+  }
+
   const pathMap: Record<string, string> = {
     "email-sequences": "/api/cron/email-sequences",
     "weekly-digest": "/api/cron/weekly-digest",
