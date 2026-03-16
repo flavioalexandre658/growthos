@@ -305,10 +305,7 @@ function ConnectedCard({
       setActiveJobId(result.jobId);
       toast.success(tc("syncStarted"), { id: config.toastId });
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : tc("importErrorToast"),
-        { id: config.toastId },
-      );
+      toast.error(tc("importErrorToast"), { id: config.toastId });
     }
   };
 

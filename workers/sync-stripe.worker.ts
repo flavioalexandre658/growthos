@@ -433,7 +433,7 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
         WHERE p2.organization_id = p1.organization_id
           AND p2.customer_id = p1.customer_id
           AND p2.event_type = p1.event_type
-          AND p2.amount_in_cents = p1.amount_in_cents
+          AND p2.gross_value_in_cents = p1.gross_value_in_cents
           AND p2.provider = 'stripe'
           AND ABS(EXTRACT(EPOCH FROM (p2.created_at - p1.created_at))) < 30
       )
