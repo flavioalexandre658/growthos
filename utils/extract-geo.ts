@@ -1,4 +1,9 @@
-import geoip from "geoip-lite";
+let geoip: typeof import("geoip-lite") | null = null;
+try {
+  geoip = require("geoip-lite");
+} catch {
+  // geoip-lite unavailable in this environment — skip IP lookups
+}
 
 export interface IGeoData {
   country: string | null;
@@ -47,14 +52,18 @@ export function extractGeo(headers: Headers): IGeoData {
 
   // 3. geoip-lite lookup by IP
   const ip = extractClientIp(headers);
-  if (ip) {
-    const geo = geoip.lookup(ip);
-    if (geo) {
-      return {
-        country: geo.country || null,
-        region: geo.region || null,
-        city: geo.city || null,
-      };
+  if (ip && geoip) {
+    try {
+      const geo = geoip.lookup(ip);
+      if (geo) {
+        return {
+          country: geo.country || null,
+          region: geo.region || null,
+          city: geo.city || null,
+        };
+      }
+    } catch {
+      // geoip lookup failed — fall through
     }
   }
 
