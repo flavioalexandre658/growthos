@@ -408,6 +408,29 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
   processed += allCharges.length;
   report(job, { phase: "processing", current: processed, total: totalItems, message: "Inserindo dados no banco..." });
 
+  // Remove stale duplicates: charges that were previously hashed by charge.id
+  // but now should be hashed by payment_intent.id (matching the webhook path).
+  if (isReSync) {
+    const staleHashes = allCharges
+      .filter((ch) => {
+        const pi = typeof ch.payment_intent === "string" ? ch.payment_intent : ch.payment_intent?.id ?? null;
+        return pi != null; // only charges that have a payment_intent (hash changed)
+      })
+      .map((ch) => stripeEventHash(organizationId, ch.id));
+
+    if (staleHashes.length > 0) {
+      for (let i = 0; i < staleHashes.length; i += 200) {
+        const batch = staleHashes.slice(i, i + 200);
+        await db.delete(events).where(
+          and(eq(events.organizationId, organizationId), eq(events.provider, "stripe"), sql`${events.eventHash} IN (${sql.join(batch.map(h => sql`${h}`), sql`, `)})`)
+        );
+        await db.delete(payments).where(
+          and(eq(payments.organizationId, organizationId), eq(payments.provider, "stripe"), sql`${payments.eventHash} IN (${sql.join(batch.map(h => sql`${h}`), sql`, `)})`)
+        );
+      }
+    }
+  }
+
   await bulkUpsertEvents(eventRows);
   await bulkUpsertPayments(paymentRows);
   await bulkUpsertCustomers(customerRows);
