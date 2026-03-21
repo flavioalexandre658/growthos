@@ -57,84 +57,47 @@
         {
           "title": "Visão Geral",
           "desc": "Funil em tempo real, KPIs com variação vs período anterior e gráfico diário. Veja visitas → cadastros → checkouts → receita em uma só tela.",
-          "tags": [
-            "funil",
-            "KPIs",
-            "diário"
-          ]
+          "tags": ["funil", "KPIs", "diário"]
         },
         {
           "title": "Recorrência (MRR)",
           "desc": "MRR, ARR, ARPU, LTV, Churn Rate, Revenue Churn. Sankey de fluxo de assinantes e gráfico de movimentação: Novo / Expansão / Contração / Churn.",
-          "tags": [
-            "MRR",
-            "ARR",
-            "LTV",
-            "churn"
-          ]
+          "tags": ["MRR", "ARR", "LTV", "churn"]
         },
         {
           "title": "Financeiro",
           "desc": "Receita bruta, líquida, descontos e ticket médio. Breakdown por método (PIX, cartão, boleto) e categoria de produto.",
-          "tags": [
-            "receita",
-            "ticket",
-            "métodos"
-          ]
+          "tags": ["receita", "ticket", "métodos"]
         },
         {
           "title": "Custos & P&L",
           "desc": "Cadastre custos fixos e variáveis (absoluto ou % da receita). P&L em tempo real: Receita Bruta → Lucro Bruto → Lucro Real → Margem Real.",
-          "tags": [
-            "P&L",
-            "margem",
-            "custos"
-          ]
+          "tags": ["P&L", "margem", "custos"]
         },
         {
           "title": "Canais de Aquisição",
           "desc": "Receita, etapas do funil, taxa de conversão e ticket médio por canal de origem. Heatmap visual e tabela ordenável por qualquer coluna.",
-          "tags": [
-            "UTMs",
-            "fonte",
-            "ROI"
-          ]
+          "tags": ["UTMs", "fonte", "ROI"]
         },
         {
           "title": "Landing Pages",
           "desc": "Quais páginas de entrada geram mais receita? Métricas completas de funil por URL, com busca, ordenação e paginação.",
-          "tags": [
-            "URL",
-            "entrada",
-            "conversão"
-          ]
+          "tags": ["URL", "entrada", "conversão"]
         },
         {
           "title": "Eventos & Debug",
           "desc": "Tabela de eventos com atualização em tempo real. Filtre por tipo, modelo de cobrança, data. Alertas automáticos para IDs sem deduplicação.",
-          "tags": [
-            "tempo real",
-            "debug",
-            "dedupe"
-          ]
+          "tags": ["tempo real", "debug", "dedupe"]
         },
         {
           "title": "Assinaturas",
           "desc": "Ativo, em trial, em atraso, cancelado — com plano, intervalo, valor mensal normalizado e ID do cliente. Histórico completo.",
-          "tags": [
-            "status",
-            "planos",
-            "intervalos"
-          ]
+          "tags": ["status", "planos", "intervalos"]
         },
         {
           "title": "Comparativo de Períodos",
           "desc": "Compare dois intervalos de datas — visão geral, canais, financeiro ou landing pages. Lado a lado ou resumo por IA.",
-          "tags": [
-            "diff",
-            "tendências",
-            "comparar"
-          ]
+          "tags": ["diff", "tendências", "comparar"]
         }
       ]
     },
@@ -292,11 +255,7 @@
         "revenue": "Receita",
         "vs": "vs anterior"
       },
-      "filters": [
-        "Receita",
-        "Conversão",
-        "Ticket"
-      ]
+      "filters": ["Receita", "Conversão", "Ticket"]
     },
     "ctaSection": {
       "badge": "GRÁTIS ATÉ R$15K DE RECEITA/MÊS",
