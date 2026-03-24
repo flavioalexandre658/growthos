@@ -8,13 +8,14 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { PLANS, type PlanSlug } from "@/utils/plans";
 
-function resolveGrowarePlanSlug(priceId: string): PlanSlug {
+function resolveGrowarePlanSlug(priceId: string): PlanSlug | null {
   for (const plan of Object.values(PLANS)) {
     if (plan.stripePriceId.brl === priceId || plan.stripePriceId.usd === priceId) {
       return plan.slug;
     }
   }
-  return "free";
+  console.error("[billing-webhook] resolveGrowarePlanSlug: unknown priceId", { priceId });
+  return null;
 }
 
 async function findUserByStripeCustomer(customerId: string): Promise<string | null> {
@@ -45,6 +46,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
   const priceId = subscription.items.data[0]?.price.id ?? "";
   const planSlug = resolveGrowarePlanSlug(priceId);
+  const periodEnd = new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000);
+
+  if (planSlug === null) {
+    console.error("[billing-webhook] handleCheckoutCompleted: unknown priceId, saving subscription metadata only", { priceId, userId });
+    await db.update(users).set({
+      stripeSubscriptionId: subscription.id,
+      subscriptionStatus: subscription.status,
+      currentPeriodEnd: periodEnd,
+      stripeCustomerId: session.customer as string,
+    }).where(eq(users.id, userId));
+    return;
+  }
 
   console.log("[billing-webhook] handleCheckoutCompleted: updating plan", { userId, priceId, planSlug, subscriptionId: subscription.id });
 
@@ -52,7 +65,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     planSlug,
     stripeSubscriptionId: subscription.id,
     subscriptionStatus: subscription.status,
-    currentPeriodEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
+    currentPeriodEnd: periodEnd,
     stripeCustomerId: session.customer as string,
   }).where(eq(users.id, userId));
 
@@ -94,13 +107,23 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   const priceId = subscription.items.data[0]?.price.id ?? "";
   const planSlug = resolveGrowarePlanSlug(priceId);
+  const periodEnd = new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000);
+
+  if (planSlug === null) {
+    console.error("[billing-webhook] handleSubscriptionUpdated: unknown priceId, skipping planSlug update", { priceId, userId });
+    await db.update(users).set({
+      subscriptionStatus: subscription.status,
+      currentPeriodEnd: periodEnd,
+    }).where(eq(users.id, userId));
+    return;
+  }
 
   console.log("[billing-webhook] handleSubscriptionUpdated: updating plan", { userId, priceId, planSlug, status: subscription.status });
 
   await db.update(users).set({
     planSlug,
     subscriptionStatus: subscription.status,
-    currentPeriodEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
+    currentPeriodEnd: periodEnd,
   }).where(eq(users.id, userId));
 }
 
@@ -114,6 +137,36 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     stripeSubscriptionId: null,
     subscriptionStatus: "canceled",
     currentPeriodEnd: null,
+  }).where(eq(users.id, userId));
+}
+
+async function handleInvoicePaid(invoice: Stripe.Invoice) {
+  const subscriptionId = (invoice as unknown as { subscription: string | null }).subscription;
+  if (!subscriptionId) return;
+
+  const customerId = invoice.customer as string;
+  const userId = await findUserByStripeCustomer(customerId);
+  if (!userId) {
+    console.error("[billing-webhook] handleInvoicePaid: userId not found", { customerId });
+    return;
+  }
+
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const priceId = subscription.items.data[0]?.price.id ?? "";
+  const planSlug = resolveGrowarePlanSlug(priceId);
+
+  if (planSlug === null) {
+    console.error("[billing-webhook] handleInvoicePaid: unknown priceId", { priceId, userId });
+    return;
+  }
+
+  console.log("[billing-webhook] handleInvoicePaid: updating plan", { userId, priceId, planSlug });
+
+  await db.update(users).set({
+    planSlug,
+    stripeSubscriptionId: subscription.id,
+    subscriptionStatus: subscription.status,
+    currentPeriodEnd: new Date((subscription as unknown as { current_period_end: number }).current_period_end * 1000),
   }).where(eq(users.id, userId));
 }
 
@@ -155,12 +208,17 @@ export async function POST(req: NextRequest) {
       await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
       break;
 
+    case "customer.subscription.created":
     case "customer.subscription.updated":
       await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
       break;
 
     case "customer.subscription.deleted":
       await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+      break;
+
+    case "invoice.paid":
+      await handleInvoicePaid(event.data.object as Stripe.Invoice);
       break;
 
     case "invoice.payment_failed":
