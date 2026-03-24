@@ -1,12 +1,12 @@
 {
   "landing": {
     "hero": {
-      "badge": "Free up to $15k/month in revenue",
+      "badge": "Free up to $3k/month in revenue",
       "badgeSuffix": " · Asaas & Stripe available",
       "headline1": "From funnel to real profit.",
       "headline2": "Everything in one place.",
       "subheadline": "Connect your Asaas or Stripe in 2 minutes and see exactly where every dollar of your revenue comes from — channel, campaign, landing page and real margin. All together, no spreadsheet.",
-      "disclaimer": "No credit card · Free up to $15k/month in revenue",
+      "disclaimer": "No credit card · Free up to $3k/month in revenue",
       "socialProof": "Used by {count}+ SaaS founders",
       "mockupLabel": "groware.io / overview",
       "overview": "Overview",
@@ -299,12 +299,12 @@
       ]
     },
     "ctaSection": {
-      "badge": "FREE UP TO $15K/MONTH IN REVENUE",
+      "badge": "FREE UP TO $3K/MONTH IN REVENUE",
       "headline1": "Stop guessing.",
       "headline2": "Start",
       "headline3": "growing with clarity.",
       "description": "Connect your Asaas or Stripe, install the tracker and see where every dollar of your revenue comes from — channel, campaign, real margin. In under 5 minutes.",
-      "disclaimer": "No credit card · Free up to $15k/month in revenue · 5-minute setup"
+      "disclaimer": "No credit card · Free up to $3k/month in revenue · 5-minute setup"
     },
     "strip": [
       "MRR & ARR",

@@ -14,7 +14,8 @@ import {
 import { IDailyData } from "@/interfaces/dashboard.interface";
 import type { IProfitAndLoss } from "@/interfaces/cost.interface";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal, fmtCurrencyCompact } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 
 interface RevenueLineChartProps {
   data: IDailyData[] | undefined;
@@ -38,9 +39,11 @@ interface CustomTooltipProps {
   active?: boolean;
   label?: string;
   payload?: TooltipPayloadItem[];
+  locale: string;
+  currency: string;
 }
 
-function CustomTooltip({ active, label, payload }: CustomTooltipProps) {
+function CustomTooltip({ active, label, payload, locale, currency }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-zinc-700/80 bg-zinc-900/95 px-3.5 py-3 text-xs shadow-2xl min-w-[160px]">
@@ -53,7 +56,7 @@ function CustomTooltip({ active, label, payload }: CustomTooltipProps) {
               <span className="text-zinc-400">{item.name}</span>
             </div>
             <span className="font-bold font-mono tabular-nums" style={{ color: item.color }}>
-              {fmtBRLDecimal(item.value)}
+              {fmtCurrencyDecimal(item.value, locale, currency)}
             </span>
           </div>
         ))}
@@ -70,6 +73,9 @@ const SERIES_CONFIG = [
 
 export function RevenueLineChart({ data, pl, isLoading }: RevenueLineChartProps) {
   const t = useTranslations("finance.revenueChart");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const rows = data ?? [];
 
   const series = SERIES_CONFIG.map((s) => ({ ...s, label: t(s.tKey) }));
@@ -141,10 +147,10 @@ export function RevenueLineChart({ data, pl, isLoading }: RevenueLineChartProps)
               tick={{ fontSize: 10, fill: "#52525b" }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`}
+              tickFormatter={(v) => fmtCurrencyCompact(v, locale, currency)}
               width={48}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#3f3f46", strokeWidth: 1 }} />
+            <Tooltip content={<CustomTooltip locale={locale} currency={currency} />} cursor={{ stroke: "#3f3f46", strokeWidth: 1 }} />
             <Area
               type="monotone"
               dataKey="gross"

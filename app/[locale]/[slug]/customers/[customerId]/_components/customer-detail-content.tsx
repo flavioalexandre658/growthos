@@ -12,7 +12,7 @@ import {
   IconClock,
 } from "@tabler/icons-react";
 import { formatDate } from "@/utils/format-date";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useCustomerSummary } from "@/hooks/queries/use-customer-summary";
 import { useCustomerFunnel } from "@/hooks/queries/use-customer-funnel";
@@ -88,6 +88,8 @@ export function CustomerDetailContent({ customerId }: CustomerDetailContentProps
   const slug = organization?.slug ?? "";
   const orgId = organization?.id ?? "";
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
+  const orgLocale = organization?.locale ?? "pt-BR";
+  const orgCurrency = organization?.currency ?? "BRL";
 
   const { data: summary, isLoading } = useCustomerSummary(orgId, customerId);
   const { data: customerFunnel, isPending: funnelLoading } = useCustomerFunnel(orgId, customerId);
@@ -206,7 +208,7 @@ export function CustomerDetailContent({ customerId }: CustomerDetailContentProps
               {tDetail("kpi.ltv")}
             </p>
             <p className="text-lg font-bold text-emerald-400 font-mono">
-              {fmtBRLDecimal(summary.ltvInCents / 100)}
+              {fmtCurrencyDecimal(summary.ltvInCents / 100, orgLocale, orgCurrency)}
             </p>
           </div>
           <div className="rounded-lg border border-zinc-800/60 bg-zinc-900/30 p-3.5">
@@ -227,7 +229,7 @@ export function CustomerDetailContent({ customerId }: CustomerDetailContentProps
                   {summary.activeSubscription.planName}
                 </p>
                 <p className="text-xs font-mono text-emerald-400">
-                  {fmtBRLDecimal(summary.activeSubscription.valueInCents / 100)}
+                  {fmtCurrencyDecimal(summary.activeSubscription.valueInCents / 100, orgLocale, orgCurrency)}
                   <span className="text-zinc-600 font-sans ml-1">
                     / {INTERVAL_LABELS[summary.activeSubscription.billingInterval] ?? summary.activeSubscription.billingInterval}
                   </span>
@@ -264,7 +266,7 @@ export function CustomerDetailContent({ customerId }: CustomerDetailContentProps
                 <div className="divide-y divide-zinc-800/30">
                   {[
                     { label: tDetail("subscription.plan"), value: summary.activeSubscription.planName },
-                    { label: tDetail("subscription.value"), value: fmtBRLDecimal(summary.activeSubscription.valueInCents / 100) },
+                    { label: tDetail("subscription.value"), value: fmtCurrencyDecimal(summary.activeSubscription.valueInCents / 100, orgLocale, orgCurrency) },
                     { label: tDetail("subscription.interval"), value: INTERVAL_LABELS[summary.activeSubscription.billingInterval] ?? summary.activeSubscription.billingInterval },
                     { label: tDetail("subscription.since"), value: formatDate(summary.activeSubscription.startedAt, timezone, "DD/MM/YYYY") },
                   ].map((f) => (

@@ -291,10 +291,6 @@ function ApiKeysCard({ organization }: { organization: IOrganization }) {
   const createMutation = useCreateApiKey(organization.id);
   const deleteMutation = useDeleteApiKey(organization.id);
 
-  const [snippetBaseUrl, setSnippetBaseUrl] = useState(
-    typeof window !== "undefined" ? window.location.origin : "",
-  );
-
   const handleCreate = async (input: {
     organizationId: string;
     name: string;
@@ -368,18 +364,7 @@ function ApiKeysCard({ organization }: { organization: IOrganization }) {
               <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
                 {t("snippetTitle")}
               </p>
-              <div>
-                <label className="text-[11px] text-zinc-600 uppercase tracking-wider">
-                  {t("snippetBaseUrlLabel")}
-                </label>
-                <input
-                  value={snippetBaseUrl}
-                  onChange={(e) => setSnippetBaseUrl(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-200 focus:border-indigo-500 focus:outline-none"
-                  placeholder={t("snippetBaseUrlPlaceholder")}
-                />
-              </div>
-              <InstallSnippet apiKey={firstActiveKey.key} baseUrl={snippetBaseUrl} />
+              <InstallSnippet apiKey={firstActiveKey.key} baseUrl="https://groware.io" />
               <p className="text-[11px] text-zinc-600 leading-relaxed">
                 {t("snippetHint")}
               </p>
@@ -387,7 +372,7 @@ function ApiKeysCard({ organization }: { organization: IOrganization }) {
 
             <AiPromptSection
               apiKey={firstActiveKey.key}
-              baseUrl={snippetBaseUrl}
+              baseUrl="https://groware.io"
               orgName={organization.name}
               currency={organization.currency ?? "BRL"}
               funnelSteps={organization.funnelSteps}

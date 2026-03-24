@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/routing";
 import { signOut } from "next-auth/react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import {
   IconPlus,
@@ -30,12 +30,13 @@ const STORAGE_KEY = "groware_active_org";
 
 const ORG_COLORS = ["#818cf8", "#3b82f6", "#34d399", "#f59e0b", "#ef4444", "#ec4899", "#8b5cf6", "#14b8a6"];
 
-function formatCompact(cents: number): string {
+function formatCompact(cents: number, currency: "brl" | "usd"): string {
   const val = cents / 100;
-  if (val >= 1_000_000) return `R$ ${(val / 1_000_000).toFixed(1)}M`;
-  if (val >= 1_000) return `R$ ${(val / 1_000).toFixed(1)}k`;
-  if (val > 0) return `R$ ${val.toFixed(0)}`;
-  return "R$ 0";
+  const sym = currency === "brl" ? "R$ " : "$ ";
+  if (val >= 1_000_000) return `${sym}${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1_000) return `${sym}${(val / 1_000).toFixed(1)}k`;
+  if (val > 0) return `${sym}${val.toFixed(0)}`;
+  return `${sym}0`;
 }
 
 function formatCount(n: number): string {
@@ -55,10 +56,12 @@ function OrgCard({
   org,
   color,
   onSelect,
+  isBrl,
 }: {
   org: IOrgStats;
   color: string;
   onSelect: () => void;
+  isBrl: boolean;
 }) {
   const t = useTranslations("organizations");
   const initials = org.name
@@ -96,7 +99,7 @@ function OrgCard({
         <div className="flex-1 space-y-3">
           <div>
             <span className="text-xl font-bold text-zinc-100 tracking-tight">
-              {formatCompact(org.revenueThisMonthInCents)}
+              {formatCompact(org.revenueThisMonthInCents, isBrl ? "brl" : "usd")}
             </span>
             <span className="text-[11px] text-zinc-500 ml-1.5">{t("orgCard.revenuePerMonth")}</span>
           </div>
@@ -160,6 +163,8 @@ export function OrganizationsContent({
   firstOrgSlug,
 }: OrganizationsContentProps) {
   const t = useTranslations("organizations");
+  const locale = useLocale();
+  const isBrl = locale === "pt";
   const router = useRouter();
   const searchParams = useSearchParams();
   const [orgs] = useState<IOrgStats[]>(initialOrgs);
@@ -188,7 +193,9 @@ export function OrganizationsContent({
   const settingsSlug = firstOrgSlug ?? orgs[0]?.slug;
 
   const totalRevenue = billing?.revenue?.totalInCents ?? 0;
-  const revLimit = billing?.plan.maxRevenuePerMonthBrl ?? Infinity;
+  const revLimit = isBrl
+    ? (billing?.plan.maxRevenuePerMonthBrl ?? Infinity)
+    : (billing?.plan.maxRevenuePerMonthUsd ?? Infinity);
   const isOverRevLimit = revLimit !== Infinity && totalRevenue > revLimit;
 
   return (
@@ -261,6 +268,7 @@ export function OrganizationsContent({
                 org={org}
                 color={ORG_COLORS[i % ORG_COLORS.length]}
                 onSelect={() => handleSelect(org.slug)}
+                isBrl={isBrl}
               />
             ))}
 
@@ -297,7 +305,7 @@ export function OrganizationsContent({
               </span>
               <span className="text-[10px] text-zinc-600">·</span>
               <span className="text-xs text-zinc-500">
-                {formatCompact(totalRevenue)} / {formatRevenueLimit(revLimit)} {t("billingBar.revenue")}
+                {formatCompact(totalRevenue, isBrl ? "brl" : "usd")} / {formatRevenueLimit(revLimit, isBrl ? "BRL" : "USD")} {t("billingBar.revenue")}
               </span>
               <span className="text-[10px] text-zinc-600">·</span>
               <span className="text-xs text-zinc-500">

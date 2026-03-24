@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
 import { getStatusBadgeClass } from "./subscriptions-filters";
 import type { ISubscriptionListItem } from "@/interfaces/subscription.interface";
 import type { IPaginationMeta } from "@/interfaces/dashboard.interface";
@@ -117,7 +117,7 @@ function SubscriptionDetailGrid({ item, timezone, copyLabel }: { item: ISubscrip
   );
 }
 
-function SubscriptionCard({ item, timezone, t }: { item: ISubscriptionListItem; timezone: string; t: ReturnType<typeof useTranslations> }) {
+function SubscriptionCard({ item, timezone, t, locale, currency }: { item: ISubscriptionListItem; timezone: string; t: ReturnType<typeof useTranslations>; locale: string; currency: string }) {
   const [expanded, setExpanded] = useState(false);
 
   const billingIntervals: Record<string, string> = {
@@ -154,7 +154,7 @@ function SubscriptionCard({ item, timezone, t }: { item: ISubscriptionListItem; 
               </span>
             </div>
             <span className="text-xs font-mono font-semibold text-emerald-400 shrink-0">
-              {fmtBRLDecimal(item.valueInCents / 100)}
+              {fmtCurrencyDecimal(item.valueInCents / 100, locale, currency)}
             </span>
           </div>
 
@@ -189,7 +189,7 @@ function SubscriptionCard({ item, timezone, t }: { item: ISubscriptionListItem; 
   );
 }
 
-function SubscriptionRow({ item, timezone, t, dayjsLocale, slug }: { item: ISubscriptionListItem; timezone: string; t: ReturnType<typeof useTranslations>; dayjsLocale: string; slug: string }) {
+function SubscriptionRow({ item, timezone, t, dayjsLocale, slug, locale, currency }: { item: ISubscriptionListItem; timezone: string; t: ReturnType<typeof useTranslations>; dayjsLocale: string; slug: string; locale: string; currency: string }) {
   const [expanded, setExpanded] = useState(false);
 
   const billingIntervals: Record<string, string> = {
@@ -244,7 +244,7 @@ function SubscriptionRow({ item, timezone, t, dayjsLocale, slug }: { item: ISubs
         </td>
         <td className="px-3 py-2.5 text-right">
           <span className="text-xs font-mono font-semibold text-emerald-400">
-            {fmtBRLDecimal(item.valueInCents / 100)}
+            {fmtCurrencyDecimal(item.valueInCents / 100, locale, currency)}
           </span>
         </td>
         <td className="px-3 py-2.5">
@@ -316,6 +316,8 @@ export function SubscriptionsTable({
   const { organization } = useOrganization();
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
   const slug = organization?.slug ?? "";
+  const orgLocale = organization?.locale ?? "pt-BR";
+  const orgCurrency = organization?.currency ?? "BRL";
   const paginationStart =
     pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
   const paginationEnd = Math.min(
@@ -430,7 +432,7 @@ export function SubscriptionsTable({
                 </td>
               </tr>
             ) : (
-              data.map((item) => <SubscriptionRow key={item.id} item={item} timezone={timezone} t={t} dayjsLocale={dayjsLocale} slug={slug} />)
+              data.map((item) => <SubscriptionRow key={item.id} item={item} timezone={timezone} t={t} dayjsLocale={dayjsLocale} slug={slug} locale={orgLocale} currency={orgCurrency} />)
             )}
           </tbody>
         </table>
@@ -457,7 +459,7 @@ export function SubscriptionsTable({
             {t("empty")}
           </div>
         ) : (
-          data.map((item) => <SubscriptionCard key={item.id} item={item} timezone={timezone} t={t} />)
+          data.map((item) => <SubscriptionCard key={item.id} item={item} timezone={timezone} t={t} locale={orgLocale} currency={orgCurrency} />)
         )}
       </div>
 

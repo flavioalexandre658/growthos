@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { getCurrencySymbol } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -64,6 +66,9 @@ export function CostFormDialog({
   isLoading,
 }: CostFormDialogProps) {
   const t = useTranslations("finance.costForm");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const isVariable = costKind === "variable";
   const isEditing = !!initialData;
 
@@ -233,7 +238,7 @@ export function CostFormDialog({
                         }}
                         thousandSeparator="."
                         decimalSeparator=","
-                        prefix="R$ "
+                        prefix={getCurrencySymbol(locale, currency)}
                         decimalScale={2}
                         placeholder={t("valuePlaceholder")}
                         customInput={Input}

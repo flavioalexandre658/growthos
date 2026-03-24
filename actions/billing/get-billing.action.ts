@@ -1,6 +1,7 @@
 "use server";
 
 import { getServerSession } from "next-auth";
+import { getLocale } from "next-intl/server";
 import { eq, and, sql, inArray, gte } from "drizzle-orm";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
@@ -51,6 +52,7 @@ export async function getBilling(): Promise<IBillingData | null> {
   if (!userRow) return null;
 
   const plan = getPlan(userRow.planSlug);
+  const appLocale = await getLocale();
 
   const memberOrgs = await db
     .select({ organizationId: orgMembers.organizationId, role: orgMembers.role })
@@ -90,7 +92,9 @@ export async function getBilling(): Promise<IBillingData | null> {
   }
 
   const totalRevenueInCents = revenueByOrg.reduce((sum, r) => sum + Number(r.revenue), 0);
-  const limitInCents = plan.maxRevenuePerMonthBrl;
+  const limitInCents = appLocale === "pt"
+    ? plan.maxRevenuePerMonthBrl
+    : plan.maxRevenuePerMonthUsd;
   const percentage = limitInCents === Infinity
     ? 0
     : Math.min(100, Math.round((totalRevenueInCents / limitInCents) * 100));

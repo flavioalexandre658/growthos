@@ -8,7 +8,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import {
   IconTrendingUp,
   IconTrendingDown,
@@ -89,6 +90,9 @@ interface ProfitLossCardsProps {
 
 export function ProfitLossCards({ pl, isLoading }: ProfitLossCardsProps) {
   const t = useTranslations("finance.profitLossCards");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   if (isLoading) {
     return (
@@ -101,7 +105,7 @@ export function ProfitLossCards({ pl, isLoading }: ProfitLossCardsProps) {
   const cards: PLCardProps[] = [
     {
       label: t("grossRevenue"),
-      value: fmtBRLDecimal((pl?.grossRevenueInCents ?? 0) / 100),
+      value: fmtCurrencyDecimal((pl?.grossRevenueInCents ?? 0) / 100, locale, currency),
       icon: IconCurrencyDollar,
       color: "text-emerald-400",
       bgColor: "bg-emerald-600/20",
@@ -109,7 +113,7 @@ export function ProfitLossCards({ pl, isLoading }: ProfitLossCardsProps) {
     },
     {
       label: t("variableCosts"),
-      value: fmtBRLDecimal((pl?.totalVariableCostsInCents ?? 0) / 100),
+      value: fmtCurrencyDecimal((pl?.totalVariableCostsInCents ?? 0) / 100, locale, currency),
       icon: IconReceipt,
       color: "text-orange-400",
       bgColor: "bg-orange-600/20",
@@ -118,7 +122,7 @@ export function ProfitLossCards({ pl, isLoading }: ProfitLossCardsProps) {
     },
     {
       label: t("operatingProfit"),
-      value: fmtBRLDecimal((pl?.operatingProfitInCents ?? 0) / 100),
+      value: fmtCurrencyDecimal((pl?.operatingProfitInCents ?? 0) / 100, locale, currency),
       icon: IconWallet,
       color: "text-cyan-400",
       bgColor: "bg-cyan-600/20",
@@ -127,7 +131,7 @@ export function ProfitLossCards({ pl, isLoading }: ProfitLossCardsProps) {
     },
     {
       label: t("fixedCosts"),
-      value: fmtBRLDecimal((pl?.totalFixedCostsInCents ?? 0) / 100),
+      value: fmtCurrencyDecimal((pl?.totalFixedCostsInCents ?? 0) / 100, locale, currency),
       icon: IconTrendingDown,
       color: "text-red-400",
       bgColor: "bg-red-600/20",
@@ -138,7 +142,7 @@ export function ProfitLossCards({ pl, isLoading }: ProfitLossCardsProps) {
     },
     {
       label: t("netProfit"),
-      value: fmtBRLDecimal((pl?.netProfitInCents ?? 0) / 100),
+      value: fmtCurrencyDecimal((pl?.netProfitInCents ?? 0) / 100, locale, currency),
       icon: (pl?.netProfitInCents ?? 0) >= 0 ? IconTrendingUp : IconTrendingDown,
       color: (pl?.netProfitInCents ?? 0) >= 0 ? "text-indigo-400" : "text-red-400",
       bgColor: (pl?.netProfitInCents ?? 0) >= 0 ? "bg-indigo-600/20" : "bg-red-600/20",

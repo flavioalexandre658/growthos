@@ -7,7 +7,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { fmtInt, fmtBRLDecimal } from "@/utils/format";
+import { fmtInt, fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import { getStepColor } from "@/utils/step-colors";
 import {
   IconTrendingUp,
@@ -158,6 +159,9 @@ interface KpiCardsProps {
 
 export function KpiCards({ data, isLoading, hiddenKeys }: KpiCardsProps) {
   const t = useTranslations("dashboard.kpi");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const allStepKeys = (data?.steps ?? [])
     .filter((s) => s.key !== "pageview")
     .map((s) => s.key);
@@ -201,8 +205,8 @@ export function KpiCards({ data, isLoading, hiddenKeys }: KpiCardsProps) {
   const metricCards: KpiCardProps[] = [
     {
       label: t("revenue"),
-      value: fmtBRLDecimal((data?.revenue ?? 0) / 100),
-      previousLabel: prevRevenue !== undefined ? fmtBRLDecimal(prevRevenue / 100) : undefined,
+      value: fmtCurrencyDecimal((data?.revenue ?? 0) / 100, locale, currency),
+      previousLabel: prevRevenue !== undefined ? fmtCurrencyDecimal(prevRevenue / 100, locale, currency) : undefined,
       icon: IconCurrencyDollar,
       color: "text-emerald-400",
       bgColor: "bg-emerald-600/20",
@@ -211,7 +215,7 @@ export function KpiCards({ data, isLoading, hiddenKeys }: KpiCardsProps) {
     },
     {
       label: t("averageTicket"),
-      value: data?.ticketMedio ?? "R$ 0,00",
+      value: fmtCurrencyDecimal(data?.ticketMedio ?? 0, locale, currency),
       icon: IconReceipt,
       color: "text-amber-400",
       bgColor: "bg-amber-600/20",

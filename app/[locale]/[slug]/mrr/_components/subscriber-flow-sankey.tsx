@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal, fmtInt } from "@/utils/format";
+import { fmtCurrencyDecimal, fmtInt } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import type { IMrrOverview } from "@/interfaces/mrr.interface";
 
 interface SubscriberFlowSankeyProps {
@@ -138,7 +139,7 @@ function FlowNodeRow({ label, value, color }: { label: string; value: number; co
   );
 }
 
-function SubscriberFlowMobile({ data, flowLabels }: { data: IMrrOverview; flowLabels: FlowLabels }) {
+function SubscriberFlowMobile({ data, flowLabels, locale, currency }: { data: IMrrOverview; flowLabels: FlowLabels; locale: string; currency: string }) {
   const t = useTranslations("mrr.subscriberFlow");
   const { inputs, outputs } = buildFlowNodes(data, flowLabels);
 
@@ -163,7 +164,7 @@ function SubscriberFlowMobile({ data, flowLabels }: { data: IMrrOverview; flowLa
       >
         <p className="text-[10px] font-semibold uppercase tracking-widest text-zinc-500 mb-1">{t("activeBase")}</p>
         <p className="text-3xl font-bold font-mono text-zinc-100">{fmtInt(data.activeSubscriptions)}</p>
-        <p className="text-xs font-mono text-zinc-400 mt-0.5">{fmtBRLDecimal((data.mrr ?? 0) / 100)} MRR</p>
+        <p className="text-xs font-mono text-zinc-400 mt-0.5">{fmtCurrencyDecimal((data.mrr ?? 0) / 100, locale, currency)} MRR</p>
       </div>
 
       <div className="flex flex-col items-center gap-0.5 py-1">
@@ -182,7 +183,7 @@ function SubscriberFlowMobile({ data, flowLabels }: { data: IMrrOverview; flowLa
   );
 }
 
-function SubscriberSankeyInner({ data, flowLabels, activeBaseLabel }: { data: IMrrOverview; flowLabels: FlowLabels; activeBaseLabel: string }) {
+function SubscriberSankeyInner({ data, flowLabels, activeBaseLabel, locale, currency }: { data: IMrrOverview; flowLabels: FlowLabels; activeBaseLabel: string; locale: string; currency: string }) {
   const [hovered, setHovered] = useState<string | null>(null);
 
   const xLeft = 100;
@@ -442,7 +443,7 @@ function SubscriberSankeyInner({ data, flowLabels, activeBaseLabel }: { data: IM
                 fontSize="9"
                 fontFamily="ui-monospace, monospace"
               >
-                {fmtBRLDecimal((data.mrr ?? 0) / 100)} MRR
+                {fmtCurrencyDecimal((data.mrr ?? 0) / 100, locale, currency)} MRR
               </text>
             </g>
           );
@@ -502,6 +503,9 @@ function SubscriberSankeyInner({ data, flowLabels, activeBaseLabel }: { data: IM
 
 export function SubscriberFlowSankey({ data, isLoading }: SubscriberFlowSankeyProps) {
   const t = useTranslations("mrr.subscriberFlow");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   const flowLabels: FlowLabels = {
     newSubscriptions: t("newSubscriptions"),
@@ -525,10 +529,10 @@ export function SubscriberFlowSankey({ data, isLoading }: SubscriberFlowSankeyPr
       ) : (
         <>
           <div className="md:hidden">
-            <SubscriberFlowMobile data={data} flowLabels={flowLabels} />
+            <SubscriberFlowMobile data={data} flowLabels={flowLabels} locale={locale} currency={currency} />
           </div>
           <div className="hidden md:block">
-            <SubscriberSankeyInner data={data} flowLabels={flowLabels} activeBaseLabel={t("activeBase")} />
+            <SubscriberSankeyInner data={data} flowLabels={flowLabels} activeBaseLabel={t("activeBase")} locale={locale} currency={currency} />
           </div>
         </>
       )}

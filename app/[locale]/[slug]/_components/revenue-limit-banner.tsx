@@ -16,7 +16,7 @@ export function RevenueLimitBanner({ slug }: RevenueLimitBannerProps) {
 
   if (!billing) return null;
   if (billing.revenue.percentage < 100) return null;
-  if (billing.plan.maxRevenuePerMonthBrl === Infinity) return null;
+  if (billing.revenue.limitInCents === Infinity) return null;
 
   const limitLabel = formatRevenueLimit(billing.revenue.limitInCents);
 

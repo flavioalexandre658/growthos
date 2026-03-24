@@ -3,7 +3,8 @@
 import { useTranslations } from "next-intl";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, LabelList } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import type { IProfitAndLoss } from "@/interfaces/cost.interface";
 
 interface WaterfallEntry {
@@ -96,7 +97,7 @@ function CustomBarShape(props: unknown) {
   return <path d={d} fill={payload.color} fillOpacity={0.85} />;
 }
 
-function makeLabel(data: WaterfallEntry[]) {
+function makeLabel(data: WaterfallEntry[], locale: string, currency: string) {
   return function CustomLabel(props: unknown) {
     const { x, y, width, height, index } = props as {
       x: number;
@@ -122,7 +123,7 @@ function makeLabel(data: WaterfallEntry[]) {
         fontFamily="monospace"
         fontWeight={700}
       >
-        {prefix}{fmtBRLDecimal(absVal)}
+        {prefix}{fmtCurrencyDecimal(absVal, locale, currency)}
       </text>
     );
   };
@@ -131,9 +132,11 @@ function makeLabel(data: WaterfallEntry[]) {
 interface CustomTooltipProps {
   active?: boolean;
   payload?: { payload: WaterfallEntry }[];
+  locale: string;
+  currency: string;
 }
 
-function CustomTooltip({ active, payload }: CustomTooltipProps) {
+function CustomTooltip({ active, payload, locale, currency }: CustomTooltipProps) {
   if (!active || !payload?.length) return null;
   const e = payload[0].payload;
   const absVal = Math.abs(e.value);
@@ -141,7 +144,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
     <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-xs shadow-xl">
       <p className="text-zinc-400 mb-1 font-medium">{e.name}</p>
       <p className="font-bold font-mono text-sm" style={{ color: e.color }}>
-        {e.isNegative ? "− " : ""}{fmtBRLDecimal(absVal)}
+        {e.isNegative ? "− " : ""}{fmtCurrencyDecimal(absVal, locale, currency)}
       </p>
     </div>
   );
@@ -154,6 +157,9 @@ interface ProfitLossWaterfallProps {
 
 export function ProfitLossWaterfall({ pl, isLoading }: ProfitLossWaterfallProps) {
   const t = useTranslations("finance.profitLossWaterfall");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   if (isLoading) {
     return (
@@ -177,7 +183,7 @@ export function ProfitLossWaterfall({ pl, isLoading }: ProfitLossWaterfallProps)
   };
 
   const data = buildData(pl, names);
-  const CustomLabel = makeLabel(data);
+  const CustomLabel = makeLabel(data, locale, currency);
 
   const allValues = data.map((d) => d.value);
   const maxVal = Math.max(...allValues, 0);
@@ -210,7 +216,7 @@ export function ProfitLossWaterfall({ pl, isLoading }: ProfitLossWaterfallProps)
             tickFormatter={fmtCompact}
             width={48}
           />
-          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+          <Tooltip content={<CustomTooltip locale={locale} currency={currency} />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
           <ReferenceLine y={0} stroke="#3f3f46" strokeWidth={1} />
           <Bar dataKey="value" shape={<CustomBarShape />} isAnimationActive={false}>
             <LabelList content={CustomLabel} dataKey="value" />
@@ -226,7 +232,7 @@ export function ProfitLossWaterfall({ pl, isLoading }: ProfitLossWaterfallProps)
               <span className="h-2 w-2 rounded-full shrink-0" style={{ background: entry.color }} />
               <span className="text-[10px] text-zinc-500">{entry.name}</span>
               <span className="text-[10px] font-mono font-semibold" style={{ color: entry.color }}>
-                {entry.isNegative ? "− " : ""}{fmtBRLDecimal(absVal)}
+                {entry.isNegative ? "− " : ""}{fmtCurrencyDecimal(absVal, locale, currency)}
               </span>
             </div>
           );

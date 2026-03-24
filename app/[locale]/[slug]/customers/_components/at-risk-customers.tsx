@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useAtRiskCustomers } from "@/hooks/queries/use-at-risk-customers";
-import { fmtBRL } from "@/utils/format";
+import { fmtCurrency } from "@/utils/format";
 import { formatDate } from "@/utils/format-date";
 import {
   IconAlertTriangle,
@@ -24,6 +24,8 @@ export function AtRiskCustomers() {
   const orgId = organization?.id ?? "";
   const slug = organization?.slug ?? "";
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   const [daysThreshold, setDaysThreshold] = useState(30);
   const [page, setPage] = useState(1);
@@ -125,7 +127,7 @@ export function AtRiskCustomers() {
                 <span className="hidden sm:block text-xs text-zinc-400 truncate">{customer.planName}</span>
 
                 <span className="hidden sm:block text-xs font-medium text-zinc-300">
-                  {fmtBRL(customer.valueInCents / 100)}
+                  {fmtCurrency(customer.valueInCents / 100, locale, currency)}
                 </span>
 
                 <span className="hidden sm:block text-xs text-zinc-500">

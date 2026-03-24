@@ -1,8 +1,10 @@
+"use server";
+
 import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { users, organizations, orgMembers } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import { getPlan } from "@/utils/plans";
-import { getOrgOwnerId, getPlanUsage } from "@/utils/get-plan-usage";
+import { getPlanUsage } from "@/utils/get-plan-usage";
 
 interface CacheEntry {
   value: boolean;
@@ -30,8 +32,23 @@ export async function isOrgOverRevenueLimit(organizationId: string): Promise<boo
   const cached = getCached(organizationId);
   if (cached !== null) return cached;
 
-  const ownerId = await getOrgOwnerId(organizationId);
-  if (!ownerId) {
+  // Get owner ID and org currency in one query
+  const [orgRow] = await db
+    .select({
+      userId: orgMembers.userId,
+      currency: organizations.currency,
+    })
+    .from(orgMembers)
+    .innerJoin(organizations, eq(organizations.id, orgMembers.organizationId))
+    .where(
+      and(
+        eq(orgMembers.organizationId, organizationId),
+        eq(orgMembers.role, "owner"),
+      ),
+    )
+    .limit(1);
+
+  if (!orgRow) {
     setCached(organizationId, false);
     return false;
   }
@@ -39,7 +56,7 @@ export async function isOrgOverRevenueLimit(organizationId: string): Promise<boo
   const [userRow] = await db
     .select({ planSlug: users.planSlug })
     .from(users)
-    .where(eq(users.id, ownerId))
+    .where(eq(users.id, orgRow.userId))
     .limit(1);
 
   if (!userRow) {
@@ -48,14 +65,16 @@ export async function isOrgOverRevenueLimit(organizationId: string): Promise<boo
   }
 
   const plan = getPlan(userRow.planSlug);
+  const isBrl = orgRow.currency === "BRL";
+  const limitInCents = isBrl ? plan.maxRevenuePerMonthBrl : plan.maxRevenuePerMonthUsd;
 
-  if (plan.maxRevenuePerMonthBrl === Infinity) {
+  if (limitInCents === Infinity) {
     setCached(organizationId, false);
     return false;
   }
 
-  const usage = await getPlanUsage(ownerId);
-  const isOver = usage.totalRevenueInCents >= plan.maxRevenuePerMonthBrl;
+  const usage = await getPlanUsage(orgRow.userId);
+  const isOver = usage.totalRevenueInCents >= limitInCents;
 
   setCached(organizationId, isOver);
   return isOver;

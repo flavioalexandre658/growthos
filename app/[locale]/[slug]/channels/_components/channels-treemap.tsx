@@ -3,7 +3,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal, fmtBRLCompact, fmtInt } from "@/utils/format";
+import { fmtCurrencyDecimal, fmtCurrencyCompact, fmtInt } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import { getChannelColor, getChannelName } from "@/utils/channel-colors";
 import type { IChannelData } from "@/interfaces/dashboard.interface";
 
@@ -184,6 +185,8 @@ interface TooltipData {
 function ChannelsTreemapMobile({ data, isLoading }: ChannelsTreemapProps) {
   const t = useTranslations("channels.treemap");
   const locale = useLocale();
+  const { organization } = useOrganization();
+  const orgCurrency = organization?.currency ?? "BRL";
   const sorted = useMemo(
     () => (data ?? []).filter((c) => c.revenue > 0).sort((a, b) => b.revenue - a.revenue),
     [data]
@@ -246,7 +249,7 @@ function ChannelsTreemapMobile({ data, isLoading }: ChannelsTreemapProps) {
                   </div>
                   <div className="flex items-center justify-between gap-2 mt-0.5">
                     <span className="text-sm font-bold font-mono text-zinc-100">
-                      {fmtBRLDecimal(channel.revenue / 100)}
+                      {fmtCurrencyDecimal(channel.revenue / 100, locale, orgCurrency)}
                     </span>
                     <span className="text-[10px] text-zinc-500 font-mono shrink-0">
                       {t("purchasesConv", { count: fmtInt(purchases), rate: channel.conversion_rate })}
@@ -271,6 +274,8 @@ function ChannelsTreemapMobile({ data, isLoading }: ChannelsTreemapProps) {
 export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
   const t = useTranslations("channels.treemap");
   const locale = useLocale();
+  const { organization } = useOrganization();
+  const currency = organization?.currency ?? "BRL";
   const [hoveredChannel, setHoveredChannel] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
 
@@ -386,8 +391,8 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
                   ? name.slice(0, Math.max(2, maxChars - 1)) + "…"
                   : name;
 
-              const revenueCompact = fmtBRLCompact(rect.revenue / 100);
-              const revenueDecimal = fmtBRLDecimal(rect.revenue / 100);
+              const revenueCompact = fmtCurrencyCompact(rect.revenue / 100, locale, currency);
+              const revenueDecimal = fmtCurrencyDecimal(rect.revenue / 100, locale, currency);
 
               return (
                 <g
@@ -594,7 +599,7 @@ export function ChannelsTreemap({ data, isLoading }: ChannelsTreemapProps) {
                         fontFamily="ui-monospace, monospace"
                         fontWeight="700"
                       >
-                        {fmtBRLDecimal(r.revenue / 100)}
+                        {fmtCurrencyDecimal(r.revenue / 100, locale, currency)}
                       </text>
                       <text
                         x={ttX + pad}

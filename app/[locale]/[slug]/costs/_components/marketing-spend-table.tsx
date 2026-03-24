@@ -21,7 +21,8 @@ import { useMarketingSpends } from "@/hooks/queries/use-marketing-spends";
 import { useCreateMarketingSpend } from "@/hooks/mutations/use-create-marketing-spend";
 import { useUpdateMarketingSpend } from "@/hooks/mutations/use-update-marketing-spend";
 import { useDeleteMarketingSpend } from "@/hooks/mutations/use-delete-marketing-spend";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal, getCurrencySymbol } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import { MARKETING_SOURCE_OPTIONS, getMarketingSourceLabel } from "@/utils/marketing-sources";
 import type { IMarketingSpend } from "@/interfaces/cost.interface";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
@@ -49,6 +50,10 @@ function useDebounced<T>(value: T, delay: number): T {
 export function MarketingSpendTable({ organizationId, filter = {}, slug }: MarketingSpendTableProps) {
   const t = useTranslations("finance.marketingSpend");
   const locale = useLocale();
+  const { organization } = useOrganization();
+  const orgLocale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
+  const currencyPrefix = getCurrencySymbol(orgLocale, currency);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<IMarketingSpend | null>(null);
@@ -181,7 +186,7 @@ export function MarketingSpendTable({ organizationId, filter = {}, slug }: Marke
       currentSortDir: sortDir,
       render: (row) => (
         <span className="font-mono text-sm font-bold text-violet-400">
-          {fmtBRLDecimal(row.amountInCents / 100)}
+          {fmtCurrencyDecimal(row.amountInCents / 100, orgLocale, currency)}
         </span>
       ),
     },
@@ -243,7 +248,7 @@ export function MarketingSpendTable({ organizationId, filter = {}, slug }: Marke
         <div className="flex items-center gap-2 shrink-0">
           {totalAmountInCents > 0 && (
             <Badge variant="outline" className="text-xs border-violet-700 bg-violet-600/10 text-violet-300 font-mono">
-              {t("totalLabel")}: {fmtBRLDecimal(totalAmountInCents / 100)}
+              {t("totalLabel")}: {fmtCurrencyDecimal(totalAmountInCents / 100, orgLocale, currency)}
             </Badge>
           )}
           <Button
@@ -302,7 +307,7 @@ export function MarketingSpendTable({ organizationId, filter = {}, slug }: Marke
           onValueChange={(values) => { setMinAmountInput(values.floatValue); setPage(1); }}
           thousandSeparator="."
           decimalSeparator=","
-          prefix="R$ "
+          prefix={currencyPrefix}
           decimalScale={2}
           placeholder={t("minAmountPlaceholder")}
           customInput={Input}
@@ -314,7 +319,7 @@ export function MarketingSpendTable({ organizationId, filter = {}, slug }: Marke
           onValueChange={(values) => { setMaxAmountInput(values.floatValue); setPage(1); }}
           thousandSeparator="."
           decimalSeparator=","
-          prefix="R$ "
+          prefix={currencyPrefix}
           decimalScale={2}
           placeholder={t("maxAmountPlaceholder")}
           customInput={Input}

@@ -33,6 +33,7 @@ import { getRevenueSegments } from "@/actions/dashboard/get-revenue-segments.act
 import { getMrrOverview } from "@/actions/dashboard/get-mrr-overview.action";
 import { getEvents } from "@/actions/events/get-events.action";
 import { buildProfitAndLoss } from "@/utils/build-pl";
+import { fmtCurrency } from "@/utils/format";
 import { resolvePeriodDays } from "@/utils/resolve-period-days";
 import type { IDateFilter, DashboardPeriod } from "@/interfaces/dashboard.interface";
 import type { IFixedCost, IVariableCost } from "@/interfaces/cost.interface";
@@ -62,10 +63,6 @@ const ALL_SECTIONS = [
   { key: "events" },
 ];
 
-function formatBRL(cents: number): string {
-  return `R$ ${(cents / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
 function formatPct(value: number): string {
   return `${value.toFixed(2)}%`;
 }
@@ -89,6 +86,8 @@ async function fetchAndFormatSection(
   orgId: string,
   section: string,
   filter: IDateFilter,
+  locale: string,
+  currency: string,
 ): Promise<{ formatted: Record<string, unknown>; metrics: Record<string, number> }> {
   switch (section) {
     case "overview": {
@@ -108,8 +107,8 @@ async function fetchAndFormatSection(
           edicoes: steps["edit"] ?? 0,
           checkout_iniciado: steps["checkout_started"] ?? 0,
           pagamentos: purchases,
-          receita_bruta: formatBRL(revenue),
-          ticket_medio: formatBRL(ticket),
+          receita_bruta: fmtCurrency(revenue / 100, locale, currency),
+          ticket_medio: fmtCurrency(ticket / 100, locale, currency),
           taxa_conversao: formatPct(convRate * 100),
           checkout_abandonado: funnel?.checkoutAbandoned ?? 0,
         },
@@ -122,13 +121,13 @@ async function fetchAndFormatSection(
         canal: c.channel,
         visitas: c.steps["pageview"] ?? 0,
         pagamentos: c.steps["purchase"] ?? 0,
-        receita: formatBRL(c.revenue ?? 0),
-        ticket_medio: formatBRL(c.ticket_medio ?? 0),
+        receita: fmtCurrency((c.revenue ?? 0) / 100, locale, currency),
+        ticket_medio: fmtCurrency((c.ticket_medio ?? 0) / 100, locale, currency),
         conversao: c.conversion_rate,
       }));
       const totalRevenue = result.totalRevenue ?? 0;
       return {
-        formatted: { canais: topChannels, receita_total: formatBRL(totalRevenue) },
+        formatted: { canais: topChannels, receita_total: fmtCurrency(totalRevenue / 100, locale, currency) },
         metrics: { receita_total: totalRevenue },
       };
     }
@@ -152,11 +151,11 @@ async function fetchAndFormatSection(
       );
       return {
         formatted: {
-          receita_bruta: formatBRL(pl.grossRevenueInCents),
-          custos_variaveis: formatBRL(pl.totalVariableCostsInCents),
-          lucro_operacional: formatBRL(pl.operatingProfitInCents),
-          custos_fixos: formatBRL(pl.totalFixedCostsInCents),
-          lucro_liquido: formatBRL(pl.netProfitInCents),
+          receita_bruta: fmtCurrency(pl.grossRevenueInCents / 100, locale, currency),
+          custos_variaveis: fmtCurrency(pl.totalVariableCostsInCents / 100, locale, currency),
+          lucro_operacional: fmtCurrency(pl.operatingProfitInCents / 100, locale, currency),
+          custos_fixos: fmtCurrency(pl.totalFixedCostsInCents / 100, locale, currency),
+          lucro_liquido: fmtCurrency(pl.netProfitInCents / 100, locale, currency),
           margem_liquida: `${pl.marginPercent}%`,
         },
         metrics: {
@@ -173,12 +172,12 @@ async function fetchAndFormatSection(
         url: p.page,
         visitas: p.steps["pageview"] ?? 0,
         pagamentos: p.steps["purchase"] ?? 0,
-        receita: formatBRL(p.revenue ?? 0),
+        receita: fmtCurrency((p.revenue ?? 0) / 100, locale, currency),
         conversao: p.conversion_rate,
       }));
       const totalRevenue = result.totalRevenue ?? 0;
       return {
-        formatted: { paginas: topPages, receita_total: formatBRL(totalRevenue) },
+        formatted: { paginas: topPages, receita_total: fmtCurrency(totalRevenue / 100, locale, currency) },
         metrics: { receita_total: totalRevenue },
       };
     }
@@ -186,12 +185,12 @@ async function fetchAndFormatSection(
       const mrr = await getMrrOverview(orgId, filter);
       return {
         formatted: {
-          mrr: formatBRL(mrr?.mrr ?? 0),
-          arr: formatBRL(mrr?.arr ?? 0),
+          mrr: fmtCurrency((mrr?.mrr ?? 0) / 100, locale, currency),
+          arr: fmtCurrency((mrr?.arr ?? 0) / 100, locale, currency),
           assinaturas_ativas: mrr?.activeSubscriptions ?? 0,
-          arpu: formatBRL(mrr?.arpu ?? 0),
+          arpu: fmtCurrency((mrr?.arpu ?? 0) / 100, locale, currency),
           churn_rate: formatPct(mrr?.churnRate ?? 0),
-          ltv_estimado: formatBRL(mrr?.estimatedLtv ?? 0),
+          ltv_estimado: fmtCurrency((mrr?.estimatedLtv ?? 0) / 100, locale, currency),
           crescimento_mrr: formatPct(mrr?.mrrGrowthRate ?? 0),
         },
         metrics: {
@@ -218,17 +217,17 @@ async function fetchAndFormatSection(
       const variableList = (variableCostsList ?? []) as IVariableCost[];
       const pl = buildProfitAndLoss(grossRevenue, fixedList, variableList, periodDays, segments ?? {}, totalDiscounts);
       const totalCosts = pl.totalFixedCostsInCents + pl.totalVariableCostsInCents;
-      const fixedItems = fixedList.map((c) => ({ nome: c.name, valor: formatBRL(c.amountInCents) }));
+      const fixedItems = fixedList.map((c) => ({ nome: c.name, valor: fmtCurrency(c.amountInCents / 100, locale, currency) }));
       const variableItems = variableList.map((c) => ({
         nome: c.name,
-        valor: c.type === "PERCENTAGE" ? `${c.amountInCents / 100}%` : formatBRL(c.amountInCents),
+        valor: c.type === "PERCENTAGE" ? `${c.amountInCents / 100}%` : fmtCurrency(c.amountInCents / 100, locale, currency),
         aplica_em: c.applyTo,
       }));
       return {
         formatted: {
-          custos_fixos: formatBRL(pl.totalFixedCostsInCents),
-          custos_variaveis: formatBRL(pl.totalVariableCostsInCents),
-          custo_total: formatBRL(totalCosts),
+          custos_fixos: fmtCurrency(pl.totalFixedCostsInCents / 100, locale, currency),
+          custos_variaveis: fmtCurrency(pl.totalVariableCostsInCents / 100, locale, currency),
+          custo_total: fmtCurrency(totalCosts / 100, locale, currency),
           margem: formatPct(pl.marginPercent),
           impacto_na_receita: formatPct(grossRevenue > 0 ? (totalCosts / grossRevenue) * 100 : 0),
           itens_fixos: fixedItems,
@@ -283,6 +282,8 @@ function buildVariations(
   metricsA: Record<string, number>,
   metricsB: Record<string, number>,
   t: (key: string) => string,
+  locale: string,
+  currency: string,
 ): IMetricVariation[] {
   const metricDefs: Record<string, { labelKey: string; isCurrency: boolean; higherIsBetter: boolean }[]> = {
     overview: [
@@ -350,7 +351,7 @@ function buildVariations(
     const delta = vB === 0 ? (vA > 0 ? Infinity : 0) : ((vA - vB) / Math.abs(vB)) * 100;
     const isPositive = def.higherIsBetter ? delta >= 0 : delta <= 0;
     const varStr = calcVariation(vA, vB);
-    const fmt = def.isCurrency ? formatBRL : (v: number) => v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+    const fmt = def.isCurrency ? (v: number) => fmtCurrency(v / 100, locale, currency) : (v: number) => v.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
     return {
       label,
       valueA: vA,
@@ -651,6 +652,8 @@ export function ComparisonContent() {
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const slug = organization?.slug ?? "";
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   const [section, setSection] = useState("overview");
   const [filterA, setFilterA] = useState<IDateFilter>({ period: "today" });
@@ -680,11 +683,11 @@ export function ComparisonContent() {
 
     try {
       const [sectionA, sectionB] = await Promise.all([
-        fetchAndFormatSection(orgId, section, filterA),
-        fetchAndFormatSection(orgId, section, filterB),
+        fetchAndFormatSection(orgId, section, filterA, locale, currency),
+        fetchAndFormatSection(orgId, section, filterB, locale, currency),
       ]);
 
-      const vars = buildVariations(section, sectionA.metrics, sectionB.metrics, t);
+      const vars = buildVariations(section, sectionA.metrics, sectionB.metrics, t, locale, currency);
       setVariations(vars);
 
       const sectionLabel = t(`comparison.sections.${section}`);

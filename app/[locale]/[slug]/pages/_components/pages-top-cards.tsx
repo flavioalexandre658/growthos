@@ -2,7 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal, fmtInt } from "@/utils/format";
+import { fmtCurrencyDecimal, fmtInt } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import type { ILandingPageData, IStepMeta } from "@/interfaces/dashboard.interface";
 
 interface PagesTopCardsProps {
@@ -28,6 +29,9 @@ function shortPath(p: string, max = 30): string {
 
 export function PagesTopCards({ data, stepMeta, isLoading }: PagesTopCardsProps) {
   const t = useTranslations("pages.topCards");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const topPages = data.filter((p) => p.revenue > 0).slice(0, 5);
 
   const firstStepKey = stepMeta[0]?.key ?? "pageview";
@@ -97,7 +101,7 @@ export function PagesTopCards({ data, stepMeta, isLoading }: PagesTopCardsProps)
             </div>
 
             <div className="text-sm font-bold font-mono text-emerald-400">
-              {fmtBRLDecimal(page.revenue / 100)}
+              {fmtCurrencyDecimal(page.revenue / 100, locale, currency)}
             </div>
 
             {visits > 0 && (

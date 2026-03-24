@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import { IconArrowRight } from "@tabler/icons-react";
 import dayjs from "@/utils/dayjs";
 import type { IRecentPurchase } from "@/interfaces/dashboard.interface";
@@ -18,6 +19,9 @@ export function RecentPurchases({ purchases, isLoading }: RecentPurchasesProps) 
   const t = useTranslations("dashboard.recentPurchases");
   const params = useParams<{ slug: string }>();
   const slug = params?.slug ?? "";
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
@@ -65,7 +69,7 @@ export function RecentPurchases({ purchases, isLoading }: RecentPurchasesProps) 
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <span className="text-xs font-mono font-semibold text-emerald-400">
-                  {fmtBRLDecimal(p.grossValueInCents / 100)}
+                  {fmtCurrencyDecimal(p.grossValueInCents / 100, locale, currency)}
                 </span>
                 <span className="text-[10px] text-zinc-700 hidden sm:inline">
                   {dayjs(p.createdAt).fromNow()}

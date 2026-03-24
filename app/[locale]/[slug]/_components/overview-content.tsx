@@ -8,7 +8,7 @@ import { useTopProducts } from "@/hooks/queries/use-top-products";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useAtRiskCustomersCount } from "@/hooks/queries/use-at-risk-customers";
 import { useCreateDashboardAlerts } from "@/hooks/mutations/use-create-dashboard-alerts";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
 import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { KpiCards } from "./kpi-cards";
 import { FunnelSection } from "./funnel-section";
@@ -52,6 +52,8 @@ function buildAlertEntries(
   data: IGenericFunnelData,
   slug: string,
   t: (key: string, values?: Record<string, string | number | Date>) => string,
+  locale: string,
+  currency: string,
   atRisk?: AtRiskData,
 ): AlertEntry[] {
   const alerts: AlertEntry[] = [];
@@ -75,7 +77,7 @@ function buildAlertEntries(
     alerts.push({
       id: "abandoned",
       title: t("abandonedCarts", { count: abandonedCount }),
-      body: t("abandonedRevenue", { amount: fmtBRLDecimal(lostRevenue / 100) }),
+      body: t("abandonedRevenue", { amount: fmtCurrencyDecimal(lostRevenue / 100, locale, currency) }),
       linkUrl: `/${slug}/events?event_types=checkout_abandoned`,
       metadata: { alertId: "abandoned", abandonedCount },
     });
@@ -95,12 +97,12 @@ function buildAlertEntries(
         : t("revenueFell", { pct: Math.abs(revenueChange).toFixed(0) }),
       body: isUp
         ? t("revenueChangeUp", {
-            from: fmtBRLDecimal((data.previousRevenue ?? 0) / 100),
-            to: fmtBRLDecimal(data.revenue / 100),
+            from: fmtCurrencyDecimal((data.previousRevenue ?? 0) / 100, locale, currency),
+            to: fmtCurrencyDecimal(data.revenue / 100, locale, currency),
           })
         : t("revenueChangeDown", {
-            from: fmtBRLDecimal((data.previousRevenue ?? 0) / 100),
-            to: fmtBRLDecimal(data.revenue / 100),
+            from: fmtCurrencyDecimal((data.previousRevenue ?? 0) / 100, locale, currency),
+            to: fmtCurrencyDecimal(data.revenue / 100, locale, currency),
           }),
       metadata: { alertId: "revenue-trend" },
     });
@@ -171,6 +173,8 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const slug = organization?.slug ?? "";
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   const initialHiddenKeys = new Set(
     (organization?.funnelSteps ?? [])
@@ -221,7 +225,7 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   useEffect(() => {
     if (!funnel || funnelLoading || !orgId || alertsDispatchedRef.current) return;
 
-    const alertEntries = buildAlertEntries(funnel, slug, tAlerts, atRiskData ?? undefined);
+    const alertEntries = buildAlertEntries(funnel, slug, tAlerts, locale, currency, atRiskData ?? undefined);
     if (alertEntries.length === 0) return;
 
     alertsDispatchedRef.current = true;

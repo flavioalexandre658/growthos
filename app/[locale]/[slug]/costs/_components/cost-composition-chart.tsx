@@ -2,7 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import type { ICostsSummary } from "@/interfaces/cost.interface";
 
 interface CostCompositionChartProps {
@@ -20,6 +21,9 @@ interface Segment {
 
 export function CostCompositionChart({ data, isLoading }: CostCompositionChartProps) {
   const t = useTranslations("finance.costComposition");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   if (isLoading) {
     return (
@@ -94,7 +98,7 @@ export function CostCompositionChart({ data, isLoading }: CostCompositionChartPr
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
       <h3 className="text-sm font-bold text-zinc-100 mb-1">{t("title")}</h3>
       <p className="text-xs text-zinc-500 mb-4">
-        {t("subtitleWithValue", { value: fmtBRLDecimal(gross) })}
+        {t("subtitleWithValue", { value: fmtCurrencyDecimal(gross, locale, currency) })}
       </p>
 
       <div className="flex h-8 w-full rounded-lg overflow-hidden gap-0.5 mb-4">
@@ -103,7 +107,7 @@ export function CostCompositionChart({ data, isLoading }: CostCompositionChartPr
             key={seg.label}
             className={`${seg.bgColor} opacity-80 transition-all h-full flex items-center justify-center`}
             style={{ width: getWidth(seg.value) }}
-            title={`${seg.label}: ${fmtBRLDecimal(seg.value)}`}
+            title={`${seg.label}: ${fmtCurrencyDecimal(seg.value, locale, currency)}`}
           />
         ))}
       </div>
@@ -119,7 +123,7 @@ export function CostCompositionChart({ data, isLoading }: CostCompositionChartPr
               />
               <span className="text-[11px] text-zinc-400">{seg.label}</span>
               <span className={`text-[11px] font-mono font-semibold ${seg.textColor}`}>
-                {fmtBRLDecimal(seg.value)}
+                {fmtCurrencyDecimal(seg.value, locale, currency)}
               </span>
               <span className="text-[10px] text-zinc-600">({pct}%)</span>
             </div>

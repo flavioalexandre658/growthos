@@ -2,7 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 
 interface BreakdownRow {
   name: string;
@@ -28,6 +29,9 @@ export function FinanceBreakdownTable({
   showMargin = false,
 }: FinanceBreakdownTableProps) {
   const t = useTranslations("finance.breakdownTable");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   return (
     <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
@@ -63,7 +67,7 @@ export function FinanceBreakdownTable({
 
                 <div className="text-right shrink-0">
                   <p className="text-sm font-bold font-mono text-emerald-400">
-                    {fmtBRLDecimal(row.revenue / 100)}
+                    {fmtCurrencyDecimal(row.revenue / 100, locale, currency)}
                   </p>
                   <p className="text-[11px] text-zinc-500 mt-0.5">{row.percentage}</p>
                 </div>

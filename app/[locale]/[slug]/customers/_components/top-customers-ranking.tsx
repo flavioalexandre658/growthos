@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useTopCustomers } from "@/hooks/queries/use-top-customers";
 import type { TopCustomerSortBy } from "@/actions/customers/get-top-customers.action";
-import { fmtBRL } from "@/utils/format";
+import { fmtCurrency } from "@/utils/format";
 import {
   IconTrophy,
   IconUser,
@@ -35,6 +35,8 @@ export function TopCustomersRanking() {
   const { organization } = useOrganization();
   const orgId = organization?.id ?? "";
   const slug = organization?.slug ?? "";
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   const [sortBy, setSortBy] = useState<TopCustomerSortBy>("ltv");
 
@@ -149,7 +151,7 @@ export function TopCustomersRanking() {
                 </div>
 
                 <span className="hidden sm:block text-xs font-semibold text-emerald-400">
-                  {fmtBRL(customer.ltvInCents / 100)}
+                  {fmtCurrency(customer.ltvInCents / 100, locale, currency)}
                 </span>
 
                 <span className="hidden sm:block text-xs text-zinc-400 text-center">

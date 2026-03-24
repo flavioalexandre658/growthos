@@ -178,9 +178,7 @@ export async function getFunnel(
     rates.push({ key: "total_conversion", label: "Conversão Total", value: totalRate });
   }
 
-  const ticketMedio = purchaseCount > 0
-    ? `R$ ${(grossRevenue / 100 / purchaseCount).toFixed(2).replace(".", ",")}`
-    : "R$ 0,00";
+  const ticketMedio = purchaseCount > 0 ? grossRevenue / 100 / purchaseCount : 0;
 
   const checkoutAbandoned = countMap.get("checkout_abandoned")?.total ?? 0;
 

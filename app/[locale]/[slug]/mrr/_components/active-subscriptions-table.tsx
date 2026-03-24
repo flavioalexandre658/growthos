@@ -18,7 +18,7 @@ import {
 import { useActiveSubscriptions } from "@/hooks/queries/use-active-subscriptions";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { normalizeToMonthly, INTERVAL_LABELS } from "@/utils/billing";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
 import { formatDate } from "@/utils/format-date";
 import type {
   IActiveSubscription,
@@ -46,6 +46,8 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
   const { organization } = useOrganization();
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
   const slug = organization?.slug ?? "";
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<SubscriptionStatusFilter>("active");
   const [planId, setPlanId] = useState<string | undefined>();
@@ -166,7 +168,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
           </div>
           <div className="shrink-0 text-right">
             <p className="font-mono text-sm font-bold text-emerald-400">
-              {fmtBRLDecimal(row.valueInCents / 100)}
+              {fmtCurrencyDecimal(row.valueInCents / 100, locale, currency)}
             </p>
             <p className="text-[10px] text-zinc-600">
               {INTERVAL_LABELS[row.billingInterval] ?? row.billingInterval}
@@ -203,11 +205,11 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
         return (
           <div className="text-right">
             <span className="font-mono text-sm font-bold text-emerald-400">
-              {fmtBRLDecimal(row.valueInCents / 100)}
+              {fmtCurrencyDecimal(row.valueInCents / 100, locale, currency)}
             </span>
             {isNonMonthly && (
               <div className="text-[10px] text-zinc-600 font-mono">
-                {fmtBRLDecimal(monthly / 100)}/mês
+                {fmtCurrencyDecimal(monthly / 100, locale, currency)}/mês
               </div>
             )}
           </div>
@@ -225,7 +227,7 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
       currentSortDir: sortDir,
       render: (row) => (
         <span className="font-mono text-xs text-amber-400">
-          {fmtBRLDecimal(row.estimatedLtvInCents / 100)}
+          {fmtCurrencyDecimal(row.estimatedLtvInCents / 100, locale, currency)}
         </span>
       ),
     },

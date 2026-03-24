@@ -2,7 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal, fmtInt } from "@/utils/format";
+import { fmtCurrencyDecimal, fmtInt } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import type { ILandingPagesResult } from "@/interfaces/dashboard.interface";
 
 interface PagesKpiStripProps {
@@ -40,6 +41,9 @@ function KpiItem({ label, value, sub, rightBorder, bottomBorder }: KpiItemProps)
 
 export function PagesKpiStrip({ data, isLoading }: PagesKpiStripProps) {
   const t = useTranslations("pages.kpiStrip");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   if (isLoading) {
     return (
@@ -82,7 +86,7 @@ export function PagesKpiStrip({ data, isLoading }: PagesKpiStripProps) {
         />
         <KpiItem
           label={t("totalRevenue")}
-          value={<span className="text-emerald-400">{fmtBRLDecimal(totalRevenue / 100)}</span>}
+          value={<span className="text-emerald-400">{fmtCurrencyDecimal(totalRevenue / 100, locale, currency)}</span>}
           sub={t("inPeriod")}
           bottomBorder
         />
@@ -116,7 +120,7 @@ export function PagesKpiStrip({ data, isLoading }: PagesKpiStripProps) {
         />
         <KpiItem
           label={t("totalRevenue")}
-          value={<span className="text-emerald-400">{fmtBRLDecimal(totalRevenue / 100)}</span>}
+          value={<span className="text-emerald-400">{fmtCurrencyDecimal(totalRevenue / 100, locale, currency)}</span>}
           sub={t("inPeriod")}
           rightBorder
         />

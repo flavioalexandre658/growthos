@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Edit(*)",
+      "WebFetch(*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(ls -la \"e:\\\\Program Files\\\\xampp\\\\htdocs\\\\work\\\\convitede-admin\\\\app\\\\[locale]\\\\\\(public\\)\\\\docs\\\\_components\"\")",
+      "Bash(find 'e:\\\\Program Files\\\\xampp\\\\htdocs\\\\work\\\\convitede-admin\\\\actions\\\\exchange-rates' -type f -name *.ts)",
+      "Bash(grep -n \"R$ \" \"e:/Program Files/xampp/htdocs/work/convitede-admin/app/[locale]/[slug]/ai/_components/ai-content.tsx\" \"e:/Program Files/xampp/htdocs/work/convitede-admin/app/[locale]/[slug]/ai/comparativo/_components/comparison-content.tsx\")",
+      "Bash(find 'e:/Program Files/xampp/htdocs/work/convitede-admin' -maxdepth 3 -name *intl* -o -name middleware.ts)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(sudo *)"
+    ]
+  }
+}

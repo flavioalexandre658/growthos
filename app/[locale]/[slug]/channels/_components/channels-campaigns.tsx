@@ -3,7 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useTopCampaigns } from "@/hooks/queries/use-top-campaigns";
-import { fmtBRLDecimal, fmtInt } from "@/utils/format";
+import { fmtCurrencyDecimal, fmtInt } from "@/utils/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IconSparkles } from "@tabler/icons-react";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
@@ -16,6 +16,8 @@ export function ChannelsCampaigns({ filter }: ChannelsCampaignsProps) {
   const t = useTranslations("channels.campaigns");
   const { organization } = useOrganization();
   const orgId = organization?.id;
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   const { data: campaigns, isPending: isLoading } = useTopCampaigns(orgId, filter);
 
@@ -69,7 +71,7 @@ export function ChannelsCampaigns({ filter }: ChannelsCampaignsProps) {
                     </span>
                   </div>
                   <span className="font-mono text-sm font-bold text-emerald-400 text-right">
-                    {fmtBRLDecimal(c.revenue / 100)}
+                    {fmtCurrencyDecimal(c.revenue / 100, locale, currency)}
                   </span>
                   <span className="hidden sm:block font-mono text-xs text-zinc-500 text-right">
                     {fmtInt(c.purchases)}

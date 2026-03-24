@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/responsive-table";
 import { IconChevronDown, IconChevronUp, IconCopy, IconCheck } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
-import { fmtInt, fmtBRLDecimal } from "@/utils/format";
+import { fmtInt, fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 
 function conversionColor(value: string) {
   const n = parseFloat(value);
@@ -106,6 +107,9 @@ export function PagesTable({
   onPageSizeChange,
 }: PagesTableProps) {
   const t = useTranslations("pages.table");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   const handleSort = (key: string) => {
     if (key === orderBy) {
@@ -189,7 +193,7 @@ export function PagesTable({
           className="font-mono text-sm font-bold text-emerald-400 px-1 rounded"
           style={heatmapStyle(lp.revenue, maxRevenue, "emerald")}
         >
-          {fmtBRLDecimal(lp.revenue / 100)}
+          {fmtCurrencyDecimal(lp.revenue / 100, locale, currency)}
         </span>
       ),
     },

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { IconCopy, IconCheck, IconSparkles } from "@tabler/icons-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { IFunnelStep } from "@/interfaces/organization.interface";
@@ -137,7 +137,116 @@ window.Groware.track('signup', {
 })`;
 }
 
-export function buildPrompt(
+function buildEventExampleEn(
+  eventType: string,
+  currency: string,
+): string {
+  if (eventType === "purchase") {
+    return `window.Groware.track('purchase', {
+  dedupe: invoice.id,              // REQUIRED: Unique transaction ID from the payment gateway
+  gross_value: 89.00,              // required
+  currency: '${currency}',         // required always
+  discount: 10.00,                 // optional — applied discount
+  installments: 1,                 // optional
+  payment_method: 'credit_card',   // optional — pix | credit_card | boleto | debit_card
+  product_id: product.id,          // optional but recommended
+  product_name: product.name,      // optional
+  category: product.category,      // optional
+  customer_type: 'new',            // optional — new | returning
+  customer_id: user.id, // optional — NEVER email or SSN
+})`;
+  }
+
+  if (eventType === "checkout_started") {
+    return `window.Groware.track('checkout_started', {
+  gross_value: 89.00,
+  currency: '${currency}',
+  product_id: product.id,
+  product_name: product.name,
+  customer_id: user.id,
+})`;
+  }
+
+  if (eventType === "checkout_abandoned") {
+    return `window.Groware.track('checkout_abandoned', {
+  gross_value: 89.00,
+  currency: '${currency}',
+  reason: 'exit',                  // exit | payment_failed | timeout
+  customer_id: user.id,
+})`;
+  }
+
+  if (eventType === "signup") {
+    return `// After account creation, identify the user:
+Groware.identify(user.id, { name: user.name, email: user.email })
+
+window.Groware.track('signup', {
+  dedupe: true,                    // 1 signup per session (24h)
+  customer_type: 'new',            // new | returning
+  customer_id: user.id,
+})`;
+  }
+
+  if (eventType === "trial_started") {
+    return `window.Groware.track('trial_started', {
+  dedupe: true,                    // 1 trial per session (24h)
+  plan_id: plan.id,
+  plan_name: plan.name,
+  customer_id: user.id,
+})`;
+  }
+
+  if (eventType === "subscription_canceled") {
+    return `window.Groware.track('subscription_canceled', {
+  dedupe: subscription.id,         // Unique subscription ID from the payment gateway
+  subscription_id: subscription.id,
+  gross_value: subscription.price,
+  currency: '${currency}',
+  billing_interval: 'monthly',     // monthly | yearly | weekly
+  reason: 'user_canceled',         // user_canceled | payment_failed | upgraded | downgraded
+})`;
+  }
+
+  if (eventType === "subscription_changed") {
+    return `window.Groware.track('subscription_changed', {
+  dedupe: subscription.id,         // Unique subscription ID from the payment gateway
+  subscription_id: subscription.id,
+  previous_plan_id: subscription.previousPlanId,
+  new_plan_id: subscription.newPlanId,
+  previous_value: subscription.previousPrice,
+  new_value: subscription.newPrice,
+  currency: '${currency}',
+  billing_interval: 'monthly',
+})`;
+  }
+
+  const hasFinancial = FINANCIAL_EVENTS.has(eventType);
+  const hasSubscription = SUBSCRIPTION_EVENTS.has(eventType);
+
+  if (hasFinancial) {
+    return `window.Groware.track('${eventType}', {
+  gross_value: /* value in ${currency} */,
+  currency: '${currency}',
+  product_id: product.id,
+  customer_id: user.id,
+})`;
+  }
+
+  if (hasSubscription) {
+    return `window.Groware.track('${eventType}', {
+  subscription_id: subscription.id,
+  currency: '${currency}',
+  customer_id: user.id,
+})`;
+  }
+
+  return `window.Groware.track('${eventType}', {
+  product_id: /* ID of the resource involved */,
+  customer_id: user.id,
+})`;
+}
+
+function buildPromptEn(
   apiKey: string,
   baseUrl: string,
   orgName: string,
@@ -145,6 +254,198 @@ export function buildPrompt(
   funnelSteps: IFunnelStep[],
   hasRecurringRevenue: boolean,
 ): string {
+  const funnelLabel = funnelSteps
+    .filter((s) => !s.hidden)
+    .map((s) => s.eventType)
+    .join(" → ");
+
+  const visibleSteps = funnelSteps.filter(
+    (s) => !s.hidden && s.eventType !== "pageview",
+  );
+
+  const hasPurchase = visibleSteps.some((s) => s.eventType === "purchase");
+  const hasCheckoutStarted = visibleSteps.some(
+    (s) => s.eventType === "checkout_started",
+  );
+
+  const eventExamples = visibleSteps
+    .map((step) => {
+      const comment = `// ${step.label.toUpperCase()} — fire when "${step.label.toLowerCase()}" happens`;
+      const code = buildEventExampleEn(step.eventType, currency);
+      return `${comment}\n${code}`;
+    })
+    .join("\n\n");
+
+  const checkoutStartedSection =
+    hasPurchase && !hasCheckoutStarted
+      ? `
+────────────────────────────────────────────
+OPTIONAL EVENT — checkout_started
+────────────────────────────────────────────
+Fire immediately BEFORE opening the checkout (modal, redirect, etc.).
+Not required, but enables checkout abandonment analysis in the dashboard
+(how many users started checkout but didn't pay).
+
+// CHECKOUT STARTED — fire when opening the checkout
+window.Groware.track('checkout_started', {
+  gross_value: 89.00,
+  currency: '${currency}',
+  product_id: product.id,
+  customer_id: user.id,
+})
+
+The tracker automatically detects abandonment (beforeunload after checkout_started)
+and fires checkout_abandoned without additional code.`
+      : "";
+
+  const serverSideSection = hasRecurringRevenue
+    ? `
+────────────────────────────────────────────
+SERVER-SIDE — RENEWALS AND WEBHOOKS
+────────────────────────────────────────────
+Recurring payments have NO user in the browser. Use server-side track:
+
+// Node.js / Next.js — monthly renewal cron
+await fetch('${baseUrl}/api/track', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    key: process.env.GROWARE_API_KEY,
+    event_type: 'purchase',
+    event_time: invoice.created_at,       // ISO 8601 — actual payment date
+    dedupe_id: 'purchase:' + invoice.id,  // REQUIRED: Unique invoice ID
+    gross_value: subscription.price,
+    currency: '${currency}',
+    billing_type: 'recurring',
+    billing_interval: 'monthly',   // monthly | yearly | weekly
+    subscription_id: subscription.id,
+    plan_id: subscription.planId,
+    customer_id: subscription.customerId,
+  }),
+})
+
+// Server-side cancellation (non-payment, gateway webhook)
+await fetch('${baseUrl}/api/track', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    key: process.env.GROWARE_API_KEY,
+    event_type: 'subscription_canceled',
+    event_time: subscription.canceled_at, // ISO 8601 — actual cancellation date
+    dedupe_id: 'subscription_canceled:' + subscription.id,
+    subscription_id: subscription.id,
+    gross_value: subscription.price,
+    currency: '${currency}',
+    billing_interval: 'monthly',
+    reason: 'payment_failed',
+  }),
+})`
+    : "";
+
+  return `You are a senior engineer. Integrate Groware into the project below following the instructions exactly.
+
+════════════════════════════════════════════
+CONTEXT — WHAT IS GROWARE
+════════════════════════════════════════════
+Groware is a Growth Analytics tool. A JS script (tracker.js) is
+installed on the site and sends events to the API. Events feed dashboards
+for funnel, revenue, acquisition channels, MRR and churn.
+
+Full documentation: ${baseUrl}/docs
+
+Organization: ${orgName}
+Configured funnel: ${funnelLabel}
+Base currency: ${currency}
+
+════════════════════════════════════════════
+INSTALLATION
+════════════════════════════════════════════
+Paste this script in the <head> of ALL pages (or in the root layout):
+
+<script
+  async
+  src="${baseUrl}/tracker.min.js"
+  data-key="${apiKey}"
+></script>
+
+The tracker automatically captures (no additional code):
+- pageview on every page load and SPA navigation
+- utm_source, utm_medium, utm_campaign from the URL
+- device (mobile | desktop)
+- referrer and acquisition channel
+- anonymous session_id
+
+After the user logs in, call Groware.identify() to link the profile:
+
+window.Groware.identify(user.id, {
+  name: user.name,
+  email: user.email,
+  phone: user.phone,  // optional
+})
+
+// On logout:
+window.Groware.reset()
+
+════════════════════════════════════════════
+FUNNEL EVENTS — MANDATORY IMPLEMENTATION
+════════════════════════════════════════════
+${eventExamples}
+${checkoutStartedSection}
+${serverSideSection}
+════════════════════════════════════════════
+ENVIRONMENT VARIABLE
+════════════════════════════════════════════
+// .env.local
+GROWARE_API_KEY=${apiKey}
+
+════════════════════════════════════════════
+MANDATORY RULES
+════════════════════════════════════════════
+1. customer_id must be the authenticated user's UUID — NEVER email, SSN, or name
+   → customer_id is an opaque identifier; name/email/phone go in Groware.identify()
+2. customer_id is REQUIRED in financial and lifecycle events
+   (purchase, signup, trial_started, subscription_canceled, subscription_changed)
+   → The server returns HTTP 400 if customer_id is missing in these events
+   → In custom events (event_custom), customer_id is always recommended when the user is authenticated
+3. ALWAYS include currency: '${currency}' in financial events
+   (purchase, checkout_started, checkout_abandoned)
+4. subscription_id must be unique per subscription — never reuse
+5. Renewal events MUST be server-side (no user in the browser)
+6. Install the script BEFORE any other script to capture UTMs
+7. event_time (optional, ISO 8601) — if the event happened in the past, pass event_time
+   with the actual date. Useful for historical data migration. If omitted, uses current time.
+   Accepts up to 2 years in the past. Example: event_time: '2026-01-15T10:00:00Z'
+
+════════════════════════════════════════════
+VALIDATION — HOW TO CONFIRM IT WORKED
+════════════════════════════════════════════
+1. Open the site with ?utm_source=test&utm_medium=cpc in the URL
+2. Run each funnel flow manually (signup, edit, payment)
+3. Open DevTools → Network and confirm POST /api/track with status 204
+4. Go to Groware → Data → Events and verify the events appearing
+5. For additional diagnostics add data-debug="true" to the script:
+   <script async src="${baseUrl}/tracker.min.js" data-key="${apiKey}" data-debug="true"></script>
+   and check the [Groware] logs in the browser console
+
+If you have questions about any event or field, consult the documentation:
+${baseUrl}/docs
+
+Implement the events in the exact places in the project where each action occurs.
+Do not create mocks or fictitious data — connect to the real flows.`;
+}
+
+export function buildPrompt(
+  apiKey: string,
+  baseUrl: string,
+  orgName: string,
+  currency: string,
+  funnelSteps: IFunnelStep[],
+  hasRecurringRevenue: boolean,
+  locale: string = "pt",
+): string {
+  if (locale !== "pt") {
+    return buildPromptEn(apiKey, baseUrl, orgName, currency, funnelSteps, hasRecurringRevenue);
+  }
   const funnelLabel = funnelSteps
     .filter((s) => !s.hidden)
     .map((s) => s.eventType)
@@ -334,11 +635,12 @@ export function AiPromptSection({
   hasRecurringRevenue,
 }: AiPromptSectionProps) {
   const t = useTranslations("settings.aiPrompt");
+  const locale = useLocale();
   const [copied, setCopied] = useState(false);
 
   const prompt = useMemo(
-    () => buildPrompt(apiKey, baseUrl, orgName, currency, funnelSteps, hasRecurringRevenue),
-    [apiKey, baseUrl, orgName, currency, funnelSteps, hasRecurringRevenue],
+    () => buildPrompt(apiKey, baseUrl, orgName, currency, funnelSteps, hasRecurringRevenue, locale),
+    [apiKey, baseUrl, orgName, currency, funnelSteps, hasRecurringRevenue, locale],
   );
 
   const handleCopy = () => {

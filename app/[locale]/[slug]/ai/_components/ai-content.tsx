@@ -29,6 +29,7 @@ import { useRevenueSegments } from "@/hooks/queries/use-revenue-segments";
 import { useTopProducts } from "@/hooks/queries/use-top-products";
 import { useChannels } from "@/hooks/queries/use-channels";
 import { buildProfitAndLoss } from "@/utils/build-pl";
+import { fmtCurrencyDecimal } from "@/utils/format";
 import { cn } from "@/lib/utils";
 import { useTourProgress } from "@/hooks/queries/use-tour-progress";
 import { useUpdateTourState } from "@/hooks/mutations/use-update-tour-state";
@@ -487,6 +488,8 @@ export function AiContent() {
   const t = useTranslations("ai");
   const { organization } = useOrganization();
   const orgId = organization?.id;
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   const { data: tourProgress } = useTourProgress(orgId);
   const { mutate: updateTourState } = useUpdateTourState(orgId);
@@ -544,24 +547,24 @@ export function AiContent() {
 
     const plData = pl
       ? {
-          receita_bruta: `R$ ${(pl.grossRevenueInCents / 100).toFixed(2)}`,
-          custos_variaveis: `R$ ${(pl.totalVariableCostsInCents / 100).toFixed(2)}`,
-          lucro_operacional: `R$ ${(pl.operatingProfitInCents / 100).toFixed(2)}`,
-          custos_fixos: `R$ ${(pl.totalFixedCostsInCents / 100).toFixed(2)}`,
-          lucro_liquido: `R$ ${(pl.netProfitInCents / 100).toFixed(2)}`,
+          receita_bruta: fmtCurrencyDecimal(pl.grossRevenueInCents / 100, locale, currency),
+          custos_variaveis: fmtCurrencyDecimal(pl.totalVariableCostsInCents / 100, locale, currency),
+          lucro_operacional: fmtCurrencyDecimal(pl.operatingProfitInCents / 100, locale, currency),
+          custos_fixos: fmtCurrencyDecimal(pl.totalFixedCostsInCents / 100, locale, currency),
+          lucro_liquido: fmtCurrencyDecimal(pl.netProfitInCents / 100, locale, currency),
           margem_liquida: `${pl.marginPercent}%`,
           periodo_dias: pl.periodDays,
           detalhamento_fixos: pl.fixedCostsBreakdown.map((c) => ({
             nome: c.name,
-            valor_mensal: `R$ ${(c.amountInCents / 100).toFixed(2)}/mês`,
-            valor_periodo: `R$ ${(c.calculatedInCents / 100).toFixed(2)}`,
+            valor_mensal: `${fmtCurrencyDecimal(c.amountInCents / 100, locale, currency)}/mês`,
+            valor_periodo: fmtCurrencyDecimal(c.calculatedInCents / 100, locale, currency),
           })),
           detalhamento_variaveis: pl.variableCostsBreakdown.map((c) => ({
             nome: c.name,
             percentual: `${(c.amountInCents / 100).toFixed(2)}%`,
             aplicado_sobre: c.applyTo === "all" ? "toda receita" : `${c.applyTo} = ${c.applyToValue}`,
-            receita_base: `R$ ${(c.appliedRevenueInCents / 100).toFixed(2)}`,
-            valor_calculado: `R$ ${(c.calculatedInCents / 100).toFixed(2)}`,
+            receita_base: fmtCurrencyDecimal(c.appliedRevenueInCents / 100, locale, currency),
+            valor_calculado: fmtCurrencyDecimal(c.calculatedInCents / 100, locale, currency),
           })),
         }
       : null;
@@ -570,7 +573,7 @@ export function AiContent() {
       ? {
           steps: funnel.steps.map((s) => ({ etapa: s.label, valor: s.value })),
           taxas: funnel.rates.map((r) => ({ taxa: r.label, valor: r.value })),
-          ticket_medio: funnel.ticketMedio,
+          ticket_medio: fmtCurrencyDecimal(funnel.ticketMedio, locale, currency),
           ...(funnel.checkoutAbandoned !== undefined && {
             checkout_abandonado: funnel.checkoutAbandoned,
           }),
@@ -581,14 +584,14 @@ export function AiContent() {
       ?.slice(0, 5)
       .map((c) => ({
         canal: c.channel,
-        receita: `R$ ${(c.revenue / 100).toFixed(2)}`,
+        receita: fmtCurrencyDecimal(c.revenue / 100, locale, currency),
         conversao: c.conversion_rate,
-        ticket_medio: `R$ ${(c.ticket_medio / 100).toFixed(2)}`,
+        ticket_medio: fmtCurrencyDecimal(c.ticket_medio / 100, locale, currency),
       }));
 
     const topProds = topProducts?.slice(0, 5).map((p) => ({
       produto: p.productName,
-      receita: `R$ ${(p.revenueInCents / 100).toFixed(2)}`,
+      receita: fmtCurrencyDecimal(p.revenueInCents / 100, locale, currency),
       pagamentos: p.purchases,
     }));
 
@@ -598,7 +601,7 @@ export function AiContent() {
           modelo: organization.aiProfile.model,
           regime_tributario: organization.aiProfile.taxRegime,
           meta_mensal: organization.aiProfile.monthlyGoal
-            ? `R$ ${organization.aiProfile.monthlyGoal.toFixed(2)}`
+            ? fmtCurrencyDecimal(organization.aiProfile.monthlyGoal, locale, currency)
             : undefined,
         }
       : null;
@@ -612,10 +615,10 @@ export function AiContent() {
       periodo: DEFAULT_FILTER,
       ...(marketingSummary?.length && {
         gastos_marketing: {
-          total: `R$ ${(marketingSummary.reduce((s, m) => s + m.totalAmountInCents, 0) / 100).toFixed(2)}`,
+          total: fmtCurrencyDecimal(marketingSummary.reduce((s, m) => s + m.totalAmountInCents, 0) / 100, locale, currency),
           por_canal: marketingSummary.map((m) => ({
             canal: m.sourceLabel,
-            valor: `R$ ${(m.totalAmountInCents / 100).toFixed(2)}`,
+            valor: fmtCurrencyDecimal(m.totalAmountInCents / 100, locale, currency),
           })),
         },
       }),

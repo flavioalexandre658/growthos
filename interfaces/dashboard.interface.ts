@@ -67,7 +67,7 @@ export interface IGenericFunnelData {
   steps: IGenericFunnelStep[];
   rates: { key: string; label: string; value: string }[];
   revenue: number;
-  ticketMedio: string;
+  ticketMedio: number;
   checkoutAbandoned?: number;
   previousSteps?: { key: string; value: number }[];
   previousRevenue?: number;

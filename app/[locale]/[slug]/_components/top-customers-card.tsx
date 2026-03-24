@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useTopCustomers } from "@/hooks/queries/use-top-customers";
-import { fmtBRL } from "@/utils/format";
+import { fmtCurrency } from "@/utils/format";
 import { IconUser, IconUsers, IconArrowRight } from "@tabler/icons-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,8 @@ export function TopCustomersCard() {
   const { organization } = useOrganization();
   const orgId = organization?.id ?? "";
   const slug = organization?.slug ?? "";
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   const { data: customers, isLoading } = useTopCustomers(orgId, { limit: 5 });
   const { isSensitive, maskName, maskEmail } = useSensitiveMode();
@@ -85,7 +87,7 @@ export function TopCustomersCard() {
               <div className="flex flex-col items-end shrink-0 gap-0.5">
                 {customer.ltvInCents > 0 ? (
                   <span className="text-xs font-mono font-semibold text-emerald-400">
-                    {fmtBRL(customer.ltvInCents / 100)}
+                    {fmtCurrency(customer.ltvInCents / 100, locale, currency)}
                   </span>
                 ) : (
                   <span className="text-[10px] text-zinc-700">{t("noPayments")}</span>

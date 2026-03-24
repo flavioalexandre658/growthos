@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useSession } from "next-auth/react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import toast from "react-hot-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBilling } from "@/hooks/queries/use-billing";
@@ -16,11 +16,12 @@ type BillingInterval = "monthly" | "annual";
 
 export default function BillingPage() {
   const t = useTranslations("settings.billing.page");
+  const locale = useLocale();
   const { data: session } = useSession();
   const { data: billing, isLoading } = useBilling();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [isLoadingCheckout, setIsLoadingCheckout] = useState(false);
-  const [currency, setCurrency] = useState<Currency>("brl");
+  const currency: Currency = locale === "pt" ? "brl" : "usd";
   const [billingInterval, setBillingInterval] = useState<BillingInterval>("monthly");
 
   async function handleManagePortal() {
@@ -119,19 +120,6 @@ export default function BillingPage() {
             </button>
           </div>
 
-          <div className="flex bg-[#111118] border border-[#1e1e2e] rounded-lg p-[3px] gap-0.5">
-            {(["brl", "usd"] as const).map((c) => (
-              <button
-                key={c}
-                onClick={() => setCurrency(c)}
-                className={`px-3 py-[5px] rounded-md text-xs font-semibold transition-all ${
-                  currency === c ? "bg-[#1e1e30] text-zinc-200" : "text-zinc-500 hover:text-zinc-400"
-                }`}
-              >
-                {c.toUpperCase()}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 

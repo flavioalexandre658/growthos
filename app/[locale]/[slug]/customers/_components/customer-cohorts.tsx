@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useCustomerCohorts } from "@/hooks/queries/use-customer-cohorts";
-import { fmtBRL } from "@/utils/format";
+import { fmtCurrency } from "@/utils/format";
 import {
   IconUsers,
   IconChevronDown,
@@ -43,6 +43,8 @@ export function CustomerCohorts() {
   const { organization } = useOrganization();
   const orgId = organization?.id ?? "";
   const slug = organization?.slug ?? "";
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
 
@@ -150,7 +152,7 @@ export function CustomerCohorts() {
 
                   <div className="hidden sm:block shrink-0 text-right">
                     <span className="text-xs font-medium text-zinc-300">
-                      {fmtBRL(cohort.totalLtvInCents / 100)}
+                      {fmtCurrency(cohort.totalLtvInCents / 100, locale, currency)}
                     </span>
                   </div>
 
@@ -199,7 +201,7 @@ export function CustomerCohorts() {
                               </span>
                               {c.ltvInCents > 0 && (
                                 <span className="text-[10px] text-zinc-500">
-                                  {fmtBRL(c.ltvInCents / 100)}
+                                  {fmtCurrency(c.ltvInCents / 100, locale, currency)}
                                 </span>
                               )}
                             </div>

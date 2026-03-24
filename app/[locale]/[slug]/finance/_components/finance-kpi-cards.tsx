@@ -10,7 +10,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import {
   IconCurrencyDollar,
   IconWallet,
@@ -177,6 +178,9 @@ interface FinanceKpiCardsProps {
 
 export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps) {
   const t = useTranslations("finance.kpiCards");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   if (isLoading) {
     return (
@@ -222,8 +226,8 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
         <KpiCard
           hero
           label={t("grossRevenue")}
-          value={fmtBRLDecimal(gross / 100)}
-          previousLabel={prevGross !== undefined ? fmtBRLDecimal(prevGross / 100) : undefined}
+          value={fmtCurrencyDecimal(gross / 100, locale, currency)}
+          previousLabel={prevGross !== undefined ? fmtCurrencyDecimal(prevGross / 100, locale, currency) : undefined}
           icon={IconCurrencyDollar}
           color="text-emerald-400"
           bgColor="bg-emerald-600/20"
@@ -232,8 +236,8 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
         />
         <KpiCard
           label={t("recurring")}
-          value={fmtBRLDecimal(recurring / 100)}
-          previousLabel={prevRecurring !== undefined ? fmtBRLDecimal(prevRecurring / 100) : undefined}
+          value={fmtCurrencyDecimal(recurring / 100, locale, currency)}
+          previousLabel={prevRecurring !== undefined ? fmtCurrencyDecimal(prevRecurring / 100, locale, currency) : undefined}
           subLabel={t("percentOfTotal", { percent: recurringPct })}
           icon={IconRepeat}
           color="text-cyan-400"
@@ -244,8 +248,8 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
         />
         <KpiCard
           label={t("oneTime")}
-          value={fmtBRLDecimal(oneTime / 100)}
-          previousLabel={prevOneTime !== undefined ? fmtBRLDecimal(prevOneTime / 100) : undefined}
+          value={fmtCurrencyDecimal(oneTime / 100, locale, currency)}
+          previousLabel={prevOneTime !== undefined ? fmtCurrencyDecimal(prevOneTime / 100, locale, currency) : undefined}
           subLabel={t("percentOfTotal", { percent: oneTimePct })}
           icon={IconShoppingBag}
           color="text-sky-400"
@@ -256,8 +260,8 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
         />
         <KpiCard
           label={t("averageTicket")}
-          value={fmtBRLDecimal((data?.averageTicketInCents ?? 0) / 100)}
-          previousLabel={prevTicket !== undefined ? fmtBRLDecimal(prevTicket / 100) : undefined}
+          value={fmtCurrencyDecimal((data?.averageTicketInCents ?? 0) / 100, locale, currency)}
+          previousLabel={prevTicket !== undefined ? fmtCurrencyDecimal(prevTicket / 100, locale, currency) : undefined}
           subLabel={t("purchases", { count: data?.totalPurchases ?? 0 })}
           icon={IconReceipt}
           color="text-violet-400"
@@ -272,7 +276,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <KpiCard
           label={t("discounts")}
-          value={fmtBRLDecimal((pl?.eventCostsInCents ?? 0) / 100)}
+          value={fmtCurrencyDecimal((pl?.eventCostsInCents ?? 0) / 100, locale, currency)}
           subLabel={t("discountsSubLabel")}
           icon={IconWallet}
           color="text-rose-400"
@@ -281,7 +285,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
         />
         <KpiCard
           label={t("variableCosts")}
-          value={fmtBRLDecimal((pl?.totalVariableCostsInCents ?? 0) / 100)}
+          value={fmtCurrencyDecimal((pl?.totalVariableCostsInCents ?? 0) / 100, locale, currency)}
           subLabel={t("variableCostsSubLabel")}
           icon={IconCalculator}
           color="text-orange-400"
@@ -290,7 +294,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
         />
         <KpiCard
           label={t("fixedCosts")}
-          value={fmtBRLDecimal((pl?.totalFixedCostsInCents ?? 0) / 100)}
+          value={fmtCurrencyDecimal((pl?.totalFixedCostsInCents ?? 0) / 100, locale, currency)}
           subLabel={isSubMonth ? t("fixedCostsSubLabelProrated", { days: periodDays }) : t("fixedCostsSubLabelMonthly")}
           icon={IconCalculator}
           color="text-red-400"
@@ -303,7 +307,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <KpiCard
           label={t("operatingProfit")}
-          value={fmtBRLDecimal((pl?.operatingProfitInCents ?? 0) / 100)}
+          value={fmtCurrencyDecimal((pl?.operatingProfitInCents ?? 0) / 100, locale, currency)}
           subLabel={t("operatingProfitSubLabel")}
           icon={IconTrendingUp}
           color={(pl?.operatingProfitInCents ?? 0) >= 0 ? "text-indigo-400" : "text-red-400"}
@@ -312,8 +316,8 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
         />
         <KpiCard
           label={t("netProfit")}
-          value={fmtBRLDecimal((pl?.netProfitInCents ?? 0) / 100)}
-          previousLabel={prevNetProfit !== undefined ? fmtBRLDecimal(prevNetProfit / 100) : undefined}
+          value={fmtCurrencyDecimal((pl?.netProfitInCents ?? 0) / 100, locale, currency)}
+          previousLabel={prevNetProfit !== undefined ? fmtCurrencyDecimal(prevNetProfit / 100, locale, currency) : undefined}
           subLabel={t("netProfitSubLabel")}
           icon={IconChartPie}
           color={(pl?.netProfitInCents ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"}
@@ -348,7 +352,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
               <div className="min-w-0">
                 <div className="flex items-baseline gap-2 flex-wrap">
                   <span className="text-2xl font-bold font-mono text-rose-300">
-                    {fmtBRLDecimal(lostRevenue / 100)}
+                    {fmtCurrencyDecimal(lostRevenue / 100, locale, currency)}
                   </span>
                   {prevLost !== undefined && prevLost > 0 && (
                     <VariationBadge current={lostRevenue} previous={prevLost} />
@@ -358,7 +362,7 @@ export function FinanceKpiCards({ data, isLoading, slug }: FinanceKpiCardsProps)
                 <p className="text-xs text-zinc-500 mt-0.5">
                   {t("abandonedCheckouts", { count: abandonedCount })}
                   {prevLost !== undefined && prevLost > 0 && (
-                    <> · {t("comparedToPrevious", { value: fmtBRLDecimal(prevLost / 100) })}</>
+                    <> · {t("comparedToPrevious", { value: fmtCurrencyDecimal(prevLost / 100, locale, currency) })}</>
                   )}
                 </p>
               </div>

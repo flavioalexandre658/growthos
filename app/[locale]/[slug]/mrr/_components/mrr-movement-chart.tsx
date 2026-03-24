@@ -13,7 +13,8 @@ import {
   ReferenceLine,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import type { IMrrMovementEntry } from "@/interfaces/mrr.interface";
 
 interface MrrMovementChartProps {
@@ -38,10 +39,14 @@ function CustomTooltip({
   active,
   payload,
   label,
+  locale,
+  currency,
 }: {
   active?: boolean;
   payload?: TooltipPayload[];
   label?: string;
+  locale: string;
+  currency: string;
 }) {
   if (!active || !payload?.length) return null;
 
@@ -55,7 +60,7 @@ function CustomTooltip({
         <div key={p.name} className="flex items-center justify-between gap-4">
           <span style={{ color: p.color }}>{p.name}</span>
           <span className="font-mono font-bold text-zinc-100">
-            {fmtBRLDecimal(Math.abs(p.value) / 100)}
+            {fmtCurrencyDecimal(Math.abs(p.value) / 100, locale, currency)}
           </span>
         </div>
       ))}
@@ -65,7 +70,7 @@ function CustomTooltip({
           <div className="flex items-center justify-between gap-4">
             <span style={{ color: netMrr.color }} className="font-semibold">{netMrr.name}</span>
             <span className="font-mono font-bold" style={{ color: netMrr.color }}>
-              {netMrr.value >= 0 ? "+" : ""}{fmtBRLDecimal(netMrr.value / 100)}
+              {netMrr.value >= 0 ? "+" : ""}{fmtCurrencyDecimal(netMrr.value / 100, locale, currency)}
             </span>
           </div>
         </>
@@ -76,6 +81,9 @@ function CustomTooltip({
 
 export function MrrMovementChart({ data, isLoading }: MrrMovementChartProps) {
   const t = useTranslations("mrr.movementChart");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const chartData = (data ?? []).map((d) => ({
     ...d,
     label: formatDateLabel(d.date),
@@ -109,10 +117,10 @@ export function MrrMovementChart({ data, isLoading }: MrrMovementChartProps) {
               tick={{ fontSize: 10, fill: "#52525b" }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v) => fmtBRLDecimal(Math.abs(v) / 100)}
+              tickFormatter={(v) => fmtCurrencyDecimal(Math.abs(v) / 100, locale, currency)}
               width={64}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
+            <Tooltip content={<CustomTooltip locale={locale} currency={currency} />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
             <Legend
               wrapperStyle={{ fontSize: 11, color: "#71717a", paddingTop: 14 }}
               formatter={(value) => <span style={{ color: "#71717a" }}>{value}</span>}

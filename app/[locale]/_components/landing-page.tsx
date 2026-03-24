@@ -16,7 +16,7 @@ import {
   IconReceipt,
   IconTrendingUp,
 } from "@tabler/icons-react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { LandingNav } from "./landing-nav";
 import { LandingCtaForm } from "./landing-cta-form";
 import { LandingFooter } from "./landing-footer";
@@ -204,6 +204,8 @@ const integrationLogos = [
 
 function HeroMockup() {
   const t = useTranslations("landing.hero");
+  const locale = useLocale();
+  const isEn = locale !== "pt";
 
   return (
     <div
@@ -249,19 +251,19 @@ function HeroMockup() {
           {[
             {
               labelKey: "kpis.pageviews",
-              value: "12.840",
+              value: isEn ? "12,840" : "12.840",
               color: "text-indigo-400",
               bg: "bg-indigo-600/20",
               Icon: IconEye,
-              trend: "+8,2%",
+              trend: isEn ? "+8.2%" : "+8,2%",
             },
             {
               labelKey: "kpis.signups",
-              value: "1.247",
+              value: isEn ? "1,247" : "1.247",
               color: "text-sky-400",
               bg: "bg-sky-600/20",
               Icon: IconUsers,
-              trend: "+14,3%",
+              trend: isEn ? "+14.3%" : "+14,3%",
             },
             {
               labelKey: "kpis.checkouts",
@@ -269,7 +271,7 @@ function HeroMockup() {
               color: "text-violet-400",
               bg: "bg-violet-600/20",
               Icon: IconCreditCard,
-              trend: "+6,1%",
+              trend: isEn ? "+6.1%" : "+6,1%",
             },
             {
               labelKey: "kpis.payments",
@@ -277,19 +279,19 @@ function HeroMockup() {
               color: "text-amber-400",
               bg: "bg-amber-600/20",
               Icon: IconCreditCard,
-              trend: "+11,7%",
+              trend: isEn ? "+11.7%" : "+11,7%",
             },
             {
               labelKey: "kpis.revenue",
-              value: "R$48,2k",
+              value: isEn ? "$48.2k" : "R$48,2k",
               color: "text-emerald-400",
               bg: "bg-emerald-600/20",
               Icon: IconCurrencyDollar,
-              trend: "+12,4%",
+              trend: isEn ? "+12.4%" : "+12,4%",
             },
             {
               labelKey: "kpis.avgTicket",
-              value: "R$261",
+              value: isEn ? "$261" : "R$261",
               color: "text-amber-400",
               bg: "bg-amber-600/20",
               Icon: IconReceipt,
@@ -367,7 +369,7 @@ function HeroMockup() {
                     />
                   </div>
                   <span className="text-[10px] font-mono text-zinc-400 w-12 text-right">
-                    {value.toLocaleString("pt-BR")}
+                    {value.toLocaleString(isEn ? "en-US" : "pt-BR")}
                   </span>
                 </div>
               ))}
@@ -382,26 +384,26 @@ function HeroMockup() {
               {[
                 {
                   channel: "google / organic",
-                  revenue: "R$18.400",
-                  conv: "4,2%",
+                  revenue: isEn ? "$18,400" : "R$18.400",
+                  conv: isEn ? "4.2%" : "4,2%",
                   color: "#6366f1",
                 },
                 {
                   channel: "instagram / paid",
-                  revenue: "R$9.100",
-                  conv: "2,8%",
+                  revenue: isEn ? "$9,100" : "R$9.100",
+                  conv: isEn ? "2.8%" : "2,8%",
                   color: "#f59e0b",
                 },
                 {
                   channel: "(direct)",
-                  revenue: "R$8.900",
-                  conv: "5,1%",
+                  revenue: isEn ? "$8,900" : "R$8.900",
+                  conv: isEn ? "5.1%" : "5,1%",
                   color: "#10b981",
                 },
                 {
                   channel: "email",
-                  revenue: "R$7.200",
-                  conv: "6,8%",
+                  revenue: isEn ? "$7,200" : "R$7.200",
+                  conv: isEn ? "6.8%" : "6,8%",
                   color: "#06b6d4",
                 },
               ].map(({ channel, revenue, conv, color }) => (
@@ -1054,22 +1056,24 @@ function AiSection() {
 
 function MetricsSection() {
   const t = useTranslations("landing.metrics");
+  const locale = useLocale();
+  const isEn = locale !== "pt";
   const filters = t.raw("filters") as string[];
 
   const channelRows = [
     {
       name: "google / organic",
-      revenue: "R$18.400",
-      conv: "4,2%",
-      signup: "842",
+      revenue: isEn ? "$18,400" : "R$18.400",
+      conv: isEn ? "4.2%" : "4,2%",
+      signup: isEn ? "842" : "842",
       payment: "109",
       trend: "+18%",
       up: true,
     },
     {
       name: "instagram / paid",
-      revenue: "R$9.100",
-      conv: "2,8%",
+      revenue: isEn ? "$9,100" : "R$9.100",
+      conv: isEn ? "2.8%" : "2,8%",
       signup: "201",
       payment: "42",
       trend: "+3%",
@@ -1077,8 +1081,8 @@ function MetricsSection() {
     },
     {
       name: "(direct)",
-      revenue: "R$8.900",
-      conv: "5,1%",
+      revenue: isEn ? "$8,900" : "R$8.900",
+      conv: isEn ? "5.1%" : "5,1%",
       signup: "198",
       payment: "34",
       trend: "+22%",
@@ -1086,8 +1090,8 @@ function MetricsSection() {
     },
     {
       name: "email",
-      revenue: "R$7.200",
-      conv: "6,8%",
+      revenue: isEn ? "$7,200" : "R$7.200",
+      conv: isEn ? "6.8%" : "6,8%",
       signup: "124",
       payment: "23",
       trend: "+22%",
@@ -1095,8 +1099,8 @@ function MetricsSection() {
     },
     {
       name: "twitter / x",
-      revenue: "R$2.100",
-      conv: "1,1%",
+      revenue: isEn ? "$2,100" : "R$2.100",
+      conv: isEn ? "1.1%" : "1,1%",
       signup: "72",
       payment: "11",
       trend: "−4%",

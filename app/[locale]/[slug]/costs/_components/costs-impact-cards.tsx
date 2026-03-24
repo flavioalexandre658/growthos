@@ -8,7 +8,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import {
   IconTrendingDown,
   IconCurrencyDollar,
@@ -89,6 +90,9 @@ interface CostsImpactCardsProps {
 
 export function CostsImpactCards({ data, isLoading }: CostsImpactCardsProps) {
   const t = useTranslations("finance.costsImpact");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   if (isLoading) {
     return (
@@ -100,13 +104,13 @@ export function CostsImpactCards({ data, isLoading }: CostsImpactCardsProps) {
     );
   }
 
-  const fixedTotal = fmtBRLDecimal((data?.totalFixedCostsInCents ?? 0) / 100);
-  const varTotal = fmtBRLDecimal((data?.totalVariableCostsInCents ?? 0) / 100);
-  const marketingTotal = fmtBRLDecimal((data?.totalMarketingSpendInCents ?? 0) / 100);
-  const costTotal = fmtBRLDecimal((data?.totalCostsInCents ?? 0) / 100);
+  const fixedTotal = fmtCurrencyDecimal((data?.totalFixedCostsInCents ?? 0) / 100, locale, currency);
+  const varTotal = fmtCurrencyDecimal((data?.totalVariableCostsInCents ?? 0) / 100, locale, currency);
+  const marketingTotal = fmtCurrencyDecimal((data?.totalMarketingSpendInCents ?? 0) / 100, locale, currency);
+  const costTotal = fmtCurrencyDecimal((data?.totalCostsInCents ?? 0) / 100, locale, currency);
   const impact = data?.impactPercent ?? 0;
   const margin = data?.marginPercent ?? 0;
-  const grossRev = fmtBRLDecimal((data?.grossRevenueInCents ?? 0) / 100);
+  const grossRev = fmtCurrencyDecimal((data?.grossRevenueInCents ?? 0) / 100, locale, currency);
 
   const cards: ImpactCardProps[] = [
     {

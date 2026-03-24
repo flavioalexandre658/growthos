@@ -55,3 +55,26 @@ export function fmtCurrencyDecimal(
     maximumFractionDigits: 2,
   }).format(n);
 }
+
+export function fmtCurrencyCompact(
+  value: number,
+  locale: string,
+  currency: string,
+): string {
+  const abs = Math.abs(value);
+  if (abs >= 1_000) {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: abs >= 1_000_000 ? 1 : 0,
+      notation: "compact",
+    }).format(value);
+  }
+  return fmtCurrency(value, locale, currency);
+}
+
+export function getCurrencySymbol(locale: string, currency: string): string {
+  const parts = new Intl.NumberFormat(locale, { style: "currency", currency }).formatToParts(0);
+  const sym = parts.find((p) => p.type === "currency")?.value ?? currency;
+  return sym + " ";
+}

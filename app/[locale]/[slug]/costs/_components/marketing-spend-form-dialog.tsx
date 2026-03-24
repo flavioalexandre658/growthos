@@ -5,6 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslations, useLocale } from "next-intl";
+import { getCurrencySymbol } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import { NumericFormat } from "react-number-format";
 import dayjs from "dayjs";
 import {
@@ -82,6 +84,9 @@ export function MarketingSpendFormDialog({
 }: MarketingSpendFormDialogProps) {
   const t = useTranslations("finance.marketingSpend");
   const locale = useLocale();
+  const { organization } = useOrganization();
+  const orgLocale = organization?.locale ?? "pt-BR";
+  const orgCurrency = organization?.currency ?? "BRL";
 
   const isEditing = !!initialData;
 
@@ -248,7 +253,7 @@ export function MarketingSpendFormDialog({
                       }
                       thousandSeparator="."
                       decimalSeparator=","
-                      prefix="R$ "
+                      prefix={getCurrencySymbol(orgLocale, orgCurrency)}
                       decimalScale={2}
                       fixedDecimalScale
                       placeholder={t("amountPlaceholder")}

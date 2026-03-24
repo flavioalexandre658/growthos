@@ -12,7 +12,8 @@ import { ResponsiveTable, TableColumn, ServerPaginationConfig } from "@/componen
 import { IconChevronDown, IconChevronUp, IconEye, IconEyeOff } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { ChannelBadge } from "@/components/ui/channel-badge";
-import { fmtInt, fmtBRLDecimal } from "@/utils/format";
+import { fmtInt, fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 
 function roiColor(roi: number) {
   if (roi >= 500) return "text-emerald-400";
@@ -70,7 +71,7 @@ interface ChannelsTableProps {
   onPageSizeChange: (size: number) => void;
 }
 
-function ExpandedChannelRow({ c, t }: { c: ChannelRow; t: ReturnType<typeof useTranslations<"channels.table">> }) {
+function ExpandedChannelRow({ c, t, locale, currency }: { c: ChannelRow; t: ReturnType<typeof useTranslations<"channels.table">>; locale: string; currency: string }) {
   const hasInvestment = c.investment !== undefined && c.investment !== null;
   const hasLtv = c.avgLtv !== undefined && c.avgLtv > 0;
   const hasChurn = !!c.churnRate;
@@ -87,7 +88,7 @@ function ExpandedChannelRow({ c, t }: { c: ChannelRow; t: ReturnType<typeof useT
       {hasInvestment && (
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">{t("colInvestment")}</span>
-          <span className="font-mono text-sm text-violet-400">{fmtBRLDecimal(c.investment! / 100)}</span>
+          <span className="font-mono text-sm text-violet-400">{fmtCurrencyDecimal(c.investment! / 100, locale, currency)}</span>
         </div>
       )}
       {c.roi !== undefined && c.roi !== null && (
@@ -101,7 +102,7 @@ function ExpandedChannelRow({ c, t }: { c: ChannelRow; t: ReturnType<typeof useT
       {hasCac && (
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">{t("colCac")}</span>
-          <span className={cn("font-mono text-sm font-semibold", cacColor)}>{fmtBRLDecimal(c.cac! / 100)}</span>
+          <span className={cn("font-mono text-sm font-semibold", cacColor)}>{fmtCurrencyDecimal(c.cac! / 100, locale, currency)}</span>
         </div>
       )}
       {hasPayback && (
@@ -122,7 +123,7 @@ function ExpandedChannelRow({ c, t }: { c: ChannelRow; t: ReturnType<typeof useT
       {hasLtv && (
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">{t("colAvgLtv")}</span>
-          <span className="font-mono text-sm text-emerald-400">{fmtBRLDecimal(c.avgLtv! / 100)}</span>
+          <span className="font-mono text-sm text-emerald-400">{fmtCurrencyDecimal(c.avgLtv! / 100, locale, currency)}</span>
         </div>
       )}
       {hasChurn && (
@@ -134,7 +135,7 @@ function ExpandedChannelRow({ c, t }: { c: ChannelRow; t: ReturnType<typeof useT
       {c.ticket_medio > 0 && (
         <div className="flex flex-col gap-0.5">
           <span className="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">{t("colAvgTicket")}</span>
-          <span className="font-mono text-sm text-zinc-300">{fmtBRLDecimal(c.ticket_medio / 100)}</span>
+          <span className="font-mono text-sm text-zinc-300">{fmtCurrencyDecimal(c.ticket_medio / 100, locale, currency)}</span>
         </div>
       )}
     </div>
@@ -154,6 +155,9 @@ export function ChannelsTable({
   onPageSizeChange,
 }: ChannelsTableProps) {
   const t = useTranslations("channels.table");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const [showNoRevenue, setShowNoRevenue] = useState(false);
 
   const withRevenue = data.filter((c) => c.revenue > 0);
@@ -252,7 +256,7 @@ export function ChannelsTable({
             className="font-mono text-sm font-bold text-emerald-400 px-1 rounded"
             style={heatmapStyle(c.revenue, maxRevenue, "emerald")}
           >
-            {fmtBRLDecimal(c.revenue / 100)}
+            {fmtCurrencyDecimal(c.revenue / 100, locale, currency)}
           </span>
           {variationBadge(c.revenue, c.previousRevenue)}
         </div>
@@ -319,7 +323,7 @@ export function ChannelsTable({
       serverPagination={serverPagination}
       emptyMessage={t("emptyState")}
       header={tableHeader}
-      expandedRowRender={(c) => <ExpandedChannelRow c={c} t={t} />}
+      expandedRowRender={(c) => <ExpandedChannelRow c={c} t={t} locale={locale} currency={currency} />}
     />
   );
 }

@@ -3,7 +3,8 @@
 import { useTranslations, useLocale } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getChannelName, getChannelColor } from "@/utils/channel-colors";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import type { IChannelsResult } from "@/interfaces/dashboard.interface";
 
 interface ChannelsKpiStripProps {
@@ -42,6 +43,8 @@ function KpiItem({ label, value, sub, rightBorder, bottomBorder }: KpiItemProps)
 export function ChannelsKpiStrip({ data, isLoading }: ChannelsKpiStripProps) {
   const t = useTranslations("channels.kpiStrip");
   const locale = useLocale();
+  const { organization } = useOrganization();
+  const currency = organization?.currency ?? "BRL";
 
   if (isLoading) {
     return (
@@ -80,7 +83,7 @@ export function ChannelsKpiStrip({ data, isLoading }: ChannelsKpiStripProps) {
         />
         <KpiItem
           label={t("totalRevenue")}
-          value={<span className="text-emerald-400">{fmtBRLDecimal(totalRevenue / 100)}</span>}
+          value={<span className="text-emerald-400">{fmtCurrencyDecimal(totalRevenue / 100, locale, currency)}</span>}
           sub={t("inPeriod")}
           bottomBorder
         />
@@ -120,7 +123,7 @@ export function ChannelsKpiStrip({ data, isLoading }: ChannelsKpiStripProps) {
         />
         <KpiItem
           label={t("totalRevenue")}
-          value={<span className="text-emerald-400">{fmtBRLDecimal(totalRevenue / 100)}</span>}
+          value={<span className="text-emerald-400">{fmtCurrencyDecimal(totalRevenue / 100, locale, currency)}</span>}
           sub={t("inPeriod")}
           rightBorder
         />

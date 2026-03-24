@@ -3,7 +3,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal, fmtInt } from "@/utils/format";
+import { fmtCurrencyDecimal, fmtInt } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import type { IPageScatterPoint } from "@/interfaces/dashboard.interface";
 
 interface PagesScatterPlotProps {
@@ -61,6 +62,9 @@ function classifyQuadrant(visits: number, conversionRate: number, medianX: numbe
 
 function PagesScatterMobile({ data, isLoading }: PagesScatterPlotProps) {
   const t = useTranslations("pages.scatter");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const points = useMemo(() => data ?? [], [data]);
 
   const quadrantLabels: Record<Quadrant, string> = useMemo(() => ({
@@ -148,7 +152,7 @@ function PagesScatterMobile({ data, isLoading }: PagesScatterPlotProps) {
                       </span>
                       <div className="flex items-center gap-2 shrink-0">
                         <span className="text-[11px] font-bold font-mono text-zinc-100">
-                          {fmtBRLDecimal(p.revenue / 100)}
+                          {fmtCurrencyDecimal(p.revenue / 100, locale, currency)}
                         </span>
                         <span
                           className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded"
@@ -176,6 +180,9 @@ function PagesScatterMobile({ data, isLoading }: PagesScatterPlotProps) {
 
 export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
   const t = useTranslations("pages.scatter");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
 
@@ -521,7 +528,7 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
                     fill="rgba(255,255,255,0.95)"
                     fontSize="13" fontFamily="ui-monospace, monospace" fontWeight="700"
                   >
-                    {fmtBRLDecimal(p.revenue / 100)}
+                    {fmtCurrencyDecimal(p.revenue / 100, locale, currency)}
                   </text>
                   <text
                     x={ttX + ttW - pad} y={ttY + 30} textAnchor="end"
@@ -555,7 +562,7 @@ export function PagesScatterPlot({ data, isLoading }: PagesScatterPlotProps) {
                     fontFamily="ui-sans-serif, system-ui, sans-serif"
                   >
                     {t("ticketLabel")}{p.visits > 0
-                      ? fmtBRLDecimal(p.revenue / 100 / Math.max(p.visits * (p.conversionRate / 100), 1))
+                      ? fmtCurrencyDecimal(p.revenue / 100 / Math.max(p.visits * (p.conversionRate / 100), 1), locale, currency)
                       : "—"}
                   </text>
                 </g>

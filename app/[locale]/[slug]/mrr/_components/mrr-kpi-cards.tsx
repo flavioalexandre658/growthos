@@ -8,7 +8,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import {
   IconTrendingUp,
   IconTrendingDown,
@@ -194,6 +195,9 @@ interface MrrKpiCardsProps {
 
 export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
   const t = useTranslations("mrr.kpiCards");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   if (isLoading) {
     return (
@@ -242,7 +246,7 @@ export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <KpiCard
           label={t("mrr.label")}
-          value={fmtBRLDecimal(mrr / 100)}
+          value={fmtCurrencyDecimal(mrr / 100, locale, currency)}
           subLabel={t("mrr.subLabel")}
           icon={IconCurrencyDollar}
           color="text-cyan-400"
@@ -253,7 +257,7 @@ export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
         />
         <KpiCard
           label={t("arr.label")}
-          value={fmtBRLDecimal(arr / 100)}
+          value={fmtCurrencyDecimal(arr / 100, locale, currency)}
           subLabel={t("arr.subLabel")}
           icon={IconReceipt}
           color="text-violet-400"
@@ -275,7 +279,7 @@ export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
         />
         <KpiCard
           label={t("arpu.label")}
-          value={fmtBRLDecimal(arpu / 100)}
+          value={fmtCurrencyDecimal(arpu / 100, locale, currency)}
           subLabel={t("arpu.subLabel")}
           icon={IconHeartHandshake}
           color="text-indigo-400"
@@ -291,7 +295,7 @@ export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
         <KpiCard
           hero
           label={t("periodRevenue.label")}
-          value={fmtBRLDecimal(totalPeriodRevenue / 100)}
+          value={fmtCurrencyDecimal(totalPeriodRevenue / 100, locale, currency)}
           subLabel={t("periodRevenue.subLabel", { count: totalPurchaseCount })}
           icon={IconZoomMoney}
           color="text-emerald-400"
@@ -359,7 +363,7 @@ export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
         />
         <KpiCard
           label={t("ltv.label")}
-          value={fmtBRLDecimal(estimatedLtv / 100)}
+          value={fmtCurrencyDecimal(estimatedLtv / 100, locale, currency)}
           subLabel={t("ltv.subLabel")}
           icon={IconTrendingUp}
           color="text-indigo-400"
@@ -408,7 +412,7 @@ export function MrrKpiCards({ data, isLoading }: MrrKpiCardsProps) {
             </div>
           </div>
           <span className="font-bold font-mono text-lg sm:text-xl text-teal-400 sm:text-right whitespace-nowrap">
-            {fmtBRLDecimal(forecastNext30dRevenue / 100)}
+            {fmtCurrencyDecimal(forecastNext30dRevenue / 100, locale, currency)}
           </span>
         </div>
       </div>

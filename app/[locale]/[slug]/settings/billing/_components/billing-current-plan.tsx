@@ -24,11 +24,12 @@ function SparkleIcon() {
   );
 }
 
-function formatCents(cents: number): string {
+function formatCents(cents: number, currency: "brl" | "usd"): string {
   const val = cents / 100;
-  if (val >= 1_000_000) return `R$ ${(val / 1_000_000).toFixed(1)}M`;
-  if (val >= 1_000) return `R$ ${(val / 1_000).toFixed(1)}k`;
-  return `R$ ${val.toFixed(0)}`;
+  const sym = currency === "brl" ? "R$ " : "$ ";
+  if (val >= 1_000_000) return `${sym}${(val / 1_000_000).toFixed(1)}M`;
+  if (val >= 1_000) return `${sym}${(val / 1_000).toFixed(1)}k`;
+  return `${sym}${val.toFixed(0)}`;
 }
 
 const ORG_COLORS = ["#818cf8", "#a78bfa", "#34d399", "#f59e0b", "#ef4444", "#ec4899"];
@@ -43,9 +44,9 @@ export function BillingCurrentPlan({
   const { plan, revenue, ownedOrgsCount, totalMembersInOrg } = billing;
   const isFree = plan.slug === "free";
 
-  const revPct = plan.maxRevenuePerMonthBrl === Infinity
+  const revPct = revenue.limitInCents === Infinity
     ? 0
-    : Math.min((revenue.totalInCents / plan.maxRevenuePerMonthBrl) * 100, 100);
+    : Math.min((revenue.totalInCents / revenue.limitInCents) * 100, 100);
 
   const isOverOrgLimit = plan.maxOrgs !== Infinity && ownedOrgsCount > plan.maxOrgs;
   const isOverMemberLimit = plan.maxMembers !== Infinity && totalMembersInOrg > plan.maxMembers;
@@ -105,7 +106,7 @@ export function BillingCurrentPlan({
         <div className="bg-[#0a0a14] border border-[#1a1a2e] rounded-[10px] p-4">
           <div className="flex justify-between items-center mb-3">
             <span className="text-[11px] text-zinc-500 uppercase tracking-[0.1em]">{t("revenueThisMonth")}</span>
-            {plan.maxRevenuePerMonthBrl !== Infinity && (
+            {revenue.limitInCents !== Infinity && (
               <span className={cn("text-[11px]", revPct > 80 ? "text-red-500" : "text-zinc-500")}>
                 {revPct.toFixed(0)}%
               </span>
@@ -113,11 +114,11 @@ export function BillingCurrentPlan({
           </div>
           <div className="flex items-baseline gap-1.5 mb-3">
             <span className="text-[28px] font-bold text-zinc-100 tracking-tight">
-              {formatCents(revenue.totalInCents)}
+              {formatCents(revenue.totalInCents, currency)}
             </span>
-            {plan.maxRevenuePerMonthBrl !== Infinity && (
+            {revenue.limitInCents !== Infinity && (
               <span className="text-[13px] text-zinc-600">
-                / {formatRevenueLimit(plan.maxRevenuePerMonthBrl)}
+                / {formatRevenueLimit(revenue.limitInCents, currency === "brl" ? "BRL" : "USD")}
               </span>
             )}
           </div>
@@ -144,7 +145,7 @@ export function BillingCurrentPlan({
                     <div key={org.organizationId} className="flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-sm shrink-0" style={{ background: orgColor }} />
                       <span className="text-xs text-zinc-400 flex-1 truncate">{org.organizationName}</span>
-                      <span className="text-xs text-zinc-500">{formatCents(org.revenueInCents)}</span>
+                      <span className="text-xs text-zinc-500">{formatCents(org.revenueInCents, currency)}</span>
                       <div className="w-[60px] h-[3px] bg-[#1a1a2e] rounded-sm">
                         <div className="h-full rounded-sm" style={{ width: `${orgPct}%`, background: orgColor }} />
                       </div>

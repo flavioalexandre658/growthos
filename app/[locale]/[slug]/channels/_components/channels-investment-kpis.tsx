@@ -1,7 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import { cn } from "@/lib/utils";
 import type { IChannelInvestmentGroup } from "@/interfaces/dashboard.interface";
 
@@ -19,6 +20,9 @@ function roiColor(roi: number | null) {
 
 export function ChannelsInvestmentKpis({ groups }: ChannelsInvestmentKpisProps) {
   const t = useTranslations("channels.investmentKpis");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
 
   if (groups.length === 0) return null;
 
@@ -37,13 +41,13 @@ export function ChannelsInvestmentKpis({ groups }: ChannelsInvestmentKpisProps) 
               <div className="flex flex-col">
                 <span className="text-[10px] text-zinc-500">{t("invest")}</span>
                 <span className="font-mono text-sm font-bold text-violet-400">
-                  {fmtBRLDecimal(group.investmentInCents / 100)}
+                  {fmtCurrencyDecimal(group.investmentInCents / 100, locale, currency)}
                 </span>
               </div>
               <div className="flex flex-col">
                 <span className="text-[10px] text-zinc-500">{t("revenue")}</span>
                 <span className="font-mono text-sm font-bold text-emerald-400">
-                  {fmtBRLDecimal(group.revenueInCents / 100)}
+                  {fmtCurrencyDecimal(group.revenueInCents / 100, locale, currency)}
                 </span>
               </div>
               <div className="flex flex-col">

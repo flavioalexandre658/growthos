@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal, fmtInt } from "@/utils/format";
+import { fmtCurrencyDecimal, fmtInt } from "@/utils/format";
 import { IconPackage, IconArrowRight } from "@tabler/icons-react";
 import type { ITopProduct } from "@/interfaces/dashboard.interface";
 import { useTranslations } from "next-intl";
+import { useOrganization } from "@/components/providers/organization-provider";
 
 interface TopProductsProps {
   data: ITopProduct[] | undefined;
@@ -16,6 +17,9 @@ interface TopProductsProps {
 export function TopProducts({ data, isLoading }: TopProductsProps) {
   const t = useTranslations("dashboard.topProducts");
   const { slug } = useParams<{ slug: string }>();
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const products = data ?? [];
   const maxRevenue = products[0]?.revenueInCents ?? 1;
 
@@ -70,7 +74,7 @@ export function TopProducts({ data, isLoading }: TopProductsProps) {
                     {p.productName}
                   </span>
                   <span className="text-xs font-mono text-zinc-400 tabular-nums shrink-0">
-                    {fmtBRLDecimal(p.revenueInCents / 100)}
+                    {fmtCurrencyDecimal(p.revenueInCents / 100, locale, currency)}
                   </span>
                   <span className="text-[10px] font-mono text-zinc-600 tabular-nums shrink-0 w-8 text-right">
                     {fmtInt(p.purchases)}×

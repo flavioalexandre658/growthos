@@ -14,6 +14,8 @@ import { useVariableCosts } from "@/hooks/queries/use-variable-costs";
 import { useCreateVariableCost } from "@/hooks/mutations/use-create-variable-cost";
 import { useUpdateVariableCost } from "@/hooks/mutations/use-update-variable-cost";
 import { useDeleteVariableCost } from "@/hooks/mutations/use-delete-variable-cost";
+import { fmtCurrency } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import type { IVariableCost, VariableCostApplyTo } from "@/interfaces/cost.interface";
 import toast from "react-hot-toast";
 
@@ -27,6 +29,9 @@ export function VariableCostsTable({
   grossRevenueInCents,
 }: VariableCostsTableProps) {
   const t = useTranslations("finance.variableCosts");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<IVariableCost | null>(null);
 
@@ -127,11 +132,7 @@ export function VariableCostsTable({
             </span>
             {calculatedCents > 0 && (
               <p className="text-[10px] text-zinc-500 mt-0.5">
-                ≈ R${" "}
-                {(calculatedCents / 100)
-                  .toFixed(2)
-                  .replace(".", ",")}{" "}
-                / mês
+                ≈ {fmtCurrency(calculatedCents / 100, locale, currency)} / mês
               </p>
             )}
           </div>

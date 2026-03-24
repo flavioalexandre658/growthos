@@ -4,7 +4,8 @@ import { useState, useCallback } from "react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { IconUsers } from "@tabler/icons-react";
-import { fmtInt, fmtBRLDecimal } from "@/utils/format";
+import { fmtInt, fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import type { ISourceDistribution } from "@/interfaces/dashboard.interface";
 import { useTranslations } from "next-intl";
 
@@ -51,6 +52,9 @@ function renderActiveShape(props: unknown) {
 
 export function SourceChart({ data, isLoading }: SourceChartProps) {
   const t = useTranslations("dashboard.sourceChart");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const sources = data?.sources ?? [];
   const total = data?.total ?? 0;
   const [activeIdx, setActiveIdx] = useState<number | undefined>(undefined);
@@ -131,7 +135,7 @@ export function SourceChart({ data, isLoading }: SourceChartProps) {
                   </span>
                   {hoveredSource.revenueInCents > 0 && (
                     <span className="text-[9px] text-emerald-500 font-mono mt-0.5">
-                      {fmtBRLDecimal(hoveredSource.revenueInCents / 100)}
+                      {fmtCurrencyDecimal(hoveredSource.revenueInCents / 100, locale, currency)}
                     </span>
                   )}
                 </>
@@ -180,7 +184,7 @@ export function SourceChart({ data, isLoading }: SourceChartProps) {
                           isDimmed ? "text-zinc-700" : "text-emerald-500"
                         }`}
                       >
-                        {fmtBRLDecimal(s.revenueInCents / 100)}
+                        {fmtCurrencyDecimal(s.revenueInCents / 100, locale, currency)}
                       </span>
                     )}
                     <span

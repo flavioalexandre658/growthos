@@ -11,7 +11,8 @@ import {
   CartesianGrid,
 } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import type { IMrrGrowthEntry } from "@/interfaces/mrr.interface";
 
 interface MrrGrowthChartProps {
@@ -28,17 +29,21 @@ function CustomTooltip({
   active,
   payload,
   label,
+  locale,
+  currency,
 }: {
   active?: boolean;
   payload?: { value: number }[];
   label?: string;
+  locale: string;
+  currency: string;
 }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs">
       <p className="text-zinc-400 mb-1">{label}</p>
       <p className="font-bold font-mono text-emerald-400">
-        {fmtBRLDecimal(payload[0].value / 100)}
+        {fmtCurrencyDecimal(payload[0].value / 100, locale, currency)}
       </p>
     </div>
   );
@@ -46,6 +51,9 @@ function CustomTooltip({
 
 export function MrrGrowthChart({ data, isLoading }: MrrGrowthChartProps) {
   const t = useTranslations("mrr.growthChart");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const chartData = (data ?? []).map((d) => ({
     ...d,
     label: formatDateLabel(d.date),
@@ -83,10 +91,10 @@ export function MrrGrowthChart({ data, isLoading }: MrrGrowthChartProps) {
               tick={{ fontSize: 10, fill: "#52525b" }}
               axisLine={false}
               tickLine={false}
-              tickFormatter={(v) => fmtBRLDecimal(v / 100)}
+              tickFormatter={(v) => fmtCurrencyDecimal(v / 100, locale, currency)}
               width={72}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: "#3f3f46" }} />
+            <Tooltip content={<CustomTooltip locale={locale} currency={currency} />} cursor={{ stroke: "#3f3f46" }} />
             <Area
               type="monotone"
               dataKey="mrr"

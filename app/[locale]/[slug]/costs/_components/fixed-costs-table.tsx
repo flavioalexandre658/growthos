@@ -14,7 +14,8 @@ import { useFixedCosts } from "@/hooks/queries/use-fixed-costs";
 import { useCreateFixedCost } from "@/hooks/mutations/use-create-fixed-cost";
 import { useUpdateFixedCost } from "@/hooks/mutations/use-update-fixed-cost";
 import { useDeleteFixedCost } from "@/hooks/mutations/use-delete-fixed-cost";
-import { fmtBRLDecimal } from "@/utils/format";
+import { fmtCurrencyDecimal } from "@/utils/format";
+import { useOrganization } from "@/components/providers/organization-provider";
 import type { IFixedCost, FixedCostFrequency } from "@/interfaces/cost.interface";
 import toast from "react-hot-toast";
 
@@ -37,6 +38,9 @@ interface FixedCostsTableProps {
 
 export function FixedCostsTable({ organizationId, grossRevenueInCents }: FixedCostsTableProps) {
   const t = useTranslations("finance.fixedCosts");
+  const { organization } = useOrganization();
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<IFixedCost | null>(null);
 
@@ -124,14 +128,14 @@ export function FixedCostsTable({ organizationId, grossRevenueInCents }: FixedCo
         return (
           <div className="text-right">
             <span className="font-mono text-zinc-200">
-              {fmtBRLDecimal(row.amountInCents / 100)}
+              {fmtCurrencyDecimal(row.amountInCents / 100, locale, currency)}
             </span>
             <span className="text-zinc-600 text-[10px] ml-1">
               /{frequencyLabels[freq].toLowerCase()}
             </span>
             {freq !== "monthly" && (
               <p className="text-[10px] text-zinc-500 mt-0.5">
-                ≈ {fmtBRLDecimal(monthly / 100)}{t("perMonth")}
+                ≈ {fmtCurrencyDecimal(monthly / 100, locale, currency)}{t("perMonth")}
               </p>
             )}
             {impactPct && (

@@ -66,9 +66,9 @@ export default async function LoginPage() {
             <div className="p-4 space-y-4">
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  { labelKey: "mockupRevenue", value: "R$ 47.2k", delta: "+12%", up: true },
-                  { labelKey: "mockupConversion", value: "3.8%", delta: "+0.4pp", up: true },
-                  { labelKey: "mockupTicket", value: "R$ 89", delta: "-2%", up: false },
+                  { labelKey: "mockupRevenue", valueKey: "mockupRevenueValue", delta: "+12%", up: true },
+                  { labelKey: "mockupConversion", valueKey: "mockupConversionValue", delta: "+0.4pp", up: true },
+                  { labelKey: "mockupTicket", valueKey: "mockupTicketValue", delta: "-2%", up: false },
                 ].map((kpi) => (
                   <div
                     key={kpi.labelKey}
@@ -76,7 +76,7 @@ export default async function LoginPage() {
                   >
                     <p className="text-xs text-zinc-500 mb-1">{t(kpi.labelKey as Parameters<typeof t>[0])}</p>
                     <p className="text-sm font-bold text-zinc-100 tabular-nums">
-                      {kpi.value}
+                      {t(kpi.valueKey as Parameters<typeof t>[0])}
                     </p>
                     <p
                       className={`text-xs font-medium mt-0.5 ${kpi.up ? "text-emerald-400" : "text-red-400"}`}
