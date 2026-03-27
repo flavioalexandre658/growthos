@@ -14,8 +14,8 @@ import {
   IconLock,
   IconMail,
   IconUser,
+  IconPhone,
   IconArrowRight,
-  IconBrandGoogle,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,13 +29,13 @@ export function RegisterForm() {
   const locale = useLocale();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const registerSchema = z
     .object({
       name: z.string().min(2, t("nameMin")),
       email: z.string().email(t("emailError")),
+      phone: z.string().min(1, t("phoneRequired")),
       password: z.string().min(6, t("passwordMin")),
       confirmPassword: z.string().min(1, t("confirmRequired")),
     })
@@ -52,7 +52,7 @@ export function RegisterForm() {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: { name: "", email: "", phone: "", password: "", confirmPassword: "" },
   });
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -105,38 +105,8 @@ export function RegisterForm() {
   const inputClass =
     "bg-zinc-900/50 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500 focus-visible:border-indigo-500 h-11";
 
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    await signIn("google", { callbackUrl: "/onboarding" });
-  };
-
   return (
-    <div className="space-y-5">
-      <Button
-        type="button"
-        variant="outline"
-        onClick={handleGoogleSignIn}
-        disabled={isGoogleLoading || isLoading}
-        className="w-full h-11 border-zinc-800 bg-zinc-900/50 text-zinc-100 hover:bg-zinc-800 hover:text-white font-medium gap-2.5"
-      >
-        {isGoogleLoading ? (
-          <IconLoader2 size={16} className="animate-spin" />
-        ) : (
-          <IconBrandGoogle size={16} />
-        )}
-        {t("continueWithGoogle")}
-      </Button>
-
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-zinc-800" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-zinc-950 px-3 text-zinc-600">{t("orSeparator")}</span>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="space-y-2">
         <Label
           htmlFor="name"
@@ -186,6 +156,32 @@ export function RegisterForm() {
         </div>
         {errors.email && (
           <p className="text-xs text-red-400">{errors.email.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label
+          htmlFor="phone"
+          className="text-zinc-400 text-xs uppercase tracking-wider font-semibold"
+        >
+          {t("phoneLabel")}
+        </Label>
+        <div className="relative">
+          <IconPhone
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+          />
+          <Input
+            id="phone"
+            type="tel"
+            placeholder={t("phonePlaceholder")}
+            autoComplete="tel"
+            className={cn("pl-9", inputClass, errors.phone && "border-red-500/50")}
+            {...register("phone")}
+          />
+        </div>
+        {errors.phone && (
+          <p className="text-xs text-red-400">{errors.phone.message}</p>
         )}
       </div>
 
@@ -278,6 +274,5 @@ export function RegisterForm() {
         </Link>
       </p>
     </form>
-    </div>
   );
 }

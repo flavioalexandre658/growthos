@@ -11,6 +11,7 @@ import { welcomeEmail } from "@/lib/email-templates/welcome";
 const schema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   email: z.string().email("Email inválido"),
+  phone: z.string().optional(),
   password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
   confirmPassword: z.string().min(1, "Confirmação de senha é obrigatória"),
   locale: z.enum(["pt", "en"]).optional().default("pt"),
@@ -46,6 +47,7 @@ export async function register(input: z.infer<typeof schema>) {
     .values({
       name: data.name,
       email: data.email,
+      phone: data.phone ?? null,
       passwordHash,
       locale: data.locale,
       authProvider: "credentials",
