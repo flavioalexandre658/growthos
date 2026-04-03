@@ -5,6 +5,8 @@
       "stepProgress": "Passo {current} de {total}",
       "steps": {
         "organization": "Organização",
+        "choose-path": "Método",
+        "gateway": "Gateway",
         "funnel": "Funil",
         "install": "Instalar"
       }
@@ -319,9 +321,22 @@
         }
       }
     },
+    "stepChoosePath": {
+      "title": "Como você quer começar?",
+      "subtitle": "Escolha a melhor forma de conectar seus dados",
+      "gatewayTitle": "Integrar com gateway",
+      "gatewaySubtitle": "Stripe, Asaas",
+      "gatewayBadge": "Recomendado",
+      "gatewayTime": "2 minutos, sem código",
+      "gatewayDescription": "Cole sua chave de API e veja seu dashboard populado automaticamente",
+      "trackerTitle": "Instalar tracker",
+      "trackerSubtitle": "Para capturar funil de aquisição",
+      "trackerBadge": "Requer acesso ao código",
+      "trackerDescription": "Instale um script no seu site para rastrear UTMs, canais e conversões"
+    },
     "stepGateway": {
       "title": "Conectar gateway de pagamento",
-      "subtitle": "Vincule sua receita ao canal de aquisição — de onde veio cada cliente",
+      "subtitle": "Cole sua chave de API para importar dados automaticamente",
       "calloutTitle": "Tracker + Gateway = visão completa",
       "calloutDescription": "O tracker captura UTMs, canal e funil. O gateway traz receita real. Juntos, você vê quanto cada canal gerou em R$.",
       "availableLabel": "Disponível",
@@ -334,7 +349,12 @@
       "submit": "Continuar",
       "connectedToast": "Gateway conectado!",
       "errorToast": "Erro ao conectar. Verifique a chave.",
-      "mercadoPagoDescription": "Pagamentos no Brasil via Mercado Pago"
+      "mercadoPagoDescription": "Pagamentos no Brasil via Mercado Pago",
+      "syncingTitle": "Importando dados...",
+      "syncingSubtitle": "Estamos sincronizando seu histórico de pagamentos",
+      "syncComplete": "Sincronização completa!",
+      "syncFailed": "Falha na sincronização. Você pode tentar novamente nas configurações.",
+      "goToDashboard": "Ir para o Dashboard"
     },
     "stepVerifyEvent": {
       "titleDetected": "Evento detectado!",

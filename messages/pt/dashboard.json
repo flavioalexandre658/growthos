@@ -60,11 +60,15 @@
     "overview": {
       "title": "Visão Geral",
       "subtitle": "Performance consolidada do período",
+      "gatewayOnlySubtitle": "Receita recorrente e assinaturas",
       "stepsVisibleTitle": "Etapas visíveis",
       "stepsButton": "Etapas",
       "stepsPopoverTitle": "Etapas visíveis",
       "stepsPopoverDescription": "Alternância temporária — não persiste",
-      "showAll": "Mostrar todas"
+      "showAll": "Mostrar todas",
+      "trackerPromptTitle": "Quer ver funil de aquisição e canais?",
+      "trackerPromptDescription": "Instale o tracker no seu site para rastrear UTMs, canais de entrada e conversões do funil.",
+      "trackerPromptCta": "Instalar tracker"
     },
     "periodFilter": {
       "today": "Hoje",

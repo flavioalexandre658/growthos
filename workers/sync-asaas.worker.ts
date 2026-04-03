@@ -9,7 +9,8 @@ import {
   mapAsaasBillingType,
   mapAsaasBillingInterval,
 } from "@/utils/asaas-helpers";
-import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
+import { getRevenueBudget } from "@/utils/check-revenue-limit";
+import dayjs from "@/utils/dayjs";
 import { SyncCaches } from "./shared/caches";
 import { bulkUpsertPayments, bulkUpsertEvents, bulkUpsertSubscriptions, bulkUpsertCustomers } from "./shared/bulk-operations";
 import type { SyncJobData, SyncJobProgress } from "@/lib/queue";
@@ -151,6 +152,8 @@ export async function processAsaasSyncJob(job: Job<SyncJobData>): Promise<{
   subscriptionsSynced: number;
   paymentsSynced: number;
   oneTimePurchasesSynced: number;
+  reachedLimit?: boolean;
+  skippedByLimit?: number;
 }> {
   const { organizationId, integrationId } = job.data;
 
@@ -168,9 +171,11 @@ export async function processAsaasSyncJob(job: Job<SyncJobData>): Promise<{
   if (!integration) throw new Error("Integração não encontrada.");
   if (integration.status === "disconnected") throw new Error("Integração desconectada.");
 
-  if (await isOrgOverRevenueLimit(organizationId)) {
-    throw new Error("Limite de receita do plano atingido. Faça upgrade para importar dados históricos.");
-  }
+  const budget = await getRevenueBudget(organizationId);
+  let revenueAccumulated = 0;
+  let reachedLimit = false;
+  let skippedByLimit = 0;
+  const monthStart = dayjs().startOf("month");
 
   const apiKey = decrypt(integration.accessToken);
   const orgCurrency = await getOrgCurrency(organizationId);
@@ -279,6 +284,19 @@ export async function processAsaasSyncJob(job: Job<SyncJobData>): Promise<{
   for (const payment of allPayments) {
     if (!payment.value) continue;
 
+    const grossCents = Math.round(payment.value * 100);
+    if (!budget.isUnlimited) {
+      const paidDate = payment.paymentDate ? dayjs(payment.paymentDate) : dayjs(payment.dateCreated);
+      if (paidDate.isAfter(monthStart) || paidDate.isSame(monthStart)) {
+        if (revenueAccumulated + grossCents > budget.remainingInCents) {
+          reachedLimit = true;
+          skippedByLimit++;
+          continue;
+        }
+        revenueAccumulated += grossCents;
+      }
+    }
+
     const customerId = payment.externalReference ?? payment.customer;
     const acq = await caches.lookupAcquisition(organizationId, customerId);
 
@@ -291,10 +309,9 @@ export async function processAsaasSyncJob(job: Job<SyncJobData>): Promise<{
     const billingReason = isRecurring ? "subscription_cycle" : null;
     const eventType = isRecurring ? "renewal" : "purchase";
 
-    const grossValueInCents = Math.round(payment.value * 100);
     const netValueInCents = Math.round(payment.netValue * 100);
     const { baseCurrency, exchangeRate, baseValueInCents } = await caches.computeBaseValue(
-      organizationId, "BRL", orgCurrency, grossValueInCents,
+      organizationId, "BRL", orgCurrency, grossCents,
     );
 
     const paymentMethod = mapAsaasBillingType(payment.billingType);
@@ -303,7 +320,7 @@ export async function processAsaasSyncJob(job: Job<SyncJobData>): Promise<{
     eventRows.push({
       organizationId,
       eventType,
-      grossValueInCents,
+      grossValueInCents: grossCents,
       currency: "BRL",
       baseCurrency,
       exchangeRate,
@@ -330,7 +347,7 @@ export async function processAsaasSyncJob(job: Job<SyncJobData>): Promise<{
     paymentRows.push({
       organizationId,
       eventType,
-      grossValueInCents,
+      grossValueInCents: grossCents,
       currency: "BRL",
       baseCurrency,
       exchangeRate,
@@ -423,7 +440,10 @@ export async function processAsaasSyncJob(job: Job<SyncJobData>): Promise<{
 
   caches.clear();
 
-  report(job, { phase: "completed", current: totalItems, total: totalItems, message: "Sync concluído!" });
+  const completionMsg = reachedLimit
+    ? `Sync concluído! ${skippedByLimit} transações ignoradas por limite do plano.`
+    : "Sync concluído!";
+  report(job, { phase: "completed", current: totalItems, total: totalItems, message: completionMsg, reachedLimit });
 
-  return { subscriptionsSynced: allSubs.length, paymentsSynced, oneTimePurchasesSynced };
+  return { subscriptionsSynced: allSubs.length, paymentsSynced, oneTimePurchasesSynced, reachedLimit, skippedByLimit };
 }

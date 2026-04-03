@@ -6,7 +6,6 @@ import { db } from "@/db";
 import { integrations } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getSyncQueue } from "@/lib/queue";
-import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
 
 export async function syncAsaasHistory(
   organizationId: string,
@@ -28,10 +27,6 @@ export async function syncAsaasHistory(
 
   if (!integration) throw new Error("Integração não encontrada.");
   if (integration.status === "disconnected") throw new Error("Integração desconectada.");
-
-  if (await isOrgOverRevenueLimit(organizationId)) {
-    throw new Error("Limite de receita do plano atingido. Faça upgrade para importar dados históricos.");
-  }
 
   const queue = getSyncQueue();
 

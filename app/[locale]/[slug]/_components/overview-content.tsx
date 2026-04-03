@@ -8,6 +8,10 @@ import { useTopProducts } from "@/hooks/queries/use-top-products";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useAtRiskCustomersCount } from "@/hooks/queries/use-at-risk-customers";
 import { useCreateDashboardAlerts } from "@/hooks/mutations/use-create-dashboard-alerts";
+import { useOrgDataSources } from "@/hooks/queries/use-org-data-sources";
+import { useMrrOverview } from "@/hooks/queries/use-mrr-overview";
+import { useMrrMovement } from "@/hooks/queries/use-mrr-movement";
+import { useMrrGrowth } from "@/hooks/queries/use-mrr-growth";
 import { fmtCurrencyDecimal } from "@/utils/format";
 import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { KpiCards } from "./kpi-cards";
@@ -18,6 +22,11 @@ import { SourceChart } from "./source-chart";
 import { TopProducts } from "./top-products";
 import { TopCustomersCard } from "./top-customers-card";
 import { StepVisibilityToggle } from "@/components/ui/step-visibility-toggle";
+import { MrrKpiCards } from "@/app/[locale]/[slug]/mrr/_components/mrr-kpi-cards";
+import { SubscriberFlowSankey } from "@/app/[locale]/[slug]/mrr/_components/subscriber-flow-sankey";
+import { MrrGrowthChart } from "@/app/[locale]/[slug]/mrr/_components/mrr-growth-chart";
+import { MrrMovementChart } from "@/app/[locale]/[slug]/mrr/_components/mrr-movement-chart";
+import { ActiveSubscriptionsTable } from "@/app/[locale]/[slug]/mrr/_components/active-subscriptions-table";
 import type { StepVisibilityToggleProps } from "@/components/ui/step-visibility-toggle";
 import type { IGenericFunnelData } from "@/interfaces/dashboard.interface";
 import { IconCreditCard, IconCode, IconX } from "@tabler/icons-react";
@@ -166,15 +175,73 @@ function buildAlertEntries(
   return alerts;
 }
 
-export function OverviewContent({ filter }: OverviewContentProps) {
+function GatewayOnlyDashboard({
+  filter,
+  orgId,
+  slug,
+}: {
+  filter: IDateFilter;
+  orgId: string;
+  slug: string;
+}) {
+  const t = useTranslations("dashboard.overview");
+
+  const { data: overview, isPending: overviewLoading } = useMrrOverview(orgId, filter);
+  const { data: movement, isPending: movementLoading } = useMrrMovement(orgId, filter);
+  const { data: growth, isPending: growthLoading } = useMrrGrowth(orgId, filter);
+
+  return (
+    <>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-xl border border-indigo-500/20 bg-indigo-950/10 px-4 py-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-indigo-300">
+            {t("trackerPromptTitle")}
+          </p>
+          <p className="text-[11px] text-zinc-400 leading-relaxed mt-0.5">
+            {t("trackerPromptDescription")}
+          </p>
+        </div>
+        <Link
+          href={`/onboarding/${slug}?step=install`}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600/20 px-3 py-1.5 text-[11px] font-semibold text-indigo-300 ring-1 ring-inset ring-indigo-600/30 hover:bg-indigo-600/30 transition-colors shrink-0"
+        >
+          <IconCode size={12} />
+          {t("trackerPromptCta")}
+        </Link>
+      </div>
+
+      <MrrKpiCards data={overview} isLoading={overviewLoading} />
+
+      <SubscriberFlowSankey data={overview} isLoading={overviewLoading} />
+
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+        <MrrGrowthChart data={growth} isLoading={growthLoading} />
+        <MrrMovementChart data={movement} isLoading={movementLoading} />
+      </div>
+
+      <ActiveSubscriptionsTable organizationId={orgId} />
+    </>
+  );
+}
+
+function TrackerDashboard({
+  filter,
+  orgId,
+  slug,
+  locale,
+  currency,
+  organization,
+}: {
+  filter: IDateFilter;
+  orgId: string;
+  slug: string;
+  locale: string;
+  currency: string;
+  organization: { funnelSteps?: { eventType: string; hidden?: boolean }[] } | null;
+}) {
   const t = useTranslations("dashboard.overview");
   const tTour = useTranslations("tour.welcome.dashboard");
   const tAlerts = useTranslations("dashboard.alerts");
-  const { organization } = useOrganization();
-  const orgId = organization?.id;
-  const slug = organization?.slug ?? "";
-  const locale = organization?.locale ?? "pt-BR";
-  const currency = organization?.currency ?? "BRL";
 
   const initialHiddenKeys = new Set(
     (organization?.funnelSteps ?? [])
@@ -197,8 +264,8 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   const { data: dailyResult, isPending: dailyLoading } = useDaily(orgId, filter);
   const { data: sourceData, isPending: sourceLoading } = useSourceDistribution(orgId, filter);
   const { data: topProducts, isPending: topProductsLoading } = useTopProducts(orgId, filter);
-  const { data: atRiskData } = useAtRiskCustomersCount(orgId ?? "");
-  const { mutate: createAlerts } = useCreateDashboardAlerts(orgId ?? "");
+  const { data: atRiskData } = useAtRiskCustomersCount(orgId);
+  const { mutate: createAlerts } = useCreateDashboardAlerts(orgId);
 
   const allSteps: StepOption[] = (funnel?.steps ?? [])
     .filter((s) => s.key !== "pageview")
@@ -230,29 +297,18 @@ export function OverviewContent({ filter }: OverviewContentProps) {
 
     alertsDispatchedRef.current = true;
     createAlerts({ organizationId: orgId, alerts: alertEntries });
-  }, [funnel, funnelLoading, orgId, slug, atRiskData, tAlerts, createAlerts]);
+  }, [funnel, funnelLoading, orgId, slug, atRiskData, tAlerts, createAlerts, locale, currency]);
 
   return (
-    <div className="space-y-4">
-      <GatewayPromptModal />
-
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>
-          <p className="text-xs text-zinc-500">{t("subtitle")}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {allSteps.length > 0 && (
-            <StepVisibilityToggle
-              steps={allSteps}
-              hiddenKeys={hiddenKeys}
-              onToggle={toggleHidden}
-            />
-          )}
-          <Suspense>
-            <PeriodFilter filter={filter} />
-          </Suspense>
-        </div>
+    <>
+      <div className="flex items-center gap-2">
+        {allSteps.length > 0 && (
+          <StepVisibilityToggle
+            steps={allSteps}
+            hiddenKeys={hiddenKeys}
+            onToggle={toggleHidden}
+          />
+        )}
       </div>
 
       {hasNoData && !bannerDismissed && (
@@ -312,6 +368,61 @@ export function OverviewContent({ filter }: OverviewContentProps) {
         <TopProducts data={topProducts} isLoading={topProductsLoading} />
         <TopCustomersCard />
       </div>
+    </>
+  );
+}
+
+export function OverviewContent({ filter }: OverviewContentProps) {
+  const t = useTranslations("dashboard.overview");
+  const { organization } = useOrganization();
+  const orgId = organization?.id;
+  const slug = organization?.slug ?? "";
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
+
+  const { data: dataSources, isPending: dataSourcesLoading } =
+    useOrgDataSources(orgId);
+
+  const hasGateway = dataSources?.hasGateway ?? false;
+  const hasTracker = dataSources?.hasTracker ?? false;
+  const showGatewayDashboard = hasGateway && !hasTracker;
+
+  return (
+    <div className="space-y-4">
+      {!showGatewayDashboard && <GatewayPromptModal />}
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>
+          <p className="text-xs text-zinc-500">
+            {showGatewayDashboard ? t("gatewayOnlySubtitle") : t("subtitle")}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Suspense>
+            <PeriodFilter filter={filter} />
+          </Suspense>
+        </div>
+      </div>
+
+      {!dataSourcesLoading && orgId && showGatewayDashboard && (
+        <GatewayOnlyDashboard
+          filter={filter}
+          orgId={orgId}
+          slug={slug}
+        />
+      )}
+
+      {!dataSourcesLoading && orgId && !showGatewayDashboard && (
+        <TrackerDashboard
+          filter={filter}
+          orgId={orgId}
+          slug={slug}
+          locale={locale}
+          currency={currency}
+          organization={organization}
+        />
+      )}
     </div>
   );
 }

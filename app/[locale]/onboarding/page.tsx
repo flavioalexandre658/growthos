@@ -45,6 +45,7 @@ export default async function OnboardingPage({
           userName={session.user.name}
           existingOrg={null}
           existingApiKey={null}
+          hasActiveIntegration={false}
           initialStepParam={null}
         />
       </Suspense>

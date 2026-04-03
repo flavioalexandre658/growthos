@@ -5,6 +5,8 @@
       "stepProgress": "Step {current} of {total}",
       "steps": {
         "organization": "Organization",
+        "choose-path": "Method",
+        "gateway": "Gateway",
         "funnel": "Funnel",
         "install": "Install"
       }
@@ -319,9 +321,22 @@
         }
       }
     },
+    "stepChoosePath": {
+      "title": "How do you want to start?",
+      "subtitle": "Choose the best way to connect your data",
+      "gatewayTitle": "Integrate with gateway",
+      "gatewaySubtitle": "Stripe, Asaas",
+      "gatewayBadge": "Recommended",
+      "gatewayTime": "2 minutes, no code",
+      "gatewayDescription": "Paste your API key and see your dashboard populated automatically",
+      "trackerTitle": "Install tracker",
+      "trackerSubtitle": "To capture acquisition funnel",
+      "trackerBadge": "Requires code access",
+      "trackerDescription": "Install a script on your site to track UTMs, channels and conversions"
+    },
     "stepGateway": {
       "title": "Connect payment gateway",
-      "subtitle": "Link your revenue to the acquisition channel — see where each customer came from",
+      "subtitle": "Paste your API key to import data automatically",
       "calloutTitle": "Tracker + Gateway = complete picture",
       "calloutDescription": "The tracker captures UTMs, channel and funnel. The gateway brings real revenue. Together, you see how much each channel generated.",
       "availableLabel": "Available",
@@ -334,7 +349,12 @@
       "submit": "Continue",
       "connectedToast": "Gateway connected!",
       "errorToast": "Error connecting. Check the key.",
-      "mercadoPagoDescription": "Payments in Brazil via Mercado Pago"
+      "mercadoPagoDescription": "Payments in Brazil via Mercado Pago",
+      "syncingTitle": "Importing data...",
+      "syncingSubtitle": "We are syncing your payment history",
+      "syncComplete": "Sync complete!",
+      "syncFailed": "Sync failed. You can try again in settings.",
+      "goToDashboard": "Go to Dashboard"
     },
     "stepVerifyEvent": {
       "titleDetected": "Event detected!",

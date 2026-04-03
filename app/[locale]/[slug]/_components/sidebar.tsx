@@ -53,6 +53,7 @@ import { useTranslations } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useOrgHasData } from "@/hooks/queries/use-org-has-data";
 import { useBilling } from "@/hooks/queries/use-billing";
+import { useOrgDataSources } from "@/hooks/queries/use-org-data-sources";
 import { SetupChecklist } from "./setup-checklist";
 import { GlobalSearch } from "./global-search";
 import { MobileTopbarActions } from "./topbar";
@@ -75,7 +76,14 @@ interface NavSection {
   items: NavItemDef[];
 }
 
-function buildNavSections(slug: string, hasData: boolean, hasAi: boolean, t: (key: string) => string): NavSection[] {
+function buildNavSections(
+  slug: string,
+  hasData: boolean,
+  hasAi: boolean,
+  hasTracker: boolean,
+  hasGateway: boolean,
+  t: (key: string) => string,
+): NavSection[] {
   const sections: NavSection[] = [
     {
       title: t("sections.overview"),
@@ -88,40 +96,46 @@ function buildNavSections(slug: string, hasData: boolean, hasAi: boolean, t: (ke
       items: [
         { href: `/${slug}/finance`, label: t("nav.finance"), icon: IconCurrencyDollar, exact: false },
         { href: `/${slug}/costs`, label: t("nav.costs"), icon: IconCalculator, exact: false },
-        { href: `/${slug}/mrr`, label: t("nav.recurrence"), icon: IconRepeat, exact: false },
+        ...((hasGateway && !hasTracker)
+          ? []
+          : [{ href: `/${slug}/mrr`, label: t("nav.recurrence"), icon: IconRepeat, exact: false }]),
       ],
     },
-    {
+  ];
+
+  if (hasTracker) {
+    sections.push({
       title: t("sections.acquisition"),
       items: [
         { href: `/${slug}/channels`, label: t("nav.channels"), icon: IconBrandGoogle, exact: false },
         { href: `/${slug}/pages`, label: t("nav.pages"), icon: IconWorldWww, exact: false },
       ],
-    },
-    {
-      title: t("sections.intelligence"),
-      items: [
-        { href: `/${slug}/ai`, label: t("nav.aiAnalysis"), icon: IconSparkles, exact: true, highlight: true, locked: !hasAi, lockBadge: t("lockBadge.starter") },
-        { href: `/${slug}/ai/comparativo`, label: t("nav.comparative"), icon: IconTrendingUp, exact: false, highlight: false, locked: !hasAi, lockBadge: t("lockBadge.starter") },
-      ],
-    },
-  ];
+    });
+  }
 
   const dataItems: NavItemDef[] = [
     { href: `/${slug}/events`, label: t("nav.events"), icon: IconList, exact: true },
     { href: `/${slug}/events/debug`, label: t("nav.debug"), icon: IconBug, exact: true },
   ];
 
-  if (hasData) {
+  if (hasData || hasGateway) {
     dataItems.splice(1, 0,
       { href: `/${slug}/customers`, label: t("nav.customers"), icon: IconUsers, exact: false },
       { href: `/${slug}/subscriptions`, label: t("nav.subscriptions"), icon: IconReceipt2, exact: false },
     );
   }
 
-  sections.splice(3, 0, {
+  sections.push({
     title: t("sections.data"),
     items: dataItems,
+  });
+
+  sections.push({
+    title: t("sections.intelligence"),
+    items: [
+      { href: `/${slug}/ai`, label: t("nav.aiAnalysis"), icon: IconSparkles, exact: true, highlight: true, locked: !hasAi, lockBadge: t("lockBadge.starter") },
+      { href: `/${slug}/ai/comparativo`, label: t("nav.comparative"), icon: IconTrendingUp, exact: false, highlight: false, locked: !hasAi, lockBadge: t("lockBadge.starter") },
+    ],
   });
 
   return sections;
@@ -379,9 +393,12 @@ function SidebarContent({
   const { organization } = useOrganization();
   const { data: hasData } = useOrgHasData(organization?.id);
   const { data: billing } = useBilling();
+  const { data: dataSources } = useOrgDataSources(organization?.id);
   const t = useTranslations("sidebar");
   const hasAi = billing?.plan.hasAiAnalysis ?? false;
-  const sections = buildNavSections(slug, hasData ?? true, hasAi, t);
+  const hasTracker = dataSources?.hasTracker ?? true;
+  const hasGateway = dataSources?.hasGateway ?? false;
+  const sections = buildNavSections(slug, hasData ?? true, hasAi, hasTracker, hasGateway, t);
   const footerNav = buildFooterNav(slug, t);
 
   const navRef = useRef<HTMLElement>(null);

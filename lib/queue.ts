@@ -99,6 +99,7 @@ export interface SyncJobProgress {
   current: number;
   total: number;
   message: string;
+  reachedLimit?: boolean;
 }
 
 export interface AiJobData {

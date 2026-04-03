@@ -8,32 +8,67 @@ import { IconCheck } from "@tabler/icons-react";
 import { GrowareLogo } from "@/components/groware-logo";
 import { cn } from "@/lib/utils";
 import { StepOrganization } from "./step-organization";
+import { StepChoosePath } from "./step-choose-path";
 import { StepFunnelConfig } from "./step-funnel-config";
 import { StepInstallTracker } from "./step-install-tracker";
+import { StepGateway } from "./step-gateway";
 import { pushDataLayerEvent } from "@/utils/datalayer";
 import type { IOrganization } from "@/interfaces/organization.interface";
 import type { IFunnelStepConfig } from "@/db/schema/organization.schema";
 
-const STEP_KEYS = ["organization", "funnel", "install"] as const;
-const STEP_MAP: Record<string, number> = {
-  organization: 1,
-  funnel: 2,
-  install: 3,
-};
+type OnboardingPath = "gateway" | "tracker" | null;
+
+const GATEWAY_STEPS = ["organization", "choose-path", "gateway"] as const;
+const TRACKER_STEPS = [
+  "organization",
+  "choose-path",
+  "funnel",
+  "install",
+] as const;
+const DEFAULT_STEPS = ["organization", "choose-path", "gateway"] as const;
+
+function inferPathFromStep(step: string | null): OnboardingPath {
+  if (step === "gateway") return "gateway";
+  if (step === "funnel" || step === "install") return "tracker";
+  return null;
+}
+
+function getActiveSteps(path: OnboardingPath) {
+  if (path === "gateway") return GATEWAY_STEPS;
+  if (path === "tracker") return TRACKER_STEPS;
+  return DEFAULT_STEPS;
+}
+
+function calcStepMap(steps: readonly string[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  steps.forEach((key, idx) => {
+    map[key] = idx + 1;
+  });
+  return map;
+}
 
 function calcInitialStep(
   existingOrg: IOrganization | null,
   existingApiKey: string | null,
+  hasActiveIntegration: boolean,
   stepParam: string | null,
+  path: OnboardingPath,
 ): number {
-  if (stepParam && STEP_MAP[stepParam]) {
-    const requested = STEP_MAP[stepParam];
-    if (requested === 3 && existingOrg) return 3;
-    if (requested === 2 && existingOrg) return 2;
-    return requested;
+  const steps = getActiveSteps(path);
+  const map = calcStepMap(steps);
+
+  if (stepParam && map[stepParam]) {
+    const requested = map[stepParam];
+    if (requested <= 1) return 1;
+    if (existingOrg) return requested;
+    return 1;
   }
+
   if (!existingOrg) return 1;
-  if (existingApiKey) return 3;
+  if (hasActiveIntegration) return map["gateway"] ?? steps.length;
+  if (existingApiKey && path === "tracker")
+    return map["install"] ?? steps.length;
+  if (path === "tracker") return map["funnel"] ?? 3;
   return 2;
 }
 
@@ -41,6 +76,7 @@ interface OnboardingWizardProps {
   userName: string;
   existingOrg: IOrganization | null;
   existingApiKey: string | null;
+  hasActiveIntegration: boolean;
   initialStepParam?: string | null;
 }
 
@@ -48,24 +84,40 @@ export function OnboardingWizard({
   userName,
   existingOrg,
   existingApiKey,
+  hasActiveIntegration,
   initialStepParam,
 }: OnboardingWizardProps) {
   const t = useTranslations("onboarding.wizard");
   const { data: session } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [currentStep, setCurrentStep] = useState(() =>
-    calcInitialStep(existingOrg, existingApiKey, initialStepParam ?? null),
+
+  const [path, setPath] = useState<OnboardingPath>(() =>
+    inferPathFromStep(initialStepParam ?? null),
   );
+
+  const activeSteps = getActiveSteps(path);
+
+  const [currentStep, setCurrentStep] = useState(() =>
+    calcInitialStep(
+      existingOrg,
+      existingApiKey,
+      hasActiveIntegration,
+      initialStepParam ?? null,
+      inferPathFromStep(initialStepParam ?? null),
+    ),
+  );
+
   const [org, setOrg] = useState<IOrganization | null>(existingOrg);
   const [funnelSteps, setFunnelSteps] = useState<IFunnelStepConfig[]>(
     existingOrg?.funnelSteps ?? [],
   );
 
   const syncStepToUrl = useCallback(
-    (step: number) => {
+    (step: number, steps: readonly string[]) => {
       if (step === 1) return;
-      const stepKey = STEP_KEYS[step - 1];
+      const stepKey = steps[step - 1];
+      if (!stepKey) return;
       const params = new URLSearchParams(searchParams.toString());
       params.set("step", stepKey);
       router.replace(`?${params.toString()}`, { scroll: false });
@@ -74,8 +126,8 @@ export function OnboardingWizard({
   );
 
   useEffect(() => {
-    syncStepToUrl(currentStep);
-  }, [currentStep, syncStepToUrl]);
+    syncStepToUrl(currentStep, activeSteps);
+  }, [currentStep, activeSteps, syncStepToUrl]);
 
   useEffect(() => {
     const userId = session?.user?.id;
@@ -86,9 +138,17 @@ export function OnboardingWizard({
     localStorage.setItem(key, "1");
   }, [session]);
 
-  const advance = () => {
-    setCurrentStep((s) => Math.min(s + 1, 3));
+  const handleChoosePath = (chosen: "gateway" | "tracker") => {
+    setPath(chosen);
+    pushDataLayerEvent("OnboardingPathChosen", { path: chosen });
+    setCurrentStep(3);
   };
+
+  const advance = () => {
+    setCurrentStep((s) => Math.min(s + 1, activeSteps.length));
+  };
+
+  const stepKey = activeSteps[currentStep - 1];
 
   return (
     <div className="w-full max-w-lg space-y-6">
@@ -105,7 +165,7 @@ export function OnboardingWizard({
       <div className="relative">
         <div className="absolute left-0 right-0 top-4 -translate-y-1/2 h-px bg-zinc-800" />
         <div className="relative flex items-start justify-between">
-          {STEP_KEYS.map((key, idx) => {
+          {activeSteps.map((key, idx) => {
             const number = idx + 1;
             const isDone = currentStep > number;
             const isActive = currentStep === number;
@@ -145,16 +205,30 @@ export function OnboardingWizard({
       </div>
 
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 backdrop-blur-sm shadow-xl shadow-black/30">
-        {currentStep === 1 && (
+        {stepKey === "organization" && (
           <StepOrganization
             onComplete={(createdOrg) => {
               setOrg(createdOrg);
-              router.push(`/onboarding/${createdOrg.slug}?step=funnel`);
+              router.push(
+                `/onboarding/${createdOrg.slug}?step=choose-path`,
+              );
             }}
           />
         )}
 
-        {currentStep === 2 && org && (
+        {stepKey === "choose-path" && (
+          <StepChoosePath onChoose={handleChoosePath} />
+        )}
+
+        {stepKey === "gateway" && org && (
+          <StepGateway
+            organizationId={org.id}
+            slug={org.slug}
+            onComplete={advance}
+          />
+        )}
+
+        {stepKey === "funnel" && org && (
           <StepFunnelConfig
             organizationId={org.id}
             onComplete={(steps) => {
@@ -164,7 +238,7 @@ export function OnboardingWizard({
           />
         )}
 
-        {currentStep === 3 && org && (
+        {stepKey === "install" && org && (
           <StepInstallTracker
             organizationId={org.id}
             organizationName={org.name}
@@ -178,7 +252,10 @@ export function OnboardingWizard({
       </div>
 
       <p className="text-center text-xs text-zinc-700">
-        {t("stepProgress", { current: currentStep, total: STEP_KEYS.length })}
+        {t("stepProgress", {
+          current: currentStep,
+          total: activeSteps.length,
+        })}
       </p>
     </div>
   );

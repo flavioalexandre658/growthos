@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
 import {
   IconBrandStripe,
@@ -12,14 +13,22 @@ import {
   IconArrowRight,
   IconLink,
   IconPlugConnected,
+  IconCheck,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { connectStripe } from "@/actions/integrations/connect-stripe.action";
 import { connectAsaas } from "@/actions/integrations/connect-asaas.action";
+import { syncStripeHistory } from "@/actions/integrations/sync-stripe-history.action";
+import { syncAsaasHistory } from "@/actions/integrations/sync-asaas-history.action";
+import { completeOnboarding } from "@/actions/auth/complete-onboarding.action";
+import { useSyncProgress } from "@/hooks/queries/use-sync-progress";
+import { pushDataLayerEvent } from "@/utils/datalayer";
+import { growareTrack } from "@/utils/groware";
 
 interface StepGatewayProps {
   organizationId: string;
+  slug: string;
   onComplete: () => void;
 }
 
@@ -56,7 +65,7 @@ function ProviderCard({
 }: {
   config: ProviderConfig;
   organizationId: string;
-  onConnected: (provider: Provider) => void;
+  onConnected: (provider: Provider, integrationId: string) => void;
 }) {
   const t = useTranslations("onboarding.stepGateway");
   const tStripe = useTranslations("settings.integrations.stripe");
@@ -73,15 +82,14 @@ function ProviderCard({
     if (!key) return;
     setIsConnecting(true);
     try {
-      if (config.id === "stripe") {
-        await connectStripe(organizationId, key);
-      } else {
-        await connectAsaas(organizationId, key);
-      }
+      const integration =
+        config.id === "stripe"
+          ? await connectStripe(organizationId, key)
+          : await connectAsaas(organizationId, key);
       setConnected(true);
       setCredential("");
       toast.success(t("connectedToast"));
-      onConnected(config.id);
+      onConnected(config.id, integration.id);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("errorToast"));
     } finally {
@@ -200,6 +208,72 @@ function ProviderCard({
   );
 }
 
+function OnboardingSyncProgress({
+  jobId,
+  onCompleted,
+  onFailed,
+}: {
+  jobId: string;
+  onCompleted: () => void;
+  onFailed: () => void;
+}) {
+  const t = useTranslations("onboarding.stepGateway");
+  const { data } = useSyncProgress(jobId);
+
+  useEffect(() => {
+    if (data?.state === "completed" || data?.state === "not_found") onCompleted();
+    if (data?.state === "failed") onFailed();
+  }, [data?.state, onCompleted, onFailed]);
+
+  const isWaiting = !data || data.state === "waiting" || data.state === "delayed";
+  const progress = data?.progress;
+  const pct =
+    progress && progress.total > 0
+      ? Math.round((progress.current / progress.total) * 100)
+      : undefined;
+  const isIndeterminate =
+    isWaiting ||
+    progress?.phase === "fetching" ||
+    progress?.phase === "deleting";
+
+  return (
+    <div className="rounded-xl border border-zinc-700/50 bg-zinc-800/30 p-4 space-y-3">
+      <div className="flex items-center gap-3">
+        <span className="relative flex h-2 w-2 shrink-0">
+          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-400" />
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-zinc-200">{t("syncingTitle")}</p>
+          <p className="text-[11px] text-zinc-500">{t("syncingSubtitle")}</p>
+        </div>
+        {pct !== undefined && (
+          <span className="text-xs tabular-nums text-zinc-400 shrink-0">
+            {pct}%
+          </span>
+        )}
+      </div>
+
+      <div className="relative h-[3px] w-full overflow-hidden rounded-full bg-zinc-700/60">
+        {isIndeterminate ? (
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-zinc-400/60 to-transparent animate-shimmer bg-[length:200%_100%]" />
+        ) : (
+          <div
+            className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-500 ease-out"
+            style={{ width: `${pct ?? 0}%` }}
+          />
+        )}
+      </div>
+
+      {!isWaiting && progress?.message && (
+        <p className="text-[11px] text-zinc-500 truncate leading-none">
+          {progress.message}
+        </p>
+      )}
+    </div>
+  );
+}
+
 const COMING_SOON_PROVIDERS = [
   {
     name: "Kiwify",
@@ -230,13 +304,21 @@ const COMING_SOON_PROVIDERS = [
   },
 ];
 
-export function StepGateway({ organizationId, onComplete }: StepGatewayProps) {
+export function StepGateway({
+  organizationId,
+  slug,
+  onComplete,
+}: StepGatewayProps) {
   const t = useTranslations("onboarding.stepGateway");
   const tStripe = useTranslations("settings.integrations.stripe");
   const tAsaas = useTranslations("settings.integrations.asaas");
+  const { data: session, update } = useSession();
   const [connectedProviders, setConnectedProviders] = useState<Set<Provider>>(
     new Set(),
   );
+  const [syncJobId, setSyncJobId] = useState<string | null>(null);
+  const [syncDone, setSyncDone] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   const PROVIDER_CONFIGS: ProviderConfig[] = [
     {
@@ -253,6 +335,10 @@ export function StepGateway({ organizationId, onComplete }: StepGatewayProps) {
         tStripe("tutorialStep3"),
         tStripe("tutorialStep4"),
         tStripe("tutorialStep5"),
+        tStripe("tutorialStep6"),
+        tStripe("tutorialStep7"),
+        tStripe("tutorialStep8"),
+        tStripe("tutorialStep9"),
       ],
       dashboardUrl: "https://dashboard.stripe.com/apikeys",
     },
@@ -269,17 +355,53 @@ export function StepGateway({ organizationId, onComplete }: StepGatewayProps) {
         tAsaas("tutorialStep2"),
         tAsaas("tutorialStep3"),
         tAsaas("tutorialStep4"),
-        tAsaas("tutorialStep5"),
       ],
       dashboardUrl: "https://app.asaas.com",
     },
   ];
 
-  const handleConnected = (provider: Provider) => {
+  const handleConnected = async (provider: Provider, integrationId: string) => {
     setConnectedProviders((prev) => new Set(prev).add(provider));
+    pushDataLayerEvent("GatewayConnectedOnboarding", { provider });
+
+    try {
+      const syncFn =
+        provider === "stripe" ? syncStripeHistory : syncAsaasHistory;
+      const { jobId } = await syncFn(organizationId, integrationId);
+      setSyncJobId(jobId);
+    } catch {
+      setSyncDone(true);
+    }
   };
 
+  const handleSyncCompleted = useCallback(() => {
+    setSyncDone(true);
+    toast.success(t("syncComplete"));
+  }, [t]);
+
+  const handleSyncFailed = useCallback(() => {
+    setSyncDone(true);
+    toast.error(t("syncFailed"));
+  }, [t]);
+
   const hasAnyConnected = connectedProviders.size > 0;
+
+  const handleFinish = async () => {
+    setIsFinishing(true);
+    try {
+      await completeOnboarding();
+      pushDataLayerEvent("OnboardingCompleted");
+      growareTrack("onboarding", {
+        product_id: organizationId,
+        customer_id: session?.user?.id,
+      });
+      await update({ onboardingCompleted: true });
+      window.location.href = `/${slug}`;
+    } catch {
+      toast.error(t("errorToast"));
+      setIsFinishing(false);
+    }
+  };
 
   return (
     <div className="space-y-5">
@@ -293,80 +415,111 @@ export function StepGateway({ organizationId, onComplete }: StepGatewayProps) {
         </div>
       </div>
 
-      <div className="rounded-lg border border-indigo-500/20 bg-indigo-950/10 px-4 py-3 space-y-1">
-        <p className="text-xs font-semibold text-indigo-300">
-          {t("calloutTitle")}
-        </p>
-        <p className="text-[11px] text-zinc-400 leading-relaxed">
-          {t("calloutDescription")}
-        </p>
-      </div>
+      {syncJobId && !syncDone && (
+        <OnboardingSyncProgress
+          jobId={syncJobId}
+          onCompleted={handleSyncCompleted}
+          onFailed={handleSyncFailed}
+        />
+      )}
 
-      <div className="space-y-3">
-        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
-          {t("availableLabel")}
-        </p>
-        {PROVIDER_CONFIGS.map((config) => (
-          <ProviderCard
-            key={config.id}
-            config={config}
-            organizationId={organizationId}
-            onConnected={handleConnected}
-          />
-        ))}
-      </div>
-
-      <div className="space-y-2">
-        <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest">
-          {t("comingSoonLabel")}
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          {COMING_SOON_PROVIDERS.map((provider) => (
-            <div
-              key={provider.name}
-              className="flex flex-col items-center gap-2 rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-3 py-3 opacity-50"
-            >
-              <div
-                className="w-8 h-8 rounded-lg border flex items-center justify-center shrink-0"
-                style={{
-                  backgroundColor: `${provider.accentColor}15`,
-                  borderColor: `${provider.accentColor}25`,
-                }}
-              >
-                {provider.logo}
-              </div>
-              <div className="text-center">
-                <p className="text-xs font-medium text-zinc-400">
-                  {provider.name}
-                </p>
-                <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-500 border border-zinc-700">
-                  <IconClock size={9} />
-                  {t("comingSoonLabel")}
-                </span>
-              </div>
-            </div>
-          ))}
+      {syncDone && (
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-4">
+          <div className="flex items-center gap-2">
+            <IconCheck size={16} className="text-emerald-400" />
+            <p className="text-sm font-medium text-emerald-300">
+              {t("syncComplete")}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
+
+      {!syncJobId && (
+        <>
+          <div className="space-y-3">
+            <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
+              {t("availableLabel")}
+            </p>
+            {PROVIDER_CONFIGS.map((config) => (
+              <ProviderCard
+                key={config.id}
+                config={config}
+                organizationId={organizationId}
+                onConnected={handleConnected}
+              />
+            ))}
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-[10px] font-semibold text-zinc-600 uppercase tracking-widest">
+              {t("comingSoonLabel")}
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {COMING_SOON_PROVIDERS.map((provider) => (
+                <div
+                  key={provider.name}
+                  className="flex flex-col items-center gap-2 rounded-xl border border-zinc-800/60 bg-zinc-900/30 px-3 py-3 opacity-50"
+                >
+                  <div
+                    className="w-8 h-8 rounded-lg border flex items-center justify-center shrink-0"
+                    style={{
+                      backgroundColor: `${provider.accentColor}15`,
+                      borderColor: `${provider.accentColor}25`,
+                    }}
+                  >
+                    {provider.logo}
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-medium text-zinc-400">
+                      {provider.name}
+                    </p>
+                    <span className="inline-flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-500 border border-zinc-700">
+                      <IconClock size={9} />
+                      {t("comingSoonLabel")}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="flex flex-col gap-2 pt-1">
-        <Button
-          onClick={onComplete}
-          className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold gap-2 group"
-        >
-          {hasAnyConnected ? t("submit") : t("submit")}
-          <IconArrowRight
-            size={16}
-            className="transition-transform group-hover:translate-x-0.5"
-          />
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={onComplete}
-          className="w-full h-9 text-zinc-500 hover:text-zinc-300 text-sm"
-        >
-          {t("skip")}
-        </Button>
+        {hasAnyConnected || syncDone ? (
+          <Button
+            onClick={handleFinish}
+            disabled={isFinishing}
+            className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold gap-2 group"
+          >
+            {isFinishing ? t("connecting") : t("goToDashboard")}
+            <IconArrowRight
+              size={16}
+              className="transition-transform group-hover:translate-x-0.5"
+            />
+          </Button>
+        ) : (
+          <>
+            <Button
+              onClick={onComplete}
+              className="w-full h-11 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold gap-2 group"
+            >
+              {t("submit")}
+              <IconArrowRight
+                size={16}
+                className="transition-transform group-hover:translate-x-0.5"
+              />
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={handleFinish}
+              disabled={isFinishing}
+              className="w-full h-9 text-zinc-500 hover:text-zinc-300 text-sm"
+            >
+              {t("skip")}
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

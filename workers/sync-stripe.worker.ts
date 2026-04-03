@@ -5,7 +5,8 @@ import { integrations, events, payments, subscriptions, organizations } from "@/
 import { decrypt } from "@/lib/crypto";
 import { eq, and, sql } from "drizzle-orm";
 import { extractSubscriptionIdFromInvoice, extractPaymentIntentFromInvoice, mapBillingInterval, stripeEventHash } from "@/utils/stripe-helpers";
-import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
+import { getRevenueBudget } from "@/utils/check-revenue-limit";
+import dayjs from "@/utils/dayjs";
 import { SyncCaches } from "./shared/caches";
 import { bulkUpsertPayments, bulkUpsertEvents, bulkUpsertSubscriptions, bulkUpsertCustomers } from "./shared/bulk-operations";
 import type { SyncJobData, SyncJobProgress } from "@/lib/queue";
@@ -112,6 +113,8 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
   subscriptionsSynced: number;
   invoicesSynced: number;
   oneTimePurchasesSynced: number;
+  reachedLimit?: boolean;
+  skippedByLimit?: number;
 }> {
   const { organizationId, integrationId } = job.data;
 
@@ -129,9 +132,11 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
   if (!integration) throw new Error("Integração não encontrada.");
   if (integration.status === "disconnected") throw new Error("Integração desconectada.");
 
-  if (await isOrgOverRevenueLimit(organizationId)) {
-    throw new Error("Limite de receita do plano atingido. Faça upgrade para importar dados históricos.");
-  }
+  const budget = await getRevenueBudget(organizationId);
+  let revenueAccumulated = 0;
+  let reachedLimit = false;
+  let skippedByLimit = 0;
+  const monthStart = dayjs().startOf("month");
 
   const stripe = new Stripe(decrypt(integration.accessToken));
   const orgCurrency = await getOrgCurrency(organizationId);
@@ -244,6 +249,18 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
     const eventType = isRecurring && billingReason !== "subscription_create" ? "renewal" : "purchase";
     const paidAt = invoice.status_transitions?.paid_at ?? invoice.created;
 
+    if (!budget.isUnlimited) {
+      const eventDate = dayjs.unix(paidAt);
+      if (eventDate.isAfter(monthStart) || eventDate.isSame(monthStart)) {
+        if (revenueAccumulated + invoice.amount_paid > budget.remainingInCents) {
+          reachedLimit = true;
+          skippedByLimit++;
+          continue;
+        }
+        revenueAccumulated += invoice.amount_paid;
+      }
+    }
+
     const eventCurrency = invoice.currency.toUpperCase();
     const { baseCurrency, exchangeRate, baseValueInCents } = await caches.computeBaseValue(
       organizationId, eventCurrency, orgCurrency, invoice.amount_paid,
@@ -323,6 +340,18 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
   report(job, { phase: "processing", current: processed, total: totalItems, message: "Processando charges..." });
 
   for (const charge of allCharges) {
+    if (!budget.isUnlimited) {
+      const eventDate = dayjs.unix(charge.created);
+      if (eventDate.isAfter(monthStart) || eventDate.isSame(monthStart)) {
+        if (revenueAccumulated + charge.amount > budget.remainingInCents) {
+          reachedLimit = true;
+          skippedByLimit++;
+          continue;
+        }
+        revenueAccumulated += charge.amount;
+      }
+    }
+
     const rawCustomerId = typeof charge.customer === "string" ? charge.customer : charge.customer?.id ?? null;
     const metaCustomerId = extractMetaCustomerId(charge.metadata as Record<string, string> | null);
     const customerId = metaCustomerId ?? rawCustomerId;
@@ -481,11 +510,17 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
 
   caches.clear();
 
-  report(job, { phase: "completed", current: totalItems, total: totalItems, message: "Sync concluído!" });
+  const completionMessage = reachedLimit
+    ? `Sync concluído! ${skippedByLimit} transações não importadas (limite do plano atingido).`
+    : "Sync concluído!";
+
+  report(job, { phase: "completed", current: totalItems, total: totalItems, message: completionMessage, reachedLimit });
 
   return {
     subscriptionsSynced: allSubs.length,
     invoicesSynced,
     oneTimePurchasesSynced,
+    reachedLimit,
+    skippedByLimit,
   };
 }

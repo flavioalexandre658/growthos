@@ -60,11 +60,15 @@
     "overview": {
       "title": "Overview",
       "subtitle": "Consolidated performance for the period",
+      "gatewayOnlySubtitle": "Recurring revenue and subscriptions",
       "stepsVisibleTitle": "Visible steps",
       "stepsButton": "Steps",
       "stepsPopoverTitle": "Visible steps",
       "stepsPopoverDescription": "Temporary toggle — not persisted",
-      "showAll": "Show all"
+      "showAll": "Show all",
+      "trackerPromptTitle": "Want to see acquisition funnel and channels?",
+      "trackerPromptDescription": "Install the tracker on your site to track UTMs, entry channels, and funnel conversions.",
+      "trackerPromptCta": "Install tracker"
     },
     "periodFilter": {
       "today": "Today",
