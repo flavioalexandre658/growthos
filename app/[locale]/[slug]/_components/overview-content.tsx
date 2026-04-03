@@ -239,7 +239,6 @@ function TrackerDashboard({
   currency: string;
   organization: { funnelSteps?: { eventType: string; hidden?: boolean }[] } | null;
 }) {
-  const t = useTranslations("dashboard.overview");
   const tTour = useTranslations("tour.welcome.dashboard");
   const tAlerts = useTranslations("dashboard.alerts");
 
