@@ -12,6 +12,7 @@ import { useOrgDataSources } from "@/hooks/queries/use-org-data-sources";
 import { useMrrOverview } from "@/hooks/queries/use-mrr-overview";
 import { useMrrMovement } from "@/hooks/queries/use-mrr-movement";
 import { useMrrGrowth } from "@/hooks/queries/use-mrr-growth";
+import { getDemoData } from "@/lib/demo-data";
 import { fmtCurrencyDecimal } from "@/utils/format";
 import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { KpiCards } from "./kpi-cards";
@@ -179,47 +180,59 @@ function GatewayOnlyDashboard({
   filter,
   orgId,
   slug,
+  isDemo,
+  currency,
 }: {
   filter: IDateFilter;
   orgId: string;
   slug: string;
+  isDemo?: boolean;
+  currency?: string;
 }) {
   const t = useTranslations("dashboard.overview");
+  const demoData = isDemo ? getDemoData(currency ?? "BRL") : null;
 
   const { data: overview, isPending: overviewLoading } = useMrrOverview(orgId, filter);
   const { data: movement, isPending: movementLoading } = useMrrMovement(orgId, filter);
   const { data: growth, isPending: growthLoading } = useMrrGrowth(orgId, filter);
 
+  const effectiveOverview = demoData?.mrrOverview ?? overview;
+  const effectiveMovement = demoData?.mrrMovement ?? movement;
+  const effectiveGrowth = demoData?.mrrGrowth ?? growth;
+  const effectiveLoading = isDemo ? false : undefined;
+
   return (
     <>
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-xl border border-indigo-500/20 bg-indigo-950/10 px-4 py-3">
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-indigo-300">
-            {t("trackerPromptTitle")}
-          </p>
-          <p className="text-[11px] text-zinc-400 leading-relaxed mt-0.5">
-            {t("trackerPromptDescription")}
-          </p>
+      {!isDemo && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-xl border border-indigo-500/20 bg-indigo-950/10 px-4 py-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-indigo-300">
+              {t("trackerPromptTitle")}
+            </p>
+            <p className="text-[11px] text-zinc-400 leading-relaxed mt-0.5">
+              {t("trackerPromptDescription")}
+            </p>
+          </div>
+          <Link
+            href={`/onboarding/${slug}?step=install`}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600/20 px-3 py-1.5 text-[11px] font-semibold text-indigo-300 ring-1 ring-inset ring-indigo-600/30 hover:bg-indigo-600/30 transition-colors shrink-0"
+          >
+            <IconCode size={12} />
+            {t("trackerPromptCta")}
+          </Link>
         </div>
-        <Link
-          href={`/onboarding/${slug}?step=install`}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600/20 px-3 py-1.5 text-[11px] font-semibold text-indigo-300 ring-1 ring-inset ring-indigo-600/30 hover:bg-indigo-600/30 transition-colors shrink-0"
-        >
-          <IconCode size={12} />
-          {t("trackerPromptCta")}
-        </Link>
-      </div>
+      )}
 
-      <MrrKpiCards data={overview} isLoading={overviewLoading} />
+      <MrrKpiCards data={effectiveOverview} isLoading={effectiveLoading ?? overviewLoading} />
 
-      <SubscriberFlowSankey data={overview} isLoading={overviewLoading} />
+      <SubscriberFlowSankey data={effectiveOverview} isLoading={effectiveLoading ?? overviewLoading} />
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        <MrrGrowthChart data={growth} isLoading={growthLoading} />
-        <MrrMovementChart data={movement} isLoading={movementLoading} />
+        <MrrGrowthChart data={effectiveGrowth} isLoading={effectiveLoading ?? growthLoading} />
+        <MrrMovementChart data={effectiveMovement} isLoading={effectiveLoading ?? movementLoading} />
       </div>
 
-      <ActiveSubscriptionsTable organizationId={orgId} />
+      {!isDemo && <ActiveSubscriptionsTable organizationId={orgId} />}
     </>
   );
 }
@@ -384,11 +397,12 @@ export function OverviewContent({ filter }: OverviewContentProps) {
 
   const hasGateway = dataSources?.hasGateway ?? false;
   const hasTracker = dataSources?.hasTracker ?? false;
-  const showGatewayDashboard = hasGateway && !hasTracker;
+  const isDemo = !hasGateway && !hasTracker;
+  const showGatewayDashboard = isDemo || (hasGateway && !hasTracker);
 
   return (
     <div className="space-y-4">
-      {!showGatewayDashboard && <GatewayPromptModal />}
+      {!showGatewayDashboard && !isDemo && <GatewayPromptModal />}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -409,6 +423,8 @@ export function OverviewContent({ filter }: OverviewContentProps) {
           filter={filter}
           orgId={orgId}
           slug={slug}
+          isDemo={isDemo}
+          currency={currency}
         />
       )}
 

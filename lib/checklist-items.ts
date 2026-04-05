@@ -3,7 +3,7 @@ import type { ITourProgress } from "@/interfaces/tour.interface";
 export interface ChecklistItem {
   id: keyof Pick<
     ITourProgress,
-    "gatewayConnected" | "trackerInstalled" | "funnelEventReceived" | "costsConfigured" | "aiExplored"
+    "gatewayConnected" | "funnelEventReceived" | "costsConfigured" | "aiExplored"
   >;
   labelKey: string;
   ctaKey?: string;
@@ -20,21 +20,16 @@ export function getChecklistItems(slug: string): ChecklistItem[] {
       href: "settings/integrations",
     },
     {
-      id: "trackerInstalled",
-      labelKey: "items.tracker.label",
-      ctaKey: "items.tracker.cta",
-      href: `/onboarding/${slug}?step=install`,
-    },
-    {
-      id: "funnelEventReceived",
-      labelKey: "items.funnelEvent.label",
-      auto: true,
-    },
-    {
       id: "costsConfigured",
       labelKey: "items.costs.label",
       ctaKey: "items.costs.cta",
       href: "costs",
+    },
+    {
+      id: "funnelEventReceived",
+      labelKey: "items.channels.label",
+      ctaKey: "items.channels.cta",
+      href: "channels",
     },
     {
       id: "aiExplored",

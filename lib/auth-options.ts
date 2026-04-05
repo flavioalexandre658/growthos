@@ -4,7 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { users } from "@/db/schema";
+import { users, organizations, orgMembers } from "@/db/schema";
 import { sendEmail } from "@/lib/email";
 import { welcomeEmail } from "@/lib/email-templates/welcome";
 import { isPlatformAdmin } from "@/utils/is-platform-admin";
@@ -99,24 +99,58 @@ export const authOptions: NextAuthOptions = {
 
       const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
 
+      const userName = user.name ?? email.split("@")[0];
+
       const [newUser] = await db
         .insert(users)
         .values({
-          name: user.name ?? email.split("@")[0],
+          name: userName,
           email,
           passwordHash: null,
           authProvider: "google",
           role: "ADMIN",
-          onboardingCompleted: false,
+          onboardingCompleted: true,
         })
         .returning({ id: users.id, name: users.name, email: users.email });
+
+      const slugBase = email
+        .split("@")[0]
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 40);
+      const suffix = Math.random().toString(36).slice(2, 6);
+      const slug = `${slugBase}-${suffix}`;
+
+      const [org] = await db
+        .insert(organizations)
+        .values({
+          name: userName,
+          slug,
+          currency: "USD",
+          country: "US",
+          timezone: "America/New_York",
+          locale: "en-US",
+          language: "en-US",
+          createdByUserId: newUser.id,
+        })
+        .returning({ id: organizations.id, slug: organizations.slug });
+
+      await db.insert(orgMembers).values({
+        organizationId: org.id,
+        userId: newUser.id,
+        role: "owner",
+        acceptedAt: new Date(),
+      });
 
       sendEmail({
         to: newUser.email,
         subject: `Welcome to Groware, ${newUser.name}!`,
         html: welcomeEmail({
           userName: newUser.name,
-          dashboardUrl: `${baseUrl}/organizations`,
+          dashboardUrl: `${baseUrl}/${org.slug}`,
         }),
       }).catch((err) => {
         console.error("[welcome-email-google]", err);

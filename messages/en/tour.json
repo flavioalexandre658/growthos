@@ -15,22 +15,18 @@
           "description": "Import your financial history in minutes",
           "cta": "Connect now"
         },
-        "tracker": {
-          "label": "Install tracker.js",
-          "description": "Track acquisition channels and funnel",
-          "cta": "View instructions"
-        },
-        "funnelEvent": {
-          "label": "Receive first funnel event",
-          "description": "Confirms that tracking is working"
-        },
         "costs": {
-          "label": "Configure costs",
+          "label": "Add fixed costs to see your real profit",
           "description": "Complete your P&L with real costs",
           "cta": "Add costs"
         },
+        "channels": {
+          "label": "See which channels drive the most revenue",
+          "description": "Find out where your best customers come from",
+          "cta": "View channels"
+        },
         "ai": {
-          "label": "Explore AI Analysis",
+          "label": "Run your first AI analysis",
           "description": "Insights based on your data",
           "cta": "Explore"
         }

@@ -15,22 +15,18 @@
           "description": "Importe seu histórico financeiro em minutos",
           "cta": "Conectar agora"
         },
-        "tracker": {
-          "label": "Instalar tracker.js",
-          "description": "Rastreie canais de aquisição e funil",
-          "cta": "Ver instruções"
-        },
-        "funnelEvent": {
-          "label": "Receber primeiro evento do funil",
-          "description": "Confirma que o tracking está funcionando"
-        },
         "costs": {
-          "label": "Configurar custos",
+          "label": "Adicionar custos fixos para ver seu lucro real",
           "description": "Complete seu P&L com custos reais",
           "cta": "Adicionar custos"
         },
+        "channels": {
+          "label": "Ver quais canais geram mais receita",
+          "description": "Descubra de onde vêm seus melhores clientes",
+          "cta": "Ver canais"
+        },
         "ai": {
-          "label": "Explorar Análise com IA",
+          "label": "Fazer sua primeira análise com IA",
           "description": "Insights baseados nos seus dados",
           "cta": "Explorar"
         }

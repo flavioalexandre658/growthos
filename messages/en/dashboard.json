@@ -126,6 +126,20 @@
       "title": "Revenue limit reached",
       "description": "Your {plan} plan has a {limit}/mo limit. New events are being blocked.",
       "upgrade": "Upgrade now"
+    },
+    "demoBanner": {
+      "message": "You're viewing sample data. Connect your Asaas or Stripe to see your real data in 2 minutes.",
+      "cta": "Connect now"
+    },
+    "connectModal": {
+      "title": "Connect your gateway",
+      "subtitle": "See your real data in 2 minutes",
+      "securityNote": "Read-only access — we never move your money",
+      "mostUsedBadge": "Most used in BR",
+      "comingSoonLabel": "Coming soon",
+      "syncComplete": "Data imported successfully!",
+      "syncFailed": "Import failed. Try again in settings.",
+      "closeCta": "View my dashboard"
     }
   }
 }

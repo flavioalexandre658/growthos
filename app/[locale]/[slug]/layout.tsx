@@ -7,6 +7,7 @@ import { Sidebar } from "./_components/sidebar";
 import { Topbar } from "./_components/topbar";
 import { MobileChecklistBanner } from "./_components/mobile-checklist-banner";
 import { RevenueLimitBanner } from "./_components/revenue-limit-banner";
+import { DemoDataBanner } from "./_components/demo-data-banner";
 
 interface OrgLayoutProps {
   children: React.ReactNode;
@@ -19,8 +20,6 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/login");
 
-  if (!session.user.onboardingCompleted) redirect("/onboarding");
-
   const org = await getOrganizationBySlug(slug);
   if (!org) redirect("/organizations");
 
@@ -32,6 +31,7 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
       <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto overscroll-none">
         <Topbar slug={slug} />
         <div className="pt-14 md:pt-0">
+          <DemoDataBanner />
           <RevenueLimitBanner slug={slug} />
           <MobileChecklistBanner slug={slug} />
           {children}

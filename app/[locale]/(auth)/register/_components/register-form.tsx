@@ -13,8 +13,7 @@ import {
   IconLoader2,
   IconLock,
   IconMail,
-  IconUser,
-  IconPhone,
+  IconBuilding,
   IconArrowRight,
 } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
@@ -31,18 +30,11 @@ export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const registerSchema = z
-    .object({
-      name: z.string().min(2, t("nameMin")),
-      email: z.string().email(t("emailError")),
-      phone: z.string().min(1, t("phoneRequired")),
-      password: z.string().min(6, t("passwordMin")),
-      confirmPassword: z.string().min(1, t("confirmRequired")),
-    })
-    .refine((data) => data.password === data.confirmPassword, {
-      message: t("passwordMismatch"),
-      path: ["confirmPassword"],
-    });
+  const registerSchema = z.object({
+    companyName: z.string().min(2, t("companyNameMin")),
+    email: z.string().email(t("emailError")),
+    password: z.string().min(6, t("passwordMin")),
+  });
 
   type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -52,7 +44,7 @@ export function RegisterForm() {
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { name: "", email: "", phone: "", password: "", confirmPassword: "" },
+    defaultValues: { companyName: "", email: "", password: "" },
   });
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -74,7 +66,7 @@ export function RegisterForm() {
         return;
       }
 
-      const { user } = result;
+      const { user, orgSlug } = result;
 
       const loginResult = await signIn("credentials", {
         email: data.email,
@@ -90,7 +82,7 @@ export function RegisterForm() {
           customer_id: user.id,
         });
         toast.success(t("successToast"));
-        router.push("/onboarding");
+        router.push(`/${locale}/${orgSlug}`);
       } else {
         setErrorMessage(t("loginAfterRegisterError"));
       }
@@ -109,27 +101,27 @@ export function RegisterForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="space-y-2">
         <Label
-          htmlFor="name"
+          htmlFor="companyName"
           className="text-zinc-400 text-xs uppercase tracking-wider font-semibold"
         >
-          {t("nameLabel")}
+          {t("companyNameLabel")}
         </Label>
         <div className="relative">
-          <IconUser
+          <IconBuilding
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
           />
           <Input
-            id="name"
+            id="companyName"
             type="text"
-            placeholder={t("namePlaceholder")}
-            autoComplete="name"
-            className={cn("pl-9", inputClass, errors.name && "border-red-500/50")}
-            {...register("name")}
+            placeholder={t("companyNamePlaceholder")}
+            autoComplete="organization"
+            className={cn("pl-9", inputClass, errors.companyName && "border-red-500/50")}
+            {...register("companyName")}
           />
         </div>
-        {errors.name && (
-          <p className="text-xs text-red-400">{errors.name.message}</p>
+        {errors.companyName && (
+          <p className="text-xs text-red-400">{errors.companyName.message}</p>
         )}
       </div>
 
@@ -161,32 +153,6 @@ export function RegisterForm() {
 
       <div className="space-y-2">
         <Label
-          htmlFor="phone"
-          className="text-zinc-400 text-xs uppercase tracking-wider font-semibold"
-        >
-          {t("phoneLabel")}
-        </Label>
-        <div className="relative">
-          <IconPhone
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
-          />
-          <Input
-            id="phone"
-            type="tel"
-            placeholder={t("phonePlaceholder")}
-            autoComplete="tel"
-            className={cn("pl-9", inputClass, errors.phone && "border-red-500/50")}
-            {...register("phone")}
-          />
-        </div>
-        {errors.phone && (
-          <p className="text-xs text-red-400">{errors.phone.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label
           htmlFor="password"
           className="text-zinc-400 text-xs uppercase tracking-wider font-semibold"
         >
@@ -208,32 +174,6 @@ export function RegisterForm() {
         </div>
         {errors.password && (
           <p className="text-xs text-red-400">{errors.password.message}</p>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Label
-          htmlFor="confirmPassword"
-          className="text-zinc-400 text-xs uppercase tracking-wider font-semibold"
-        >
-          {t("confirmPasswordLabel")}
-        </Label>
-        <div className="relative">
-          <IconLock
-            size={16}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
-          />
-          <Input
-            id="confirmPassword"
-            type="password"
-            placeholder={t("confirmPasswordPlaceholder")}
-            autoComplete="new-password"
-            className={cn("pl-9", inputClass, errors.confirmPassword && "border-red-500/50")}
-            {...register("confirmPassword")}
-          />
-        </div>
-        {errors.confirmPassword && (
-          <p className="text-xs text-red-400">{errors.confirmPassword.message}</p>
         )}
       </div>
 
