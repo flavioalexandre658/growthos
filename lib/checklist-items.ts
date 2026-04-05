@@ -11,7 +11,7 @@ export interface ChecklistItem {
   auto?: boolean;
 }
 
-export function getChecklistItems(slug: string): ChecklistItem[] {
+export function getChecklistItems(): ChecklistItem[] {
   return [
     {
       id: "gatewayConnected",

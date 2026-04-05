@@ -31,7 +31,7 @@ export function MobileChecklistBanner({ slug }: MobileChecklistBannerProps) {
   const { data: billing } = useBilling();
   const hasAi = billing?.plan.hasAiAnalysis ?? false;
 
-  const visibleItems = getChecklistItems(slug).filter((item) => {
+  const visibleItems = getChecklistItems().filter((item) => {
     if (item.id === "aiExplored" && !hasAi) return false;
     return true;
   });
