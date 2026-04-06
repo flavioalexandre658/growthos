@@ -17,10 +17,6 @@ export default async function OrganizationsPage() {
     redirect("/login");
   }
 
-  if (!session.user.onboardingCompleted) {
-    redirect("/onboarding");
-  }
-
   const [orgs, billing] = await Promise.all([
     getOrganizationsWithStats(),
     getBilling(),
