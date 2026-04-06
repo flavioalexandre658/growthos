@@ -330,11 +330,31 @@
       }
     },
     "integrations": {
+      "title": "Integrações",
+      "subtitle": "Conecte gateways de pagamento para importar receita automaticamente",
       "comingSoon": "Em breve",
       "availableFromStarter": "Disponível a partir do Starter",
       "starterPlus": "Starter+",
+      "integrate": "Integrar",
+      "manage": "Gerenciar",
+      "mostUsedBadge": "Mais usado",
+      "stripeTagline": "Pagamentos globais e assinaturas",
+      "asaasTagline": "Gateway brasileiro com Pix e boleto",
+      "kiwifyTagline": "Infoprodutos e cursos online",
+      "hotmartTagline": "Plataforma de produtos digitais",
       "kiwifyDescription": "Infoprodutos e cursos online",
       "hotmartDescription": "Plataforma de produtos digitais",
+      "drawer": {
+        "tutorialTitle": "Como conectar",
+        "credentialsTitle": "Credenciais",
+        "connectionTitle": "Conexão",
+        "syncTitle": "Sincronização",
+        "webhookTitle": "Webhook",
+        "dangerTitle": "Zona de perigo",
+        "providerAccount": "Conta do provedor",
+        "lastSync": "Última sincronização",
+        "history": "Histórico"
+      },
       "common": {
         "lastSync": "Último sync",
         "history": "Histórico",

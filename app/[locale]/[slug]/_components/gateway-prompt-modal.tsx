@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import {
-  IconBrandStripe,
   IconBolt,
   IconInfoCircle,
   IconX,
@@ -33,7 +33,15 @@ const GATEWAYS: GatewayOption[] = [
     name: "Stripe",
     descKey: "stripeDesc",
     color: "#635BFF",
-    logo: <IconBrandStripe size={20} className="text-[#635BFF]" />,
+    logo: (
+      <Image
+        src="/assets/images/gateways/stripe.png"
+        alt="Stripe"
+        width={28}
+        height={28}
+        className="object-contain"
+      />
+    ),
   },
   {
     id: "asaas",
@@ -41,9 +49,13 @@ const GATEWAYS: GatewayOption[] = [
     descKey: "asaasDesc",
     color: "#00C896",
     logo: (
-      <span className="text-[15px] font-bold text-[#00C896] leading-none tracking-tight">
-        A
-      </span>
+      <Image
+        src="/assets/images/gateways/asaas.png"
+        alt="Asaas"
+        width={28}
+        height={28}
+        className="object-contain"
+      />
     ),
   },
   {

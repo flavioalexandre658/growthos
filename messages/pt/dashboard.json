@@ -128,18 +128,11 @@
       "upgrade": "Fazer upgrade"
     },
     "demoBanner": {
-      "message": "Você está vendo dados de exemplo. Conecte seu Asaas ou Stripe para ver seus dados reais em 2 minutos.",
-      "cta": "Conectar agora"
+      "modeLabel": "Modo demonstração"
     },
-    "connectModal": {
-      "title": "Conecte seu gateway",
-      "subtitle": "Veja seus dados reais em 2 minutos",
-      "securityNote": "Acesso somente leitura — nunca movemos seu dinheiro",
-      "mostUsedBadge": "Mais usado no BR",
-      "comingSoonLabel": "Em breve",
-      "syncComplete": "Dados importados com sucesso!",
-      "syncFailed": "Falha na importação. Tente novamente nas configurações.",
-      "closeCta": "Ver meu dashboard"
+    "tracker": {
+      "title": "Rastreamento",
+      "subtitle": "Funil de aquisição e jornada dos visitantes"
     }
   }
 }

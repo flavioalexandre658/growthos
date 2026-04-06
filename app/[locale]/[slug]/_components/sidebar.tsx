@@ -8,7 +8,6 @@ import {
   IconLayoutDashboard,
   IconBrandGoogle,
   IconCurrencyDollar,
-  IconMenu2,
   IconX,
   IconChevronLeft,
   IconChevronRight,
@@ -21,7 +20,7 @@ import {
   IconCheck,
   IconSelector,
   IconPlus,
-  IconRepeat,
+  IconChartFunnel,
   IconSparkles,
   IconTrendingUp,
   IconList,
@@ -32,8 +31,6 @@ import {
 } from "@tabler/icons-react";
 import { GrowareIcon } from "@/components/groware-icon";
 import { GrowareLogo } from "@/components/groware-logo";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
@@ -56,7 +53,6 @@ import { useBilling } from "@/hooks/queries/use-billing";
 import { useOrgDataSources } from "@/hooks/queries/use-org-data-sources";
 import { SetupChecklist } from "./setup-checklist";
 import { GlobalSearch } from "./global-search";
-import { MobileTopbarActions } from "./topbar";
 
 const STORAGE_KEY = "groware_active_org";
 
@@ -96,9 +92,6 @@ function buildNavSections(
       items: [
         { href: `/${slug}/finance`, label: t("nav.finance"), icon: IconCurrencyDollar, exact: false },
         { href: `/${slug}/costs`, label: t("nav.costs"), icon: IconCalculator, exact: false },
-        ...((hasGateway && !hasTracker)
-          ? []
-          : [{ href: `/${slug}/mrr`, label: t("nav.recurrence"), icon: IconRepeat, exact: false }]),
       ],
     },
   ];
@@ -107,6 +100,7 @@ function buildNavSections(
     sections.push({
       title: t("sections.acquisition"),
       items: [
+        { href: `/${slug}/tracker`, label: t("nav.tracker"), icon: IconChartFunnel, exact: false },
         { href: `/${slug}/channels`, label: t("nav.channels"), icon: IconBrandGoogle, exact: false },
         { href: `/${slug}/pages`, label: t("nav.pages"), icon: IconWorldWww, exact: false },
       ],
@@ -379,7 +373,7 @@ function OrgSwitcher({ slug, collapsed }: { slug: string; collapsed?: boolean })
   );
 }
 
-function SidebarContent({
+export function SidebarContent({
   slug,
   collapsed,
   onCollapse,
@@ -510,41 +504,19 @@ function SidebarContent({
 
 export function Sidebar({ slug }: { slug: string }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const t = useTranslations("sidebar");
 
   return (
-    <>
-      <aside
-        className={cn(
-          "hidden md:flex flex-col h-dvh sticky top-0 transition-all duration-200 shrink-0",
-          collapsed ? "w-16" : "w-56",
-        )}
-      >
-        <SidebarContent
-          slug={slug}
-          collapsed={collapsed}
-          onCollapse={() => setCollapsed((v) => !v)}
-        />
-      </aside>
-
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between h-14 px-3 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800/60">
-        <div className="flex items-center gap-2">
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-zinc-400 h-8 w-8">
-                <IconMenu2 size={18} />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-56 bg-zinc-950 border-zinc-800 [&>button:last-of-type]:hidden">
-              <SheetTitle className="sr-only">{t("mobileMenuTitle")}</SheetTitle>
-              <SidebarContent slug={slug} onClose={() => setMobileOpen(false)} />
-            </SheetContent>
-          </Sheet>
-          <GrowareLogo size="sm" />
-        </div>
-        <MobileTopbarActions />
-      </div>
-    </>
+    <aside
+      className={cn(
+        "hidden md:flex flex-col h-dvh sticky top-0 transition-all duration-200 shrink-0",
+        collapsed ? "w-16" : "w-56",
+      )}
+    >
+      <SidebarContent
+        slug={slug}
+        collapsed={collapsed}
+        onCollapse={() => setCollapsed((v) => !v)}
+      />
+    </aside>
   );
 }

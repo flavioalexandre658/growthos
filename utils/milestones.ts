@@ -146,7 +146,7 @@ export async function checkMilestones(orgId: string): Promise<void> {
     });
 
     const shareUrl = org.publicPageEnabled ? `${baseUrl}/p/${org.slug}` : undefined;
-    const dashboardUrl = `${baseUrl}/${org.slug}/mrr`;
+    const dashboardUrl = `${baseUrl}/${org.slug}`;
     const metricValue = def.getValue(metrics, org.locale, org.currency);
 
     for (const owner of orgOwners) {
@@ -177,7 +177,7 @@ export async function checkMilestones(orgId: string): Promise<void> {
       type: "milestone",
       title: `${def.emoji} ${def.label}`,
       body: metricValue,
-      linkUrl: `/${org.slug}/mrr`,
+      linkUrl: `/${org.slug}`,
     }).catch(() => {});
   }
 }

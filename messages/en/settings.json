@@ -330,11 +330,31 @@
       }
     },
     "integrations": {
+      "title": "Integrations",
+      "subtitle": "Connect payment gateways to import revenue automatically",
       "comingSoon": "Coming soon",
       "availableFromStarter": "Available from Starter",
       "starterPlus": "Starter+",
+      "integrate": "Integrate",
+      "manage": "Manage",
+      "mostUsedBadge": "Most used",
+      "stripeTagline": "Global payments and subscriptions",
+      "asaasTagline": "Brazilian gateway with Pix and boleto",
+      "kiwifyTagline": "Digital products and online courses",
+      "hotmartTagline": "Digital products platform",
       "kiwifyDescription": "Digital products and online courses",
       "hotmartDescription": "Digital products platform",
+      "drawer": {
+        "tutorialTitle": "How to connect",
+        "credentialsTitle": "Credentials",
+        "connectionTitle": "Connection",
+        "syncTitle": "Sync",
+        "webhookTitle": "Webhook",
+        "dangerTitle": "Danger zone",
+        "providerAccount": "Provider account",
+        "lastSync": "Last sync",
+        "history": "History"
+      },
       "common": {
         "lastSync": "Last sync",
         "history": "History",

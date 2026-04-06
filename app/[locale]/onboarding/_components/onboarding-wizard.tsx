@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { GrowareLogo } from "@/components/groware-logo";
 import { StepOrganization } from "./step-organization";
 import { pushDataLayerEvent } from "@/utils/datalayer";
@@ -21,8 +20,8 @@ export function OnboardingWizard({
   userName,
 }: OnboardingWizardProps) {
   const t = useTranslations("onboarding.wizard");
+  const locale = useLocale();
   const { data: session } = useSession();
-  const router = useRouter();
 
   useEffect(() => {
     const userId = session?.user?.id;
@@ -48,7 +47,10 @@ export function OnboardingWizard({
       <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 backdrop-blur-sm shadow-xl shadow-black/30">
         <StepOrganization
           onComplete={(createdOrg) => {
-            router.push(`/${createdOrg.slug}`);
+            try {
+              localStorage.setItem("groware_active_org", createdOrg.slug);
+            } catch {}
+            window.location.href = `/${locale}/${createdOrg.slug}`;
           }}
         />
       </div>

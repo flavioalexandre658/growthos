@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
 import {
-  IconBrandStripe,
   IconChevronDown,
   IconChevronUp,
   IconCircleCheckFilled,
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { connectStripe } from "@/actions/integrations/connect-stripe.action";
 import { connectAsaas } from "@/actions/integrations/connect-asaas.action";
+import { renderInlineMarkdown } from "@/utils/inline-markdown";
 
 export type Provider = "stripe" | "asaas";
 
@@ -39,14 +40,26 @@ interface ProviderCardProps {
 
 export function AsaasLogoIcon() {
   return (
-    <span className="text-[15px] font-bold text-[#00BFA5] leading-none tracking-tight">
-      A
-    </span>
+    <Image
+      src="/assets/images/gateways/asaas.png"
+      alt="Asaas"
+      width={28}
+      height={28}
+      className="object-contain"
+    />
   );
 }
 
 export function StripeLogoIcon() {
-  return <IconBrandStripe size={18} className="text-[#635BFF]" />;
+  return (
+    <Image
+      src="/assets/images/gateways/stripe.png"
+      alt="Stripe"
+      width={28}
+      height={28}
+      className="object-contain"
+    />
+  );
 }
 
 export function ProviderCard({
@@ -172,7 +185,7 @@ export function ProviderCard({
                   <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-zinc-800 text-zinc-500 border border-zinc-700">
                     {i + 1}
                   </span>
-                  <span className="pt-0.5 flex-1">{step}</span>
+                  <span className="pt-0.5 flex-1">{renderInlineMarkdown(step)}</span>
                 </li>
               ))}
             </ol>

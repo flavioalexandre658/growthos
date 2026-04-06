@@ -5,6 +5,7 @@ import { getOrganizationBySlug } from "@/actions/organizations/get-organization-
 import { updateLastActivity } from "@/actions/emails/update-last-activity.action";
 import { Sidebar } from "./_components/sidebar";
 import { Topbar } from "./_components/topbar";
+import { MobileTopbar } from "./_components/mobile-topbar";
 import { MobileChecklistBanner } from "./_components/mobile-checklist-banner";
 import { RevenueLimitBanner } from "./_components/revenue-limit-banner";
 import { DemoDataBanner } from "./_components/demo-data-banner";
@@ -26,17 +27,18 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
   void updateLastActivity(org.id);
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-zinc-950">
-      <Sidebar slug={slug} />
-      <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto overscroll-none">
-        <Topbar slug={slug} />
-        <div className="pt-14 md:pt-0">
-          <DemoDataBanner />
+    <div className="flex flex-col h-dvh overflow-hidden bg-zinc-950">
+      <DemoDataBanner />
+      <MobileTopbar slug={slug} />
+      <div className="flex flex-1 min-h-0 overflow-hidden">
+        <Sidebar slug={slug} />
+        <main className="flex-1 min-w-0 overflow-x-hidden overflow-y-auto overscroll-none">
+          <Topbar slug={slug} />
           <RevenueLimitBanner slug={slug} />
           <MobileChecklistBanner slug={slug} />
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
