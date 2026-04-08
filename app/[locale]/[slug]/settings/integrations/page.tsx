@@ -13,6 +13,10 @@ import { connectKiwify } from "@/actions/integrations/connect-kiwify.action";
 import { syncKiwifyHistory } from "@/actions/integrations/sync-kiwify-history.action";
 import { connectHotmart } from "@/actions/integrations/connect-hotmart.action";
 import { syncHotmartHistory } from "@/actions/integrations/sync-hotmart-history.action";
+import { connectMercadoPago } from "@/actions/integrations/connect-mercadopago.action";
+import { syncMercadoPagoHistory } from "@/actions/integrations/sync-mercadopago-history.action";
+import { connectPagarme } from "@/actions/integrations/connect-pagarme.action";
+import { syncPagarmeHistory } from "@/actions/integrations/sync-pagarme-history.action";
 import type { IntegrationDrawerConfig } from "./_components/integration-types";
 
 const STRIPE_EVENTS = [
@@ -54,6 +58,25 @@ const HOTMART_EVENTS = [
   "PURCHASE_DELAYED",
   "PURCHASE_EXPIRED",
   "SUBSCRIPTION_CANCELLATION",
+];
+
+const MERCADOPAGO_EVENTS = [
+  "payment",
+  "subscription_preapproval",
+  "subscription_authorized_payment",
+];
+
+const PAGARME_EVENTS = [
+  "order.paid",
+  "order.canceled",
+  "order.payment_failed",
+  "charge.paid",
+  "charge.refunded",
+  "charge.chargedback",
+  "subscription.created",
+  "subscription.canceled",
+  "subscription.charges_paid",
+  "subscription.charges_payment_failed",
 ];
 
 function AsaasLogoIcon() {
@@ -104,6 +127,30 @@ function HotmartLogoIcon() {
   );
 }
 
+function MercadoPagoLogoIcon() {
+  return (
+    <Image
+      src="/assets/images/gateways/mercadopago.png"
+      alt="Mercado Pago"
+      width={28}
+      height={28}
+      className="object-contain"
+    />
+  );
+}
+
+function PagarmeLogoIcon() {
+  return (
+    <Image
+      src="/assets/images/gateways/pagarme.png"
+      alt="Pagar.me"
+      width={28}
+      height={28}
+      className="object-contain"
+    />
+  );
+}
+
 export default function IntegrationsPage() {
   const tNav = useTranslations("settings.nav");
   const t = useTranslations("settings.integrations");
@@ -111,6 +158,8 @@ export default function IntegrationsPage() {
   const tAsaas = useTranslations("settings.integrations.asaas");
   const tKiwify = useTranslations("settings.integrations.kiwify");
   const tHotmart = useTranslations("settings.integrations.hotmart");
+  const tMercadoPago = useTranslations("settings.integrations.mercadopago");
+  const tPagarme = useTranslations("settings.integrations.pagarme");
 
   return (
     <SettingsSectionWrapper label={tNav("integrations")} hideCompleteness>
@@ -298,6 +347,74 @@ export default function IntegrationsPage() {
           onSync: (orgId, integrationId) => syncHotmartHistory(orgId, integrationId),
         };
 
+        const mercadoPagoConfig: IntegrationDrawerConfig = {
+          provider: "mercadopago",
+          providerName: "Mercado Pago",
+          tagline: t("mercadopagoTagline"),
+          accentColor: "#00B1EA",
+          logo: <MercadoPagoLogoIcon />,
+          credentialLabel: tMercadoPago("credentialLabel"),
+          credentialPlaceholder: tMercadoPago("credentialPlaceholder"),
+          connectVia: tMercadoPago("connectVia"),
+          howToGetCredential: tMercadoPago("howToGetCredential"),
+          tutorialSteps: [
+            tMercadoPago("tutorialStep1"),
+            tMercadoPago("tutorialStep2"),
+            tMercadoPago("tutorialStep3"),
+            tMercadoPago("tutorialStep4"),
+            tMercadoPago("tutorialStep5"),
+          ],
+          dashboardUrl: "https://www.mercadopago.com.br/developers/panel/app",
+          openDashboardLabel: tMercadoPago("openDashboard"),
+          webhookEvents: MERCADOPAGO_EVENTS,
+          webhookStep1: tMercadoPago("webhookStep1"),
+          webhookStep2: tMercadoPago("webhookStep2"),
+          webhookStep3: tMercadoPago("webhookStep3"),
+          webhookSecretPlaceholder: tMercadoPago("webhookSecretPlaceholder"),
+          webhookWarning: tMercadoPago("webhookWarning"),
+          toastId: "mercadopago-sync",
+          disconnectConfirm: tMercadoPago("disconnectConfirm"),
+          connectedToast: tMercadoPago("connectedToast"),
+          connectErrorToast: tMercadoPago("connectErrorToast"),
+          disconnectedToast: tMercadoPago("disconnectedToast"),
+          onConnect: (orgId, key) => connectMercadoPago(orgId, key as string),
+          onSync: (orgId, integrationId) => syncMercadoPagoHistory(orgId, integrationId),
+        };
+
+        const pagarmeConfig: IntegrationDrawerConfig = {
+          provider: "pagarme",
+          providerName: "Pagar.me",
+          tagline: t("pagarmeTagline"),
+          accentColor: "#65A300",
+          logo: <PagarmeLogoIcon />,
+          credentialLabel: tPagarme("credentialLabel"),
+          credentialPlaceholder: tPagarme("credentialPlaceholder"),
+          connectVia: tPagarme("connectVia"),
+          howToGetCredential: tPagarme("howToGetCredential"),
+          tutorialSteps: [
+            tPagarme("tutorialStep1"),
+            tPagarme("tutorialStep2"),
+            tPagarme("tutorialStep3"),
+            tPagarme("tutorialStep4"),
+            tPagarme("tutorialStep5"),
+          ],
+          dashboardUrl: "https://dashboard.pagar.me/",
+          openDashboardLabel: tPagarme("openDashboard"),
+          webhookEvents: PAGARME_EVENTS,
+          webhookStep1: tPagarme("webhookStep1"),
+          webhookStep2: tPagarme("webhookStep2"),
+          webhookStep3: tPagarme("webhookStep3"),
+          webhookSecretPlaceholder: tPagarme("webhookSecretPlaceholder"),
+          webhookWarning: tPagarme("webhookWarning"),
+          toastId: "pagarme-sync",
+          disconnectConfirm: tPagarme("disconnectConfirm"),
+          connectedToast: tPagarme("connectedToast"),
+          connectErrorToast: tPagarme("connectErrorToast"),
+          disconnectedToast: tPagarme("disconnectedToast"),
+          onConnect: (orgId, key) => connectPagarme(orgId, key as string),
+          onSync: (orgId, integrationId) => syncPagarmeHistory(orgId, integrationId),
+        };
+
         return (
           <div className="space-y-5">
             <TrackerCallout />
@@ -309,6 +426,8 @@ export default function IntegrationsPage() {
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <IntegrationCard organizationId={org.id} config={asaasConfig} />
                 <IntegrationCard organizationId={org.id} config={stripeConfig} />
+                <IntegrationCard organizationId={org.id} config={mercadoPagoConfig} />
+                <IntegrationCard organizationId={org.id} config={pagarmeConfig} />
                 <IntegrationCard organizationId={org.id} config={kiwifyConfig} />
                 <IntegrationCard organizationId={org.id} config={hotmartConfig} />
               </div>

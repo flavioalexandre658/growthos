@@ -1,4 +1,10 @@
-export type IntegrationProvider = "stripe" | "asaas" | "kiwify" | "hotmart";
+export type IntegrationProvider =
+  | "stripe"
+  | "asaas"
+  | "kiwify"
+  | "hotmart"
+  | "mercadopago"
+  | "pagarme";
 
 export type IntegrationStatus = "active" | "error" | "disconnected";
 
@@ -38,6 +44,16 @@ export interface IConnectHotmartInput {
   organizationId: string;
   clientId: string;
   clientSecret: string;
+}
+
+export interface IConnectMercadoPagoInput {
+  organizationId: string;
+  accessToken: string;
+}
+
+export interface IConnectPagarmeInput {
+  organizationId: string;
+  secretKey: string;
 }
 
 export interface ISaveWebhookSecretInput {

@@ -5,6 +5,8 @@ import { processStripeSyncJob } from "./sync-stripe.worker";
 import { processAsaasSyncJob } from "./sync-asaas.worker";
 import { processKiwifySyncJob } from "./sync-kiwify.worker";
 import { processHotmartSyncJob } from "./sync-hotmart.worker";
+import { processMercadoPagoSyncJob } from "./sync-mercadopago.worker";
+import { processPagarmeSyncJob } from "./sync-pagarme.worker";
 import { processAiJob } from "./ai.worker";
 import { processWebhookJob } from "./webhook.worker";
 import { processEmailJob } from "./email.worker";
@@ -51,6 +53,12 @@ export async function startWorkers(): Promise<void> {
         if (job.data.provider === "hotmart") {
           return await processHotmartSyncJob(job);
         }
+        if (job.data.provider === "mercadopago") {
+          return await processMercadoPagoSyncJob(job);
+        }
+        if (job.data.provider === "pagarme") {
+          return await processPagarmeSyncJob(job);
+        }
         throw new Error(`Unknown provider: ${job.data.provider}`);
       } catch (err) {
         console.error(`[sync-worker] Job ${job.id} failed:`, err);
@@ -73,6 +81,8 @@ export async function startWorkers(): Promise<void> {
           asaas: "Asaas",
           kiwify: "Kiwify",
           hotmart: "Hotmart",
+          mercadopago: "Mercado Pago",
+          pagarme: "Pagar.me",
         };
         const providerLabel = providerLabelMap[job.data.provider] ?? job.data.provider;
 

@@ -62,6 +62,17 @@ export async function POST(req: NextRequest) {
       "@/utils/hotmart-webhook-handlers"
     );
     await handleHotmartEvent(organizationId, parsed);
+  } else if (provider === "mercadopago") {
+    const accessToken = decrypt(integration.accessToken);
+    const { handleMercadoPagoEvent } = await import(
+      "@/utils/mercadopago-webhook-handlers"
+    );
+    await handleMercadoPagoEvent(organizationId, parsed, accessToken);
+  } else if (provider === "pagarme") {
+    const { handlePagarmeEvent } = await import(
+      "@/utils/pagarme-webhook-handlers"
+    );
+    await handlePagarmeEvent(organizationId, parsed);
   }
 
   invalidateOrgDashboardCache(organizationId).catch(() => {});

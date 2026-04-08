@@ -13,6 +13,8 @@
 | **Asaas** | ✅ Implementado | `connect-asaas.action.ts` | `sync-asaas-history.action.ts` | `/api/webhooks/asaas/[id]` | drawer config no `page.tsx` |
 | **Kiwify** | ✅ Implementado | `connect-kiwify.action.ts` | `sync-kiwify-history.action.ts` | `/api/webhooks/kiwify/[id]` | drawer config no `page.tsx` |
 | **Hotmart** | ✅ Implementado | `connect-hotmart.action.ts` | `sync-hotmart-history.action.ts` | `/api/webhooks/hotmart/[id]` | drawer config no `page.tsx` |
+| **Mercado Pago** | ✅ Implementado | `connect-mercadopago.action.ts` | `sync-mercadopago-history.action.ts` | `/api/webhooks/mercadopago/[id]` | drawer config no `page.tsx` |
+| **Pagar.me** | ✅ Implementado | `connect-pagarme.action.ts` | `sync-pagarme-history.action.ts` | `/api/webhooks/pagarme/[id]` | drawer config no `page.tsx` |
 
 ---
 
@@ -1011,6 +1013,171 @@ V1 usa apenas **produção**. Para suportar sandbox no futuro, adicionar `provid
 
 ---
 
-_Documento atualizado em abril/2026 — versão 2.1_
-_Providers implementados: Stripe, Asaas, Kiwify, Hotmart_
-_Próximo provider potencial: Mercado Pago_
+---
+
+## Mercado Pago — Especificidades
+
+### 1. Autenticação — Access Token único
+
+O Mercado Pago usa um **Access Token permanente** (`APP_USR-...` em produção ou `TEST-...` em sandbox) enviado via header `Authorization: Bearer <token>`. Diferente do Kiwify/Hotmart (OAuth client credentials), não há refresh — o token é colado direto pelo usuário no form de connect.
+
+**Validação no connect:** `GET https://api.mercadopago.com/users/me` retorna `{ id, nickname, email, ... }`. O `providerAccountId` é a string do `id`.
+
+### 2. Webhook — thin envelope com fetch-by-id
+
+O Mercado Pago envia webhooks com **payload minimalista** — só `{ type, action, data: { id } }`. O handler precisa **fetch o recurso completo** pela API antes de processar:
+
+```typescript
+switch (topic) {
+  case "payment":
+    const payment = await fetchMercadoPagoResource<MPPayment>(`/v1/payments/${dataId}`, accessToken);
+    // ...
+  case "subscription_preapproval":
+    const preapproval = await fetchMercadoPagoResource<MPPreapproval>(`/preapproval/${dataId}`, accessToken);
+    // ...
+  case "subscription_authorized_payment":
+    const authorized = await fetchMercadoPagoResource<MPAuthorizedPayment>(`/authorized_payments/${dataId}`, accessToken);
+    // fetch again /v1/payments/{authorized.payment.id}
+}
+```
+
+O `data.id` pode vir no body ou em query params (`?data.id=xxx&type=xxx`). O handler tenta o body primeiro, cai no query como fallback.
+
+### 3. HMAC SHA-256 manifest format
+
+Diferente do Asaas (shared token simples) e Stripe (payload-based HMAC), o MP valida por um **manifest string** montado a partir de múltiplos campos:
+
+```typescript
+const manifest = `id:${dataId};request-id:${requestIdHeader};ts:${ts};`;
+const expected = createHmac("sha256", webhookSecret).update(manifest).digest("hex");
+```
+
+Header enviado: `x-signature: ts=<ms>,v1=<hex>`. O `ts` e `v1` são extraídos via parse. O secret é configurado no painel "Suas Integrações" → Webhooks (campo "Chave secreta").
+
+### 4. Valores em decimal
+
+`transaction_amount` é decimal (ex: `79.90`). Converter com `Math.round(value * 100)` antes de persistir.
+
+### 5. Currency multi-moeda
+
+`currency_id` traz ISO 4217 (`BRL`, `ARS`, `USD`). O worker usa `caches.computeBaseValue` com a moeda da org.
+
+### 6. Subscription = Preapproval
+
+Terminologia exclusiva do MP. Status nativos: `pending`, `authorized`, `paused`, `cancelled`. Mapper em `utils/mercadopago-helpers.ts:mapMercadoPagoPreapprovalStatus`.
+
+Endpoint de listagem: **`/preapproval/search`** (sem `/v1/` no caminho, diferente dos payments).
+
+### 7. Paginação offset-based com cap
+
+```
+GET /v1/payments/search?range=date_created&begin_date=<ISO>&end_date=<ISO>&offset=0&limit=100
+```
+
+Hard cap conhecido: ~1000 results por query via offset. O worker mitiga fazendo **loop de janelas de 90 dias** retrocedendo até 2 anos.
+
+### 8. Ponte de customer_id
+
+```
+checkout?external_reference=gos_<user_id>
+```
+
+O webhook handler extrai `payment.external_reference` e remove o prefixo `gos_` via `extractGrowthosCustomerId`. Fallback: `payment.payer.id` → `payer.email`.
+
+### 9. Mapeamento de eventos
+
+| Topic MP | Handler interno | Action |
+|---|---|---|
+| `payment` (status=approved) | `handleMPPayment` | Insere event/payment. Detecta recorrência via `metadata.preapproval_id`. |
+| `payment` (status=refunded) | `handleMPRefund` | Event negativo. |
+| `subscription_preapproval` | `handleMPPreapproval` | Upsert em `subscriptions`. Status=cancelled dispara `subscription_canceled` event. |
+| `subscription_authorized_payment` | (fetch + delega para `handleMPPayment(force_recurring=true)`) | Pagamento de renovação. |
+
+---
+
+## Pagar.me — Especificidades
+
+### 1. Autenticação — Basic Auth com chave única
+
+A Pagar.me v5 usa **Basic Auth** com a Secret Key como username e senha vazia:
+
+```
+Authorization: Basic <base64(secretKey + ":")>
+```
+
+Helper em `utils/pagarme-helpers.ts:pagarmeBasicAuthHeader`. Chaves:
+- `sk_live_*` — produção
+- `sk_test_*` — sandbox
+
+O `connect-pagarme.action.ts` valida o prefix e rejeita qualquer outro formato.
+
+**Validação no connect:** não há `/me`. Smoke test em `GET /core/v5/orders?size=1` — 200 = ok, 401/403 = credencial inválida. O `providerAccountId` é derivado como `secretKey.slice(0, 16)` (pattern do Stripe).
+
+### 2. Webhook — HMAC SHA-1 sobre raw body
+
+Header: `X-Hub-Signature: sha1=<hex>`. O handler aceita também `X-Hub-Signature-256` (SHA-256 fallback) para futuras migrações da Pagar.me.
+
+```typescript
+const expected = createHmac("sha1", secret).update(rawBody).digest("hex");
+```
+
+Comparação via `timingSafeEqual`. O `secret` é definido pelo usuário ao criar o webhook no painel da Pagar.me.
+
+### 3. Full resource embedded no payload
+
+Diferente do Mercado Pago, o webhook da Pagar.me traz **o recurso completo** já embutido:
+
+```json
+{
+  "id": "hook_xxx",
+  "account": { "id": "acc_xxx" },
+  "type": "charge.paid",
+  "data": { "id": "ch_xxx", "amount": 9990, "status": "paid", ... },
+  "created_at": "2026-04-08T..."
+}
+```
+
+Sem necessidade de fetch extra. Dedup via `pagarmeEventHash(orgId, charge.id)`.
+
+### 4. Cents inteiros
+
+`amount` é integer em centavos (BRL). Formato interno do Groware — sem conversão.
+
+### 5. Paginação page+size, max 30
+
+```
+GET /core/v5/orders?page=1&size=30
+GET /core/v5/charges?page=1&size=30
+GET /core/v5/subscriptions?page=1&size=30
+```
+
+Limite conhecido: `size=30` é o máximo. O worker faz loop incrementando `page` até receber array vazio. Filtro de data: `created_since=<ISO>` para re-sync incremental.
+
+### 6. Metadata nativo
+
+A Pagar.me suporta objeto `metadata` em Order, Charge, Customer e Subscription — tudo flui para o webhook via `data.metadata.growthos_customer_id`. O handler extrai também de `customer.metadata` como fallback.
+
+### 7. Mapeamento de eventos
+
+| Evento Pagar.me | Handler interno |
+|---|---|
+| `order.paid` / `charge.paid` | `handlePagarmePaid` (purchase) |
+| `subscription.charges_paid` | `handlePagarmePaid(force_recurring=true)` (renewal) |
+| `charge.refunded` / `charge.chargedback` | `handlePagarmeRefund` |
+| `order.canceled` / `order.payment_failed` / `charge.payment_failed` | `handlePagarmeFailed` (marca subscription past_due se houver) |
+| `subscription.created` | `handlePagarmeSubscriptionCreated` (upsert em `subscriptions`) |
+| `subscription.canceled` | `handlePagarmeSubscriptionCanceled` |
+| `subscription.charges_payment_failed` | `handlePagarmeSubscriptionPastDue` |
+
+### 8. Subscription status
+
+Status nativos: `active`, `canceled`, `future`, `expired`, `trial`, `past_due`. Mapper em `utils/pagarme-helpers.ts:mapPagarmeSubscriptionStatus` normaliza para `active | canceled | past_due | trialing`.
+
+### 9. Billing interval
+
+O Pagar.me expõe `interval` (`month`, `year`, `week`) + `interval_count`. Mapper: `mapPagarmeBillingInterval(interval, count)` combina os dois (ex: `month` + `count=3` → `quarterly`).
+
+---
+
+_Documento atualizado em abril/2026 — versão 2.2_
+_Providers implementados: Stripe, Asaas, Kiwify, Hotmart, Mercado Pago, Pagar.me_
