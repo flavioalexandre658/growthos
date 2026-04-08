@@ -123,11 +123,41 @@ function DisconnectedDrawerBody({
   const tc = useTranslations("settings.integrations.common");
   const tDrawer = useTranslations("settings.integrations.drawer");
   const queryClient = useQueryClient();
+  const isMultiField = !!config.credentialFields && config.credentialFields.length > 0;
   const [credential, setCredential] = useState("");
+  const [credentialMap, setCredentialMap] = useState<Record<string, string>>({});
   const [tutorialOpen, setTutorialOpen] = useState(true);
   const [isConnecting, setIsConnecting] = useState(false);
 
+  const allMultiFieldsFilled = isMultiField
+    ? (config.credentialFields ?? []).every((f) => (credentialMap[f.key] ?? "").trim().length > 0)
+    : false;
+
+  const canSubmit = isMultiField ? allMultiFieldsFilled : credential.trim().length > 0;
+
   const handleConnect = async () => {
+    if (isMultiField) {
+      if (!allMultiFieldsFilled) return;
+      setIsConnecting(true);
+      try {
+        const trimmed: Record<string, string> = {};
+        for (const f of config.credentialFields ?? []) {
+          trimmed[f.key] = (credentialMap[f.key] ?? "").trim();
+        }
+        await config.onConnect(organizationId, trimmed);
+        await queryClient.invalidateQueries({
+          queryKey: getIntegrationsQueryKey(organizationId),
+        });
+        toast.success(config.connectedToast);
+        setCredentialMap({});
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : config.connectErrorToast);
+      } finally {
+        setIsConnecting(false);
+      }
+      return;
+    }
+
     const key = credential.trim();
     if (!key) return;
     setIsConnecting(true);
@@ -189,22 +219,42 @@ function DisconnectedDrawerBody({
         <h3 className="text-[11px] uppercase tracking-wider font-semibold text-zinc-400">
           {tDrawer("credentialsTitle")}
         </h3>
-        <div className="space-y-2">
-          <label className="text-xs text-zinc-400">{config.credentialLabel}</label>
-          <Input
-            value={credential}
-            onChange={(e) => setCredential(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleConnect()}
-            placeholder={config.credentialPlaceholder}
-            type="password"
-            className="bg-zinc-950 border-zinc-700 text-zinc-300 font-mono text-xs h-9"
-          />
-        </div>
+        {isMultiField ? (
+          <div className="space-y-3">
+            {(config.credentialFields ?? []).map((field) => (
+              <div key={field.key} className="space-y-2">
+                <label className="text-xs text-zinc-400">{field.label}</label>
+                <Input
+                  value={credentialMap[field.key] ?? ""}
+                  onChange={(e) =>
+                    setCredentialMap((prev) => ({ ...prev, [field.key]: e.target.value }))
+                  }
+                  onKeyDown={(e) => e.key === "Enter" && handleConnect()}
+                  placeholder={field.placeholder}
+                  type={field.type ?? "password"}
+                  className="bg-zinc-950 border-zinc-700 text-zinc-300 font-mono text-xs h-9"
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <label className="text-xs text-zinc-400">{config.credentialLabel}</label>
+            <Input
+              value={credential}
+              onChange={(e) => setCredential(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleConnect()}
+              placeholder={config.credentialPlaceholder}
+              type="password"
+              className="bg-zinc-950 border-zinc-700 text-zinc-300 font-mono text-xs h-9"
+            />
+          </div>
+        )}
         <Button
           onClick={handleConnect}
-          disabled={!credential.trim() || isConnecting}
+          disabled={!canSubmit || isConnecting}
           style={
-            !credential.trim() || isConnecting
+            !canSubmit || isConnecting
               ? undefined
               : { backgroundColor: config.accentColor }
           }

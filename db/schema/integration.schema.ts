@@ -3,6 +3,8 @@ import { organizations } from "./organization.schema";
 
 export interface IIntegrationMeta {
   webhookSecret?: string;
+  oauthAccessToken?: string;
+  oauthTokenExpiresAt?: number;
   [key: string]: unknown;
 }
 
@@ -15,7 +17,7 @@ export const integrations = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" }),
 
     provider: text("provider", {
-      enum: ["stripe", "asaas"],
+      enum: ["stripe", "asaas", "kiwify", "hotmart"],
     }).notNull(),
 
     accessToken: text("access_token").notNull(),

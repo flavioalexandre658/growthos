@@ -9,10 +9,10 @@
 
 | Provider | Status | Connect Action | Sync Histórico | Webhook | UI |
 | -------- | ------ | -------------- | -------------- | ------- | -- |
-| **Stripe** | ✅ Implementado | `connect-stripe.action.ts` | `sync-stripe-history.action.ts` | `/api/webhooks/stripe/[id]` | `stripe-connect-card.tsx` |
-| **Asaas** | ✅ Implementado | `connect-asaas.action.ts` | `sync-asaas-history.action.ts` | `/api/webhooks/asaas/[id]` | `asaas-connect-card.tsx` |
-| Kiwify | 🔜 Em breve | — | — | — | coming-soon |
-| Hotmart | 🔜 Em breve | — | — | — | coming-soon |
+| **Stripe** | ✅ Implementado | `connect-stripe.action.ts` | `sync-stripe-history.action.ts` | `/api/webhooks/stripe/[id]` | drawer config no `page.tsx` |
+| **Asaas** | ✅ Implementado | `connect-asaas.action.ts` | `sync-asaas-history.action.ts` | `/api/webhooks/asaas/[id]` | drawer config no `page.tsx` |
+| **Kiwify** | ✅ Implementado | `connect-kiwify.action.ts` | `sync-kiwify-history.action.ts` | `/api/webhooks/kiwify/[id]` | drawer config no `page.tsx` |
+| **Hotmart** | ✅ Implementado | `connect-hotmart.action.ts` | `sync-hotmart-history.action.ts` | `/api/webhooks/hotmart/[id]` | drawer config no `page.tsx` |
 
 ---
 
@@ -839,6 +839,178 @@ O webhook handler extrai: `payment.externalReference ?? payment.customer`
 
 ---
 
-_Documento atualizado em março/2026 — versão 2.0_
-_Providers implementados: Stripe, Asaas_
-_Próximos providers: Kiwify, Hotmart, Mercado Pago_
+---
+
+## Kiwify — Especificidades
+
+### 1. Autenticação — OAuth2 Client Credentials
+
+Diferente de Stripe (Restricted Key) e Asaas (API Key fixa), o Kiwify usa **OAuth2 client credentials** retornando um JWT Bearer com TTL de ~24h.
+
+**Credenciais que o cliente fornece:**
+- `client_id`
+- `client_secret`
+- `account_id` (segundo identificador, exigido como header em toda chamada da API)
+
+**Token endpoint:** `POST https://public-api.kiwify.com/v1/oauth/token` com body `application/x-www-form-urlencoded`:
+
+```
+client_id=<id>&client_secret=<secret>
+```
+
+**Headers nas chamadas autenticadas:**
+
+```
+Authorization: Bearer <access_token>
+x-kiwify-account-id: <accountId>
+```
+
+**Validação no connect:** `GET /v1/account` (smoke test que confirma credenciais + account_id juntos).
+
+O OAuth token é cacheado em `providerMeta.oauthAccessToken` (encriptado) com `providerMeta.oauthTokenExpiresAt` em epoch ms. O helper compartilhado `utils/oauth-token-cache.ts` faz refresh automático com margem de 5 minutos.
+
+### 2. Webhook — Validação por shared token
+
+O Kiwify usa **shared token**, não HMAC. Quando o cliente cria o webhook no painel, ele define um campo `token`. Esse mesmo token é enviado em cada delivery — o handler aceita o token via:
+
+1. Query param `?token=...`
+2. Header `x-kiwify-token` / `kiwify-token` / `x-kiwify-signature`
+3. Campo `token` no body
+
+(A documentação oficial não especifica claramente o canal — o handler tenta os três para máxima compatibilidade.)
+
+### 3. Sem endpoint de subscriptions list
+
+A API pública do Kiwify **não tem** endpoint `/v1/subscriptions` para listar assinaturas. O sync histórico só importa **vendas** via `GET /v1/sales`. Estado vigente de assinaturas é mantido a partir dos webhooks (`subscription_renewed`, `subscription_canceled`, `subscription_late`) e do primeiro sale recorrente.
+
+### 4. Janela de sales = 90 dias
+
+`GET /v1/sales` exige `start_date` e `end_date` e limita a janela a **90 dias por request**. O worker faz um loop de janelas de 90 dias retrocedendo até 2 anos (regra de `event_time` do `/api/track`).
+
+### 5. Paginação offset-based
+
+```
+GET /v1/sales?start_date=2025-01-01&end_date=2025-03-31&page_number=1&page_size=100
+```
+
+O loop incrementa `page_number` até receber menos que `PAGE_SIZE` items.
+
+### 6. Valores em cents (integer)
+
+Diferente do Asaas (decimais), o Kiwify entrega `charge_amount` em **cents inteiros** (ex: `9700` = R$ 97,00). Não dividir/multiplicar.
+
+### 7. Ponte de customer_id via UTM
+
+O Kiwify não tem campo `metadata` ou `external_reference` nativo. Padrão recomendado:
+
+```
+https://pay.kiwify.com.br/checkout/abc?utm_content=gos_<user_id>
+```
+
+O handler extrai via `TrackingParameters.utm_content` e remove o prefixo `gos_`. Se não houver, fallback para `Customer.email` normalizado.
+
+### 8. Mapeamento de eventos
+
+| Evento Kiwify | Handler interno | Equivalente Stripe |
+|---|---|---|
+| `compra_aprovada` | `handleKiwifyPurchase` | `checkout.session.completed` / `payment_intent.succeeded` |
+| `subscription_renewed` | `handleKiwifyPurchase(force_recurring=true)` | `invoice.payment_succeeded` |
+| `compra_reembolsada` | `handleKiwifyRefund` | `charge.refunded` |
+| `chargeback` | `handleKiwifyRefund` | `charge.refunded` |
+| `subscription_canceled` | `handleKiwifySubscriptionCanceled` | `customer.subscription.deleted` |
+| `subscription_late` | `handleKiwifySubscriptionPastDue` | `invoice.payment_failed` |
+
+---
+
+## Hotmart — Especificidades
+
+### 1. Autenticação — OAuth2 Client Credentials + Basic header
+
+O Hotmart também usa OAuth2 client credentials, mas o token endpoint exige um header `Authorization: Basic <base64(client_id:client_secret)>` adicional.
+
+**Credenciais que o cliente fornece:**
+- `client_id`
+- `client_secret`
+
+O `basic_token` (Base64) é **derivado server-side** pelo Groware — o cliente não precisa copiar separadamente, mesmo que o painel do Hotmart o exiba. Helper em `utils/hotmart-helpers.ts`:
+
+```typescript
+function hotmartBasicToken(clientId: string, clientSecret: string): string {
+  return Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+}
+```
+
+**Token endpoint:** `POST https://api-sec-vlc.hotmart.com/security/oauth/token?grant_type=client_credentials&client_id=<id>&client_secret=<secret>` com header `Authorization: Basic <basic>`.
+
+**Validação no connect:** `GET /payments/api/v1/sales/history?max_results=1` como smoke test.
+
+Token cacheado da mesma forma que o Kiwify (via `oauth-token-cache.ts`).
+
+### 2. Webhook — Validação por hottok
+
+O Hotmart usa **hottok**, gerado automaticamente pelo Hotmart por conta e exibido no painel de Webhook. O cliente copia e cola na UI do Groware. O Hotmart envia o `hottok` no body de cada webhook (campo top-level `hottok`). O handler também aceita header `x-hotmart-hottok` ou `hottok` para compatibilidade.
+
+```typescript
+const expectedHottok = decrypt(integration.providerMeta.webhookSecret);
+const incomingHottok = body.hottok ?? req.headers.get("x-hotmart-hottok");
+if (incomingHottok !== expectedHottok) return 401;
+```
+
+### 3. Valores em decimal — converter para cents
+
+Diferente do Kiwify (já em cents), o Hotmart envia `purchase.price.value` como **decimal** (ex: `97.00`). O handler converte:
+
+```typescript
+const grossInCents = Math.round(value * 100);
+```
+
+### 4. Multi-currency
+
+O Hotmart suporta vendas em USD/EUR além de BRL. O campo `purchase.price.currency_value` traz o ISO 4217 (`"BRL"`, `"USD"`). O handler usa `computeBaseValue` para converter para a moeda base da org via `resolveExchangeRate`.
+
+### 5. Paginação cursor-based
+
+```
+GET /payments/api/v1/sales/history?max_results=50&page_token=<token>
+```
+
+A resposta traz `page_info.next_page_token`. Loop até `next_page_token` ser null.
+
+### 6. Subscriptions list disponível
+
+`GET /payments/api/v1/subscriptions` lista todas as assinaturas com paginação cursor-based — usado pelo worker para popular a tabela `subscriptions`.
+
+### 7. Ponte de customer_id via sck
+
+```
+https://pay.hotmart.com/X12345?sck=gos_<user_id>
+```
+
+O webhook recebe em `data.purchase.sck`. Handler extrai e remove o prefixo `gos_`. Fallback: `data.buyer.ucode` → `data.buyer.email`.
+
+### 8. Mapeamento de eventos
+
+| Evento Hotmart | Handler interno | Notas |
+|---|---|---|
+| `PURCHASE_APPROVED` | `handleHotmartApproved` | Distingue purchase × renewal via `recurrence_number` (>1 = renovação) |
+| `PURCHASE_COMPLETE` | `handleHotmartApproved` | Pós-escrow, mesmo handler |
+| `PURCHASE_REFUNDED` / `PURCHASE_PROTEST` | `handleHotmartRefund` | Insere event negativo |
+| `PURCHASE_CHARGEBACK` | `handleHotmartRefund` | Mesmo tratamento |
+| `PURCHASE_CANCELED` | `handleHotmartCanceled` | Trata como refund |
+| `PURCHASE_DELAYED` / `PURCHASE_EXPIRED` | `handleHotmartPastDue` | Atualiza subscription.status = past_due |
+| `SUBSCRIPTION_CANCELLATION` | `handleHotmartSubscriptionCanceled` | **Atenção: double-L na grafia** |
+| `UPDATE_SUBSCRIPTION_CHARGE_DATE` | no-op | Apenas data de próxima cobrança, sem impacto financeiro |
+
+### 9. Status de subscription
+
+Hotmart usa valores nativos como `ACTIVE`, `OVERDUE`, `CANCELLED_BY_CUSTOMER`, `CANCELLED_BY_SELLER`, `INACTIVE`, `EXPIRED`, `STARTED`. O mapper em `utils/hotmart-helpers.ts:mapHotmartSubscriptionStatus` normaliza para `active | canceled | past_due | trialing`.
+
+### 10. Sandbox
+
+V1 usa apenas **produção**. Para suportar sandbox no futuro, adicionar `providerMeta.environment` e ramificar URLs em `HOTMART_API_BASE` e `HOTMART_OAUTH_URL`.
+
+---
+
+_Documento atualizado em abril/2026 — versão 2.1_
+_Providers implementados: Stripe, Asaas, Kiwify, Hotmart_
+_Próximo provider potencial: Mercado Pago_

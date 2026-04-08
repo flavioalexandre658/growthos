@@ -1,4 +1,4 @@
-export type IntegrationProvider = "stripe" | "asaas";
+export type IntegrationProvider = "stripe" | "asaas" | "kiwify" | "hotmart";
 
 export type IntegrationStatus = "active" | "error" | "disconnected";
 
@@ -25,6 +25,19 @@ export interface IConnectStripeInput {
 export interface IConnectAsaasInput {
   organizationId: string;
   apiKey: string;
+}
+
+export interface IConnectKiwifyInput {
+  organizationId: string;
+  clientId: string;
+  clientSecret: string;
+  accountId: string;
+}
+
+export interface IConnectHotmartInput {
+  organizationId: string;
+  clientId: string;
+  clientSecret: string;
 }
 
 export interface ISaveWebhookSecretInput {

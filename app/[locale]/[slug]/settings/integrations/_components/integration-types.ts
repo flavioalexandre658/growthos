@@ -1,5 +1,14 @@
 import type { IIntegration, IntegrationProvider } from "@/interfaces/integration.interface";
 
+export interface CredentialField {
+  key: string;
+  label: string;
+  placeholder: string;
+  type?: "text" | "password";
+}
+
+export type ConnectCredential = string | Record<string, string>;
+
 export interface IntegrationDrawerConfig {
   provider: IntegrationProvider;
   providerName: string;
@@ -9,6 +18,7 @@ export interface IntegrationDrawerConfig {
   badge?: string;
   credentialLabel: string;
   credentialPlaceholder: string;
+  credentialFields?: CredentialField[];
   connectVia: string;
   howToGetCredential: string;
   tutorialSteps: string[];
@@ -25,6 +35,9 @@ export interface IntegrationDrawerConfig {
   connectedToast: string;
   connectErrorToast: string;
   disconnectedToast: string;
-  onConnect: (organizationId: string, credential: string) => Promise<IIntegration>;
+  onConnect: (
+    organizationId: string,
+    credential: ConnectCredential,
+  ) => Promise<IIntegration>;
   onSync: (organizationId: string, integrationId: string) => Promise<{ jobId: string }>;
 }

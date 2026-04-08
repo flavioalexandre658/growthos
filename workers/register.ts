@@ -3,6 +3,8 @@ import { getConnectionOptions } from "@/lib/queue";
 import type { SyncJobData, AiJobData, WebhookJobData, EmailJobData } from "@/lib/queue";
 import { processStripeSyncJob } from "./sync-stripe.worker";
 import { processAsaasSyncJob } from "./sync-asaas.worker";
+import { processKiwifySyncJob } from "./sync-kiwify.worker";
+import { processHotmartSyncJob } from "./sync-hotmart.worker";
 import { processAiJob } from "./ai.worker";
 import { processWebhookJob } from "./webhook.worker";
 import { processEmailJob } from "./email.worker";
@@ -43,6 +45,12 @@ export async function startWorkers(): Promise<void> {
         if (job.data.provider === "asaas") {
           return await processAsaasSyncJob(job);
         }
+        if (job.data.provider === "kiwify") {
+          return await processKiwifySyncJob(job);
+        }
+        if (job.data.provider === "hotmart") {
+          return await processHotmartSyncJob(job);
+        }
         throw new Error(`Unknown provider: ${job.data.provider}`);
       } catch (err) {
         console.error(`[sync-worker] Job ${job.id} failed:`, err);
@@ -60,11 +68,19 @@ export async function startWorkers(): Promise<void> {
           .where(eq(integrations.id, job.data.integrationId))
           .catch(() => { });
 
+        const providerLabelMap: Record<string, string> = {
+          stripe: "Stripe",
+          asaas: "Asaas",
+          kiwify: "Kiwify",
+          hotmart: "Hotmart",
+        };
+        const providerLabel = providerLabelMap[job.data.provider] ?? job.data.provider;
+
         const failOrg = await resolveOrgInfo(job.data.organizationId).catch(() => null);
         await createNotification({
           organizationId: job.data.organizationId,
           type: "sync",
-          title: `Falha na sincronização ${job.data.provider === "stripe" ? "Stripe" : "Asaas"}`,
+          title: `Falha na sincronização ${providerLabel}`,
           body: safeMsg,
           linkUrl: failOrg ? `/${failOrg.locale}/${failOrg.slug}/settings/integrations` : undefined,
         }).catch(() => { });
@@ -92,7 +108,13 @@ export async function startWorkers(): Promise<void> {
       oneTimePurchasesSynced?: number;
     };
 
-    const providerLabel = job.data.provider === "stripe" ? "Stripe" : "Asaas";
+    const providerLabelMap: Record<string, string> = {
+      stripe: "Stripe",
+      asaas: "Asaas",
+      kiwify: "Kiwify",
+      hotmart: "Hotmart",
+    };
+    const providerLabel = providerLabelMap[job.data.provider] ?? job.data.provider;
     const payments = (result?.invoicesSynced ?? result?.paymentsSynced ?? 0) + (result?.oneTimePurchasesSynced ?? 0);
     const subs = result?.subscriptionsSynced ?? 0;
 
