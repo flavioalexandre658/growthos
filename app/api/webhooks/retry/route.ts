@@ -52,6 +52,16 @@ export async function POST(req: NextRequest) {
       "@/app/api/webhooks/asaas/[integrationId]/route"
     );
     await handleAsaasEvent(organizationId, parsed, asaasApiKey);
+  } else if (provider === "kiwify") {
+    const { handleKiwifyEvent } = await import(
+      "@/utils/kiwify-webhook-handlers"
+    );
+    await handleKiwifyEvent(organizationId, parsed);
+  } else if (provider === "hotmart") {
+    const { handleHotmartEvent } = await import(
+      "@/utils/hotmart-webhook-handlers"
+    );
+    await handleHotmartEvent(organizationId, parsed);
   }
 
   invalidateOrgDashboardCache(organizationId).catch(() => {});
