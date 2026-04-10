@@ -290,7 +290,7 @@ async function registerCronSchedules(cronQueue: Queue): Promise<void> {
     { name: "evaluate-alerts", pattern: "0 * * * *" },
     { name: "aggregate-and-cleanup", pattern: "0 3 * * *" },
     { name: "weekly-digest", pattern: "0 11 * * 1" },
-    { name: "flush-failed-events", pattern: "*/2 * * * *" },
+    { name: "flush-failed-events", pattern: "*/15 * * * *" },
   ];
 
   for (const { name, pattern } of schedules) {
@@ -300,6 +300,10 @@ async function registerCronSchedules(cronQueue: Queue): Promise<void> {
       {
         name: `cron-${name}`,
         data: { cronName: name },
+        opts: {
+          removeOnComplete: true,
+          removeOnFail: 50,
+        },
       },
     );
   }

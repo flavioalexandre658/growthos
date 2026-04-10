@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { getServerSession } from "next-auth";
 import { GrowareLogo } from "@/components/groware-logo";
 import { authOptions } from "@/lib/auth-options";

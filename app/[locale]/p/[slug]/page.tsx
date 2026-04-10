@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { notFound } from "next/navigation";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
