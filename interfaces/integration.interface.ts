@@ -4,7 +4,10 @@ export type IntegrationProvider =
   | "kiwify"
   | "hotmart"
   | "mercadopago"
-  | "pagarme";
+  | "pagarme"
+  | "monetizze"
+  | "pagbank"
+  | "guru";
 
 export type IntegrationStatus = "active" | "error" | "disconnected";
 
@@ -54,6 +57,21 @@ export interface IConnectMercadoPagoInput {
 export interface IConnectPagarmeInput {
   organizationId: string;
   secretKey: string;
+}
+
+export interface IConnectMonetizzeInput {
+  organizationId: string;
+  apiKey: string;
+}
+
+export interface IConnectPagBankInput {
+  organizationId: string;
+  token: string;
+}
+
+export interface IConnectGuruInput {
+  organizationId: string;
+  userToken: string;
 }
 
 export interface ISaveWebhookSecretInput {

@@ -17,7 +17,7 @@ export const integrations = pgTable(
       .references(() => organizations.id, { onDelete: "cascade" }),
 
     provider: text("provider", {
-      enum: ["stripe", "asaas", "kiwify", "hotmart", "mercadopago", "pagarme"],
+      enum: ["stripe", "asaas", "kiwify", "hotmart", "mercadopago", "pagarme", "monetizze", "pagbank", "guru"],
     }).notNull(),
 
     accessToken: text("access_token").notNull(),

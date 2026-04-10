@@ -73,6 +73,25 @@ export async function POST(req: NextRequest) {
       "@/utils/pagarme-webhook-handlers"
     );
     await handlePagarmeEvent(organizationId, parsed);
+  } else if (provider === "monetizze") {
+    const { handleMonetizzeEvent } = await import(
+      "@/utils/monetizze-webhook-handlers"
+    );
+    const { parseMonetizzeFormBody } = await import(
+      "@/utils/monetizze-helpers"
+    );
+    const fields = typeof parsed === "string" ? parseMonetizzeFormBody(parsed) : new URLSearchParams();
+    await handleMonetizzeEvent(organizationId, fields);
+  } else if (provider === "pagbank") {
+    const { handlePagBankEvent } = await import(
+      "@/utils/pagbank-webhook-handlers"
+    );
+    await handlePagBankEvent(organizationId, parsed);
+  } else if (provider === "guru") {
+    const { handleGuruEvent } = await import(
+      "@/utils/guru-webhook-handlers"
+    );
+    await handleGuruEvent(organizationId, parsed);
   }
 
   invalidateOrgDashboardCache(organizationId).catch(() => {});

@@ -17,6 +17,12 @@ import { connectMercadoPago } from "@/actions/integrations/connect-mercadopago.a
 import { syncMercadoPagoHistory } from "@/actions/integrations/sync-mercadopago-history.action";
 import { connectPagarme } from "@/actions/integrations/connect-pagarme.action";
 import { syncPagarmeHistory } from "@/actions/integrations/sync-pagarme-history.action";
+import { connectMonetizze } from "@/actions/integrations/connect-monetizze.action";
+import { syncMonetizzeHistory } from "@/actions/integrations/sync-monetizze-history.action";
+import { connectPagBank } from "@/actions/integrations/connect-pagbank.action";
+import { syncPagBankHistory } from "@/actions/integrations/sync-pagbank-history.action";
+import { connectGuru } from "@/actions/integrations/connect-guru.action";
+import { syncGuruHistory } from "@/actions/integrations/sync-guru-history.action";
 import type { IntegrationDrawerConfig } from "./_components/integration-types";
 
 const STRIPE_EVENTS = [
@@ -74,6 +80,22 @@ const PAGARME_EVENTS = [
   "subscription.canceled",
   "subscription.charges_paid",
   "subscription.charges_payment_failed",
+];
+
+const MONETIZZE_EVENTS = ["Todos os eventos"];
+
+const PAGBANK_EVENTS = [
+  "Pagamento aprovado (PAID)",
+  "Pagamento cancelado (CANCELED)",
+  "Pagamento devolvido (REFUNDED)",
+];
+
+const GURU_EVENTS = [
+  "Aprovada",
+  "Cancelada",
+  "Completa",
+  "Reembolsada",
+  "Reclamada",
 ];
 
 function AsaasLogoIcon() {
@@ -148,6 +170,42 @@ function PagarmeLogoIcon() {
   );
 }
 
+function MonetizzeLogoIcon() {
+  return (
+    <Image
+      src="/assets/images/gateways/monetizze.png"
+      alt="Monetizze"
+      width={28}
+      height={28}
+      className="object-contain"
+    />
+  );
+}
+
+function PagBankLogoIcon() {
+  return (
+    <Image
+      src="/assets/images/gateways/pagbank.png"
+      alt="PagBank"
+      width={28}
+      height={28}
+      className="object-contain"
+    />
+  );
+}
+
+function GuruLogoIcon() {
+  return (
+    <Image
+      src="/assets/images/gateways/guru.png"
+      alt="Guru"
+      width={28}
+      height={28}
+      className="object-contain"
+    />
+  );
+}
+
 export default function IntegrationsPage() {
   const tNav = useTranslations("settings.nav");
   const t = useTranslations("settings.integrations");
@@ -157,6 +215,9 @@ export default function IntegrationsPage() {
   const tHotmart = useTranslations("settings.integrations.hotmart");
   const tMercadoPago = useTranslations("settings.integrations.mercadopago");
   const tPagarme = useTranslations("settings.integrations.pagarme");
+  const tMonetizze = useTranslations("settings.integrations.monetizze");
+  const tPagBank = useTranslations("settings.integrations.pagbank");
+  const tGuru = useTranslations("settings.integrations.guru");
 
   return (
     <SettingsSectionWrapper label={tNav("integrations")} hideCompleteness>
@@ -428,6 +489,105 @@ export default function IntegrationsPage() {
           onSync: (orgId, integrationId) => syncPagarmeHistory(orgId, integrationId),
         };
 
+        const monetizzeConfig: IntegrationDrawerConfig = {
+          provider: "monetizze",
+          providerName: "Monetizze",
+          tagline: t("monetizzeTagline"),
+          accentColor: "#FF6600",
+          logo: <MonetizzeLogoIcon />,
+          credentialLabel: tMonetizze("credentialLabel"),
+          credentialPlaceholder: tMonetizze("credentialPlaceholder"),
+          connectVia: tMonetizze("connectVia"),
+          howToGetCredential: tMonetizze("howToGetCredential"),
+          tutorialSteps: [
+            tMonetizze("tutorialStep1"),
+            tMonetizze("tutorialStep2"),
+            tMonetizze("tutorialStep3"),
+          ],
+          dashboardUrl: "https://app.monetizze.com.br",
+          openDashboardLabel: tMonetizze("openDashboard"),
+          webhookEvents: MONETIZZE_EVENTS,
+          webhookStep1: tMonetizze("webhookStep1"),
+          webhookStep2: tMonetizze("webhookStep2"),
+          webhookStep3: tMonetizze("webhookStep3"),
+          webhookSecretPlaceholder: tMonetizze("webhookSecretPlaceholder"),
+          webhookWarning: tMonetizze("webhookWarning"),
+          toastId: "monetizze-sync",
+          disconnectConfirm: tMonetizze("disconnectConfirm"),
+          connectedToast: tMonetizze("connectedToast"),
+          connectErrorToast: tMonetizze("connectErrorToast"),
+          disconnectedToast: tMonetizze("disconnectedToast"),
+          onConnect: (orgId, key) => connectMonetizze(orgId, key as string),
+          onSync: (orgId, integrationId) => syncMonetizzeHistory(orgId, integrationId),
+        };
+
+        const pagbankConfig: IntegrationDrawerConfig = {
+          provider: "pagbank",
+          providerName: "PagBank",
+          tagline: t("pagbankTagline"),
+          accentColor: "#00A651",
+          logo: <PagBankLogoIcon />,
+          credentialLabel: tPagBank("credentialLabel"),
+          credentialPlaceholder: tPagBank("credentialPlaceholder"),
+          connectVia: tPagBank("connectVia"),
+          howToGetCredential: tPagBank("howToGetCredential"),
+          tutorialSteps: [
+            tPagBank("tutorialStep1"),
+            tPagBank("tutorialStep2"),
+            tPagBank("tutorialStep3"),
+            tPagBank("tutorialStep4"),
+            tPagBank("tutorialStep5"),
+          ],
+          dashboardUrl: "https://acesso.pagseguro.uol.com.br",
+          openDashboardLabel: tPagBank("openDashboard"),
+          webhookEvents: PAGBANK_EVENTS,
+          webhookStep1: tPagBank("webhookStep1"),
+          webhookStep2: tPagBank("webhookStep2"),
+          webhookStep3: tPagBank("webhookStep3"),
+          webhookSecretPlaceholder: tPagBank("webhookSecretPlaceholder"),
+          webhookWarning: tPagBank("webhookWarning"),
+          toastId: "pagbank-sync",
+          disconnectConfirm: tPagBank("disconnectConfirm"),
+          connectedToast: tPagBank("connectedToast"),
+          connectErrorToast: tPagBank("connectErrorToast"),
+          disconnectedToast: tPagBank("disconnectedToast"),
+          onConnect: (orgId, key) => connectPagBank(orgId, key as string),
+          onSync: (orgId, integrationId) => syncPagBankHistory(orgId, integrationId),
+        };
+
+        const guruConfig: IntegrationDrawerConfig = {
+          provider: "guru",
+          providerName: "Guru",
+          tagline: t("guruTagline"),
+          accentColor: "#4A90D9",
+          logo: <GuruLogoIcon />,
+          credentialLabel: tGuru("credentialLabel"),
+          credentialPlaceholder: tGuru("credentialPlaceholder"),
+          connectVia: tGuru("connectVia"),
+          howToGetCredential: tGuru("howToGetCredential"),
+          tutorialSteps: [
+            tGuru("tutorialStep1"),
+            tGuru("tutorialStep2"),
+            tGuru("tutorialStep3"),
+            tGuru("tutorialStep4"),
+          ],
+          dashboardUrl: "https://digitalmanager.guru",
+          openDashboardLabel: tGuru("openDashboard"),
+          webhookEvents: GURU_EVENTS,
+          webhookStep1: tGuru("webhookStep1"),
+          webhookStep2: tGuru("webhookStep2"),
+          webhookStep3: tGuru("webhookStep3"),
+          webhookSecretPlaceholder: tGuru("webhookSecretPlaceholder"),
+          webhookWarning: tGuru("webhookWarning"),
+          toastId: "guru-sync",
+          disconnectConfirm: tGuru("disconnectConfirm"),
+          connectedToast: tGuru("connectedToast"),
+          connectErrorToast: tGuru("connectErrorToast"),
+          disconnectedToast: tGuru("disconnectedToast"),
+          onConnect: (orgId, key) => connectGuru(orgId, key as string),
+          onSync: (orgId, integrationId) => syncGuruHistory(orgId, integrationId),
+        };
+
         return (
           <div className="space-y-5">
             <TrackerCallout />
@@ -443,6 +603,9 @@ export default function IntegrationsPage() {
                 <IntegrationCard organizationId={org.id} config={pagarmeConfig} />
                 <IntegrationCard organizationId={org.id} config={kiwifyConfig} />
                 <IntegrationCard organizationId={org.id} config={hotmartConfig} />
+                <IntegrationCard organizationId={org.id} config={monetizzeConfig} />
+                <IntegrationCard organizationId={org.id} config={pagbankConfig} />
+                <IntegrationCard organizationId={org.id} config={guruConfig} />
               </div>
             </div>
           </div>

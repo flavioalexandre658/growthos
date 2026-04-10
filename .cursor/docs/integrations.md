@@ -15,6 +15,9 @@
 | **Hotmart** | ✅ Implementado | `connect-hotmart.action.ts` | `sync-hotmart-history.action.ts` | `/api/webhooks/hotmart/[id]` | drawer config no `page.tsx` |
 | **Mercado Pago** | ✅ Implementado | `connect-mercadopago.action.ts` | `sync-mercadopago-history.action.ts` | `/api/webhooks/mercadopago/[id]` | drawer config no `page.tsx` |
 | **Pagar.me** | ✅ Implementado | `connect-pagarme.action.ts` | `sync-pagarme-history.action.ts` | `/api/webhooks/pagarme/[id]` | drawer config no `page.tsx` |
+| **Monetizze** | ✅ Implementado | `connect-monetizze.action.ts` | `sync-monetizze-history.action.ts` | `/api/webhooks/monetizze/[id]` | drawer config no `page.tsx` |
+| **PagBank** | ✅ Implementado | `connect-pagbank.action.ts` | `sync-pagbank-history.action.ts` | `/api/webhooks/pagbank/[id]` | drawer config no `page.tsx` |
+| **Guru** | ✅ Implementado | `connect-guru.action.ts` | `sync-guru-history.action.ts` | `/api/webhooks/guru/[id]` | drawer config no `page.tsx` |
 
 ---
 
@@ -1179,5 +1182,64 @@ O Pagar.me expõe `interval` (`month`, `year`, `week`) + `interval_count`. Mappe
 
 ---
 
-_Documento atualizado em abril/2026 — versão 2.2_
-_Providers implementados: Stripe, Asaas, Kiwify, Hotmart, Mercado Pago, Pagar.me_
+---
+
+## Monetizze — Especificidades
+
+### Autenticação
+Header `X_CONSUMER_KEY` com a Chave da API. Validação via `GET /2.1/token`.
+
+### Webhook — form-encoded (único)
+O postback da Monetizze envia `application/x-www-form-urlencoded`, não JSON. O route faz `req.text()` + `new URLSearchParams(body)`. Campos: `venda[codigo]`, `venda[valor]`, `venda[status]`, `comprador[email]`, `assinatura[codigo]`, etc.
+
+### Validação
+Campo `chave_unica` no body comparado com `providerMeta.webhookSecret`. Sem HMAC.
+
+### Valores
+Decimal string (`"97.00"`) → `Math.round(parseFloat(valor) * 100)`.
+
+### Subscription
+`assinatura[codigo]`, `assinatura[status]`, `assinatura[parcela]` (parcela > 1 = renewal).
+
+---
+
+## PagBank — Especificidades
+
+### Autenticação
+Bearer token via `Authorization: Bearer <token>`. Token gerado no painel PagBank > Vendas > Integrações.
+
+### Webhook — SHA-256 não-HMAC
+Validação via `SHA256(token + "-" + rawBody)` comparado com header `x-authenticity-token`. O secret **é o mesmo** Bearer token do connect — auto-salvo em `providerMeta.webhookSecret` durante a conexão.
+
+### Valores
+Cents inteiros (`amount.value`). Sem conversão.
+
+### Historical API
+Limitada — `GET /orders` com filtros. Sem paginação bulk garantida.
+
+---
+
+## Digital Manager Guru — Especificidades
+
+### Autenticação
+Bearer token via `Authorization: Bearer <user_token>`. User Token criado em Meu Perfil > Tokens API.
+
+### Webhook — dual tokens
+- **User Token**: acesso total à API (connect + sync)
+- **Account Token**: enviado no body de cada webhook (`api_token` field) para validação
+
+São tokens diferentes. User Token vai no connect, Account Token vai em `providerMeta.webhookSecret`.
+
+### Valores
+Float/decimal (`payment.gross`) → `Math.round(value * 100)`.
+
+### Subscription
+`subscription.id`, `subscription.last_status`, `subscription.charged_every_days` (converted to billing interval).
+
+### Eventos
+Aprovada, Cancelada, Completa, Reembolsada, Reclamada.
+
+---
+
+_Documento atualizado em abril/2026 — versão 2.3_
+_Providers implementados: Stripe, Asaas, Kiwify, Hotmart, Mercado Pago, Pagar.me, Monetizze, PagBank, Guru_

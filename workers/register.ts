@@ -7,6 +7,9 @@ import { processKiwifySyncJob } from "./sync-kiwify.worker";
 import { processHotmartSyncJob } from "./sync-hotmart.worker";
 import { processMercadoPagoSyncJob } from "./sync-mercadopago.worker";
 import { processPagarmeSyncJob } from "./sync-pagarme.worker";
+import { processMonetizzeSyncJob } from "./sync-monetizze.worker";
+import { processPagBankSyncJob } from "./sync-pagbank.worker";
+import { processGuruSyncJob } from "./sync-guru.worker";
 import { processAiJob } from "./ai.worker";
 import { processWebhookJob } from "./webhook.worker";
 import { processEmailJob } from "./email.worker";
@@ -59,6 +62,15 @@ export async function startWorkers(): Promise<void> {
         if (job.data.provider === "pagarme") {
           return await processPagarmeSyncJob(job);
         }
+        if (job.data.provider === "monetizze") {
+          return await processMonetizzeSyncJob(job);
+        }
+        if (job.data.provider === "pagbank") {
+          return await processPagBankSyncJob(job);
+        }
+        if (job.data.provider === "guru") {
+          return await processGuruSyncJob(job);
+        }
         throw new Error(`Unknown provider: ${job.data.provider}`);
       } catch (err) {
         console.error(`[sync-worker] Job ${job.id} failed:`, err);
@@ -83,6 +95,9 @@ export async function startWorkers(): Promise<void> {
           hotmart: "Hotmart",
           mercadopago: "Mercado Pago",
           pagarme: "Pagar.me",
+          monetizze: "Monetizze",
+          pagbank: "PagBank",
+          guru: "Guru",
         };
         const providerLabel = providerLabelMap[job.data.provider] ?? job.data.provider;
 
@@ -123,6 +138,11 @@ export async function startWorkers(): Promise<void> {
       asaas: "Asaas",
       kiwify: "Kiwify",
       hotmart: "Hotmart",
+      mercadopago: "Mercado Pago",
+      pagarme: "Pagar.me",
+      monetizze: "Monetizze",
+      pagbank: "PagBank",
+      guru: "Guru",
     };
     const providerLabel = providerLabelMap[job.data.provider] ?? job.data.provider;
     const payments = (result?.invoicesSynced ?? result?.paymentsSynced ?? 0) + (result?.oneTimePurchasesSynced ?? 0);

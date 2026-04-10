@@ -91,7 +91,7 @@ export function getEmailQueue(): Queue {
 export interface SyncJobData {
   organizationId: string;
   integrationId: string;
-  provider: "stripe" | "asaas" | "kiwify" | "hotmart" | "mercadopago" | "pagarme";
+  provider: "stripe" | "asaas" | "kiwify" | "hotmart" | "mercadopago" | "pagarme" | "monetizze" | "pagbank" | "guru";
 }
 
 export interface SyncJobProgress {
@@ -114,7 +114,7 @@ export interface AiJobData {
 }
 
 export interface WebhookJobData {
-  provider: "stripe" | "asaas" | "kiwify" | "hotmart" | "mercadopago" | "pagarme";
+  provider: "stripe" | "asaas" | "kiwify" | "hotmart" | "mercadopago" | "pagarme" | "monetizze" | "pagbank" | "guru";
   integrationId: string;
   organizationId: string;
   payload: string;
