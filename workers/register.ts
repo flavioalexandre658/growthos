@@ -10,6 +10,11 @@ import { processPagarmeSyncJob } from "./sync-pagarme.worker";
 import { processMonetizzeSyncJob } from "./sync-monetizze.worker";
 import { processPagBankSyncJob } from "./sync-pagbank.worker";
 import { processGuruSyncJob } from "./sync-guru.worker";
+import { processPaypalSyncJob } from "./sync-paypal.worker";
+import { processEduzzSyncJob } from "./sync-eduzz.worker";
+import { processCaktoSyncJob } from "./sync-cakto.worker";
+import { processKirvanoSyncJob } from "./sync-kirvano.worker";
+import { processAbacatePaySyncJob } from "./sync-abacatepay.worker";
 import { processAiJob } from "./ai.worker";
 import { processWebhookJob } from "./webhook.worker";
 import { processEmailJob } from "./email.worker";
@@ -71,6 +76,21 @@ export async function startWorkers(): Promise<void> {
         if (job.data.provider === "guru") {
           return await processGuruSyncJob(job);
         }
+        if (job.data.provider === "paypal") {
+          return await processPaypalSyncJob(job);
+        }
+        if (job.data.provider === "eduzz") {
+          return await processEduzzSyncJob(job);
+        }
+        if (job.data.provider === "cakto") {
+          return await processCaktoSyncJob(job);
+        }
+        if (job.data.provider === "kirvano") {
+          return await processKirvanoSyncJob(job);
+        }
+        if (job.data.provider === "abacatepay") {
+          return await processAbacatePaySyncJob(job);
+        }
         throw new Error(`Unknown provider: ${job.data.provider}`);
       } catch (err) {
         console.error(`[sync-worker] Job ${job.id} failed:`, err);
@@ -98,6 +118,11 @@ export async function startWorkers(): Promise<void> {
           monetizze: "Monetizze",
           pagbank: "PagBank",
           guru: "Guru",
+          paypal: "PayPal",
+          eduzz: "Eduzz",
+          cakto: "Cakto",
+          kirvano: "Kirvano",
+          abacatepay: "AbacatePay",
         };
         const providerLabel = providerLabelMap[job.data.provider] ?? job.data.provider;
 
@@ -143,6 +168,9 @@ export async function startWorkers(): Promise<void> {
       monetizze: "Monetizze",
       pagbank: "PagBank",
       guru: "Guru",
+      cakto: "Cakto",
+      kirvano: "Kirvano",
+      abacatepay: "AbacatePay",
     };
     const providerLabel = providerLabelMap[job.data.provider] ?? job.data.provider;
     const payments = (result?.invoicesSynced ?? result?.paymentsSynced ?? 0) + (result?.oneTimePurchasesSynced ?? 0);

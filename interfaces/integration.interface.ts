@@ -7,7 +7,12 @@ export type IntegrationProvider =
   | "pagarme"
   | "monetizze"
   | "pagbank"
-  | "guru";
+  | "guru"
+  | "paypal"
+  | "eduzz"
+  | "cakto"
+  | "kirvano"
+  | "abacatepay";
 
 export type IntegrationStatus = "active" | "error" | "disconnected";
 

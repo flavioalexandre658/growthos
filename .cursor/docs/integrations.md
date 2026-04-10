@@ -18,6 +18,11 @@
 | **Monetizze** | ✅ Implementado | `connect-monetizze.action.ts` | `sync-monetizze-history.action.ts` | `/api/webhooks/monetizze/[id]` | drawer config no `page.tsx` |
 | **PagBank** | ✅ Implementado | `connect-pagbank.action.ts` | `sync-pagbank-history.action.ts` | `/api/webhooks/pagbank/[id]` | drawer config no `page.tsx` |
 | **Guru** | ✅ Implementado | `connect-guru.action.ts` | `sync-guru-history.action.ts` | `/api/webhooks/guru/[id]` | drawer config no `page.tsx` |
+| **PayPal** | ✅ Implementado | `connect-paypal.action.ts` | `sync-paypal-history.action.ts` | `/api/webhooks/paypal/[id]` | drawer config no `page.tsx` |
+| **Eduzz** | ✅ Implementado | `connect-eduzz.action.ts` | `sync-eduzz-history.action.ts` | `/api/webhooks/eduzz/[id]` | drawer config no `page.tsx` |
+| **Cakto** | ✅ Implementado | `connect-cakto.action.ts` | — (webhook-only) | `/api/webhooks/cakto/[id]` | drawer config no `page.tsx` |
+| **Kirvano** | ✅ Implementado | `connect-kirvano.action.ts` | — (webhook-only) | `/api/webhooks/kirvano/[id]` | drawer config no `page.tsx` |
+| **Abacate Pay** | ✅ Implementado | `connect-abacatepay.action.ts` | `sync-abacatepay-history.action.ts` | `/api/webhooks/abacatepay/[id]` | drawer config no `page.tsx` |
 
 ---
 
@@ -1241,5 +1246,5 @@ Aprovada, Cancelada, Completa, Reembolsada, Reclamada.
 
 ---
 
-_Documento atualizado em abril/2026 — versão 2.3_
-_Providers implementados: Stripe, Asaas, Kiwify, Hotmart, Mercado Pago, Pagar.me, Monetizze, PagBank, Guru_
+_Documento atualizado em abril/2026 — versão 2.4_
+_Providers implementados: Stripe, Asaas, Kiwify, Hotmart, Mercado Pago, Pagar.me, Monetizze, PagBank, Guru, PayPal, Eduzz, Cakto, Kirvano, Abacate Pay_

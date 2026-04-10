@@ -92,6 +92,34 @@ export async function POST(req: NextRequest) {
       "@/utils/guru-webhook-handlers"
     );
     await handleGuruEvent(organizationId, parsed);
+  } else if (provider === "paypal") {
+    const credJson = decrypt(integration.accessToken);
+    const creds = JSON.parse(credJson) as { clientId: string; secret: string };
+    const { getOAuthAccessToken } = await import("@/utils/oauth-token-cache");
+    const { paypalOAuthToken } = await import("@/utils/paypal-helpers");
+    const token = await getOAuthAccessToken(integration, () =>
+      paypalOAuthToken(creds.clientId, creds.secret),
+    );
+    const { handlePayPalEvent } = await import("@/utils/paypal-webhook-handlers");
+    await handlePayPalEvent(organizationId, parsed, token);
+  } else if (provider === "eduzz") {
+    const { handleEduzzEvent } = await import("@/utils/eduzz-webhook-handlers");
+    await handleEduzzEvent(organizationId, parsed);
+  } else if (provider === "cakto") {
+    const { handleCaktoEvent } = await import(
+      "@/utils/cakto-webhook-handlers"
+    );
+    await handleCaktoEvent(organizationId, parsed);
+  } else if (provider === "kirvano") {
+    const { handleKirvanoEvent } = await import(
+      "@/utils/kirvano-webhook-handlers"
+    );
+    await handleKirvanoEvent(organizationId, parsed);
+  } else if (provider === "abacatepay") {
+    const { handleAbacatePayEvent } = await import(
+      "@/utils/abacatepay-webhook-handlers"
+    );
+    await handleAbacatePayEvent(organizationId, parsed);
   }
 
   invalidateOrgDashboardCache(organizationId).catch(() => {});

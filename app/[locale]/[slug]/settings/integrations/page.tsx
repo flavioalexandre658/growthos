@@ -23,6 +23,16 @@ import { connectPagBank } from "@/actions/integrations/connect-pagbank.action";
 import { syncPagBankHistory } from "@/actions/integrations/sync-pagbank-history.action";
 import { connectGuru } from "@/actions/integrations/connect-guru.action";
 import { syncGuruHistory } from "@/actions/integrations/sync-guru-history.action";
+import { connectPaypal } from "@/actions/integrations/connect-paypal.action";
+import { syncPaypalHistory } from "@/actions/integrations/sync-paypal-history.action";
+import { connectEduzz } from "@/actions/integrations/connect-eduzz.action";
+import { syncEduzzHistory } from "@/actions/integrations/sync-eduzz-history.action";
+import { connectCakto } from "@/actions/integrations/connect-cakto.action";
+import { syncCaktoHistory } from "@/actions/integrations/sync-cakto-history.action";
+import { connectKirvano } from "@/actions/integrations/connect-kirvano.action";
+import { syncKirvanoHistory } from "@/actions/integrations/sync-kirvano-history.action";
+import { connectAbacatePay } from "@/actions/integrations/connect-abacatepay.action";
+import { syncAbacatePayHistory } from "@/actions/integrations/sync-abacatepay-history.action";
 import type { IntegrationDrawerConfig } from "./_components/integration-types";
 
 const STRIPE_EVENTS = [
@@ -96,6 +106,42 @@ const GURU_EVENTS = [
   "Completa",
   "Reembolsada",
   "Reclamada",
+];
+
+const PAYPAL_EVENTS = [
+  "PAYMENT.CAPTURE.COMPLETED",
+  "PAYMENT.CAPTURE.REFUNDED",
+  "BILLING.SUBSCRIPTION.ACTIVATED",
+  "BILLING.SUBSCRIPTION.CANCELLED",
+  "BILLING.SUBSCRIPTION.PAYMENT.FAILED",
+];
+
+const EDUZZ_EVENTS = [
+  "Fatura paga (invoice_paid)",
+  "Fatura cancelada (invoice_canceled)",
+  "Fatura reembolsada (invoice_refunded)",
+  "Contrato cancelado (contract_canceled)",
+];
+
+const CAKTO_EVENTS = [
+  "Compra aprovada",
+  "Reembolso",
+  "Chargeback",
+];
+
+const KIRVANO_EVENTS = [
+  "Venda aprovada",
+  "Venda recusada",
+  "Chargeback",
+];
+
+const ABACATEPAY_EVENTS = [
+  "checkout.completed",
+  "checkout.refunded",
+  "checkout.disputed",
+  "subscription.completed",
+  "subscription.cancelled",
+  "subscription.renewed",
 ];
 
 function AsaasLogoIcon() {
@@ -206,6 +252,66 @@ function GuruLogoIcon() {
   );
 }
 
+function PayPalLogoIcon() {
+  return (
+    <Image
+      src="/assets/images/gateways/paypal.png"
+      alt="PayPal"
+      width={28}
+      height={28}
+      className="object-contain"
+    />
+  );
+}
+
+function EduzzLogoIcon() {
+  return (
+    <Image
+      src="/assets/images/gateways/eduzz.png"
+      alt="Eduzz"
+      width={28}
+      height={28}
+      className="object-contain"
+    />
+  );
+}
+
+function CaktoLogoIcon() {
+  return (
+    <Image
+      src="/assets/images/gateways/cakto.png"
+      alt="Cakto"
+      width={28}
+      height={28}
+      className="object-contain"
+    />
+  );
+}
+
+function KirvanoLogoIcon() {
+  return (
+    <Image
+      src="/assets/images/gateways/kirvano.png"
+      alt="Kirvano"
+      width={28}
+      height={28}
+      className="object-contain"
+    />
+  );
+}
+
+function AbacatePayLogoIcon() {
+  return (
+    <Image
+      src="/assets/images/gateways/abacatepay.png"
+      alt="Abacate Pay"
+      width={28}
+      height={28}
+      className="object-contain"
+    />
+  );
+}
+
 export default function IntegrationsPage() {
   const tNav = useTranslations("settings.nav");
   const t = useTranslations("settings.integrations");
@@ -218,6 +324,11 @@ export default function IntegrationsPage() {
   const tMonetizze = useTranslations("settings.integrations.monetizze");
   const tPagBank = useTranslations("settings.integrations.pagbank");
   const tGuru = useTranslations("settings.integrations.guru");
+  const tPayPal = useTranslations("settings.integrations.paypal");
+  const tEduzz = useTranslations("settings.integrations.eduzz");
+  const tCakto = useTranslations("settings.integrations.cakto");
+  const tKirvano = useTranslations("settings.integrations.kirvano");
+  const tAbacatePay = useTranslations("settings.integrations.abacatepay");
 
   return (
     <SettingsSectionWrapper label={tNav("integrations")} hideCompleteness>
@@ -588,6 +699,203 @@ export default function IntegrationsPage() {
           onSync: (orgId, integrationId) => syncGuruHistory(orgId, integrationId),
         };
 
+        const paypalConfig: IntegrationDrawerConfig = {
+          provider: "paypal",
+          providerName: "PayPal",
+          tagline: t("paypalTagline"),
+          accentColor: "#003087",
+          logo: <PayPalLogoIcon />,
+          credentialLabel: tPayPal("clientIdLabel"),
+          credentialPlaceholder: tPayPal("clientIdPlaceholder"),
+          credentialFields: [
+            {
+              key: "clientId",
+              label: tPayPal("clientIdLabel"),
+              placeholder: tPayPal("clientIdPlaceholder"),
+            },
+            {
+              key: "secret",
+              label: tPayPal("secretLabel"),
+              placeholder: tPayPal("secretPlaceholder"),
+            },
+          ],
+          connectVia: tPayPal("connectVia"),
+          howToGetCredential: tPayPal("howToGetCredential"),
+          tutorialSteps: [
+            tPayPal("tutorialStep1"),
+            tPayPal("tutorialStep2"),
+            tPayPal("tutorialStep3"),
+            tPayPal("tutorialStep4"),
+            tPayPal("tutorialStep5"),
+            tPayPal("tutorialStep6"),
+            tPayPal("tutorialStep7"),
+            tPayPal("tutorialStep8"),
+            tPayPal("tutorialStep9"),
+          ],
+          dashboardUrl: "https://developer.paypal.com/dashboard/applications",
+          openDashboardLabel: tPayPal("openDashboard"),
+          webhookEvents: PAYPAL_EVENTS,
+          webhookStep1: tPayPal("webhookStep1"),
+          webhookStep2: tPayPal("webhookStep2"),
+          webhookStep3: tPayPal("webhookStep3"),
+          webhookSecretPlaceholder: tPayPal("webhookSecretPlaceholder"),
+          webhookWarning: tPayPal("webhookWarning"),
+          toastId: "paypal-sync",
+          disconnectConfirm: tPayPal("disconnectConfirm"),
+          connectedToast: tPayPal("connectedToast"),
+          connectErrorToast: tPayPal("connectErrorToast"),
+          disconnectedToast: tPayPal("disconnectedToast"),
+          onConnect: (orgId, cred) => {
+            const c = cred as Record<string, string>;
+            return connectPaypal(orgId, { clientId: c.clientId, secret: c.secret });
+          },
+          onSync: (orgId, integrationId) => syncPaypalHistory(orgId, integrationId),
+        };
+
+        const eduzzConfig: IntegrationDrawerConfig = {
+          provider: "eduzz",
+          providerName: "Eduzz",
+          tagline: t("eduzzTagline"),
+          accentColor: "#FF5722",
+          logo: <EduzzLogoIcon />,
+          credentialLabel: tEduzz("publicKeyLabel"),
+          credentialPlaceholder: tEduzz("publicKeyPlaceholder"),
+          credentialFields: [
+            {
+              key: "publicKey",
+              label: tEduzz("publicKeyLabel"),
+              placeholder: tEduzz("publicKeyPlaceholder"),
+            },
+            {
+              key: "apiKey",
+              label: tEduzz("apiKeyLabel"),
+              placeholder: tEduzz("apiKeyPlaceholder"),
+            },
+          ],
+          connectVia: tEduzz("connectVia"),
+          howToGetCredential: tEduzz("howToGetCredential"),
+          tutorialSteps: [
+            tEduzz("tutorialStep1"),
+            tEduzz("tutorialStep2"),
+            tEduzz("tutorialStep3"),
+            tEduzz("tutorialStep4"),
+            tEduzz("tutorialStep5"),
+            tEduzz("tutorialStep6"),
+            tEduzz("tutorialStep7"),
+            tEduzz("tutorialStep8"),
+          ],
+          dashboardUrl: "https://accounts.eduzz.com",
+          openDashboardLabel: tEduzz("openDashboard"),
+          webhookEvents: EDUZZ_EVENTS,
+          webhookStep1: tEduzz("webhookStep1"),
+          webhookStep2: tEduzz("webhookStep2"),
+          webhookStep3: tEduzz("webhookStep3"),
+          webhookSecretPlaceholder: tEduzz("webhookSecretPlaceholder"),
+          webhookWarning: tEduzz("webhookWarning"),
+          toastId: "eduzz-sync",
+          disconnectConfirm: tEduzz("disconnectConfirm"),
+          connectedToast: tEduzz("connectedToast"),
+          connectErrorToast: tEduzz("connectErrorToast"),
+          disconnectedToast: tEduzz("disconnectedToast"),
+          onConnect: (orgId, cred) => {
+            const c = cred as Record<string, string>;
+            return connectEduzz(orgId, { publicKey: c.publicKey, apiKey: c.apiKey });
+          },
+          onSync: (orgId, integrationId) => syncEduzzHistory(orgId, integrationId),
+        };
+
+        const caktoConfig: IntegrationDrawerConfig = {
+          provider: "cakto",
+          providerName: "Cakto",
+          tagline: t("caktoTagline"),
+          accentColor: "#6C63FF",
+          logo: <CaktoLogoIcon />,
+          credentialLabel: tCakto("credentialLabel"),
+          credentialPlaceholder: tCakto("credentialPlaceholder"),
+          connectVia: tCakto("connectVia"),
+          howToGetCredential: tCakto("howToGetCredential"),
+          tutorialSteps: [
+            tCakto("tutorialStep1"),
+          ],
+          dashboardUrl: "https://app.cakto.com.br",
+          openDashboardLabel: tCakto("openDashboard"),
+          webhookEvents: CAKTO_EVENTS,
+          webhookStep1: tCakto("webhookStep1"),
+          webhookStep2: tCakto("webhookStep2"),
+          webhookStep3: tCakto("webhookStep3"),
+          webhookSecretPlaceholder: tCakto("webhookSecretPlaceholder"),
+          webhookWarning: tCakto("webhookWarning"),
+          toastId: "cakto-sync",
+          disconnectConfirm: tCakto("disconnectConfirm"),
+          connectedToast: tCakto("connectedToast"),
+          connectErrorToast: tCakto("connectErrorToast"),
+          disconnectedToast: tCakto("disconnectedToast"),
+          onConnect: (orgId, key) => connectCakto(orgId, key as string),
+          onSync: (orgId, integrationId) => syncCaktoHistory(orgId, integrationId),
+        };
+
+        const kirvanoConfig: IntegrationDrawerConfig = {
+          provider: "kirvano",
+          providerName: "Kirvano",
+          tagline: t("kirvanoTagline"),
+          accentColor: "#00C9A7",
+          logo: <KirvanoLogoIcon />,
+          credentialLabel: tKirvano("credentialLabel"),
+          credentialPlaceholder: tKirvano("credentialPlaceholder"),
+          connectVia: tKirvano("connectVia"),
+          howToGetCredential: tKirvano("howToGetCredential"),
+          tutorialSteps: [
+            tKirvano("tutorialStep1"),
+          ],
+          dashboardUrl: "https://app.kirvano.com",
+          openDashboardLabel: tKirvano("openDashboard"),
+          webhookEvents: KIRVANO_EVENTS,
+          webhookStep1: tKirvano("webhookStep1"),
+          webhookStep2: tKirvano("webhookStep2"),
+          webhookStep3: tKirvano("webhookStep3"),
+          webhookSecretPlaceholder: tKirvano("webhookSecretPlaceholder"),
+          webhookWarning: tKirvano("webhookWarning"),
+          toastId: "kirvano-sync",
+          disconnectConfirm: tKirvano("disconnectConfirm"),
+          connectedToast: tKirvano("connectedToast"),
+          connectErrorToast: tKirvano("connectErrorToast"),
+          disconnectedToast: tKirvano("disconnectedToast"),
+          onConnect: (orgId, key) => connectKirvano(orgId, key as string),
+          onSync: (orgId, integrationId) => syncKirvanoHistory(orgId, integrationId),
+        };
+
+        const abacatepayConfig: IntegrationDrawerConfig = {
+          provider: "abacatepay",
+          providerName: "Abacate Pay",
+          tagline: t("abacatepayTagline"),
+          accentColor: "#4CAF50",
+          logo: <AbacatePayLogoIcon />,
+          credentialLabel: tAbacatePay("credentialLabel"),
+          credentialPlaceholder: tAbacatePay("credentialPlaceholder"),
+          connectVia: tAbacatePay("connectVia"),
+          howToGetCredential: tAbacatePay("howToGetCredential"),
+          tutorialSteps: [
+            tAbacatePay("tutorialStep1"),
+            tAbacatePay("tutorialStep2"),
+            tAbacatePay("tutorialStep3"),
+          ],
+          dashboardUrl: "https://app.abacatepay.com",
+          openDashboardLabel: tAbacatePay("openDashboard"),
+          webhookEvents: ABACATEPAY_EVENTS,
+          webhookStep1: tAbacatePay("webhookStep1"),
+          webhookStep2: tAbacatePay("webhookStep2"),
+          webhookStep3: tAbacatePay("webhookStep3"),
+          webhookSecretPlaceholder: tAbacatePay("webhookSecretPlaceholder"),
+          webhookWarning: tAbacatePay("webhookWarning"),
+          toastId: "abacatepay-sync",
+          disconnectConfirm: tAbacatePay("disconnectConfirm"),
+          connectedToast: tAbacatePay("connectedToast"),
+          connectErrorToast: tAbacatePay("connectErrorToast"),
+          disconnectedToast: tAbacatePay("disconnectedToast"),
+          onConnect: (orgId, key) => connectAbacatePay(orgId, key as string),
+          onSync: (orgId, integrationId) => syncAbacatePayHistory(orgId, integrationId),
+        };
+
         return (
           <div className="space-y-5">
             <TrackerCallout />
@@ -606,6 +914,11 @@ export default function IntegrationsPage() {
                 <IntegrationCard organizationId={org.id} config={monetizzeConfig} />
                 <IntegrationCard organizationId={org.id} config={pagbankConfig} />
                 <IntegrationCard organizationId={org.id} config={guruConfig} />
+                <IntegrationCard organizationId={org.id} config={paypalConfig} />
+                <IntegrationCard organizationId={org.id} config={eduzzConfig} />
+                <IntegrationCard organizationId={org.id} config={caktoConfig} />
+                <IntegrationCard organizationId={org.id} config={kirvanoConfig} />
+                <IntegrationCard organizationId={org.id} config={abacatepayConfig} />
               </div>
             </div>
           </div>
