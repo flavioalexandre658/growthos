@@ -79,14 +79,18 @@ export function ProviderCard({
     if (!key) return;
     setIsConnecting(true);
     try {
-      const integration =
+      const result =
         config.id === "stripe"
           ? await connectStripe(organizationId, key)
           : await connectAsaas(organizationId, key);
+      if (result && "error" in result) {
+        toast.error(result.error);
+        return;
+      }
       setConnected(true);
       setCredential("");
       toast.success(t("connectedToast"));
-      onConnected(config.id, integration.id);
+      onConnected(config.id, result.id);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("errorToast"));
     } finally {

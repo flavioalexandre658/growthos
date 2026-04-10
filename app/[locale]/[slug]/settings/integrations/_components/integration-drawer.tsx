@@ -144,7 +144,11 @@ function DisconnectedDrawerBody({
         for (const f of config.credentialFields ?? []) {
           trimmed[f.key] = (credentialMap[f.key] ?? "").trim();
         }
-        await config.onConnect(organizationId, trimmed);
+        const result = await config.onConnect(organizationId, trimmed);
+        if (result && "error" in result) {
+          toast.error(result.error);
+          return;
+        }
         await queryClient.invalidateQueries({
           queryKey: getIntegrationsQueryKey(organizationId),
         });
@@ -162,7 +166,11 @@ function DisconnectedDrawerBody({
     if (!key) return;
     setIsConnecting(true);
     try {
-      await config.onConnect(organizationId, key);
+      const result = await config.onConnect(organizationId, key);
+      if (result && "error" in result) {
+        toast.error(result.error);
+        return;
+      }
       await queryClient.invalidateQueries({
         queryKey: getIntegrationsQueryKey(organizationId),
       });
@@ -690,7 +698,7 @@ function WebhookStep({
       <span className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-zinc-800 text-zinc-500 border border-zinc-700">
         {n}
       </span>
-      <div className="flex-1 min-w-0 overflow-hidden pt-0.5">{text ?? children}</div>
+      <div className="flex-1 min-w-0 overflow-hidden pt-0.5">{text ? renderInlineMarkdown(text) : children}</div>
     </div>
   );
 }

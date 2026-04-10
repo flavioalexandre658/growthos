@@ -35,13 +35,17 @@ export async function kiwifyOAuthToken(
     throw new Error("Não foi possível conectar ao Kiwify. Verifique e tente novamente.");
   });
 
-  if (res.status === 401 || res.status === 403) {
-    throw new Error("client_id ou client_secret inválidos.");
-  }
-
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
-    throw new Error(`Kiwify OAuth error (${res.status}): ${text.slice(0, 200)}`);
+    if (text.includes("invalid input syntax for type uuid")) {
+      throw new Error(
+        "Client ID inválido — o formato esperado é UUID (ex: a1b2c3d4-e5f6-7890-abcd-1234567890ab). Verifique se colou o valor correto no campo Client ID.",
+      );
+    }
+    if (res.status === 401 || res.status === 403 || text.includes("auth_error")) {
+      throw new Error("client_id ou client_secret inválidos. Verifique os valores e tente novamente.");
+    }
+    throw new Error(`Erro ao autenticar no Kiwify (${res.status}). Verifique suas credenciais.`);
   }
 
   const data = (await res.json()) as KiwifyOAuthResponse;

@@ -41,23 +41,20 @@ const ASAAS_EVENTS = [
 ];
 
 const KIWIFY_EVENTS = [
-  "compra_aprovada",
-  "compra_reembolsada",
-  "chargeback",
-  "subscription_renewed",
-  "subscription_canceled",
-  "subscription_late",
+  "Compra aprovada",
+  "Reembolso",
+  "Chargeback",
+  "Assinatura renovada",
+  "Assinatura cancelada",
+  "Assinatura atrasada",
 ];
 
 const HOTMART_EVENTS = [
-  "PURCHASE_APPROVED",
-  "PURCHASE_COMPLETE",
-  "PURCHASE_REFUNDED",
-  "PURCHASE_CHARGEBACK",
-  "PURCHASE_CANCELED",
-  "PURCHASE_DELAYED",
-  "PURCHASE_EXPIRED",
-  "SUBSCRIPTION_CANCELLATION",
+  "Compra aprovada",
+  "Compra reembolsada",
+  "Chargeback",
+  "Compra atrasada",
+  "Cancelamento de Assinatura",
 ];
 
 const MERCADOPAGO_EVENTS = [
@@ -246,14 +243,14 @@ export default function IntegrationsPage() {
           credentialPlaceholder: tKiwify("clientIdPlaceholder"),
           credentialFields: [
             {
-              key: "clientId",
-              label: tKiwify("clientIdLabel"),
-              placeholder: tKiwify("clientIdPlaceholder"),
-            },
-            {
               key: "clientSecret",
               label: tKiwify("clientSecretLabel"),
               placeholder: tKiwify("clientSecretPlaceholder"),
+            },
+            {
+              key: "clientId",
+              label: tKiwify("clientIdLabel"),
+              placeholder: tKiwify("clientIdPlaceholder"),
             },
             {
               key: "accountId",

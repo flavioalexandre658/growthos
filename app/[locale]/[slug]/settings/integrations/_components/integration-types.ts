@@ -9,6 +9,8 @@ export interface CredentialField {
 
 export type ConnectCredential = string | Record<string, string>;
 
+export type ConnectResult = IIntegration | { error: string };
+
 export interface IntegrationDrawerConfig {
   provider: IntegrationProvider;
   providerName: string;
@@ -38,6 +40,6 @@ export interface IntegrationDrawerConfig {
   onConnect: (
     organizationId: string,
     credential: ConnectCredential,
-  ) => Promise<IIntegration>;
+  ) => Promise<ConnectResult>;
   onSync: (organizationId: string, integrationId: string) => Promise<{ jobId: string }>;
 }

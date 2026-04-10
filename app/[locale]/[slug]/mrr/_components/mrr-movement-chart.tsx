@@ -23,8 +23,13 @@ interface MrrMovementChartProps {
 }
 
 function formatDateLabel(dateStr: string) {
-  if (dateStr.length === 7) return dateStr.slice(5);
   const parts = dateStr.split("-");
+  if (parts.length === 2) {
+    const [year, month] = parts;
+    const monthNames = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+    const idx = parseInt(month, 10) - 1;
+    return `${monthNames[idx] ?? month}/${year.slice(2)}`;
+  }
   return `${parts[2]}/${parts[1]}`;
 }
 

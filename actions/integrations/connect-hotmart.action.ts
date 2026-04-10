@@ -18,81 +18,88 @@ interface HotmartCredentials {
   clientSecret: string;
 }
 
-async function smokeTestHotmart(accessToken: string): Promise<void> {
+type ConnectResult = IIntegration | { error: string };
+
+async function smokeTestHotmart(accessToken: string): Promise<string | null> {
   const url = `${HOTMART_API_BASE}/payments/api/v1/sales/history?max_results=1`;
-  const res = await fetch(url, { headers: hotmartAuthHeaders(accessToken) }).catch(() => {
-    throw new Error("Não foi possível conectar ao Hotmart. Verifique e tente novamente.");
-  });
+  const res = await fetch(url, { headers: hotmartAuthHeaders(accessToken) }).catch(() => null);
 
-  if (res.status === 401 || res.status === 403) {
-    throw new Error("Credenciais inválidas ou sem permissão de leitura.");
-  }
-
-  if (!res.ok && res.status !== 404) {
-    const text = await res.text().catch(() => res.statusText);
-    throw new Error(`Hotmart API error (${res.status}): ${text.slice(0, 200)}`);
-  }
+  if (!res) return "Não foi possível conectar ao Hotmart. Verifique e tente novamente.";
+  if (res.status === 401 || res.status === 403) return "Credenciais inválidas ou sem permissão de leitura.";
+  if (!res.ok && res.status !== 404) return `Hotmart API error (${res.status})`;
+  return null;
 }
 
 export async function connectHotmart(
   organizationId: string,
   credentials: HotmartCredentials,
-): Promise<IIntegration> {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("Unauthorized");
+): Promise<ConnectResult> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) return { error: "Unauthorized" };
 
-  const clientId = credentials.clientId.trim();
-  const clientSecret = credentials.clientSecret.trim();
+    const clientId = credentials.clientId.trim();
+    const clientSecret = credentials.clientSecret.trim();
 
-  if (!clientId || !clientSecret) {
-    throw new Error("client_id e client_secret são obrigatórios.");
-  }
+    if (!clientId || !clientSecret) {
+      return { error: "client_id e client_secret são obrigatórios." };
+    }
 
-  const oauth = await hotmartOAuthToken(clientId, clientSecret);
-  await smokeTestHotmart(oauth.access_token);
+    let oauth: { access_token: string; expires_in: number };
+    try {
+      oauth = await hotmartOAuthToken(clientId, clientSecret);
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "Erro ao obter token do Hotmart." };
+    }
 
-  const credJson = JSON.stringify({ clientId, clientSecret });
-  const providerAccountId = clientId.slice(0, 36);
+    const smokeError = await smokeTestHotmart(oauth.access_token);
+    if (smokeError) return { error: smokeError };
 
-  const meta: IIntegrationMeta = {
-    oauthAccessToken: encrypt(oauth.access_token),
-    oauthTokenExpiresAt: Date.now() + oauth.expires_in * 1000,
-  };
+    const credJson = JSON.stringify({ clientId, clientSecret });
+    const providerAccountId = clientId.slice(0, 36);
 
-  const [row] = await db
-    .insert(integrations)
-    .values({
-      organizationId,
-      provider: "hotmart",
-      accessToken: encrypt(credJson),
-      providerAccountId,
-      providerMeta: meta,
-      status: "active",
-    })
-    .onConflictDoUpdate({
-      target: [integrations.organizationId, integrations.provider],
-      set: {
+    const meta: IIntegrationMeta = {
+      oauthAccessToken: encrypt(oauth.access_token),
+      oauthTokenExpiresAt: Date.now() + oauth.expires_in * 1000,
+    };
+
+    const [row] = await db
+      .insert(integrations)
+      .values({
+        organizationId,
+        provider: "hotmart",
         accessToken: encrypt(credJson),
         providerAccountId,
         providerMeta: meta,
         status: "active",
-        syncError: null,
-        historySyncedAt: null,
-        updatedAt: new Date(),
-      },
-    })
-    .returning({
-      id: integrations.id,
-      organizationId: integrations.organizationId,
-      provider: integrations.provider,
-      status: integrations.status,
-      providerAccountId: integrations.providerAccountId,
-      lastSyncedAt: integrations.lastSyncedAt,
-      historySyncedAt: integrations.historySyncedAt,
-      syncError: integrations.syncError,
-      createdAt: integrations.createdAt,
-      updatedAt: integrations.updatedAt,
-    });
+      })
+      .onConflictDoUpdate({
+        target: [integrations.organizationId, integrations.provider],
+        set: {
+          accessToken: encrypt(credJson),
+          providerAccountId,
+          providerMeta: meta,
+          status: "active",
+          syncError: null,
+          historySyncedAt: null,
+          updatedAt: new Date(),
+        },
+      })
+      .returning({
+        id: integrations.id,
+        organizationId: integrations.organizationId,
+        provider: integrations.provider,
+        status: integrations.status,
+        providerAccountId: integrations.providerAccountId,
+        lastSyncedAt: integrations.lastSyncedAt,
+        historySyncedAt: integrations.historySyncedAt,
+        syncError: integrations.syncError,
+        createdAt: integrations.createdAt,
+        updatedAt: integrations.updatedAt,
+      });
 
-  return { ...row, hasWebhookSecret: false } as IIntegration;
+    return { ...row, hasWebhookSecret: false } as IIntegration;
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro ao conectar o Hotmart." };
+  }
 }

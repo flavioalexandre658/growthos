@@ -9,22 +9,18 @@ import type { IIntegration } from "@/interfaces/integration.interface";
 
 const ASAAS_BASE_URL = "https://api.asaas.com/v3";
 
+type ConnectResult = IIntegration | { error: string };
+
 async function validateAsaasApiKey(
   apiKey: string,
-): Promise<{ id: string; name: string }> {
+): Promise<{ id: string; name: string } | { error: string }> {
   const res = await fetch(`${ASAAS_BASE_URL}/myAccount/commercialInfo/`, {
     headers: { access_token: apiKey },
-  }).catch(() => {
-    throw new Error("Não foi possível conectar ao Asaas. Verifique e tente novamente.");
-  });
+  }).catch(() => null);
 
-  if (res.status === 401 || res.status === 403) {
-    throw new Error("API Key inválida ou sem permissão. Verifique e tente novamente.");
-  }
-
-  if (!res.ok) {
-    throw new Error("Não foi possível validar a API Key. Verifique e tente novamente.");
-  }
+  if (!res) return { error: "Não foi possível conectar ao Asaas. Verifique e tente novamente." };
+  if (res.status === 401 || res.status === 403) return { error: "API Key inválida ou sem permissão. Verifique e tente novamente." };
+  if (!res.ok) return { error: "Não foi possível validar a API Key. Verifique e tente novamente." };
 
   const data = (await res.json()) as {
     cpfCnpj?: string;
@@ -33,10 +29,7 @@ async function validateAsaasApiKey(
   };
 
   const accountId = data.cpfCnpj ?? data.email;
-
-  if (!accountId) {
-    throw new Error("Resposta inválida do Asaas. Verifique a API Key.");
-  }
+  if (!accountId) return { error: "Resposta inválida do Asaas. Verifique a API Key." };
 
   return { id: accountId, name: data.name ?? accountId };
 }
@@ -44,44 +37,49 @@ async function validateAsaasApiKey(
 export async function connectAsaas(
   organizationId: string,
   apiKey: string,
-): Promise<IIntegration> {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("Unauthorized");
+): Promise<ConnectResult> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) return { error: "Unauthorized" };
 
-  const account = await validateAsaasApiKey(apiKey.trim());
+    const validation = await validateAsaasApiKey(apiKey.trim());
+    if ("error" in validation) return { error: validation.error };
 
-  const [row] = await db
-    .insert(integrations)
-    .values({
-      organizationId,
-      provider: "asaas",
-      accessToken: encrypt(apiKey.trim()),
-      providerAccountId: account.id,
-      status: "active",
-    })
-    .onConflictDoUpdate({
-      target: [integrations.organizationId, integrations.provider],
-      set: {
+    const [row] = await db
+      .insert(integrations)
+      .values({
+        organizationId,
+        provider: "asaas",
         accessToken: encrypt(apiKey.trim()),
-        providerAccountId: account.id,
+        providerAccountId: validation.id,
         status: "active",
-        syncError: null,
-        historySyncedAt: null,
-        updatedAt: new Date(),
-      },
-    })
-    .returning({
-      id: integrations.id,
-      organizationId: integrations.organizationId,
-      provider: integrations.provider,
-      status: integrations.status,
-      providerAccountId: integrations.providerAccountId,
-      lastSyncedAt: integrations.lastSyncedAt,
-      historySyncedAt: integrations.historySyncedAt,
-      syncError: integrations.syncError,
-      createdAt: integrations.createdAt,
-      updatedAt: integrations.updatedAt,
-    });
+      })
+      .onConflictDoUpdate({
+        target: [integrations.organizationId, integrations.provider],
+        set: {
+          accessToken: encrypt(apiKey.trim()),
+          providerAccountId: validation.id,
+          status: "active",
+          syncError: null,
+          historySyncedAt: null,
+          updatedAt: new Date(),
+        },
+      })
+      .returning({
+        id: integrations.id,
+        organizationId: integrations.organizationId,
+        provider: integrations.provider,
+        status: integrations.status,
+        providerAccountId: integrations.providerAccountId,
+        lastSyncedAt: integrations.lastSyncedAt,
+        historySyncedAt: integrations.historySyncedAt,
+        syncError: integrations.syncError,
+        createdAt: integrations.createdAt,
+        updatedAt: integrations.updatedAt,
+      });
 
-  return { ...row, hasWebhookSecret: false } as IIntegration;
+    return { ...row, hasWebhookSecret: false } as IIntegration;
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Erro ao conectar o Asaas." };
+  }
 }
