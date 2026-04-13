@@ -11,7 +11,7 @@ export function DemoDataBanner() {
 
   const { data: dataSources } = useOrgDataSources(orgId);
 
-  if (!orgId || dataSources?.hasGateway) return null;
+  if (!orgId || dataSources?.hasRealData) return null;
 
   return (
     <div className="flex items-center justify-center gap-2 border-b border-amber-500/30 bg-amber-500/15 px-4 py-1">

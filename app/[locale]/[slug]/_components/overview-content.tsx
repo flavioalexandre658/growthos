@@ -28,8 +28,7 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   const currency = organization?.currency ?? "BRL";
 
   const { data: dataSources } = useOrgDataSources(orgId);
-  const hasGateway = dataSources?.hasGateway ?? false;
-  const isDemo = !hasGateway;
+  const isDemo = !(dataSources?.hasRealData);
 
   const demoData = isDemo ? getDemoData(currency) : null;
 

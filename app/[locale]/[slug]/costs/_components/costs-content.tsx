@@ -69,7 +69,7 @@ export function CostsContent({ filter = {}, slug }: { filter?: IDateFilter; slug
   const currency = organization?.currency ?? "BRL";
 
   const { data: dataSources } = useOrgDataSources(orgId);
-  const isDemo = !dataSources?.hasGateway;
+  const isDemo = !(dataSources?.hasRealData);
   const demoData = isDemo ? getDemoData(currency) : null;
 
   const { data: summary, isLoading: summaryLoading } = useCostsSummary(orgId);

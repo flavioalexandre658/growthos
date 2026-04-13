@@ -183,7 +183,7 @@ export function TrackerContent({ filter }: TrackerContentProps) {
   const currency = organization?.currency ?? "BRL";
 
   const { data: dataSources } = useOrgDataSources(orgId);
-  const isDemo = !dataSources?.hasGateway;
+  const isDemo = !(dataSources?.hasRealData);
   const demoData = isDemo ? getDemoData(currency) : null;
 
   const initialHiddenKeys = new Set(

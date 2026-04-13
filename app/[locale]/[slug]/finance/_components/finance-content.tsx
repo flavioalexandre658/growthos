@@ -50,7 +50,7 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
   const [showExplanation, setShowExplanation] = useState(false);
 
   const { data: dataSources } = useOrgDataSources(orgId);
-  const isDemo = !dataSources?.hasGateway;
+  const isDemo = !(dataSources?.hasRealData);
   const demoData = isDemo ? getDemoData(currency) : null;
 
   const { data: integrations, isPending: integrationsLoading } = useIntegrations(orgId ?? "");

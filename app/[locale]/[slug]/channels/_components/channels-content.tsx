@@ -35,7 +35,7 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
   const currency = organization?.currency ?? "BRL";
 
   const { data: dataSources } = useOrgDataSources(orgId);
-  const isDemo = !dataSources?.hasGateway;
+  const isDemo = !(dataSources?.hasRealData);
   const demoData = isDemo ? getDemoData(currency) : null;
 
   const [search, setSearch] = useState(initialSearch ?? "");
