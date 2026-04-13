@@ -66,27 +66,37 @@ interface KiwifySubscriptionInfo {
 }
 
 interface KiwifySale {
-  order_id: string;
+  // Webhook format
+  order_id?: string;
   order_status?: string;
-  status?: string;
-  payment_method?: string | null;
   charge_amount?: number;
   product_price?: number;
+  Commissions?: { charge_amount?: number; net_amount?: number; currency?: string };
+  commissions?: { charge_amount?: number; net_amount?: number; currency?: string };
+  Customer?: KiwifyCustomer;
+  Product?: KiwifyProduct;
+  TrackingParameters?: KiwifyTrackingParameters;
+  tracking_parameters?: KiwifyTrackingParameters;
+  Subscription?: KiwifySubscriptionInfo;
+
+  // API /v1/sales format
+  id?: string;
+  reference?: string;
+  type?: string;
+  shipping?: unknown;
+
+  // Shared fields
+  status?: string;
+  payment_method?: string | null;
   net_amount?: number;
   installments?: number;
   currency?: string;
   created_at: string;
   approved_at?: string | null;
-  Customer?: KiwifyCustomer;
+  updated_at?: string | null;
   customer?: KiwifyCustomer;
-  Product?: KiwifyProduct;
   product?: KiwifyProduct;
-  TrackingParameters?: KiwifyTrackingParameters;
-  tracking_parameters?: KiwifyTrackingParameters;
-  Subscription?: KiwifySubscriptionInfo;
   subscription?: KiwifySubscriptionInfo;
-  Commissions?: { charge_amount?: number; net_amount?: number; currency?: string };
-  commissions?: { charge_amount?: number; net_amount?: number; currency?: string };
 }
 
 interface KiwifyListResponse<T> {
@@ -134,10 +144,12 @@ function isRecurringSale(sale: KiwifySale): boolean {
 }
 
 function pickGrossInCents(sale: KiwifySale): number {
-  // Kiwify charges are integer cents (BRL).
+  // Webhook format: charge_amount is in integer cents
   const charge = sale.charge_amount ?? sale.Commissions?.charge_amount ?? sale.commissions?.charge_amount;
   if (typeof charge === "number") return Math.round(charge);
   if (typeof sale.product_price === "number") return Math.round(sale.product_price);
+  // API /v1/sales format: net_amount (in cents)
+  if (typeof sale.net_amount === "number") return Math.round(sale.net_amount);
   return 0;
 }
 
@@ -156,7 +168,7 @@ function pickCustomerId(sale: KiwifySale): string {
   if (customer?.CPF || customer?.cpf || customer?.document) {
     return (customer.CPF ?? customer.cpf ?? customer.document)!;
   }
-  return sale.order_id;
+  return sale.order_id ?? sale.id ?? sale.reference ?? "unknown";
 }
 
 function pickPaidAt(sale: KiwifySale): Date {
@@ -188,6 +200,12 @@ async function fetchSalesPage(
     console.log("[kiwify-sync] API response keys:", keys, "data length:", json?.data?.length ?? "N/A");
     if (sample) {
       console.log("[kiwify-sync] First sale keys:", Object.keys(sample));
+      console.log("[kiwify-sync] First sale sample:", {
+        id: sample.id, order_id: sample.order_id, reference: sample.reference,
+        status: sample.status, net_amount: sample.net_amount,
+        charge_amount: sample.charge_amount, currency: sample.currency,
+        payment_method: sample.payment_method,
+      });
     }
   }
 
@@ -418,7 +436,8 @@ export async function processKiwifySyncJob(job: Job<SyncJobData>): Promise<{
     );
 
     const paymentMethod = mapKiwifyPaymentMethod(sale.payment_method);
-    const eventHash = kiwifyEventHash(organizationId, sale.order_id);
+    const saleId = sale.order_id ?? sale.id ?? sale.reference ?? "";
+    const eventHash = kiwifyEventHash(organizationId, saleId);
 
     if (isRecurring && subInfo?.id && !seenSubIds.has(subInfo.id)) {
       seenSubIds.add(subInfo.id);

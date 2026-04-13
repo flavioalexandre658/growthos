@@ -14,6 +14,7 @@ import { SubscriberFlowSankey } from "@/app/[locale]/[slug]/mrr/_components/subs
 import { MrrGrowthChart } from "@/app/[locale]/[slug]/mrr/_components/mrr-growth-chart";
 import { MrrMovementChart } from "@/app/[locale]/[slug]/mrr/_components/mrr-movement-chart";
 import { ActiveSubscriptionsTable } from "@/app/[locale]/[slug]/mrr/_components/active-subscriptions-table";
+import { DemoModeBanner } from "./demo-mode-banner";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
 
 interface OverviewContentProps {
@@ -43,8 +44,12 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   const effectiveMovementLoading = isDemo ? false : movementLoading;
   const effectiveGrowthLoading = isDemo ? false : growthLoading;
 
+  const slug = organization?.slug ?? "";
+
   return (
     <div className="space-y-6">
+      {isDemo && <DemoModeBanner module="dashboard" slug={slug} />}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>
