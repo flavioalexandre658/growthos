@@ -177,7 +177,7 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
 
   return (
     <div className="space-y-4">
-      {isDemo && <DemoModeBanner module="events" slug={slug} locale={locale} />}
+      {isDemo && <DemoModeBanner module="events" slug={slug} />}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">

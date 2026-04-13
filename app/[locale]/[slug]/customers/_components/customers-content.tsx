@@ -3,7 +3,6 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useLocale } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useOrgDataSources } from "@/hooks/queries/use-org-data-sources";
 import { getDemoData } from "@/lib/demo-data";
@@ -274,7 +273,6 @@ function AllCustomersList() {
 
 export function CustomersContent() {
   const t = useTranslations("customers");
-  const locale = useLocale();
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const slug = organization?.slug ?? "";
@@ -284,7 +282,7 @@ export function CustomersContent() {
 
   return (
     <div className="space-y-4">
-      {isDemo && <DemoModeBanner module="customers" slug={slug} locale={locale} />}
+      {isDemo && <DemoModeBanner module="customers" slug={slug} />}
 
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>

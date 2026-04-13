@@ -17,12 +17,11 @@ interface DemoModeBannerProps {
     | "tracker"
     | "pages";
   slug: string;
-  locale: string;
 }
 
 const TRACKER_MODULES = new Set(["events", "channels", "tracker", "pages"]);
 
-export function DemoModeBanner({ module, slug, locale }: DemoModeBannerProps) {
+export function DemoModeBanner({ module, slug }: DemoModeBannerProps) {
   const t = useTranslations("dashboard.demoBanner");
 
   return (

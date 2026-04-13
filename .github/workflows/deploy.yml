@@ -4,24 +4,16 @@ on:
   push:
     branches: [main]
 
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Copy code to Droplet
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "."
-          target: "/opt/groware-src"
-          rm: true
-
-      - name: Build and deploy on Droplet
-        uses: appleboy/ssh-action@v1
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
@@ -29,8 +21,15 @@ jobs:
           command_timeout: 30m
           script: |
             set -e
-            set -a; source /opt/groware/.env; set +a
+
+            echo "🚀 Deploy Groware PRODUÇÃO"
             cd /opt/groware-src
+
+            git fetch origin main
+            git reset --hard origin/main
+
+            set -a; source /opt/groware/.env; set +a
+
             docker build \
               --build-arg NEXT_PUBLIC_API_URL="$NEXT_PUBLIC_API_URL" \
               --build-arg NEXT_PUBLIC_GTM_ID="$NEXT_PUBLIC_GTM_ID" \
@@ -40,6 +39,9 @@ jobs:
               --build-arg NEXTAUTH_SECRET="$NEXTAUTH_SECRET" \
               --build-arg NEXTAUTH_URL="$NEXTAUTH_URL" \
               -t groware:latest .
+
             cd /opt/groware
-            docker compose up -d --remove-orphans
+            docker compose up -d --force-recreate app
             docker image prune -f
+
+            echo "✅ Deploy concluído"

@@ -15,6 +15,7 @@ import { DemoModeBanner } from "@/app/[locale]/[slug]/_components/demo-mode-bann
 import { useCostsSummary } from "@/hooks/queries/use-costs-summary";
 import { InlineBanner } from "@/components/ui/welcome-state";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
+import type { ICostsSummary } from "@/interfaces/cost.interface";
 
 function CostsPageSkeleton() {
   return (
@@ -65,7 +66,6 @@ export function CostsContent({ filter = {}, slug }: { filter?: IDateFilter; slug
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const effectiveSlug = slug ?? organization?.slug ?? "";
-  const locale = organization?.locale ?? "pt-BR";
   const currency = organization?.currency ?? "BRL";
 
   const { data: dataSources } = useOrgDataSources(orgId);
@@ -106,9 +106,9 @@ export function CostsContent({ filter = {}, slug }: { filter?: IDateFilter; slug
         </p>
       </div>
 
-      {isDemo && <DemoModeBanner module="costs" slug={effectiveSlug} locale={locale} />}
+      {isDemo && <DemoModeBanner module="costs" slug={effectiveSlug} />}
 
-      <CostsImpactCards data={effectiveSummary as any} isLoading={effectiveSummaryLoading} />
+      <CostsImpactCards data={effectiveSummary as ICostsSummary | undefined} isLoading={effectiveSummaryLoading} />
 
       {hasNoCosts && !effectiveSummaryLoading && !isDemo && (
         <InlineBanner
@@ -118,7 +118,7 @@ export function CostsContent({ filter = {}, slug }: { filter?: IDateFilter; slug
         />
       )}
 
-      <CostCompositionChart data={effectiveSummary as any} isLoading={effectiveSummaryLoading} />
+      <CostCompositionChart data={effectiveSummary as ICostsSummary | undefined} isLoading={effectiveSummaryLoading} />
 
       <Tabs defaultValue="fixed" className="w-full">
         <TabsList className="bg-zinc-900 border border-zinc-800 h-9 mb-4">

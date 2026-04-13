@@ -27,6 +27,8 @@ import type { StepVisibilityToggleProps } from "@/components/ui/step-visibility-
 import type {
   IDateFilter,
   IGenericFunnelData,
+  ISourceDistribution,
+  ITopProduct,
 } from "@/interfaces/dashboard.interface";
 
 interface TrackerContentProps {
@@ -208,7 +210,7 @@ export function TrackerContent({ filter }: TrackerContentProps) {
   const { data: atRiskData } = useAtRiskCustomersCount(orgId ?? "");
   const { mutate: createAlerts } = useCreateDashboardAlerts(orgId ?? "");
 
-  const effectiveFunnel = isDemo ? (demoData?.funnel as any) : funnel;
+  const effectiveFunnel = isDemo ? (demoData?.funnel as IGenericFunnelData | undefined) : funnel;
   const effectiveFunnelLoading = isDemo ? false : funnelLoading;
   const effectiveDaily = isDemo ? demoData?.daily : dailyResult?.rows;
   const effectiveDailyLoading = isDemo ? false : dailyLoading;
@@ -218,10 +220,10 @@ export function TrackerContent({ filter }: TrackerContentProps) {
   const effectiveTopProductsLoading = isDemo ? false : topProductsLoading;
 
   const allSteps: StepOption[] = (effectiveFunnel?.steps ?? [])
-    .filter((s: any) => s.key !== "pageview")
-    .map((s: any) => ({ eventType: s.key, label: s.label }));
+    .filter((s) => s.key !== "pageview")
+    .map((s) => ({ eventType: s.key, label: s.label }));
 
-  const stepMeta = effectiveFunnel?.steps.map((s: any) => ({ key: s.key, label: s.label })) ?? [];
+  const stepMeta = effectiveFunnel?.steps.map((s) => ({ key: s.key, label: s.label })) ?? [];
 
   const [bannerDismissed, setBannerDismissed] = useState(() => {
     try {
@@ -234,7 +236,7 @@ export function TrackerContent({ filter }: TrackerContentProps) {
   const hasNoData =
     !effectiveFunnelLoading &&
     effectiveFunnel !== undefined &&
-    (effectiveFunnel?.steps ?? []).every((s: any) => s.value === 0) &&
+    (effectiveFunnel?.steps ?? []).every((s) => s.value === 0) &&
     (!effectiveFunnel?.revenue || effectiveFunnel.revenue === 0);
 
   const alertsDispatchedRef = useRef(false);
@@ -270,7 +272,7 @@ export function TrackerContent({ filter }: TrackerContentProps) {
         </div>
       </div>
 
-      {isDemo && <DemoModeBanner module="tracker" slug={slug} locale={locale} />}
+      {isDemo && <DemoModeBanner module="tracker" slug={slug} />}
 
       {hasNoData && !bannerDismissed && !isDemo && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/40 px-4 py-3 relative">
@@ -315,7 +317,7 @@ export function TrackerContent({ filter }: TrackerContentProps) {
           isLoading={effectiveFunnelLoading}
           hiddenKeys={hiddenKeys}
         />
-        <SourceChart data={effectiveSource as any} isLoading={effectiveSourceLoading} />
+        <SourceChart data={effectiveSource as ISourceDistribution | null | undefined} isLoading={effectiveSourceLoading} />
       </div>
 
       <DailyChart
@@ -326,7 +328,7 @@ export function TrackerContent({ filter }: TrackerContentProps) {
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <TopProducts data={effectiveTopProducts as any} isLoading={effectiveTopProductsLoading} />
+        <TopProducts data={effectiveTopProducts as ITopProduct[] | undefined} isLoading={effectiveTopProductsLoading} />
         <TopCustomersCard />
       </div>
     </div>

@@ -9,7 +9,7 @@ import { useSubscriptions } from "@/hooks/queries/use-subscriptions";
 import { useDebounce } from "@/hooks/use-debounce";
 import { exportSubscriptions } from "@/actions/subscriptions/export-subscriptions.action";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
-import type { ISubscriptionParams } from "@/interfaces/subscription.interface";
+import type { ISubscriptionParams, ISubscriptionListItem } from "@/interfaces/subscription.interface";
 import { SubscriptionsFilters } from "./subscriptions-filters";
 import { SubscriptionsTable } from "./subscriptions-table";
 import { DemoModeBanner } from "@/app/[locale]/[slug]/_components/demo-mode-banner";
@@ -32,7 +32,6 @@ export function SubscriptionsContent({ filter }: SubscriptionsContentProps) {
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const slug = organization?.slug ?? "";
-  const orgLocale = organization?.locale ?? "pt-BR";
   const currency = organization?.currency ?? "BRL";
 
   const { data: dataSources } = useOrgDataSources(orgId);
@@ -154,7 +153,7 @@ export function SubscriptionsContent({ filter }: SubscriptionsContentProps) {
 
   return (
     <div className="space-y-4">
-      {isDemo && <DemoModeBanner module="subscriptions" slug={slug} locale={orgLocale} />}
+      {isDemo && <DemoModeBanner module="subscriptions" slug={slug} />}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
@@ -226,7 +225,7 @@ export function SubscriptionsContent({ filter }: SubscriptionsContentProps) {
       </div>
 
       <SubscriptionsTable
-        data={items as any}
+        data={items as ISubscriptionListItem[]}
         pagination={pagination}
         isLoading={effectiveLoading}
         onPageChange={setPage}

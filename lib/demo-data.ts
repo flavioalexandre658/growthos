@@ -347,7 +347,6 @@ function buildActiveSubscriptions(isBrl: boolean): IActiveSubscription[] {
 
 function buildEvents(isBrl: boolean): DemoEvent[] {
   const currency = isBrl ? "BRL" : "USD";
-  const scale = isBrl ? 1 : 0.2;
   const plans = isBrl ? BRL_PLANS : USD_PLANS;
   const events: DemoEvent[] = [];
 

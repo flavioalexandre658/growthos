@@ -2,7 +2,6 @@
 
 import { Suspense, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useLocale } from "next-intl";
 import { useFinancial } from "@/hooks/queries/use-financial";
 import { useDaily } from "@/hooks/queries/use-daily";
 import { useOrganization } from "@/components/providers/organization-provider";
@@ -45,7 +44,6 @@ const PL_STEP_KEYS = [
 export function FinanceContent({ filter, slug }: FinanceContentProps) {
   const t = useTranslations("finance.financeContent");
   const tTour = useTranslations("tour.welcome.finance");
-  const locale = useLocale();
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const currency = organization?.currency ?? "BRL";
@@ -106,7 +104,7 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
         </Suspense>
       </div>
 
-      {isDemo && <DemoModeBanner module="finance" slug={slug} locale={locale} />}
+      {isDemo && <DemoModeBanner module="finance" slug={slug} />}
 
       {hasNoPayments && !hasActiveIntegration && !isDemo ? (
         <WelcomeState

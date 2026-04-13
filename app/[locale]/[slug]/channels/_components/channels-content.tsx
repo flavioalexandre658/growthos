@@ -7,7 +7,7 @@ import { useDebounce } from "@/hooks/use-debounce";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useOrgDataSources } from "@/hooks/queries/use-org-data-sources";
 import { getDemoData } from "@/lib/demo-data";
-import { IDateFilter, IChannelParams, OrderDirection } from "@/interfaces/dashboard.interface";
+import { IDateFilter, IChannelParams, IChannelsResult, OrderDirection } from "@/interfaces/dashboard.interface";
 import { PeriodFilter } from "@/app/[locale]/[slug]/_components/period-filter";
 import { DemoModeBanner } from "@/app/[locale]/[slug]/_components/demo-mode-banner";
 import { ChannelsTreemap } from "./channels-treemap";
@@ -32,7 +32,6 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const slug = organization?.slug ?? "";
-  const locale = organization?.locale ?? "pt-BR";
   const currency = organization?.currency ?? "BRL";
 
   const { data: dataSources } = useOrgDataSources(orgId);
@@ -114,7 +113,7 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
         </div>
       </div>
 
-      {isDemo && <DemoModeBanner module="channels" slug={slug} locale={locale} />}
+      {isDemo && <DemoModeBanner module="channels" slug={slug} />}
 
       {hasNoData && !isDemo ? (
         <WelcomeState
@@ -127,7 +126,7 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
         />
       ) : (
         <>
-          <ChannelsKpiStrip data={effectiveResp as any} isLoading={effectiveLoading} />
+          <ChannelsKpiStrip data={effectiveResp as IChannelsResult | undefined} isLoading={effectiveLoading} />
 
           {investmentGroups.length > 0 && (
             <ChannelsInvestmentKpis groups={investmentGroups} />

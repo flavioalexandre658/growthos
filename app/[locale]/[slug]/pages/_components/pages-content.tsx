@@ -11,6 +11,8 @@ import {
   IDateFilter,
   ILandingPageData,
   ILandingPageParams,
+  ILandingPagesResult,
+  IPageScatterPoint,
   OrderDirection,
 } from "@/interfaces/dashboard.interface";
 import { PeriodFilter } from "@/app/[locale]/[slug]/_components/period-filter";
@@ -191,7 +193,6 @@ export function PagesContent({ filter }: PagesContentProps) {
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const slug = organization?.slug ?? "";
-  const locale = organization?.locale ?? "pt-BR";
   const currency = organization?.currency ?? "BRL";
 
   const { data: dataSources } = useOrgDataSources(orgId);
@@ -266,7 +267,7 @@ export function PagesContent({ filter }: PagesContentProps) {
         </div>
       </div>
 
-      {isDemo && <DemoModeBanner module="pages" slug={slug} locale={locale} />}
+      {isDemo && <DemoModeBanner module="pages" slug={slug} />}
 
       {hasNoData && !isDemo ? (
         <WelcomeState
@@ -279,15 +280,15 @@ export function PagesContent({ filter }: PagesContentProps) {
         />
       ) : (
         <>
-          <PagesKpiStrip data={effectiveResp as any} isLoading={effectiveLoading} />
+          <PagesKpiStrip data={effectiveResp as ILandingPagesResult | undefined} isLoading={effectiveLoading} />
 
           <PagesScatterPlot
-            data={effectiveResp?.scatterData as any}
+            data={effectiveResp?.scatterData as IPageScatterPoint[] | undefined}
             isLoading={effectiveLoading}
           />
 
           <PagesTopCards
-            data={allData as any}
+            data={allData}
             stepMeta={stepMeta}
             isLoading={effectiveLoading}
           />
