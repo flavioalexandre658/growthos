@@ -20,6 +20,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { LandingNav } from "./landing-nav";
 import { LandingCtaForm } from "./landing-cta-form";
 import { LandingFooter } from "./landing-footer";
+import Image from "next/image";
 
 const featureIcons = [
   IconLayoutDashboard,
@@ -742,7 +743,7 @@ function IntegrationsSection() {
       </p>
 
       <div className="mt-12 sm:mt-16 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        {items.map(({ name, desc, status }, idx) => {
+        {items.map(({ name, desc, status }) => {
           const SpecialLogo = specialLogos[name];
           const gatewayImg = gatewayImageMap[name];
           return (
@@ -754,7 +755,7 @@ function IntegrationsSection() {
                 {SpecialLogo ? (
                   <SpecialLogo />
                 ) : gatewayImg ? (
-                  <img src={gatewayImg} alt={name} width={28} height={28} className="object-contain" />
+                  <Image src={gatewayImg} alt={name} width={28} height={28} className="object-contain" />
                 ) : (
                   <span className="text-zinc-500 text-lg font-bold">{name.charAt(0)}</span>
                 )}
