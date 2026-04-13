@@ -68,7 +68,7 @@
       },
       {
         "title": "2. Service description",
-        "content": "Groware is a growth and revenue analytics platform for SaaS companies and digital businesses. The service includes MRR dashboards, acquisition channel analysis, P&L, event tracking and AI-powered analysis."
+        "content": "Groware is a growth and revenue analytics platform for digital businesses — SaaS, digital products, e-commerce and creators. The service includes MRR dashboards, acquisition channel analysis, P&L, event tracking and AI-powered analysis."
       },
       {
         "title": "3. Beta period",
@@ -129,7 +129,7 @@
           "Event table with debug and deduplication alerts",
           "Active, trial and canceled subscription management",
           "Period comparison with AI analysis",
-          "Native Stripe integration (webhooks + full history sync)",
+          "Native integration with 14 payment gateways (Stripe, Kiwify, Hotmart, Asaas, PayPal, Mercado Pago and more)",
           "AI analysis via Google Gemini 1.5 Flash with streaming",
           "tracker.js — tracking script (2.1 kB, zero dependencies)",
           "Shareable public page per organization",

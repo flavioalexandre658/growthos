@@ -68,7 +68,7 @@
       },
       {
         "title": "2. Descrição do serviço",
-        "content": "O Groware é uma plataforma de analytics de crescimento e receita para empresas SaaS e negócios digitais. O serviço inclui dashboards de MRR, análise de canais de aquisição, P&L, rastreamento de eventos e análise com inteligência artificial."
+        "content": "O Groware é uma plataforma de analytics de crescimento e receita para negócios digitais — SaaS, infoprodutos, e-commerce e creators. O serviço inclui dashboards de MRR, análise de canais de aquisição, P&L, rastreamento de eventos e análise com inteligência artificial."
       },
       {
         "title": "3. Período de beta",
@@ -129,7 +129,7 @@
           "Tabela de eventos com debug e alertas de deduplicação",
           "Gestão de assinaturas ativas, em trial e canceladas",
           "Comparativo de períodos com análise por IA",
-          "Integração nativa com Stripe (webhooks + sync de histórico completo)",
+          "Integração nativa com 14 gateways de pagamento (Stripe, Kiwify, Hotmart, Asaas, PayPal, Mercado Pago e mais)",
           "Análise com IA via Google Gemini 1.5 Flash com streaming",
           "tracker.js — script de rastreamento (2,1 kB, zero dependências)",
           "Página pública compartilhável por organização",

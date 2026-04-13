@@ -10,6 +10,7 @@ export function LandingFooter() {
     { label: t("links.changelog"), href: "/changelog" as const },
     { label: t("links.privacy"), href: "/privacy" as const },
     { label: t("links.terms"), href: "/terms" as const },
+    { label: t("links.blog"), href: "/blog" as const },
   ];
 
   return (

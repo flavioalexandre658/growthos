@@ -1,0 +1,168 @@
+---
+title: "Como Acompanhar MRR no Asaas"
+description: "Use o Asaas para cobranças recorrentes? Aprenda a acompanhar seu MRR real, calcular churn e ver métricas de crescimento que o painel do Asaas não mostra."
+date: "2026-04-13"
+slug: "mrr-asaas"
+keywords: ["mrr asaas", "asaas recorrência", "asaas métricas", "cobrança recorrente asaas", "asaas dashboard"]
+author: "Groware"
+---
+
+# Como Acompanhar MRR no Asaas
+
+O Asaas se tornou uma das plataformas preferidas de SaaS e prestadores de serviço no Brasil para cobranças recorrentes. Com boleto, Pix e cartão integrados, é uma solução robusta para quem precisa cobrar clientes de forma automatizada.
+
+Mas quando você precisa saber se seu negócio está realmente crescendo — não apenas cobrando — o painel do Asaas mostra o básico. MRR segmentado, churn rate, LTV e NRR ficam por sua conta calcular.
+
+Se você usa o Asaas para cobranças recorrentes, este guia mostra como acompanhar as métricas que transformam dados de cobrança em inteligência de negócio.
+
+## O Asaas Como Plataforma de Cobrança
+
+O Asaas é excelente no que faz:
+
+- **Cobranças recorrentes** automáticas via boleto, Pix e cartão
+- **Régua de cobrança** para inadimplentes
+- **Split de pagamento** para divisões automáticas
+- **Nota fiscal** integrada
+- **API completa** para integração com sistemas
+
+É uma infraestrutura de pagamento sólida. Mas infraestrutura de pagamento não é a mesma coisa que analytics de negócio. E essa diferença importa muito quando você precisa tomar decisões estratégicas.
+
+## O Que o Asaas Mostra vs. O Que Você Precisa
+
+### O que o Asaas mostra:
+- Total recebido no período
+- Cobranças pagas, pendentes e vencidas
+- Lista de clientes com status de assinatura
+- Relatórios financeiros (entradas e saídas)
+
+### O que você precisa para gerenciar crescimento:
+- MRR decomposto (new, expansion, contraction, churn)
+- Churn rate mensal com tendência
+- LTV por plano ou segmento de cliente
+- NRR para saber se a base expande ou contrai
+- Receita líquida após taxas
+
+A lacuna entre os dois é exatamente onde os problemas se escondem.
+
+## Calculando Seu MRR no Asaas
+
+### Passo 1: Identifique Seus Assinantes Ativos
+
+No Asaas, vá em Cobranças > Assinaturas e filtre por status "Ativa". Conte o total e anote o valor de cada assinatura.
+
+Exemplo:
+
+| Plano | Assinantes | Valor Mensal |
+|-------|-----------|-------------|
+| Starter | 85 | R$ 97 |
+| Business | 42 | R$ 247 |
+| Enterprise | 8 | R$ 997 |
+
+### Passo 2: Calcule o MRR
+
+**MRR = (85 × R$ 97) + (42 × R$ 247) + (8 × R$ 997)**
+**MRR = R$ 8.245 + R$ 10.374 + R$ 7.976 = R$ 26.595**
+
+### Passo 3: Decomponha o MRR
+
+Para entender se o MRR está crescendo de forma saudável, decomponha:
+
+**Exemplo do mês:**
+- 12 novos clientes Starter + 3 novos Business = +R$ 1.905 (New MRR)
+- 5 upgrades de Starter para Business = +R$ 750 (Expansion MRR)
+- 2 downgrades de Business para Starter = -R$ 300 (Contraction MRR)
+- 7 cancelamentos Starter + 2 cancelamentos Business = -R$ 1.173 (Churned MRR)
+
+**Net New MRR = R$ 1.905 + R$ 750 - R$ 300 - R$ 1.173 = +R$ 1.182**
+
+O MRR cresceu R$ 1.182 no mês, ou **4,6%**. Isso é um crescimento saudável.
+
+## O Desafio Específico do Asaas: Boleto e Pix
+
+Um desafio único do Asaas que não existe em plataformas como Hotmart e Kiwify é a alta proporção de cobranças via **boleto e Pix**.
+
+Por que isso complica?
+
+### Inadimplência Mais Alta
+Boleto tem taxa de inadimplência muito maior que cartão de crédito. Enquanto cartão tem falha de pagamento em torno de 3-5% das cobranças, boleto pode chegar a 15-25% de não pagamento.
+
+Isso significa que seu MRR "teórico" (baseado em assinantes ativos) pode ser significativamente diferente do MRR "efetivo" (baseado em quem realmente pagou).
+
+### Churn Involuntário Elevado
+Clientes que não pagam o boleto por 2-3 meses seguidos eventualmente são cancelados. Mas diferente do churn por cartão (onde a cobrança falha e você sabe imediatamente), o churn por boleto é um processo lento que infla artificialmente a base de "ativos".
+
+### Como Ajustar
+
+Calcule dois MRRs:
+- **MRR Contratado**: Todos os assinantes com assinatura ativa
+- **MRR Efetivo**: Apenas assinantes que pagaram a última cobrança
+
+Se a diferença for grande (mais de 10%), você tem um problema de inadimplência que precisa ser resolvido com melhorias na régua de cobrança ou migração de clientes para cartão.
+
+## Métricas Essenciais para Quem Usa Asaas
+
+### 1. Taxa de Pagamento por Método
+
+Acompanhe qual método de pagamento tem melhor taxa de recebimento:
+
+| Método | Cobranças Emitidas | Pagas | Taxa |
+|--------|-------------------|-------|------|
+| Cartão de crédito | 95 | 91 | 95,8% |
+| Pix | 45 | 38 | 84,4% |
+| Boleto | 60 | 42 | 70,0% |
+
+Com esses dados, você pode criar incentivos para clientes migrarem para cartão (desconto, benefício extra) e melhorar a taxa de recebimento global.
+
+### 2. Churn por Tipo (Voluntário vs. Inadimplência)
+
+Separe cancelamentos em:
+- **Voluntário**: Cliente solicitou cancelamento ativamente
+- **Inadimplência**: Não pagou por X meses e foi cancelado automaticamente
+
+As estratégias de retenção são completamente diferentes para cada tipo. Churn voluntário exige melhoria de produto. Inadimplência exige melhoria de cobrança.
+
+### 3. Days Sales Outstanding (DSO)
+
+Quanto tempo em média seus clientes levam para pagar? Se a cobrança é emitida no dia 1 e o cliente paga no dia 18, seu DSO é 18 dias. Um DSO alto impacta seu fluxo de caixa mesmo que o MRR seja saudável.
+
+### 4. Cohort de Retenção
+
+Agrupe clientes por mês de entrada e acompanhe quantos permanecem ao longo do tempo:
+
+| Coorte | Mês 1 | Mês 3 | Mês 6 | Mês 12 |
+|--------|-------|-------|-------|--------|
+| Jan/26 | 100% | 78% | 62% | 48% |
+| Fev/26 | 100% | 82% | 68% | — |
+| Mar/26 | 100% | 85% | — | — |
+
+Se a retenção de março é melhor que janeiro, algo que você mudou (onboarding, produto, público) está funcionando.
+
+## Conectando Asaas a Um Dashboard de Analytics
+
+O Asaas tem uma API excelente — uma das melhores entre as plataformas brasileiras. Isso facilita a integração com ferramentas de analytics externas.
+
+A Groware se conecta ao Asaas via API e transforma seus dados de cobrança em métricas de negócio:
+
+- **MRR contratado e efetivo** calculados automaticamente
+- **Churn segmentado** por tipo (voluntário vs. inadimplência) e por método de pagamento
+- **LTV** ajustado pela taxa de recebimento real
+- **NRR** considerando upgrades, downgrades e cancelamentos
+- **Receita líquida** descontando taxas do Asaas
+
+Se você também usa outras plataformas (Hotmart, Kiwify, Stripe), a Groware consolida tudo em um único dashboard. Isso é especialmente útil para negócios que usam o Asaas para clientes B2B e Kiwify/Hotmart para B2C.
+
+## Quando o MRR no Asaas Engana
+
+Cuidado com estes cenários:
+
+**MRR inflado por inadimplentes**: Se você tem 200 assinantes "ativos" mas 30 não pagam há 2 meses, seu MRR real é 15% menor do que o número de assinantes sugere.
+
+**Sazonalidade de boleto**: Em janeiro e julho, a taxa de pagamento de boletos cai significativamente. Se seu MRR parece cair nesses meses, pode ser inadimplência temporária, não churn real.
+
+**Upgrades via nova assinatura**: Se um cliente cancela o plano Starter e cria uma nova assinatura Business, o Asaas registra como cancelamento + nova venda, não como upgrade. Isso infla tanto o churn quanto o New MRR.
+
+## Conclusão
+
+O Asaas é uma plataforma poderosa para cobranças recorrentes no Brasil. Mas a distância entre processar cobranças e gerenciar crescimento é grande.
+
+Se você depende do Asaas para recorrência, invista em acompanhar MRR real (não apenas contratado), churn segmentado por tipo e método de pagamento, e LTV ajustado pela taxa de recebimento. Esses números mostram a diferença entre um negócio que cobra e um negócio que cresce.

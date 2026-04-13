@@ -14,7 +14,7 @@ const translations = {
     stepsTitle: "PRÓXIMOS PASSOS",
     steps: [
       { n: "1", title: "Instale o tracker", desc: "Adicione o script no seu site para começar a capturar eventos automaticamente." },
-      { n: "2", title: "Conecte o Stripe", desc: "Sincronize assinaturas e pagamentos para ter MRR, churn e ARPU em tempo real." },
+      { n: "2", title: "Conecte seu gateway", desc: "Sincronize assinaturas e pagamentos para ter MRR, churn e ARPU em tempo real." },
       { n: "3", title: "Configure o funil", desc: "Defina os passos do seu funil para medir conversão de ponta a ponta." },
     ],
     cta: "Ir para o dashboard",
@@ -28,7 +28,7 @@ const translations = {
     stepsTitle: "NEXT STEPS",
     steps: [
       { n: "1", title: "Install the tracker", desc: "Add the script to your site to start capturing events automatically." },
-      { n: "2", title: "Connect Stripe", desc: "Sync subscriptions and payments to get MRR, churn, and ARPU in real time." },
+      { n: "2", title: "Connect your gateway", desc: "Sync subscriptions and payments to get MRR, churn, and ARPU in real time." },
       { n: "3", title: "Set up your funnel", desc: "Define your funnel steps to measure end-to-end conversion." },
     ],
     cta: "Go to dashboard",

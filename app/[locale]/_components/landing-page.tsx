@@ -35,82 +35,22 @@ const featureIcons = [
 
 const aiFeatureIcons = [IconSearch, IconTrendingUp, IconBolt];
 
-function StripeLogo() {
-  return (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="#635BFF">
-      <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z" />
-    </svg>
-  );
-}
-
-function AsaasLogo() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
-      <rect width="24" height="24" rx="6" fill="#0066CC" />
-      <text
-        x="12"
-        y="17"
-        textAnchor="middle"
-        fontFamily="sans-serif"
-        fontWeight="800"
-        fontSize="13"
-        fill="white"
-      >
-        A
-      </text>
-    </svg>
-  );
-}
-
-function KiwifyLogo() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
-      <rect width="24" height="24" rx="6" fill="#7C3AED" />
-      <text
-        x="12"
-        y="17"
-        textAnchor="middle"
-        fontFamily="sans-serif"
-        fontWeight="800"
-        fontSize="13"
-        fill="white"
-      >
-        K
-      </text>
-    </svg>
-  );
-}
-
-function HotmartLogo() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-      <rect width="24" height="24" rx="6" fill="#FF5000" />
-      <path
-        d="M12 4c0 0-5 5-5 9a5 5 0 0010 0c0-2-1-3.5-2-4.5 0 2-1 3.5-2 4 0-3.5-1-6.5-1-8.5z"
-        fill="white"
-      />
-    </svg>
-  );
-}
-
-function MercadoPagoLogo() {
-  return (
-    <svg viewBox="0 0 24 24" width="22" height="22">
-      <rect width="24" height="24" rx="6" fill="#009EE3" />
-      <text
-        x="12"
-        y="16"
-        textAnchor="middle"
-        fontFamily="sans-serif"
-        fontWeight="800"
-        fontSize="8.5"
-        fill="white"
-      >
-        MP
-      </text>
-    </svg>
-  );
-}
+const gatewayImageMap: Record<string, string> = {
+  Stripe: "/assets/images/gateways/stripe.png",
+  Asaas: "/assets/images/gateways/asaas.png",
+  Kiwify: "/assets/images/gateways/kiwify.png",
+  Hotmart: "/assets/images/gateways/hotmart.png",
+  "Mercado Pago": "/assets/images/gateways/mercadopago.png",
+  "Pagar.me": "/assets/images/gateways/pagarme.png",
+  Monetizze: "/assets/images/gateways/monetizze.png",
+  PagBank: "/assets/images/gateways/pagbank.png",
+  Guru: "/assets/images/gateways/guru.png",
+  PayPal: "/assets/images/gateways/paypal.png",
+  Eduzz: "/assets/images/gateways/eduzz.png",
+  Cakto: "/assets/images/gateways/cakto.png",
+  Kirvano: "/assets/images/gateways/kirvano.png",
+  "Abacate Pay": "/assets/images/gateways/abacatepay.png",
+};
 
 function GeminiLogo() {
   return (
@@ -139,26 +79,9 @@ function GeminiLogo() {
 function TrackerLogo() {
   return (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-      <path
-        d="M8 8L4 12L8 16"
-        stroke="#10b981"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M16 8L20 12L16 16"
-        stroke="#10b981"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M13 6L11 18"
-        stroke="#6366f1"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
+      <path d="M8 8L4 12L8 16" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16 8L20 12L16 16" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M13 6L11 18" stroke="#6366f1" strokeWidth="2" strokeLinecap="round" />
     </svg>
   );
 }
@@ -166,41 +89,18 @@ function TrackerLogo() {
 function RestApiLogo() {
   return (
     <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
-      <rect
-        width="24"
-        height="24"
-        rx="6"
-        fill="#18181b"
-        stroke="#3f3f46"
-        strokeWidth="1"
-      />
-      <path
-        d="M5 12L8 9M8 9L5 6M8 9H12"
-        stroke="#a1a1aa"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M12 15H19"
-        stroke="#6366f1"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
+      <rect width="24" height="24" rx="6" fill="#18181b" stroke="#3f3f46" strokeWidth="1" />
+      <path d="M5 12L8 9M8 9L5 6M8 9H12" stroke="#a1a1aa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 15H19" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }
 
-const integrationLogos = [
-  StripeLogo,
-  AsaasLogo,
-  KiwifyLogo,
-  HotmartLogo,
-  MercadoPagoLogo,
-  TrackerLogo,
-  GeminiLogo,
-  RestApiLogo,
-];
+const specialLogos: Record<string, React.ComponentType> = {
+  "tracker.js": TrackerLogo,
+  "Gemini AI": GeminiLogo,
+  "REST API": RestApiLogo,
+};
 
 function HeroMockup() {
   const t = useTranslations("landing.hero");
@@ -843,14 +743,21 @@ function IntegrationsSection() {
 
       <div className="mt-12 sm:mt-16 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         {items.map(({ name, desc, status }, idx) => {
-          const Logo = integrationLogos[idx];
+          const SpecialLogo = specialLogos[name];
+          const gatewayImg = gatewayImageMap[name];
           return (
             <div
               key={name}
               className="bg-zinc-900/40 border border-zinc-800 rounded-2xl p-5 sm:p-6 flex flex-col gap-3 hover:border-indigo-500/25 hover:shadow-[0_8px_32px_rgba(79,70,229,0.1)] transition-all"
             >
-              <div className="w-11 h-11 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center">
-                <Logo />
+              <div className="w-11 h-11 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center overflow-hidden">
+                {SpecialLogo ? (
+                  <SpecialLogo />
+                ) : gatewayImg ? (
+                  <img src={gatewayImg} alt={name} width={28} height={28} className="object-contain" />
+                ) : (
+                  <span className="text-zinc-500 text-lg font-bold">{name.charAt(0)}</span>
+                )}
               </div>
               <div>
                 <h3 className="text-sm sm:text-base font-semibold tracking-tight">

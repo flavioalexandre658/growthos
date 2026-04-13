@@ -29,6 +29,7 @@ export function LandingNav() {
           { label: t("integrations"), href: "#integracoes" },
           { label: t("ai"), href: "#ia" },
           { label: t("docs"), href: "/docs" },
+          { label: t("blog"), href: "/blog" },
         ].map(({ label, href }) => (
           <a
             key={href}

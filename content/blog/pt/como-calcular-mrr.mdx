@@ -1,0 +1,115 @@
+---
+title: "Como Calcular o MRR do Seu Negócio Digital"
+description: "Aprenda a calcular o MRR (Receita Recorrente Mensal) do seu infoproduto com exemplos práticos usando Hotmart e Kiwify. Fórmula completa e erros comuns."
+date: "2026-04-13"
+slug: "como-calcular-mrr"
+keywords: ["como calcular mrr", "mrr infoproduto", "receita recorrente mensal", "mrr hotmart", "mrr kiwify"]
+author: "Groware"
+---
+
+# Como Calcular o MRR do Seu Negócio Digital
+
+Se você vende assinaturas, mentorias mensais ou qualquer produto recorrente no Hotmart, Kiwify ou outra plataforma, existe um número que deveria estar no topo do seu dashboard todos os dias: o **MRR** (Monthly Recurring Revenue), ou **Receita Recorrente Mensal**.
+
+O problema é que a maioria das plataformas brasileiras não calcula esse número pra você. Elas mostram faturamento bruto, número de vendas e pouco mais. Isso faz com que muitos infoprodutores tomem decisões baseadas em dados incompletos.
+
+Neste artigo, você vai aprender exatamente como calcular o MRR, entender os erros mais comuns e ver exemplos práticos com números reais.
+
+## O Que É MRR e Por Que Ele Importa
+
+MRR é a soma de toda a receita recorrente que entra no seu negócio todo mês, normalizada para um período mensal. Diferente do faturamento bruto, o MRR exclui vendas únicas e considera apenas a receita previsível.
+
+Por que isso importa? Porque o faturamento bruto é enganoso. Imagine que você fez R$ 50.000 no mês, mas R$ 35.000 vieram de um lançamento pontual. Seu negócio recorrente na verdade gera R$ 15.000/mês. Se o lançamento não se repetir, sua receita real é muito menor do que parece.
+
+O MRR te dá a **verdade** sobre a saúde do seu negócio.
+
+## A Fórmula do MRR
+
+A fórmula básica é simples:
+
+**MRR = Número de assinantes ativos × Valor médio da assinatura mensal**
+
+Se você tem 200 assinantes pagando R$ 97/mês, seu MRR é:
+
+**200 × R$ 97 = R$ 19.400**
+
+Mas na prática, poucos negócios têm um único plano com um único preço. É aí que a coisa complica.
+
+### MRR com Múltiplos Planos
+
+Se você tem planos diferentes, o cálculo correto é somar o MRR de cada plano:
+
+| Plano | Assinantes | Preço Mensal | MRR do Plano |
+|-------|-----------|-------------|-------------|
+| Básico | 150 | R$ 47 | R$ 7.050 |
+| Pro | 80 | R$ 97 | R$ 7.760 |
+| Premium | 25 | R$ 197 | R$ 4.925 |
+| **Total** | **255** | — | **R$ 19.735** |
+
+### MRR com Planos Anuais
+
+Aqui é onde a maioria erra. Se você vendeu um plano anual de R$ 997, **não** pode contar R$ 997 como MRR. O correto é dividir pelo número de meses:
+
+**R$ 997 ÷ 12 = R$ 83,08 de MRR por assinante anual**
+
+Misturar receita anual com mensal no mesmo número é o erro mais comum que vemos em infoprodutores tentando calcular MRR manualmente.
+
+## Os 4 Componentes do MRR
+
+Para acompanhar o MRR de verdade, você precisa entender seus componentes:
+
+### New MRR (Novo MRR)
+Receita de novos assinantes que entraram no mês. Se 30 pessoas novas assinaram o plano de R$ 97, seu New MRR é R$ 2.910.
+
+### Expansion MRR (MRR de Expansão)
+Receita adicional de assinantes que fizeram upgrade. Se 10 assinantes do plano Básico (R$ 47) migraram para o Pro (R$ 97), o Expansion MRR é 10 × R$ 50 = R$ 500.
+
+### Contraction MRR (MRR de Contração)
+Receita perdida por downgrades. Se 5 assinantes do Pro foram para o Básico, o Contraction MRR é 5 × R$ 50 = R$ 250.
+
+### Churned MRR (MRR Cancelado)
+Receita perdida por cancelamentos. Se 15 assinantes do plano Pro cancelaram, o Churned MRR é 15 × R$ 97 = R$ 1.455.
+
+A fórmula completa fica:
+
+**MRR Atual = MRR Anterior + New MRR + Expansion MRR - Contraction MRR - Churned MRR**
+
+## Exemplo Prático: Calculando o MRR Real
+
+Digamos que você tem uma comunidade no Hotmart com 400 membros ativos:
+
+- MRR do mês anterior: R$ 32.000
+- 45 novos assinantes a R$ 97 = +R$ 4.365 (New MRR)
+- 8 upgrades de R$ 97 para R$ 197 = +R$ 800 (Expansion MRR)
+- 3 downgrades de R$ 197 para R$ 97 = -R$ 300 (Contraction MRR)
+- 22 cancelamentos a R$ 97 = -R$ 2.134 (Churned MRR)
+
+**MRR Atual = R$ 32.000 + R$ 4.365 + R$ 800 - R$ 300 - R$ 2.134 = R$ 34.731**
+
+Seu MRR cresceu R$ 2.731, ou **8,5% no mês**. Esse é um número muito mais útil do que simplesmente olhar o faturamento bruto.
+
+## Por Que o Hotmart e o Kiwify Não Mostram Isso
+
+Plataformas como Hotmart e Kiwify foram construídas para processar pagamentos, não para análise de negócio. O dashboard delas mostra:
+
+- Total de vendas no período
+- Número de transações
+- Reembolsos
+
+Mas **não** mostra MRR segmentado por componentes, tendência de crescimento do MRR ao longo do tempo, nem a relação entre novo MRR e MRR perdido por churn. Você acaba tendo que exportar planilhas, cruzar dados manualmente e torcer para não errar.
+
+## Como Automatizar o Cálculo do MRR
+
+Calcular MRR manualmente é possível quando você tem 50 assinantes. Com 500 ou 5.000, vira um pesadelo de planilhas.
+
+A Groware conecta diretamente com Hotmart, Kiwify, Monetizze, Asaas e Stripe, e calcula seu MRR automaticamente em tempo real. Todos os componentes — New, Expansion, Contraction e Churned MRR — aparecem separados no dashboard, atualizados a cada transação.
+
+Em vez de gastar horas por semana em planilhas, você abre o painel e vê exatamente quanto seu negócio recorrente está crescendo, onde está perdendo receita e quais planos estão performando melhor.
+
+Se você quer saber seu MRR real agora, conecte sua plataforma à Groware e veja o número em menos de 2 minutos.
+
+## Conclusão
+
+O MRR é o número mais importante para qualquer negócio digital com receita recorrente. Sem ele, você está voando às cegas — achando que está crescendo quando pode estar estagnado, ou pior, encolhendo.
+
+Calcule seu MRR. Acompanhe seus componentes. Tome decisões baseadas em dados reais, não em faturamento bruto que esconde a verdade sobre a saúde do seu negócio.

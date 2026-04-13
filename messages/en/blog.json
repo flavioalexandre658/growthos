@@ -1,0 +1,16 @@
+{
+  "blog": {
+    "pageTitle": "Blog",
+    "pageDescription": "Practical content about metrics, recurring revenue and growth for digital businesses.",
+    "readingTime": "{minutes} min read",
+    "publishedAt": "Published on {date}",
+    "backToList": "Back to blog",
+    "emptyState": "No articles published yet.",
+    "tableOfContents": "In this article",
+    "cta": {
+      "title": "See your real numbers in 2 minutes",
+      "description": "Groware automatically connects your platforms and calculates MRR, churn, LTV and P&L without spreadsheets.",
+      "button": "Create free account"
+    }
+  }
+}

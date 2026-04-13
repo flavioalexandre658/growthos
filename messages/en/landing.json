@@ -2,12 +2,12 @@
   "landing": {
     "hero": {
       "badge": "Free up to $3k/month in revenue",
-      "badgeSuffix": " · Asaas & Stripe available",
+      "badgeSuffix": " · 14 integrated gateways",
       "headline1": "From funnel to real profit.",
       "headline2": "Everything in one place.",
-      "subheadline": "Connect your Asaas or Stripe in 2 minutes and see exactly where every dollar of your revenue comes from — channel, campaign, landing page and real margin. All together, no spreadsheet.",
+      "subheadline": "Connect your gateway in 2 minutes and see exactly where every dollar comes from — channel, campaign, landing page and real margin. Works with info-products, SaaS, e-commerce and any digital business.",
       "disclaimer": "No credit card · Free up to $3k/month in revenue",
-      "socialProof": "Used by {count}+ SaaS founders",
+      "socialProof": "Used by {count}+ digital entrepreneurs",
       "mockupLabel": "groware.io / overview",
       "overview": "Overview",
       "overviewSub": "Consolidated period performance",
@@ -28,11 +28,11 @@
       "label": "// the problem",
       "headline1": "Your data is scattered everywhere,",
       "headline2": "except where you need it.",
-      "description": "MRR in Stripe or Asaas. Costs in a spreadsheet. Acquisition in Google Analytics. Nothing talks to each other — and you discover your real margin a month late, if you ever do.",
+      "description": "Revenue scattered across Kiwify, Hotmart, Stripe, Asaas and other gateways. Costs in a spreadsheet. Acquisition in Google Analytics. Nothing talks to each other — and you discover your real margin a month late, if you ever do.",
       "items": [
         {
           "icon": "📊",
-          "title": "Stripe Dashboard",
+          "title": "Gateway Dashboard",
           "desc": "Shows what came in. Not where it came from, what it cost to acquire, or whether you actually made a profit."
         },
         {
@@ -160,7 +160,7 @@
         },
         {
           "title": "Connect your gateway",
-          "desc": "Paste your Asaas API key or Stripe Restricted Key. Groware imports the full history and starts receiving webhooks automatically.",
+          "desc": "Paste your gateway key (Stripe, Kiwify, Hotmart, Asaas...). Groware imports the full history and starts receiving webhooks automatically.",
           "time": "~2 min"
         }
       ]
@@ -175,28 +175,73 @@
       "items": [
         {
           "name": "Stripe",
-          "desc": "Full history, subscriptions, renewals, churn. Restricted Key — read-only, no risk.",
+          "desc": "Global payments and subscriptions.",
           "status": "live"
         },
         {
           "name": "Asaas",
-          "desc": "PIX, bank slip, credit card. The dominant gateway for Brazilian SaaS — full native integration.",
+          "desc": "Brazilian gateway with Pix and bank slip.",
           "status": "live"
         },
         {
           "name": "Kiwify",
-          "desc": "Digital products and info-products. Payment events, refunds and subscription lifecycle.",
-          "status": "soon"
+          "desc": "Info-products and online courses.",
+          "status": "live"
         },
         {
           "name": "Hotmart",
-          "desc": "Digital marketplace integration. Purchases, subscriptions and affiliate tracking.",
-          "status": "soon"
+          "desc": "Digital products platform.",
+          "status": "live"
         },
         {
           "name": "Mercado Pago",
-          "desc": "Payments for marketplace and e-commerce. The most popular platform in Latin America.",
-          "status": "soon"
+          "desc": "Payments and transparent checkout.",
+          "status": "live"
+        },
+        {
+          "name": "Pagar.me",
+          "desc": "Payment gateway for SaaS.",
+          "status": "live"
+        },
+        {
+          "name": "Monetizze",
+          "desc": "Affiliate and digital products platform.",
+          "status": "live"
+        },
+        {
+          "name": "PagBank",
+          "desc": "Payments and PagSeguro checkout.",
+          "status": "live"
+        },
+        {
+          "name": "Guru",
+          "desc": "Checkout and digital sales management.",
+          "status": "live"
+        },
+        {
+          "name": "PayPal",
+          "desc": "Global payments and international checkout.",
+          "status": "live"
+        },
+        {
+          "name": "Eduzz",
+          "desc": "Info-products and affiliate platform.",
+          "status": "live"
+        },
+        {
+          "name": "Cakto",
+          "desc": "Checkout and digital product sales.",
+          "status": "live"
+        },
+        {
+          "name": "Kirvano",
+          "desc": "Digital sales platform.",
+          "status": "live"
+        },
+        {
+          "name": "Abacate Pay",
+          "desc": "Pix payments and simplified checkout.",
+          "status": "live"
         },
         {
           "name": "tracker.js",
@@ -267,14 +312,14 @@
         }
       ],
       "mockupDiagnosisHeader": "## Diagnosis",
-      "mockupDiagnosisLine": "Your real margin of <highlight>61.6%</highlight> is <above>above average</above> for B2C SaaS.",
+      "mockupDiagnosisLine": "Your real margin of <highlight>61.6%</highlight> is <above>above average</above> for digital businesses.",
       "mockupOpportunitiesHeader": "## Opportunities",
       "mockupOp1": "Fixed costs represent <warn>23.6%</warn> of revenue.",
-      "mockupOp2": "Gateway fee <warn>$4,200</warn> → evaluate negotiated plan.",
+      "mockupOp2": "Gateway fee <warn>$4,200</warn> → compare costs across gateways.",
       "mockupOp3": "Average ticket grew <good>+8.1%</good> — upsell signal.",
       "mockupRecsHeader": "## Recommendations",
-      "mockupRec1": "1. Negotiate processing fee with Stripe",
-      "mockupRec2": "2. Review redundant SaaS tools",
+      "mockupRec1": "1. Negotiate processing fee with your gateway",
+      "mockupRec2": "2. Review redundant tools and costs",
       "mockupRec3": "3. Accelerate upsell with MRR expansion"
     },
     "metrics": {
@@ -303,7 +348,7 @@
       "headline1": "Stop guessing.",
       "headline2": "Start",
       "headline3": "growing with clarity.",
-      "description": "Connect your Asaas or Stripe, install the tracker and see where every dollar of your revenue comes from — channel, campaign, real margin. In under 5 minutes.",
+      "description": "Connect your favorite gateway, install the tracker and see where every dollar of your revenue comes from — channel, campaign, real margin. In under 5 minutes.",
       "disclaimer": "No credit card · Free up to $3k/month in revenue · 5-minute setup"
     },
     "strip": [
@@ -312,8 +357,8 @@
       "ROI by Channel",
       "Real P&L",
       "AI Analysis",
-      "Stripe Integration",
-      "Asaas Integration",
+      "14 Gateways",
+      "Native Integrations",
       "Funnel Tracking",
       "Landing Pages",
       "Event Debug",

@@ -1,0 +1,141 @@
+---
+title: "Como Calcular Receita Recorrente no Kiwify"
+description: "O Kiwify mostra vendas, mas não calcula MRR, churn ou LTV. Aprenda a ver sua receita recorrente real e as métricas que faltam no painel do Kiwify."
+date: "2026-04-13"
+slug: "receita-recorrente-kiwify"
+keywords: ["receita recorrente kiwify", "mrr kiwify", "kiwify assinatura", "métricas kiwify", "kiwify recorrência"]
+author: "Groware"
+---
+
+# Como Calcular Receita Recorrente no Kiwify
+
+O Kiwify cresceu rápido no mercado brasileiro por ser simples, ter taxas competitivas e checkout otimizado. Mas se você usa o Kiwify para vender assinaturas, já percebeu que o painel mostra vendas — e quase nada sobre a saúde do seu negócio recorrente.
+
+Você sabe quanto vendeu no mês. Mas sabe quanto da sua receita é recorrente e previsível? Sabe se está perdendo mais assinantes do que ganhando? Sabe qual é o valor real de cada cliente ao longo do tempo?
+
+Provavelmente não. E isso precisa mudar.
+
+## O Que o Kiwify Mostra Hoje
+
+O dashboard do Kiwify é enxuto e direto:
+
+- Total de vendas aprovadas no período
+- Vendas por produto
+- Comissões pagas a afiliados
+- Reembolsos processados
+- Assinaturas ativas (número total)
+
+Para vendas de produtos únicos, isso é suficiente. Mas para negócios de recorrência, faltam as métricas que realmente importam.
+
+## A Diferença Entre Vendas e Receita Recorrente
+
+Vamos a um exemplo concreto. No mês passado, seu painel do Kiwify mostrou R$ 42.000 em vendas. Ótimo número. Mas o que está por trás dele?
+
+| Tipo de Venda | Valor |
+|--------------|-------|
+| Vendas do curso (produto único) | R$ 15.000 |
+| Primeiras assinaturas (novos membros) | R$ 8.730 |
+| Renovações de assinatura | R$ 16.320 |
+| Upgrade de plano | R$ 1.950 |
+| **Total** | **R$ 42.000** |
+
+No Kiwify, tudo aparece como "vendas". Mas a realidade é que:
+
+- **R$ 15.000** são vendas únicas — podem não se repetir
+- **R$ 8.730** são novas assinaturas — receita nova, mas dependem de aquisição contínua
+- **R$ 16.320** são renovações — essa é sua receita recorrente real
+- **R$ 1.950** são upgrades — expansão da base existente
+
+Seu MRR real (renovações + upgrades) é **R$ 18.270**, não R$ 42.000. A diferença é de 56%. Tomar decisões de investimento achando que tem R$ 42.000 de receita previsível quando tem R$ 18.270 pode ser fatal.
+
+## Como Calcular Seu MRR no Kiwify (Método Manual)
+
+Se você quer calcular manualmente, aqui está o processo:
+
+### Passo 1: Exporte as transações
+No Kiwify, vá em Vendas e exporte o relatório do período. Você vai ter uma lista com todas as transações.
+
+### Passo 2: Filtre por tipo
+Separe as transações em categorias:
+- Primeira compra de produto de assinatura (New MRR)
+- Renovação de assinatura (Base MRR)
+- Upgrade de plano (Expansion MRR)
+- Cancelamentos e não-renovações (Churned MRR)
+
+### Passo 3: Calcule o MRR
+Some todas as renovações e upgrades ativos. Se você tem planos anuais, divida o valor por 12 para normalizar.
+
+**Exemplo:**
+- 190 assinantes no plano de R$ 67/mês = R$ 12.730
+- 45 assinantes no plano de R$ 147/mês = R$ 6.615
+- 12 assinantes no plano anual de R$ 1.200/ano = R$ 1.200 (R$ 100/mês cada)
+- **MRR total = R$ 20.545**
+
+### Passo 4: Calcule o Churn
+Conte quantos assinantes cancelaram ou não renovaram no mês. Divida pelo total de assinantes no início do mês.
+
+Se 28 de 247 cancelaram: **churn = 11,3%**
+
+### Passo 5: Calcule o LTV
+**LTV = Ticket médio mensal ÷ Churn rate**
+
+Ticket médio = R$ 20.545 ÷ 247 = R$ 83,18
+
+**LTV = R$ 83,18 ÷ 0,113 = R$ 736,11**
+
+## Os Problemas do Cálculo Manual
+
+Esse processo funciona, mas tem limitações reais:
+
+**Tempo**: Leva de 1 a 3 horas por mês, dependendo do volume. Tempo que poderia ser usado criando conteúdo ou melhorando o produto.
+
+**Precisão**: Classificar manualmente cada transação como "nova", "renovação" ou "upgrade" está sujeito a erros. Uma classificação errada muda o MRR.
+
+**Sem visão em tempo real**: Você só sabe os números quando senta para calcular. Se um pico de cancelamentos aconteceu na terça-feira, você só descobre no fim do mês.
+
+**Sem tendência histórica**: Para ver se o MRR está crescendo ao longo de 6 meses, você precisa calcular 6 vezes e montar um gráfico manualmente.
+
+## Métricas Que Faltam no Kiwify e Que Você Deveria Acompanhar
+
+### Taxa de Renovação
+Qual porcentagem dos assinantes que deveriam renovar no mês efetivamente renovaram? Se 200 tinham cobrança programada e 172 pagaram, sua taxa de renovação é 86%. Os outros 28 podem ter tido falha no cartão, cancelado ou deixado expirar.
+
+### Involuntary Churn (Churn Involuntário)
+Dos cancelamentos, quantos foram porque o cartão falhou (e o cliente nem sabe que saiu)? Esse é o churn involuntário, e muitas vezes representa 30-50% de todos os cancelamentos. É receita que pode ser recuperada com retry automático e dunning emails.
+
+### Cohort Retention
+Dos 60 assinantes que entraram em janeiro, quantos ainda estão ativos em abril? Essa análise de coorte mostra a qualidade real da sua aquisição e ajuda a identificar quais campanhas trouxeram clientes que ficam.
+
+### MRR por Produto
+Se você tem múltiplos produtos de assinatura no Kiwify, qual deles está crescendo e qual está estagnado? Sem essa visão, você pode estar investindo no produto errado.
+
+## Kiwify + Dashboard de Analytics: A Combinação Certa
+
+O Kiwify faz muito bem o que se propõe: checkout rápido, taxas competitivas e entrega de conteúdo. Não é papel dele ser uma ferramenta de BI (Business Intelligence).
+
+A solução é conectar o Kiwify a um dashboard especializado em métricas de recorrência. A Groware faz exatamente isso:
+
+1. **Conecta via API em menos de 2 minutos** — você autoriza o acesso e a Groware importa todo o histórico
+2. **Classifica automaticamente** cada transação como new, renewal, expansion, contraction ou churn
+3. **Calcula MRR, churn, LTV e NRR** em tempo real, atualizando a cada nova transação
+4. **Mostra tendências** com gráficos que cobrem semanas, meses ou o período que você quiser
+5. **Separa churn voluntário de involuntário**, mostrando exatamente onde agir
+
+Se você vende assinaturas no Kiwify e toma decisões olhando apenas o total de vendas, está dirigindo no escuro. Os dados estão lá — só precisam ser processados da forma certa.
+
+## Quanto Custa Não Ter Essas Métricas
+
+Vamos fazer uma conta rápida. Se seu churn é 12% ao mês e você não sabe, não toma nenhuma ação para reduzir. Digamos que com ações simples de retenção (onboarding melhor, emails de engajamento, recuperação de cartão), você conseguiria reduzir para 8%.
+
+Com 300 assinantes a R$ 97/mês:
+- Churn 12%: 36 cancelamentos/mês = R$ 3.492/mês perdidos
+- Churn 8%: 24 cancelamentos/mês = R$ 2.328/mês perdidos
+- **Diferença: R$ 1.164/mês = R$ 13.968/ano**
+
+Quase R$ 14.000 por ano que você deixa na mesa simplesmente por não saber seu churn real. E esse cálculo é conservador — com bases maiores, o impacto é proporcionalmente maior.
+
+## Conclusão
+
+O Kiwify é uma excelente plataforma de vendas. Mas se você depende dele para entender a saúde do seu negócio recorrente, está voando sem instrumentos.
+
+Calcule sua receita recorrente real. Acompanhe churn, LTV e NRR. Tome decisões baseadas em dados, não em faturamento bruto. Seu negócio no Kiwify tem muito mais potencial do que o painel nativo consegue mostrar.

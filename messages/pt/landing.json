@@ -2,12 +2,12 @@
   "landing": {
     "hero": {
       "badge": "Grátis até R$15k de receita/mês",
-      "badgeSuffix": " · Asaas e Stripe disponíveis",
+      "badgeSuffix": " · 14 gateways integrados",
       "headline1": "Do funil ao lucro real.",
       "headline2": "Tudo num só lugar.",
-      "subheadline": "Conecte seu Asaas ou Stripe em 2 minutos e veja de onde vem cada real da sua receita — canal, campanha, landing page e margem real. Tudo junto, sem planilha.",
+      "subheadline": "Conecte seu gateway em 2 minutos e veja de onde vem cada real — canal, campanha, landing page e margem real. Funciona com infoprodutos, SaaS, e-commerce e qualquer negócio digital.",
       "disclaimer": "Sem cartão de crédito · Grátis até R$15k de receita/mês",
-      "socialProof": "Usado por {count}+ founders de SaaS brasileiros",
+      "socialProof": "Usado por {count}+ empreendedores digitais",
       "mockupLabel": "groware.io / visão-geral",
       "overview": "Visão Geral",
       "overviewSub": "Performance consolidada do período",
@@ -28,11 +28,11 @@
       "label": "// o problema",
       "headline1": "Seus dados estão em todo lugar,",
       "headline2": "menos onde você precisa.",
-      "description": "MRR no Stripe ou Asaas. Custos numa planilha. Aquisição no Google Analytics. Nada conversa entre si — e você descobre sua margem real com um mês de atraso, se descobre.",
+      "description": "Receita espalhada entre Kiwify, Hotmart, Stripe, Asaas e outros gateways. Custos numa planilha. Aquisição no Google Analytics. Nada conversa entre si — e você descobre sua margem real com um mês de atraso, se descobre.",
       "items": [
         {
           "icon": "📊",
-          "title": "Dashboard do Stripe",
+          "title": "Dashboard do gateway",
           "desc": "Mostra o que entrou. Não de onde veio, quanto custou pra adquirir, ou se você teve lucro de verdade."
         },
         {
@@ -123,7 +123,7 @@
         },
         {
           "title": "Conecte seu gateway",
-          "desc": "Cole sua chave do Asaas ou Chave Restrita do Stripe. O Groware importa o histórico completo e começa a receber webhooks automaticamente.",
+          "desc": "Cole a chave do seu gateway (Stripe, Kiwify, Hotmart, Asaas...). O Groware importa o histórico completo e começa a receber webhooks automaticamente.",
           "time": "~2 min"
         }
       ]
@@ -138,28 +138,73 @@
       "items": [
         {
           "name": "Stripe",
-          "desc": "Histórico completo, assinaturas, renovações, churn. Chave Restrita — somente leitura, sem risco.",
+          "desc": "Pagamentos globais e assinaturas.",
           "status": "live"
         },
         {
           "name": "Asaas",
-          "desc": "PIX, boleto, cartão. O gateway dominante para SaaS — integração nativa completa.",
+          "desc": "Gateway brasileiro com Pix e boleto.",
           "status": "live"
         },
         {
           "name": "Kiwify",
-          "desc": "Infoprodutos e produtos digitais. Eventos de pagamento, reembolsos e ciclo de vida da assinatura.",
-          "status": "soon"
+          "desc": "Infoprodutos e cursos online.",
+          "status": "live"
         },
         {
           "name": "Hotmart",
-          "desc": "Integração com marketplace digital. Compras, assinaturas e rastreamento de afiliados.",
-          "status": "soon"
+          "desc": "Plataforma de produtos digitais.",
+          "status": "live"
         },
         {
           "name": "Mercado Pago",
-          "desc": "Pagamentos para marketplace e e-commerce. A plataforma mais popular da América Latina.",
-          "status": "soon"
+          "desc": "Pagamentos e checkout transparente.",
+          "status": "live"
+        },
+        {
+          "name": "Pagar.me",
+          "desc": "Gateway de pagamento para SaaS.",
+          "status": "live"
+        },
+        {
+          "name": "Monetizze",
+          "desc": "Plataforma de afiliados e produtos digitais.",
+          "status": "live"
+        },
+        {
+          "name": "PagBank",
+          "desc": "Pagamentos e checkout PagSeguro.",
+          "status": "live"
+        },
+        {
+          "name": "Guru",
+          "desc": "Checkout e gestão de vendas digitais.",
+          "status": "live"
+        },
+        {
+          "name": "PayPal",
+          "desc": "Pagamentos globais e checkout internacional.",
+          "status": "live"
+        },
+        {
+          "name": "Eduzz",
+          "desc": "Plataforma de infoprodutos e afiliados.",
+          "status": "live"
+        },
+        {
+          "name": "Cakto",
+          "desc": "Checkout e vendas de produtos digitais.",
+          "status": "live"
+        },
+        {
+          "name": "Kirvano",
+          "desc": "Plataforma de vendas digitais.",
+          "status": "live"
+        },
+        {
+          "name": "Abacate Pay",
+          "desc": "Pagamentos Pix e checkout simplificado.",
+          "status": "live"
         },
         {
           "name": "tracker.js",
@@ -230,14 +275,14 @@
         }
       ],
       "mockupDiagnosisHeader": "## Diagnóstico",
-      "mockupDiagnosisLine": "Sua margem real de <highlight>61,6%</highlight> está <above>acima da média</above> para SaaS B2C.",
+      "mockupDiagnosisLine": "Sua margem real de <highlight>61,6%</highlight> está <above>acima da média</above> para negócios digitais.",
       "mockupOpportunitiesHeader": "## Oportunidades",
       "mockupOp1": "Custos fixos representam <warn>23,6%</warn> da receita.",
-      "mockupOp2": "Taxa de gateway <warn>R$4.200</warn> → avalie plano negociado.",
+      "mockupOp2": "Taxa de gateway <warn>R$4.200</warn> → compare custos entre gateways.",
       "mockupOp3": "Ticket médio cresceu <good>+8,1%</good> — sinal de upsell.",
       "mockupRecsHeader": "## Recomendações",
-      "mockupRec1": "1. Negociar taxa de processamento com Stripe",
-      "mockupRec2": "2. Revisar ferramentas SaaS redundantes",
+      "mockupRec1": "1. Negociar taxa de processamento com seu gateway",
+      "mockupRec2": "2. Revisar ferramentas e custos redundantes",
       "mockupRec3": "3. Acelerar upsell com expansão de MRR"
     },
     "metrics": {
@@ -262,7 +307,7 @@
       "headline1": "Pare de adivinhar.",
       "headline2": "Comece a",
       "headline3": "crescer com clareza.",
-      "description": "Conecte seu Asaas ou Stripe, instale o tracker e veja de onde vem cada real da sua receita — canal, campanha, margem real. Em menos de 5 minutos.",
+      "description": "Conecte seu gateway favorito, instale o tracker e veja de onde vem cada real da sua receita — canal, campanha, margem real. Em menos de 5 minutos.",
       "disclaimer": "Sem cartão de crédito · Grátis até R$15k de receita/mês · Configuração em 5 minutos"
     },
     "strip": [
@@ -271,8 +316,8 @@
       "ROI por Canal",
       "P&L Real",
       "Análise com IA",
-      "Integração Stripe",
-      "Integração Asaas",
+      "14 Gateways",
+      "Integrações Nativas",
       "Rastreamento de Funil",
       "Landing Pages",
       "Debug de Eventos",

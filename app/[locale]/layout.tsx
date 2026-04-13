@@ -41,6 +41,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: "metadata" });
 
   const isPt = locale === "pt";
+  const baseUrl = "https://groware.io";
+  const canonicalUrl = isPt ? baseUrl : `${baseUrl}/en`;
 
   return {
     title: {
@@ -48,11 +50,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       default: t("defaultTitle"),
     },
     description: t("defaultDescription"),
-    metadataBase: new URL("https://groware.io"),
+    metadataBase: new URL(baseUrl),
+    alternates: {
+      canonical: canonicalUrl,
+      languages: {
+        pt: baseUrl,
+        en: `${baseUrl}/en`,
+        "x-default": baseUrl,
+      },
+    },
+    keywords: isPt
+      ? ["analytics", "receita", "MRR", "P&L", "dashboard", "SaaS", "infoprodutos", "e-commerce", "Stripe", "Kiwify", "Hotmart", "Asaas", "PayPal", "gateway", "métricas", "churn", "LTV", "CAC", "ROI"]
+      : ["analytics", "revenue", "MRR", "P&L", "dashboard", "SaaS", "digital products", "e-commerce", "Stripe", "Kiwify", "Hotmart", "Asaas", "PayPal", "gateway", "metrics", "churn", "LTV", "CAC", "ROI"],
     openGraph: {
       title: t("ogTitle"),
       description: t("ogDescription"),
-      url: "https://groware.io",
+      url: canonicalUrl,
       siteName: "Groware",
       locale: t("ogLocale"),
       type: "website",
@@ -85,6 +98,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         index: true,
         follow: true,
         "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
       },
     },
   };

@@ -4,6 +4,7 @@
     "integrations": "Integrações",
     "ai": "Análise com IA",
     "docs": "Docs",
+    "blog": "Blog",
     "signIn": "Já tenho conta",
     "earlyAccess": "Começar grátis"
   },
@@ -14,7 +15,8 @@
       "docs": "Docs",
       "changelog": "Changelog",
       "privacy": "Privacidade",
-      "terms": "Termos"
+      "terms": "Termos",
+      "blog": "Blog"
     }
   },
   "cta": {

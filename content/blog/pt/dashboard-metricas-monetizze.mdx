@@ -1,0 +1,151 @@
+---
+title: "Dashboard de Métricas para Monetizze — O Que Acompanhar"
+description: "Descubra quais métricas acompanhar se você vende na Monetizze. MRR, churn, LTV e receita líquida que o painel nativo não mostra. Guia completo."
+date: "2026-04-13"
+slug: "dashboard-metricas-monetizze"
+keywords: ["métricas monetizze", "dashboard monetizze", "monetizze analytics", "monetizze assinatura", "monetizze métricas recorrência"]
+author: "Groware"
+---
+
+# Dashboard de Métricas para Monetizze — O Que Acompanhar
+
+A Monetizze é uma das plataformas mais tradicionais do mercado brasileiro de infoprodutos. Milhares de produtores vendem seus cursos, e-books e assinaturas por lá. Mas quando o assunto é analytics, o dashboard nativo deixa a desejar — especialmente para quem trabalha com recorrência.
+
+Se você vende assinaturas na Monetizze e quer entender de verdade a saúde do seu negócio, este guia mostra o que acompanhar e como obter os números que o painel nativo não fornece.
+
+## O Que o Dashboard da Monetizze Oferece
+
+O painel da Monetizze mostra:
+
+- Vendas aprovadas, pendentes e canceladas
+- Valor total por período
+- Comissões de afiliados
+- Status de assinaturas (ativo, cancelado, inadimplente)
+- Relatórios de transações para exportação
+
+É um painel funcional para acompanhar vendas, mas não é um dashboard de analytics de negócio. A diferença é importante.
+
+## 7 Métricas Que Você Deveria Acompanhar na Monetizze
+
+### 1. MRR (Receita Recorrente Mensal)
+
+O MRR é a receita previsível do seu negócio. Na Monetizze, você precisa separar manualmente:
+
+- Vendas únicas (cursos, e-books)
+- Renovações de assinatura
+- Novas assinaturas
+
+Se você tem 350 assinantes no plano de R$ 67/mês e 80 no plano de R$ 127/mês:
+
+**MRR = (350 × R$ 67) + (80 × R$ 127) = R$ 23.450 + R$ 10.160 = R$ 33.610**
+
+Esse é o valor que deveria entrar todo mês se ninguém cancelar. O problema é que pessoas cancelam — por isso o MRR precisa ser acompanhado junto com o churn.
+
+### 2. Churn Rate (Taxa de Cancelamento)
+
+A Monetizze mostra assinaturas canceladas, mas não calcula a taxa. Você precisa fazer:
+
+**Churn = Cancelamentos no mês ÷ Assinantes ativos no início do mês**
+
+Se 32 de 430 assinantes cancelaram: **churn = 7,4%**
+
+Acompanhe mês a mês para ver a tendência. Um churn que sobe de 6% para 9% em 3 meses é um sinal de alerta, mesmo que o número absoluto de assinantes cresça.
+
+### 3. LTV (Lifetime Value)
+
+Com o churn calculado, o LTV é direto:
+
+**LTV = Ticket médio mensal ÷ Churn rate**
+
+Se o ticket médio é R$ 78,16 (R$ 33.610 ÷ 430) e o churn é 7,4%:
+
+**LTV = R$ 78,16 ÷ 0,074 = R$ 1.056,22**
+
+Cada assinante vale, em média, R$ 1.056 ao longo da sua permanência. Isso define quanto você pode pagar para adquirir um cliente novo.
+
+### 4. Receita Líquida (Descontando Taxas)
+
+A Monetizze cobra taxas que variam conforme o plano e o método de pagamento. As taxas típicas incluem:
+
+- Taxa por venda (percentual + valor fixo)
+- Taxa de processamento do gateway
+- Antecipação de recebíveis (se utilizada)
+
+Se seu faturamento bruto de assinaturas é R$ 33.610 e as taxas totais somam 12%, sua receita líquida é:
+
+**R$ 33.610 × 0,88 = R$ 29.577**
+
+A diferença de R$ 4.033 parece pequena em um mês, mas representa **R$ 48.396 por ano** que não chega na sua conta. Decisões de investimento precisam ser feitas sobre a receita líquida, não a bruta.
+
+### 5. Taxa de Inadimplência
+
+Diferente do churn voluntário (quando o cliente decide cancelar), a inadimplência acontece quando o pagamento falha — cartão expirado, saldo insuficiente, dados desatualizados.
+
+Na Monetizze, acompanhe quantos assinantes ficam com status "inadimplente" a cada mês. Se 8% dos seus assinantes ficam inadimplentes mensalmente e você recupera metade com retry, os outros 4% viram churn involuntário que poderia ser evitado.
+
+### 6. Tempo Médio de Permanência
+
+A permanência média é o inverso do churn:
+
+**Permanência = 1 ÷ Churn rate mensal**
+
+Com churn de 7,4%: **permanência média = 13,5 meses**
+
+Mas a média esconde a distribuição. Se 40% cancelam no primeiro mês e os que ficam permanecem 2 anos, a média de 13,5 meses não representa ninguém. Idealmente, acompanhe a permanência por coorte (grupo de pessoas que entraram no mesmo mês).
+
+### 7. Net MRR Growth (Crescimento Líquido do MRR)
+
+O crescimento líquido do MRR mostra se seu negócio recorrente está expandindo ou contraindo:
+
+**Net MRR Growth = New MRR + Expansion MRR - Churned MRR - Contraction MRR**
+
+Se no mês:
+- 40 novos assinantes a R$ 67 = +R$ 2.680
+- 8 upgrades de R$ 67 para R$ 127 = +R$ 480
+- 25 cancelamentos a R$ 67 = -R$ 1.675
+- 7 cancelamentos a R$ 127 = -R$ 889
+
+**Net MRR Growth = R$ 2.680 + R$ 480 - R$ 1.675 - R$ 889 = +R$ 596**
+
+Positivo, mas por pouco. Se o churn subir mais 1%, o crescimento líquido vira negativo.
+
+## Montando Seu Dashboard para Monetizze
+
+Se você quer começar a acompanhar essas métricas, tem duas opções:
+
+### Opção 1: Planilha Manual
+
+Crie uma planilha com abas para:
+- **Dados brutos**: Exportação mensal da Monetizze
+- **MRR**: Cálculo mês a mês com decomposição
+- **Churn**: Taxa mensal e tendência
+- **LTV**: Cálculo atualizado com o churn mais recente
+- **P&L simplificado**: Receita bruta, taxas, receita líquida, custos
+
+Atualize mensalmente. O processo leva de 2 a 4 horas por mês.
+
+### Opção 2: Dashboard Automatizado
+
+A Groware conecta diretamente com a Monetizze via API e calcula todas as 7 métricas automaticamente. A integração leva menos de 2 minutos, e os dados são atualizados em tempo real.
+
+A vantagem principal é que você não precisa esperar o fim do mês para ver os números. Se houve um pico de cancelamentos na quarta-feira, você vê imediatamente e pode agir. Com a planilha, só descobriria quando sentasse para atualizar.
+
+## Erros Comuns ao Analisar Dados da Monetizze
+
+### Confundir Vendas Brutas com MRR
+Se você vendeu R$ 50.000 no mês mas R$ 20.000 foram de produtos únicos, seu MRR não é R$ 50.000. Sempre separe recorrência de vendas pontuais.
+
+### Ignorar Inadimplência
+Assinantes inadimplentes ainda aparecem como "ativos" em alguns relatórios. Isso infla artificialmente o número de assinantes e distorce o MRR. Considere como ativos apenas quem pagou a última mensalidade.
+
+### Não Considerar Sazonalidade
+Janeiro e fevereiro costumam ter churn mais alto (férias, reorganização financeira). Julho também. Comparar churn de janeiro com churn de março pode levar a conclusões erradas. Compare sempre com o mesmo mês do ano anterior, se possível.
+
+### Olhar Apenas Números Absolutos
+"Ganhamos 50 assinantes novos!" — ótimo, mas se perdemos 45, o crescimento líquido foi de apenas 5. Sempre olhe o saldo, não apenas as entradas.
+
+## Conclusão
+
+A Monetizze é uma plataforma sólida para processar pagamentos. Mas para gerenciar um negócio de recorrência, você precisa ir além do que o painel nativo oferece.
+
+Acompanhe MRR, churn, LTV, receita líquida, inadimplência, permanência e crescimento líquido. Esses 7 números contam a história completa do seu negócio — não apenas quanto entrou, mas se a saúde financeira está melhorando ou piorando.

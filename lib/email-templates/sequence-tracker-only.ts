@@ -23,14 +23,14 @@ const translations = {
       subBody:
         "Mas sem um gateway conectado, as telas de Recorrência e P&L ficam incompletas.",
       subBody2:
-        "Conecte seu Stripe ou Asaas e veja MRR, churn, LTV e receita por canal — tudo automático.",
+        "Conecte seu gateway de pagamento e veja MRR, churn, LTV e receita por canal — tudo automático.",
       cta: "Conectar gateway →",
       previewText: "Seu funil está rodando. Agora conecte a receita",
     },
     tracker_only_5d: {
       subject: "MRR, Churn, LTV — tudo automático com uma API key",
       greeting: (name: string) => `Oi, ${name},`,
-      body: () => "Uma API key do Stripe ou Asaas desbloqueia tudo isso no seu dashboard:",
+      body: () => "Uma API key do seu gateway de pagamento desbloqueia tudo isso no seu dashboard:",
       features: [
         "Tela completa de Recorrência (MRR, ARR, ARPU, LTV, Churn)",
         "P&L automático com receita real",
@@ -50,14 +50,14 @@ const translations = {
       subBody:
         "But without a connected gateway, the Recurring Revenue and P&L screens remain incomplete.",
       subBody2:
-        "Connect your Stripe or Asaas and see MRR, churn, LTV, and revenue by channel — all automatic.",
+        "Connect your payment gateway and see MRR, churn, LTV, and revenue by channel — all automatic.",
       cta: "Connect gateway →",
       previewText: "Your funnel is running. Now connect the revenue",
     },
     tracker_only_5d: {
       subject: "MRR, Churn, LTV — all automatic with one API key",
       greeting: (name: string) => `Hi ${name},`,
-      body: () => "One Stripe or Asaas API key unlocks all of this in your dashboard:",
+      body: () => "One API key from your payment gateway unlocks all of this in your dashboard:",
       features: [
         "Full Recurring Revenue screen (MRR, ARR, ARPU, LTV, Churn)",
         "Automatic P&L with real revenue",

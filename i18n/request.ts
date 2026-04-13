@@ -24,6 +24,7 @@ const MESSAGE_FILES = [
   "tour",
   "customers",
   "topbar",
+  "blog",
 ] as const;
 
 export default getRequestConfig(async ({ requestLocale }) => {

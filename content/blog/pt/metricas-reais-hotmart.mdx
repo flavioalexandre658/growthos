@@ -1,0 +1,116 @@
+---
+title: "Como Ver Métricas Reais de Assinatura no Hotmart"
+description: "O dashboard do Hotmart não mostra MRR, churn ou LTV. Descubra como ver as métricas reais do seu negócio de assinatura no Hotmart com dados precisos."
+date: "2026-04-13"
+slug: "metricas-reais-hotmart"
+keywords: ["métricas hotmart", "mrr hotmart", "churn hotmart", "dashboard hotmart", "assinatura hotmart métricas"]
+author: "Groware"
+---
+
+# Como Ver Métricas Reais de Assinatura no Hotmart
+
+Se você vende assinaturas no Hotmart, já deve ter sentido a frustração: o dashboard mostra vendas, comissões e reembolsos. Mas quando você precisa saber qual é o seu churn real, quanto de MRR está crescendo ou qual é o LTV dos seus assinantes, o painel fica em silêncio.
+
+O Hotmart foi construído como plataforma de vendas, não como ferramenta de analytics. E isso cria um ponto cego perigoso para quem tem um negócio baseado em recorrência.
+
+## O Que o Dashboard do Hotmart Mostra
+
+Vamos reconhecer o que o Hotmart faz bem. O painel nativo oferece:
+
+- **Total de vendas** no período selecionado
+- **Número de transações** (aprovadas, canceladas, reembolsadas)
+- **Comissões de afiliados** pagas
+- **Relatório de assinantes** com status (ativo, cancelado, atrasado)
+- **Saldo disponível** para saque
+
+Para um infoprodutor que vende cursos avulsos, isso pode ser suficiente. Mas para quem tem um **negócio de recorrência** — comunidades, mentorias mensais, clubes de conteúdo — essas informações são só o começo.
+
+## O Que o Hotmart Não Mostra (e Você Precisa)
+
+### MRR (Receita Recorrente Mensal)
+O Hotmart mostra o total de vendas no período, mas não separa vendas únicas de recorrência. Se você vendeu R$ 30.000 no mês — sendo R$ 18.000 de renovações de assinatura e R$ 12.000 de vendas únicas de um curso — o painel mostra apenas R$ 30.000. Você não sabe qual é o seu MRR real.
+
+### Churn Rate
+O Hotmart lista assinantes cancelados, mas não calcula a taxa de cancelamento. Você vê que 47 pessoas cancelaram, mas precisa abrir uma planilha para descobrir que isso representa 9,4% da sua base de 500 assinantes. E ainda precisa diferenciar cancelamentos voluntários de falhas de pagamento.
+
+### LTV (Lifetime Value)
+Não existe cálculo de LTV no Hotmart. Para saber quanto um cliente vale ao longo do tempo, você teria que exportar o histórico de cada assinante, calcular a permanência média e multiplicar pelo ticket. Com 200 assinantes, isso leva horas. Com 2.000, é impraticável.
+
+### NRR (Net Revenue Retention)
+O conceito de NRR nem existe no vocabulário do Hotmart. Se assinantes fizeram upgrade ou downgrade de plano, isso aparece como transações separadas, sem consolidação.
+
+### Churn Segmentado
+Você não consegue saber se os cancelamentos estão concentrados no primeiro mês (problema de onboarding), após 3 meses (problema de conteúdo) ou se são distribuídos uniformemente. Essa informação muda completamente a estratégia de retenção.
+
+## O Método Planilha: Funciona, Mas Tem Limites
+
+Muitos infoprodutores contornam as limitações do Hotmart com planilhas. O processo é:
+
+1. Exportar relatório de transações do Hotmart
+2. Filtrar por tipo (assinatura, renovação, cancelamento)
+3. Calcular MRR somando renovações ativas
+4. Contar cancelamentos e dividir pela base para churn
+5. Cruzar dados para calcular LTV
+
+Funciona? Sim, para quem tem tempo e paciência. Mas tem problemas sérios:
+
+**Atraso nos dados**: Você só atualiza quando senta para fazer a planilha. Até lá, pode estar perdendo assinantes sem perceber.
+
+**Erro humano**: Uma fórmula errada, uma coluna trocada, e todos os números ficam distorcidos. Já vi infoprodutores tomando decisões de investimento baseados em MRR calculado errado.
+
+**Não escala**: Com 100 assinantes, leva 30 minutos. Com 500, leva 2 horas. Com 2.000, um dia inteiro. E precisa ser refeito todo mês.
+
+**Sem histórico visual**: Planilhas não mostram tendências visuais facilmente. Você precisa criar gráficos manualmente para ver se o MRR está subindo ou descendo ao longo de 6 meses.
+
+## 3 Números Que Todo Assinante do Hotmart Deveria Saber
+
+Antes de qualquer dashboard sofisticado, garanta que você sabe pelo menos estes 3 números:
+
+### 1. Seu MRR Real (Sem Vendas Únicas)
+
+Pegue o relatório de transações do último mês. Filtre apenas renovações de assinatura aprovadas. Some os valores. Esse é seu MRR bruto.
+
+Exemplo: 380 renovações de R$ 97 = **MRR de R$ 36.860**.
+
+Agora desconte a taxa do Hotmart (tipicamente 9,9% + R$ 1 por transação para o plano mais comum): **MRR líquido de aproximadamente R$ 32.830**.
+
+### 2. Seu Churn Mensal
+
+Divida o número de cancelamentos no mês pelo total de assinantes ativos no início do mês.
+
+Exemplo: 42 cancelamentos ÷ 380 assinantes = **churn de 11%**.
+
+### 3. Sua Permanência Média
+
+Se seu churn mensal é 11%, a permanência média é aproximadamente **1 ÷ 0,11 = 9 meses**.
+
+Com esses 3 números, você já sabe mais sobre seu negócio do que 90% dos infoprodutores.
+
+## A Alternativa: Dashboard Conectado ao Hotmart
+
+Em vez de exportar planilhas manualmente, existe outra abordagem: conectar o Hotmart a um dashboard de analytics que calcula tudo automaticamente.
+
+A Groware se integra diretamente com a API do Hotmart e processa todas as transações em tempo real. O resultado é um painel que mostra:
+
+- **MRR** separado por componentes (new, expansion, contraction, churn)
+- **Churn rate** segmentado por período de vida do assinante
+- **LTV** por plano e por canal de aquisição
+- **NRR** com tendência mensal
+- **Receita líquida** descontando taxas da plataforma
+
+A integração leva menos de 2 minutos. Você autoriza o acesso via API, e a Groware puxa o histórico completo de transações. Em minutos, você tem um dashboard com todas as métricas que o Hotmart não te mostra.
+
+## Quando Você Precisa Dessas Métricas
+
+Se você está em alguma dessas situações, precisa de visibilidade urgente:
+
+- **Vendendo mais mas não crescendo**: O MRR segmentado vai mostrar se o churn está neutralizando as novas vendas.
+- **Investindo em tráfego sem saber o retorno real**: O LTV por canal vai revelar se o investimento faz sentido.
+- **Sentindo que muita gente cancela**: O churn segmentado vai mostrar exatamente quando e por que os cancelamentos acontecem.
+- **Pensando em criar novos planos**: Os dados de Expansion MRR e NRR vão mostrar se upgrades funcionam no seu público.
+
+## Conclusão
+
+O Hotmart é excelente no que faz: processar pagamentos e entregar conteúdo. Mas para gerenciar um negócio de recorrência, você precisa de métricas que ele não oferece.
+
+Não se contente em saber apenas quanto vendeu. Saiba quanto está retendo, quanto cada cliente vale e se seu negócio está realmente crescendo. Essas respostas estão nos seus dados — só falta a ferramenta certa para revelá-las.

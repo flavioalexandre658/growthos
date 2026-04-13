@@ -24,7 +24,7 @@ const translations = {
       body: (orgName: string) =>
         `Seu dashboard do <strong style="color:#d4d4d8;">${orgName}</strong> está pronto — mas ainda sem dados.`,
       subBody:
-        "O jeito mais rápido de ver seus números: conecte seu Stripe ou Asaas. Em 2 minutos seu histórico completo de pagamentos, assinaturas e MRR aparece no dashboard.",
+        "O jeito mais rápido de ver seus números: conecte seu gateway de pagamento (Stripe, Kiwify, Hotmart, Asaas ou outro). Em 2 minutos seu histórico completo de pagamentos, assinaturas e MRR aparece no dashboard.",
       ctaStripe: "Conectar Stripe →",
       ctaAsaas: "Conectar Asaas →",
       ctaTracker: "Prefiro instalar o tracker.js primeiro →",
@@ -37,7 +37,7 @@ const translations = {
         "Quer ver seu MRR real em 3 minutos? É simples assim:",
       steps: [
         "Vá em <strong style=\"color:#d4d4d8;\">Configurações → Integrações</strong>",
-        "Cole sua <strong style=\"color:#d4d4d8;\">Restricted Key do Stripe</strong> (ou API Key do Asaas)",
+        "Cole as <strong style=\"color:#d4d4d8;\">credenciais do seu gateway favorito</strong>",
         "Clique <strong style=\"color:#d4d4d8;\">Conectar</strong>",
         "Aguarde ~2 minutos enquanto importamos seu histórico",
         "Pronto — MRR, churn, receita e assinaturas no dashboard",
@@ -48,10 +48,10 @@ const translations = {
     dashboard_empty_5d: {
       subject: "Tracker.js ou Gateway — qual é melhor para você?",
       greeting: (name: string) => `Oi, ${name},`,
-      body: () => "Queria tirar uma dúvida que muitos founders têm: qual integração começar primeiro?",
+      body: () => "Queria tirar uma dúvida que muitos empreendedores têm: qual integração começar primeiro?",
       modes: [
         {
-          title: "Gateway (Stripe/Asaas)",
+          title: "Gateway de pagamento",
           desc: "Importa pagamentos, assinaturas, MRR automaticamente. Ótimo se você quer ver dados financeiros rápido.",
         },
         {
@@ -75,7 +75,7 @@ const translations = {
       body: (orgName: string) =>
         `Your <strong style="color:#d4d4d8;">${orgName}</strong> dashboard is ready — but still without data.`,
       subBody:
-        "The fastest way to see your numbers: connect your Stripe or Asaas. In 2 minutes your full history of payments, subscriptions, and MRR will appear in the dashboard.",
+        "The fastest way to see your numbers: connect your payment gateway (Stripe, Kiwify, Hotmart, Asaas, or another). In 2 minutes your full history of payments, subscriptions, and MRR will appear in the dashboard.",
       ctaStripe: "Connect Stripe →",
       ctaAsaas: "Connect Asaas →",
       ctaTracker: "I'd rather install tracker.js first →",
@@ -87,7 +87,7 @@ const translations = {
       body: () => "Want to see your real MRR in 3 minutes? It's this simple:",
       steps: [
         "Go to <strong style=\"color:#d4d4d8;\">Settings → Integrations</strong>",
-        "Paste your <strong style=\"color:#d4d4d8;\">Stripe Restricted Key</strong> (or Asaas API Key)",
+        "Paste the <strong style=\"color:#d4d4d8;\">credentials from your favorite gateway</strong>",
         "Click <strong style=\"color:#d4d4d8;\">Connect</strong>",
         "Wait ~2 minutes while we import your history",
         "Done — MRR, churn, revenue and subscriptions in the dashboard",
@@ -98,10 +98,10 @@ const translations = {
     dashboard_empty_5d: {
       subject: "Tracker.js or Gateway — which is better for you?",
       greeting: (name: string) => `Hi ${name},`,
-      body: () => "I wanted to answer a question many founders have: which integration to start with?",
+      body: () => "I wanted to answer a question many entrepreneurs have: which integration to start with?",
       modes: [
         {
-          title: "Gateway (Stripe/Asaas)",
+          title: "Payment gateway",
           desc: "Imports payments, subscriptions, MRR automatically. Great if you want to see financial data quickly.",
         },
         {

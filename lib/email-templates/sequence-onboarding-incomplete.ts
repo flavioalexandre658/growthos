@@ -34,7 +34,7 @@ const translations = {
       body: () =>
         "Vi que você ainda não terminou o setup do Groware. Queria te contar o que acontece quando você termina:",
       subBody:
-        "O Groware importa seu histórico completo do Stripe ou Asaas automaticamente. MRR, churn, receita, assinaturas — tudo no dashboard sem precisar configurar nada à mão.",
+        "O Groware importa seu histórico completo do seu gateway automaticamente. MRR, churn, receita, assinaturas — tudo no dashboard sem precisar configurar nada à mão.",
       cta: "Completar o setup →",
       previewText: () => "Seus dados estão esperando por você",
     },
@@ -76,7 +76,7 @@ const translations = {
       body: () =>
         "I noticed you haven't finished the Groware setup yet. I wanted to tell you what happens when you do:",
       subBody:
-        "Groware automatically imports your full Stripe or Asaas history. MRR, churn, revenue, subscriptions — all in the dashboard without any manual configuration.",
+        "Groware automatically imports your full history from your payment gateway. MRR, churn, revenue, subscriptions — all in the dashboard without any manual configuration.",
       cta: "Complete the setup →",
       previewText: () => "Your data is waiting for you",
     },

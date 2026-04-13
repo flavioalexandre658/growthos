@@ -27,7 +27,7 @@ const translations = {
         `Você acessou o Groware <strong style="color:#d4d4d8;">${count} vezes</strong> este mês — ótimo ritmo.`,
       subBody: "Para continuar crescendo com mais profundidade, o plano Starter desbloqueia:",
       features: [
-        "Integrações com Asaas e Kiwify",
+        "14 gateways integrados (Stripe, Kiwify, Hotmart, Asaas, PayPal e mais)",
         "Análise da nossa IA ilimitada",
         "Comparativo entre períodos",
         "Suporte prioritário",
@@ -39,7 +39,7 @@ const translations = {
       subject: "Quanto custa não saber seu lucro real?",
       greeting: (name: string) => `Oi, ${name},`,
       body: () =>
-        "A maioria dos founders descobre custos escondidos quando configura o P&L completo pela primeira vez.",
+        "A maioria dos empreendedores descobre custos escondidos quando configura o P&L completo pela primeira vez.",
       subBody:
         "Com o plano Starter, o Groware calcula seu lucro real automaticamente — receita menos todos os seus custos, sem planilha.",
       cta: "Experimentar o Starter →",
@@ -54,7 +54,7 @@ const translations = {
       subBody: "O Starter também desbloqueia:",
       features: [
         "Análise da nossa IA ilimitada",
-        "Integrações com Asaas e Kiwify",
+        "14 gateways integrados (Stripe, Kiwify, Hotmart, Asaas, PayPal e mais)",
         "Comparativo entre períodos",
         "Suporte prioritário",
       ],
@@ -81,7 +81,7 @@ const translations = {
         `You've accessed Groware <strong style="color:#d4d4d8;">${count} times</strong> this month — great pace.`,
       subBody: "To keep growing with more depth, the Starter plan unlocks:",
       features: [
-        "Asaas and Kiwify integrations",
+        "14 integrated gateways (Stripe, Kiwify, Hotmart, Asaas, PayPal and more)",
         "Unlimited AI analysis",
         "Period comparison",
         "Priority support",
@@ -93,7 +93,7 @@ const translations = {
       subject: "How much does not knowing your real profit cost?",
       greeting: (name: string) => `Hi ${name},`,
       body: () =>
-        "Most founders discover hidden costs when they set up the full P&L for the first time.",
+        "Most entrepreneurs discover hidden costs when they set up the full P&L for the first time.",
       subBody:
         "With the Starter plan, Groware automatically calculates your real profit — revenue minus all your costs, no spreadsheet needed.",
       cta: "Try Starter →",
@@ -108,7 +108,7 @@ const translations = {
       subBody: "Starter also unlocks:",
       features: [
         "Unlimited AI analysis",
-        "Asaas and Kiwify integrations",
+        "14 integrated gateways (Stripe, Kiwify, Hotmart, Asaas, PayPal and more)",
         "Period comparison",
         "Priority support",
       ],

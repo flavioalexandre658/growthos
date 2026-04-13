@@ -1,0 +1,176 @@
+---
+title: "Como Integrar Kiwify com Dashboard de Analytics"
+description: "Guia técnico para integrar o Kiwify com um dashboard de analytics e ver MRR, churn, LTV e receita líquida em tempo real. API, webhooks e alternativas."
+date: "2026-04-13"
+slug: "integrar-kiwify-dashboard"
+keywords: ["integrar kiwify", "kiwify api", "kiwify dashboard analytics", "kiwify webhook", "kiwify integração"]
+author: "Groware"
+---
+
+# Como Integrar Kiwify com Dashboard de Analytics
+
+Você usa o Kiwify e quer ver métricas como MRR, churn, LTV e receita líquida em um dashboard profissional. O problema é que o painel nativo do Kiwify não calcula essas métricas. A solução é integrar o Kiwify com uma ferramenta de analytics externa.
+
+Neste guia, vou mostrar as opções de integração disponíveis, os prós e contras de cada uma, e como escolher a melhor abordagem para o seu caso.
+
+## Por Que Integrar o Kiwify a Um Dashboard Externo
+
+O Kiwify é otimizado para vendas: checkout rápido, taxas competitivas, entrega de conteúdo. Mas para gerenciar um negócio de recorrência, você precisa de métricas que vão além de "quanto vendi".
+
+Sem integração com um dashboard externo, você fica limitado a:
+- Ver vendas totais por período
+- Conferir o número de assinaturas ativas
+- Exportar planilhas manualmente
+
+Com integração, você ganha:
+- MRR em tempo real com decomposição por componentes
+- Churn rate calculado automaticamente
+- LTV por plano e canal de aquisição
+- Tendências visuais ao longo de meses
+- Alertas quando métricas saem da faixa esperada
+
+## As 3 Formas de Integrar o Kiwify
+
+### 1. Webhooks do Kiwify
+
+O Kiwify oferece webhooks que enviam notificações em tempo real quando eventos acontecem. Os principais eventos disponíveis são:
+
+- **Compra aprovada** — nova venda ou renovação
+- **Compra reembolsada** — reembolso processado
+- **Assinatura cancelada** — cancelamento de assinatura
+- **Compra recusada** — tentativa de pagamento falhou
+
+**Como funciona:** Você configura uma URL no painel do Kiwify para onde os webhooks são enviados. Cada vez que um evento acontece, o Kiwify envia um POST com os dados da transação para essa URL.
+
+**Prós:**
+- Dados em tempo real
+- Não precisa fazer requisições manuais
+- Captura eventos conforme acontecem
+
+**Contras:**
+- Exige um servidor para receber os webhooks
+- Você precisa construir a lógica de processamento
+- Não traz dados históricos (só eventos futuros)
+- Se o servidor estiver fora do ar, eventos são perdidos
+
+### 2. Exportação Manual + Planilha
+
+A abordagem mais simples: exportar relatórios do Kiwify periodicamente e processar em uma planilha ou ferramenta de BI.
+
+**Como funciona:** No painel do Kiwify, você exporta o relatório de vendas em CSV. Depois importa em uma planilha (Google Sheets, Excel) onde suas fórmulas calculam MRR, churn e LTV.
+
+**Prós:**
+- Não precisa de conhecimento técnico
+- Funciona com qualquer ferramenta de planilha
+- Controle total sobre os cálculos
+
+**Contras:**
+- Manual e demorado (1-3 horas por mês)
+- Dados sempre defasados
+- Propenso a erros humanos
+- Não escala com o crescimento do negócio
+
+### 3. Plataforma de Analytics com Integração Nativa
+
+A terceira opção é usar uma plataforma que já tem integração pronta com o Kiwify. Sem código, sem configuração de servidor, sem planilhas.
+
+**Como funciona:** Você autoriza o acesso no painel da plataforma de analytics, e ela se conecta ao Kiwify para puxar os dados automaticamente. A partir daí, todas as métricas são calculadas em tempo real.
+
+**Prós:**
+- Setup em minutos (sem código)
+- Dados históricos importados automaticamente
+- Métricas calculadas em tempo real
+- Escala sem esforço adicional
+
+**Contras:**
+- Custo mensal da plataforma de analytics
+- Dependência de um serviço externo
+
+## O Que Esperar de Um Bom Dashboard de Analytics
+
+Se você vai investir em uma integração, o dashboard precisa entregar valor real. Aqui estão os requisitos mínimos:
+
+### Métricas Essenciais
+
+Um dashboard que vale a pena deve calcular automaticamente:
+
+**MRR com decomposição:**
+- New MRR (novos assinantes)
+- Expansion MRR (upgrades)
+- Contraction MRR (downgrades)
+- Churned MRR (cancelamentos)
+- Net New MRR (saldo)
+
+**Churn rate:**
+- Churn de clientes (quantos saíram)
+- Churn de receita (quanto de MRR perdido)
+- Churn voluntário vs. involuntário
+- Churn por período de vida do assinante
+
+**LTV:**
+- LTV médio geral
+- LTV por plano
+- LTV por canal de aquisição (se disponível)
+
+**Receita líquida:**
+- Faturamento bruto
+- Menos taxas do Kiwify
+- Menos reembolsos
+- Menos chargebacks
+- Igual receita líquida real
+
+### Visualizações
+
+Números em tabela são úteis, mas gráficos de tendência são essenciais:
+- Gráfico de MRR ao longo do tempo
+- Gráfico de churn mensal com tendência
+- Gráfico de waterfall mostrando decomposição do MRR
+- Curva de retenção por coorte
+
+### Alertas
+
+O melhor dashboard não é o que você olha todo dia — é o que te avisa quando algo precisa de atenção:
+- Churn subiu acima do normal
+- MRR caiu comparado ao mês anterior
+- Taxa de reembolso acima do limite
+- Cohort com retenção abaixo do esperado
+
+## Passo a Passo: Integrando Kiwify com a Groware
+
+A Groware oferece integração nativa com o Kiwify. O processo é direto:
+
+**Passo 1:** Crie sua conta na Groware (leva 1 minuto)
+
+**Passo 2:** No dashboard da Groware, vá em Integrações e selecione Kiwify
+
+**Passo 3:** Autorize o acesso. A Groware se conecta à API do Kiwify com permissões de leitura
+
+**Passo 4:** Aguarde a importação do histórico. Dependendo do volume de dados, pode levar de alguns segundos a alguns minutos
+
+**Passo 5:** Pronto. Seu dashboard está populado com todas as métricas calculadas automaticamente
+
+A partir daqui, cada nova transação no Kiwify é processada em tempo real. Você não precisa fazer nada — os números atualizam sozinhos.
+
+## Integração com Múltiplas Plataformas
+
+Se você vende no Kiwify e também no Hotmart, Monetizze ou usa Asaas, pode conectar todas as plataformas no mesmo dashboard. A Groware consolida os dados e mostra métricas unificadas, além da visão por plataforma.
+
+Isso resolve o problema mais comum de infoprodutores que cresceram organicamente e acabaram com produtos espalhados por múltiplas plataformas — sem visão consolidada do negócio.
+
+## Quanto Custa Não Ter Visibilidade
+
+Vamos ser práticos. Um infoprodutor com 400 assinantes a R$ 97/mês tem MRR de R$ 38.800. Se o churn é 10% ao mês e ele não sabe:
+
+- Perde 40 assinantes/mês = R$ 3.880/mês em churned MRR
+- Se conseguisse reduzir para 7% com ações de retenção: 28 assinantes/mês = R$ 2.716/mês
+- Diferença: R$ 1.164/mês = **R$ 13.968/ano**
+
+Essa é receita que já foi adquirida e está sendo perdida por falta de visibilidade. O custo de qualquer ferramenta de analytics é uma fração desse valor.
+
+## Conclusão
+
+Integrar o Kiwify com um dashboard de analytics não é um luxo técnico — é uma necessidade de negócio para quem tem receita recorrente. Sem visibilidade sobre MRR, churn, LTV e receita líquida, você toma decisões no escuro.
+
+Escolha a abordagem que faz sentido para o seu momento: planilha se está começando, webhooks se tem equipe técnica, ou uma plataforma com integração nativa se quer resultado imediato sem complexidade.
+
+O importante é ter os dados. Com eles, as decisões certas ficam evidentes.

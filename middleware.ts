@@ -5,25 +5,39 @@ import { routing } from "./i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
 
-const PUBLIC_PAGE_PATTERNS = [
-  /^\/[a-z]{2}$/,
-  /^\/[a-z]{2}\/$/,
-  /^\/[a-z]{2}\/(login|register|forgot-password|reset-password|privacy|terms|changelog|docs)(\/.*)?$/,
-  /^\/[a-z]{2}\/p\//,
-  /^\/[a-z]{2}\/invite\//,
-];
+const PUBLIC_PATHS = new Set([
+  "/",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/privacy",
+  "/terms",
+  "/changelog",
+  "/docs",
+  "/blog",
+]);
 
 function isPublicPage(pathname: string): boolean {
-  return PUBLIC_PAGE_PATTERNS.some((pattern) => pattern.test(pathname));
+  const withoutLocale = pathname.replace(/^\/en(\/|$)/, "/");
+  const basePath = withoutLocale.split("/").slice(0, 2).join("/") || "/";
+
+  if (PUBLIC_PATHS.has(basePath)) return true;
+  if (withoutLocale.startsWith("/p/")) return true;
+  if (withoutLocale.startsWith("/invite/")) return true;
+  if (withoutLocale.startsWith("/docs/")) return true;
+  if (withoutLocale.startsWith("/blog/")) return true;
+
+  return false;
+}
+
+function extractLocale(pathname: string): string {
+  const match = pathname.match(/^\/en(\/|$)/);
+  return match ? "en" : "pt";
 }
 
 export default async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
-
-  const hasLocalePrefix = /^\/[a-z]{2}(\/|$)/.test(pathname);
-  if (!hasLocalePrefix) {
-    return intlMiddleware(req);
-  }
 
   const intlResponse = intlMiddleware(req);
 
@@ -40,9 +54,9 @@ export default async function middleware(req: NextRequest) {
     });
 
     if (!token) {
-      const localeMatch = pathname.match(/^\/([a-z]{2})(\/.*)?$/);
-      const locale = localeMatch ? localeMatch[1] : routing.defaultLocale;
-      const loginUrl = new URL(`/${locale}/login`, req.url);
+      const locale = extractLocale(pathname);
+      const loginPath = locale === "pt" ? "/login" : "/en/login";
+      const loginUrl = new URL(loginPath, req.url);
       loginUrl.searchParams.set("callbackUrl", req.url);
       return NextResponse.redirect(loginUrl);
     }
@@ -50,9 +64,9 @@ export default async function middleware(req: NextRequest) {
     const isNewOrg = req.nextUrl.searchParams.get("new-org") === "1";
     const hasStepParam = req.nextUrl.searchParams.has("step");
     if (pathname.includes("/onboarding") && token.onboardingCompleted && !isNewOrg && !hasStepParam) {
-      const localeMatch = pathname.match(/^\/([a-z]{2})(\/.*)?$/);
-      const locale = localeMatch ? localeMatch[1] : routing.defaultLocale;
-      return NextResponse.redirect(new URL(`/${locale}/organizations`, req.url));
+      const locale = extractLocale(pathname);
+      const orgPath = locale === "pt" ? "/organizations" : "/en/organizations";
+      return NextResponse.redirect(new URL(orgPath, req.url));
     }
   }
 
