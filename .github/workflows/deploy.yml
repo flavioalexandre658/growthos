@@ -23,6 +23,7 @@ jobs:
             set -e
 
             echo "🚀 Deploy Groware PRODUÇÃO"
+            git config --global --add safe.directory /opt/groware-src
             cd /opt/groware-src
 
             git fetch origin main
