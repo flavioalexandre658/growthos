@@ -543,13 +543,16 @@ export async function processKiwifySyncJob(job: Job<SyncJobData>): Promise<{
     message: "Finalizando...",
   });
 
+  // Only mark historySyncedAt if we actually imported data.
+  // Otherwise keep it null so the next sync retries the full history.
+  const hasData = eventRows.length > 0 || paymentRows.length > 0;
   await db
     .update(integrations)
     .set({
       status: "active",
-      historySyncedAt: new Date(),
+      ...(hasData || isReSync ? { historySyncedAt: new Date() } : {}),
       lastSyncedAt: new Date(),
-      syncError: null,
+      syncError: totalItems === 0 && !isReSync ? "Nenhuma venda encontrada na API Kiwify." : null,
       syncJobId: null,
       updatedAt: new Date(),
     })
@@ -565,6 +568,7 @@ export async function processKiwifySyncJob(job: Job<SyncJobData>): Promise<{
     paymentsInserted: paymentRows.length,
     subscriptionsInserted: subRows.length,
     customersInserted: customerRows.length,
+    historySyncedAtUpdated: hasData || isReSync,
   });
 
   const completionMsg = reachedLimit

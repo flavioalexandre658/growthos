@@ -357,13 +357,14 @@ export async function processMonetizzeSyncJob(job: Job<SyncJobData>): Promise<{
 
   report(job, { phase: "finalizing", current: totalItems, total: totalItems, message: "Finalizando..." });
 
+  const hasData = eventRows.length > 0 || paymentRows.length > 0 || subRows.length > 0;
   await db
     .update(integrations)
     .set({
       status: "active",
-      historySyncedAt: new Date(),
+      ...(hasData || isReSync ? { historySyncedAt: new Date() } : {}),
       lastSyncedAt: new Date(),
-      syncError: null,
+      syncError: totalItems === 0 && !isReSync ? "Nenhuma venda encontrada na API Monetizze." : null,
       syncJobId: null,
       updatedAt: new Date(),
     })
