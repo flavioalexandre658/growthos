@@ -10,6 +10,7 @@ export function abacatepayEventHash(orgId: string, externalId: string): string {
     .slice(0, 32);
 }
 
+
 export function abacatepayAuthHeaders(apiKey: string): HeadersInit {
   return { Authorization: `Bearer ${apiKey}` };
 }
