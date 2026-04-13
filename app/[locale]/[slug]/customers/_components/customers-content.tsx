@@ -3,7 +3,10 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
+import { useOrgDataSources } from "@/hooks/queries/use-org-data-sources";
+import { getDemoData } from "@/lib/demo-data";
 import { useCustomers } from "@/hooks/queries/use-customers";
 import { formatDate } from "@/utils/format-date";
 import {
@@ -30,7 +33,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { ChannelBadge } from "@/components/ui/channel-badge";
-import type { ICustomerListParams } from "@/interfaces/customer.interface";
+import { DemoModeBanner } from "@/app/[locale]/[slug]/_components/demo-mode-banner";
+import type { ICustomer, ICustomerListParams } from "@/interfaces/customer.interface";
 import { AtRiskCustomers } from "./at-risk-customers";
 import { TopCustomersRanking } from "./top-customers-ranking";
 import { CustomerCohorts } from "./customer-cohorts";
@@ -43,6 +47,11 @@ function AllCustomersList() {
   const slug = organization?.slug ?? "";
   const orgId = organization?.id ?? "";
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
+  const currency = organization?.currency ?? "BRL";
+
+  const { data: dataSources } = useOrgDataSources(orgId || undefined);
+  const isDemo = !dataSources?.hasGateway;
+  const demoData = isDemo ? getDemoData(currency) : null;
 
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -67,8 +76,35 @@ function AllCustomersList() {
 
   const { data, isLoading } = useCustomers(orgId, params);
 
-  const customers = data?.data ?? [];
-  const pagination = data?.pagination;
+  const demoCustomers: ICustomer[] = (demoData?.customers ?? []).map((c) => ({
+    id: c.id,
+    organizationId: orgId,
+    customerId: c.customerId,
+    name: c.name,
+    email: c.email,
+    phone: null,
+    country: null,
+    region: null,
+    city: null,
+    avatarUrl: null,
+    metadata: null,
+    firstSource: c.firstSource,
+    firstMedium: null,
+    firstCampaign: null,
+    firstContent: null,
+    firstLandingPage: c.firstLandingPage,
+    firstReferrer: null,
+    firstDevice: c.firstDevice,
+    firstSeenAt: c.firstSeenAt,
+    lastSeenAt: c.lastSeenAt,
+    createdAt: c.firstSeenAt,
+    updatedAt: c.lastSeenAt,
+  }));
+
+  const customers = isDemo ? demoCustomers : (data?.data ?? []);
+  const pagination = isDemo
+    ? { page: 1, limit: 25, total: demoCustomers.length, total_pages: 1 }
+    : data?.pagination;
 
   const { isSensitive, maskName, maskEmail, maskLocation } = useSensitiveMode();
 
@@ -238,9 +274,18 @@ function AllCustomersList() {
 
 export function CustomersContent() {
   const t = useTranslations("customers");
+  const locale = useLocale();
+  const { organization } = useOrganization();
+  const orgId = organization?.id;
+  const slug = organization?.slug ?? "";
+
+  const { data: dataSources } = useOrgDataSources(orgId);
+  const isDemo = !dataSources?.hasGateway;
 
   return (
     <div className="space-y-4">
+      {isDemo && <DemoModeBanner module="customers" slug={slug} locale={locale} />}
+
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-lg font-bold text-zinc-100">{t("title")}</h1>

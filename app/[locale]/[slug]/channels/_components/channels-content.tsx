@@ -5,8 +5,11 @@ import { useTranslations } from "next-intl";
 import { useChannels } from "@/hooks/queries/use-channels";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useOrganization } from "@/components/providers/organization-provider";
+import { useOrgDataSources } from "@/hooks/queries/use-org-data-sources";
+import { getDemoData } from "@/lib/demo-data";
 import { IDateFilter, IChannelParams, OrderDirection } from "@/interfaces/dashboard.interface";
 import { PeriodFilter } from "@/app/[locale]/[slug]/_components/period-filter";
+import { DemoModeBanner } from "@/app/[locale]/[slug]/_components/demo-mode-banner";
 import { ChannelsTreemap } from "./channels-treemap";
 import { ChannelsKpiStrip } from "./channels-kpi-strip";
 import { ChannelsTable } from "./channels-table";
@@ -29,6 +32,12 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const slug = organization?.slug ?? "";
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
+
+  const { data: dataSources } = useOrgDataSources(orgId);
+  const isDemo = !dataSources?.hasGateway;
+  const demoData = isDemo ? getDemoData(currency) : null;
 
   const [search, setSearch] = useState(initialSearch ?? "");
   const debouncedSearch = useDebounce(search, 400);
@@ -48,12 +57,31 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
 
   const { data: resp, isPending: isLoading } = useChannels(orgId, params);
 
-  const channelsData = resp?.data ?? [];
-  const pagination = resp?.pagination ?? EMPTY_PAGINATION;
-  const stepMeta = resp?.stepMeta ?? [];
-  const investmentGroups = resp?.investmentGroups ?? [];
+  const demoResp = demoData ? {
+    data: demoData.channels.data,
+    pagination: { page: 1, limit: 30, total: demoData.channels.data.length, total_pages: 1 },
+    stepMeta: [
+      { key: "pageview", label: "Visualizações" },
+      { key: "signup", label: "Cadastros" },
+      { key: "checkout", label: "Checkouts" },
+      { key: "purchase", label: "Compras" },
+    ],
+    investmentGroups: [],
+    totalRevenue: demoData.channels.totalRevenue,
+    channelsWithRevenue: demoData.channels.channelsWithRevenue,
+    topChannel: demoData.channels.topChannel,
+    concentrationTop2: demoData.channels.concentrationTop2,
+  } : null;
 
-  const hasNoData = !isLoading && resp !== undefined && channelsData.length === 0;
+  const effectiveResp = isDemo ? demoResp : resp;
+  const effectiveLoading = isDemo ? false : isLoading;
+
+  const channelsData = effectiveResp?.data ?? [];
+  const pagination = effectiveResp?.pagination ?? EMPTY_PAGINATION;
+  const stepMeta = effectiveResp?.stepMeta ?? [];
+  const investmentGroups = effectiveResp?.investmentGroups ?? [];
+
+  const hasNoData = !effectiveLoading && effectiveResp !== undefined && channelsData.length === 0;
 
   return (
     <div className="space-y-4">
@@ -86,7 +114,9 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
         </div>
       </div>
 
-      {hasNoData ? (
+      {isDemo && <DemoModeBanner module="channels" slug={slug} locale={locale} />}
+
+      {hasNoData && !isDemo ? (
         <WelcomeState
           icon={IconBrandGoogle}
           title={tTour("title")}
@@ -97,7 +127,7 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
         />
       ) : (
         <>
-          <ChannelsKpiStrip data={resp} isLoading={isLoading} />
+          <ChannelsKpiStrip data={effectiveResp as any} isLoading={effectiveLoading} />
 
           {investmentGroups.length > 0 && (
             <ChannelsInvestmentKpis groups={investmentGroups} />
@@ -105,13 +135,13 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
 
           <ChannelsCampaigns filter={filter} />
 
-          <ChannelsTreemap data={channelsData} isLoading={isLoading} />
+          <ChannelsTreemap data={channelsData} isLoading={effectiveLoading} />
 
           <ChannelsTable
             data={channelsData}
             stepMeta={stepMeta}
             pagination={pagination}
-            isLoading={isLoading}
+            isLoading={effectiveLoading}
             orderBy={orderBy}
             orderDir={orderDir}
             onOrderBy={(k) => { setOrderBy(k); setPage(1); }}

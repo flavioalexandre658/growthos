@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
+import { useOrgDataSources } from "@/hooks/queries/use-org-data-sources";
+import { getDemoData } from "@/lib/demo-data";
 import { useEvents } from "@/hooks/queries/use-events";
 import { useDebounce } from "@/hooks/use-debounce";
 import { exportEvents } from "@/actions/events/export-events.action";
 import type { IDateFilter, OrderDirection } from "@/interfaces/dashboard.interface";
-import type { IEventParams } from "@/interfaces/event.interface";
+import type { IEvent, IEventParams } from "@/interfaces/event.interface";
+import { DemoModeBanner } from "@/app/[locale]/[slug]/_components/demo-mode-banner";
 import { EventHealthStatus } from "./event-health-status";
 import { EventsFilters } from "./events-filters";
 import { EventsTable } from "./events-table";
@@ -15,7 +19,6 @@ import { IconList, IconDownload, IconLoader2 } from "@tabler/icons-react";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
 import "dayjs/locale/en";
-import { useLocale } from "next-intl";
 
 const EMPTY_PAGINATION = { page: 1, limit: 25, total: 0, total_pages: 0 };
 
@@ -47,6 +50,12 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
   const dayjsLocale = locale === "pt" ? "pt-br" : locale;
   const { organization } = useOrganization();
   const orgId = organization?.id;
+  const slug = organization?.slug ?? "";
+  const currency = organization?.currency ?? "BRL";
+
+  const { data: dataSources } = useOrgDataSources(orgId);
+  const isDemo = !dataSources?.hasGateway;
+  const demoData = isDemo ? getDemoData(currency) : null;
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 400);
@@ -80,12 +89,32 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
 
   const { data: resp, isPending: isLoading } = useEvents(orgId, params);
 
-  const events = resp?.data ?? [];
-  const pagination = resp?.pagination ?? EMPTY_PAGINATION;
-  const distinctEventTypes = resp?.distinctEventTypes ?? [];
-  const distinctSources = resp?.distinctSources ?? [];
-  const distinctDevices = resp?.distinctDevices ?? [];
-  const distinctProviders = resp?.distinctProviders ?? [];
+  const demoEvents: IEvent[] = (demoData?.events ?? []).map((e) => ({
+    ...e,
+    billingInterval: null,
+    subscriptionId: null,
+    productId: null,
+    category: null,
+    sessionId: null,
+    eventHash: null,
+  }));
+
+  const events = isDemo ? demoEvents : (resp?.data ?? []);
+  const pagination = isDemo
+    ? { page: 1, limit: 25, total: demoEvents.length, total_pages: 1 }
+    : (resp?.pagination ?? EMPTY_PAGINATION);
+  const distinctEventTypes = isDemo
+    ? [...new Set(demoEvents.map((e) => e.eventType))]
+    : (resp?.distinctEventTypes ?? []);
+  const distinctSources = isDemo
+    ? [...new Set(demoEvents.map((e) => e.source).filter(Boolean) as string[])]
+    : (resp?.distinctSources ?? []);
+  const distinctDevices = isDemo
+    ? [...new Set(demoEvents.map((e) => e.device).filter(Boolean) as string[])]
+    : (resp?.distinctDevices ?? []);
+  const distinctProviders = isDemo
+    ? [...new Set(demoEvents.map((e) => e.provider).filter(Boolean) as string[])]
+    : (resp?.distinctProviders ?? []);
 
   const toggleEventType = (et: string) => {
     setSelectedEventTypes((prev) =>
@@ -148,6 +177,8 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
 
   return (
     <div className="space-y-4">
+      {isDemo && <DemoModeBanner module="events" slug={slug} locale={locale} />}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600/20 border border-indigo-600/30 shrink-0">
@@ -171,7 +202,7 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
           <button
             type="button"
             onClick={handleExport}
-            disabled={isExporting || pagination.total === 0}
+            disabled={isDemo || isExporting || pagination.total === 0}
             title={t("exportTitle")}
             className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-zinc-800 bg-zinc-900 text-xs text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >

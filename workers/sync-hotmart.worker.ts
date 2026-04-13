@@ -133,13 +133,37 @@ function report(job: Job, progress: SyncJobProgress): void {
 async function fetchHotmartPage<T>(
   url: string,
   accessToken: string,
+  logFirstPage = false,
 ): Promise<HotmartListResponse<T>> {
   const res = await fetch(url, { headers: hotmartAuthHeaders(accessToken) });
   if (!res.ok) {
     const text = await res.text().catch(() => res.statusText);
     throw new Error(`Hotmart API error (${res.status}): ${text.slice(0, 200)}`);
   }
-  return res.json() as Promise<HotmartListResponse<T>>;
+  const json = await res.json();
+
+  if (logFirstPage) {
+    const keys = Object.keys(json ?? {});
+    const items = json?.items;
+    console.log("[hotmart-sync] API response keys:", keys, "items length:", Array.isArray(items) ? items.length : "N/A");
+    if (Array.isArray(items) && items[0]) {
+      console.log("[hotmart-sync] First item keys:", Object.keys(items[0]));
+    }
+  }
+
+  // Handle alternative response formats
+  if (Array.isArray(json)) {
+    return { items: json };
+  }
+  if (json && !Array.isArray(json.items) && typeof json === "object") {
+    const alt = json.data ?? json.sales ?? json.results ?? json.records;
+    if (Array.isArray(alt)) {
+      console.log("[hotmart-sync] API returned data under alternative key, found", alt.length, "items");
+      return { items: alt, page_info: json.page_info };
+    }
+  }
+
+  return json as HotmartListResponse<T>;
 }
 
 async function fetchAllHotmart<T>(
@@ -158,13 +182,14 @@ async function fetchAllHotmart<T>(
     const url = `${HOTMART_API_BASE}${basePath}${sep}max_results=${PAGE_SIZE}${tokenParam}`;
 
     let token = await refreshToken();
+    const isFirstPage = all.length === 0;
     let page: HotmartListResponse<T>;
     try {
-      page = await fetchHotmartPage<T>(url, token);
+      page = await fetchHotmartPage<T>(url, token, isFirstPage);
     } catch (err) {
       if (err instanceof Error && err.message.includes("401")) {
         token = await refreshToken();
-        page = await fetchHotmartPage<T>(url, token);
+        page = await fetchHotmartPage<T>(url, token, isFirstPage);
       } else {
         throw err;
       }
@@ -300,6 +325,7 @@ export async function processHotmartSyncJob(job: Job<SyncJobData>): Promise<{
   );
 
   const totalItems = allSales.length + allSubs.length;
+  console.log(`[hotmart-sync] Total fetched: ${allSales.length} sales + ${allSubs.length} subscriptions (isReSync=${isReSync})`);
 
   if (!isReSync) {
     report(job, {
@@ -380,11 +406,13 @@ export async function processHotmartSyncJob(job: Job<SyncJobData>): Promise<{
 
   let paymentsSynced = 0;
   let oneTimePurchasesSynced = 0;
+  let skippedZeroGross = 0;
+  let skippedNoTransaction = 0;
 
   for (const item of allSales) {
-    if (!item.purchase?.transaction) continue;
+    if (!item.purchase?.transaction) { skippedNoTransaction++; continue; }
     const grossCents = pickGrossInCents(item);
-    if (!grossCents) continue;
+    if (!grossCents) { skippedZeroGross++; continue; }
 
     if (!budget.isUnlimited) {
       const paid = dayjs(pickEventDate(item));
@@ -529,6 +557,18 @@ export async function processHotmartSyncJob(job: Job<SyncJobData>): Promise<{
     .where(eq(integrations.id, integrationId));
 
   caches.clear();
+
+  console.log("[hotmart-sync] Summary:", {
+    totalSalesFetched: allSales.length,
+    totalSubsFetched: allSubs.length,
+    skippedNoTransaction,
+    skippedZeroGross,
+    skippedByLimit,
+    eventsInserted: eventRows.length,
+    paymentsInserted: paymentRows.length,
+    subscriptionsInserted: subRows.length,
+    customersInserted: customerRows.length,
+  });
 
   const completionMsg = reachedLimit
     ? `Sync concluído! ${skippedByLimit} transações ignoradas por limite do plano.`

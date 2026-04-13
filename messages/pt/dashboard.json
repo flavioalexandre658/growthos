@@ -128,7 +128,20 @@
       "upgrade": "Fazer upgrade"
     },
     "demoBanner": {
-      "modeLabel": "Modo demonstração"
+      "modeLabel": "Modo demonstração",
+      "title": "Modo demonstração",
+      "dashboardDescription": "Estes dados são de exemplo. Conecte um gateway para ver sua receita real.",
+      "financeDescription": "O P&L abaixo usa dados fictícios. Conecte um gateway e adicione seus custos reais.",
+      "eventsDescription": "Eventos simulados. Instale o tracker.js e conecte um gateway para ver dados reais.",
+      "customersDescription": "Clientes fictícios. Conecte um gateway para ver quem compra de você.",
+      "channelsDescription": "Canais simulados. Instale o tracker.js para rastrear a origem de cada venda.",
+      "costsDescription": "Custos de exemplo. Adicione seus custos reais para calcular a margem correta.",
+      "mrrDescription": "Dados de MRR fictícios. Conecte um gateway com assinaturas para ver métricas reais.",
+      "subscriptionsDescription": "Assinaturas fictícias. Conecte um gateway para ver seus assinantes reais.",
+      "trackerDescription": "Funil simulado. Instale o tracker.js para capturar conversões reais do seu site.",
+      "pagesDescription": "Páginas fictícias. Instale o tracker.js para rastrear as landing pages do seu site.",
+      "connectGateway": "Conectar gateway",
+      "installTracker": "Instalar tracker"
     },
     "tracker": {
       "title": "Rastreamento",

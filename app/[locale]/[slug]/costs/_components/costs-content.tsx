@@ -2,6 +2,8 @@
 
 import { useTranslations } from "next-intl";
 import { useOrganization } from "@/components/providers/organization-provider";
+import { useOrgDataSources } from "@/hooks/queries/use-org-data-sources";
+import { getDemoData } from "@/lib/demo-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FixedCostsTable } from "./fixed-costs-table";
@@ -9,6 +11,7 @@ import { VariableCostsTable } from "./variable-costs-table";
 import { MarketingSpendTable } from "./marketing-spend-table";
 import { CostsImpactCards } from "./costs-impact-cards";
 import { CostCompositionChart } from "./cost-composition-chart";
+import { DemoModeBanner } from "@/app/[locale]/[slug]/_components/demo-mode-banner";
 import { useCostsSummary } from "@/hooks/queries/use-costs-summary";
 import { InlineBanner } from "@/components/ui/welcome-state";
 import type { IDateFilter } from "@/interfaces/dashboard.interface";
@@ -61,14 +64,34 @@ export function CostsContent({ filter = {}, slug }: { filter?: IDateFilter; slug
   const tTour = useTranslations("tour.welcome.costs");
   const { organization } = useOrganization();
   const orgId = organization?.id;
+  const effectiveSlug = slug ?? organization?.slug ?? "";
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
+
+  const { data: dataSources } = useOrgDataSources(orgId);
+  const isDemo = !dataSources?.hasGateway;
+  const demoData = isDemo ? getDemoData(currency) : null;
 
   const { data: summary, isLoading: summaryLoading } = useCostsSummary(orgId);
 
+  const demoCostsSummary = demoData ? {
+    grossRevenueInCents: demoData.financial.grossRevenueInCents,
+    totalFixedCostsInCents: demoData.financial.pl.totalFixedCostsInCents,
+    totalVariableCostsInCents: demoData.financial.pl.totalVariableCostsInCents,
+    totalMarketingSpendInCents: demoData.financial.pl.marketingSpendInCents,
+    totalCostsInCents: demoData.financial.pl.totalFixedCostsInCents + demoData.financial.pl.totalVariableCostsInCents + demoData.financial.pl.marketingSpendInCents,
+    impactPercent: Math.round(((demoData.financial.pl.totalFixedCostsInCents + demoData.financial.pl.totalVariableCostsInCents + demoData.financial.pl.marketingSpendInCents) / demoData.financial.grossRevenueInCents) * 1000) / 10,
+    marginPercent: demoData.financial.pl.marginPercent,
+  } : undefined;
+
+  const effectiveSummary = isDemo ? demoCostsSummary : summary;
+  const effectiveSummaryLoading = isDemo ? false : summaryLoading;
+
   const hasNoCosts =
-    !summaryLoading &&
-    summary !== undefined &&
-    (summary?.totalFixedCostsInCents ?? 0) === 0 &&
-    (summary?.totalVariableCostsInCents ?? 0) === 0;
+    !effectiveSummaryLoading &&
+    effectiveSummary !== undefined &&
+    (effectiveSummary?.totalFixedCostsInCents ?? 0) === 0 &&
+    (effectiveSummary?.totalVariableCostsInCents ?? 0) === 0;
 
   if (!orgId) {
     return <CostsPageSkeleton />;
@@ -83,9 +106,11 @@ export function CostsContent({ filter = {}, slug }: { filter?: IDateFilter; slug
         </p>
       </div>
 
-      <CostsImpactCards data={summary} isLoading={summaryLoading} />
+      {isDemo && <DemoModeBanner module="costs" slug={effectiveSlug} locale={locale} />}
 
-      {hasNoCosts && !summaryLoading && (
+      <CostsImpactCards data={effectiveSummary as any} isLoading={effectiveSummaryLoading} />
+
+      {hasNoCosts && !effectiveSummaryLoading && !isDemo && (
         <InlineBanner
           description={tTour("ctaLabel")}
           ctaLabel={t("fixedCostsTab")}
@@ -93,7 +118,7 @@ export function CostsContent({ filter = {}, slug }: { filter?: IDateFilter; slug
         />
       )}
 
-      <CostCompositionChart data={summary} isLoading={summaryLoading} />
+      <CostCompositionChart data={effectiveSummary as any} isLoading={effectiveSummaryLoading} />
 
       <Tabs defaultValue="fixed" className="w-full">
         <TabsList className="bg-zinc-900 border border-zinc-800 h-9 mb-4">
@@ -118,15 +143,15 @@ export function CostsContent({ filter = {}, slug }: { filter?: IDateFilter; slug
         </TabsList>
 
         <TabsContent value="fixed">
-          <FixedCostsTable organizationId={orgId} grossRevenueInCents={summary?.grossRevenueInCents} />
+          <FixedCostsTable organizationId={orgId} grossRevenueInCents={effectiveSummary?.grossRevenueInCents} />
         </TabsContent>
 
         <TabsContent value="variable">
-          <VariableCostsTable organizationId={orgId} grossRevenueInCents={summary?.grossRevenueInCents} />
+          <VariableCostsTable organizationId={orgId} grossRevenueInCents={effectiveSummary?.grossRevenueInCents} />
         </TabsContent>
 
         <TabsContent value="marketing">
-          <MarketingSpendTable organizationId={orgId} filter={filter} slug={slug} />
+          <MarketingSpendTable organizationId={orgId} filter={filter} slug={effectiveSlug} />
         </TabsContent>
       </Tabs>
     </div>

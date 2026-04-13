@@ -5,6 +5,8 @@ import { useTranslations } from "next-intl";
 import { useLandingPages } from "@/hooks/queries/use-landing-pages";
 import { useDebounce } from "@/hooks/use-debounce";
 import { useOrganization } from "@/components/providers/organization-provider";
+import { useOrgDataSources } from "@/hooks/queries/use-org-data-sources";
+import { getDemoData } from "@/lib/demo-data";
 import {
   IDateFilter,
   ILandingPageData,
@@ -12,6 +14,7 @@ import {
   OrderDirection,
 } from "@/interfaces/dashboard.interface";
 import { PeriodFilter } from "@/app/[locale]/[slug]/_components/period-filter";
+import { DemoModeBanner } from "@/app/[locale]/[slug]/_components/demo-mode-banner";
 import { PagesTable } from "./pages-table";
 import { PagesKpiStrip } from "./pages-kpi-strip";
 import { PagesScatterPlot } from "./pages-scatter-plot";
@@ -188,6 +191,12 @@ export function PagesContent({ filter }: PagesContentProps) {
   const { organization } = useOrganization();
   const orgId = organization?.id;
   const slug = organization?.slug ?? "";
+  const locale = organization?.locale ?? "pt-BR";
+  const currency = organization?.currency ?? "BRL";
+
+  const { data: dataSources } = useOrgDataSources(orgId);
+  const isDemo = !dataSources?.hasGateway;
+  const demoData = isDemo ? getDemoData(currency) : null;
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 400);
@@ -208,11 +217,33 @@ export function PagesContent({ filter }: PagesContentProps) {
 
   const { data: resp, isPending: isLoading } = useLandingPages(orgId, params);
 
-  const allData = useMemo(() => resp?.data ?? [], [resp?.data]);
-  const pagination = resp?.pagination ?? EMPTY_PAGINATION;
-  const stepMeta = resp?.stepMeta ?? [];
+  const demoResp = demoData ? {
+    data: demoData.pages.data,
+    pagination: { page: 1, limit: 30, total: demoData.pages.data.length, total_pages: 1 },
+    stepMeta: [
+      { key: "pageview", label: "Visualizações" },
+      { key: "signup", label: "Cadastros" },
+      { key: "checkout", label: "Checkouts" },
+      { key: "purchase", label: "Compras" },
+    ],
+    totalPages: demoData.pages.totalPages,
+    pagesWithRevenue: demoData.pages.pagesWithRevenue,
+    totalRevenue: demoData.pages.totalRevenue,
+    bestConversionPage: demoData.pages.bestConversionPage,
+    bestConversionRate: demoData.pages.bestConversionRate,
+    biggestOpportunityPage: demoData.pages.biggestOpportunityPage,
+    biggestOpportunityVisits: demoData.pages.biggestOpportunityVisits,
+    scatterData: demoData.pages.scatterData,
+  } : null;
 
-  const hasNoData = !isLoading && resp !== undefined && allData.length === 0;
+  const effectiveResp = isDemo ? demoResp : resp;
+  const effectiveLoading = isDemo ? false : isLoading;
+
+  const allData = useMemo(() => effectiveResp?.data ?? [], [effectiveResp?.data]);
+  const pagination = effectiveResp?.pagination ?? EMPTY_PAGINATION;
+  const stepMeta = effectiveResp?.stepMeta ?? [];
+
+  const hasNoData = !effectiveLoading && effectiveResp !== undefined && allData.length === 0;
 
   const filteredData = useMemo<ILandingPageData[]>(() => {
     if (pageTypes.size === 0) return allData;
@@ -235,7 +266,9 @@ export function PagesContent({ filter }: PagesContentProps) {
         </div>
       </div>
 
-      {hasNoData ? (
+      {isDemo && <DemoModeBanner module="pages" slug={slug} locale={locale} />}
+
+      {hasNoData && !isDemo ? (
         <WelcomeState
           icon={IconWorldWww}
           title={tTour("title")}
@@ -246,17 +279,17 @@ export function PagesContent({ filter }: PagesContentProps) {
         />
       ) : (
         <>
-          <PagesKpiStrip data={resp} isLoading={isLoading} />
+          <PagesKpiStrip data={effectiveResp as any} isLoading={effectiveLoading} />
 
           <PagesScatterPlot
-            data={resp?.scatterData}
-            isLoading={isLoading}
+            data={effectiveResp?.scatterData as any}
+            isLoading={effectiveLoading}
           />
 
           <PagesTopCards
-            data={allData}
+            data={allData as any}
             stepMeta={stepMeta}
-            isLoading={isLoading}
+            isLoading={effectiveLoading}
           />
 
           <div className="flex flex-wrap items-center gap-2">
@@ -296,7 +329,7 @@ export function PagesContent({ filter }: PagesContentProps) {
                   }
                 : pagination
             }
-            isLoading={isLoading}
+            isLoading={effectiveLoading}
             orderBy={orderBy}
             orderDir={orderDir}
             onOrderBy={(k) => {

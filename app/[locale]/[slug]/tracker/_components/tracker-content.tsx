@@ -9,7 +9,10 @@ import { useDaily } from "@/hooks/queries/use-daily";
 import { useSourceDistribution } from "@/hooks/queries/use-source-distribution";
 import { useTopProducts } from "@/hooks/queries/use-top-products";
 import { useOrganization } from "@/components/providers/organization-provider";
+import { useOrgDataSources } from "@/hooks/queries/use-org-data-sources";
+import { getDemoData } from "@/lib/demo-data";
 import { useAtRiskCustomersCount } from "@/hooks/queries/use-at-risk-customers";
+import { DemoModeBanner } from "@/app/[locale]/[slug]/_components/demo-mode-banner";
 import { useCreateDashboardAlerts } from "@/hooks/mutations/use-create-dashboard-alerts";
 import { fmtCurrencyDecimal } from "@/utils/format";
 import { KpiCards } from "@/app/[locale]/[slug]/_components/kpi-cards";
@@ -177,6 +180,10 @@ export function TrackerContent({ filter }: TrackerContentProps) {
   const locale = organization?.locale ?? "pt-BR";
   const currency = organization?.currency ?? "BRL";
 
+  const { data: dataSources } = useOrgDataSources(orgId);
+  const isDemo = !dataSources?.hasGateway;
+  const demoData = isDemo ? getDemoData(currency) : null;
+
   const initialHiddenKeys = new Set(
     (organization?.funnelSteps ?? [])
       .filter((s) => s.hidden)
@@ -201,11 +208,20 @@ export function TrackerContent({ filter }: TrackerContentProps) {
   const { data: atRiskData } = useAtRiskCustomersCount(orgId ?? "");
   const { mutate: createAlerts } = useCreateDashboardAlerts(orgId ?? "");
 
-  const allSteps: StepOption[] = (funnel?.steps ?? [])
-    .filter((s) => s.key !== "pageview")
-    .map((s) => ({ eventType: s.key, label: s.label }));
+  const effectiveFunnel = isDemo ? (demoData?.funnel as any) : funnel;
+  const effectiveFunnelLoading = isDemo ? false : funnelLoading;
+  const effectiveDaily = isDemo ? demoData?.daily : dailyResult?.rows;
+  const effectiveDailyLoading = isDemo ? false : dailyLoading;
+  const effectiveSource = isDemo ? demoData?.sourceDistribution : sourceData;
+  const effectiveSourceLoading = isDemo ? false : sourceLoading;
+  const effectiveTopProducts = isDemo ? demoData?.topProducts : topProducts;
+  const effectiveTopProductsLoading = isDemo ? false : topProductsLoading;
 
-  const stepMeta = funnel?.steps.map((s) => ({ key: s.key, label: s.label })) ?? [];
+  const allSteps: StepOption[] = (effectiveFunnel?.steps ?? [])
+    .filter((s: any) => s.key !== "pageview")
+    .map((s: any) => ({ eventType: s.key, label: s.label }));
+
+  const stepMeta = effectiveFunnel?.steps.map((s: any) => ({ key: s.key, label: s.label })) ?? [];
 
   const [bannerDismissed, setBannerDismissed] = useState(() => {
     try {
@@ -216,22 +232,22 @@ export function TrackerContent({ filter }: TrackerContentProps) {
   });
 
   const hasNoData =
-    !funnelLoading &&
-    funnel !== undefined &&
-    (funnel?.steps ?? []).every((s) => s.value === 0) &&
-    (!funnel?.revenue || funnel.revenue === 0);
+    !effectiveFunnelLoading &&
+    effectiveFunnel !== undefined &&
+    (effectiveFunnel?.steps ?? []).every((s: any) => s.value === 0) &&
+    (!effectiveFunnel?.revenue || effectiveFunnel.revenue === 0);
 
   const alertsDispatchedRef = useRef(false);
 
   useEffect(() => {
-    if (!funnel || funnelLoading || !orgId || alertsDispatchedRef.current) return;
+    if (!funnel || funnelLoading || !orgId || alertsDispatchedRef.current || isDemo) return;
 
     const alertEntries = buildAlertEntries(funnel, slug, tAlerts, locale, currency, atRiskData ?? undefined);
     if (alertEntries.length === 0) return;
 
     alertsDispatchedRef.current = true;
     createAlerts({ organizationId: orgId, alerts: alertEntries });
-  }, [funnel, funnelLoading, orgId, slug, atRiskData, tAlerts, createAlerts, locale, currency]);
+  }, [funnel, funnelLoading, orgId, slug, atRiskData, tAlerts, createAlerts, locale, currency, isDemo]);
 
   return (
     <div className="space-y-4">
@@ -254,7 +270,9 @@ export function TrackerContent({ filter }: TrackerContentProps) {
         </div>
       </div>
 
-      {hasNoData && !bannerDismissed && (
+      {isDemo && <DemoModeBanner module="tracker" slug={slug} locale={locale} />}
+
+      {hasNoData && !bannerDismissed && !isDemo && (
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/40 px-4 py-3 relative">
           <p className="flex-1 text-xs text-zinc-500 leading-relaxed pr-6 sm:pr-0">
             {tTour("noDataSubtitle")}
@@ -289,26 +307,26 @@ export function TrackerContent({ filter }: TrackerContentProps) {
         </div>
       )}
 
-      <KpiCards data={funnel} isLoading={funnelLoading} hiddenKeys={hiddenKeys} />
+      <KpiCards data={effectiveFunnel} isLoading={effectiveFunnelLoading} hiddenKeys={hiddenKeys} />
 
       <div className="grid grid-cols-1 xl:grid-cols-[55fr_45fr] gap-4">
         <FunnelSection
-          data={funnel}
-          isLoading={funnelLoading}
+          data={effectiveFunnel}
+          isLoading={effectiveFunnelLoading}
           hiddenKeys={hiddenKeys}
         />
-        <SourceChart data={sourceData} isLoading={sourceLoading} />
+        <SourceChart data={effectiveSource as any} isLoading={effectiveSourceLoading} />
       </div>
 
       <DailyChart
-        data={dailyResult?.rows}
+        data={effectiveDaily}
         stepMeta={stepMeta}
-        isLoading={dailyLoading}
+        isLoading={effectiveDailyLoading}
         hiddenKeys={hiddenKeys}
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <TopProducts data={topProducts} isLoading={topProductsLoading} />
+        <TopProducts data={effectiveTopProducts as any} isLoading={effectiveTopProductsLoading} />
         <TopCustomersCard />
       </div>
     </div>

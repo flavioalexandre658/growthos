@@ -96,7 +96,7 @@ function buildNavSections(
     },
   ];
 
-  if (hasTracker) {
+  if (hasTracker || !hasGateway) {
     sections.push({
       title: t("sections.acquisition"),
       items: [

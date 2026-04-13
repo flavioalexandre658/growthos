@@ -179,7 +179,32 @@ async function fetchSalesPage(
     const text = await res.text().catch(() => res.statusText);
     throw new Error(`Kiwify API error (${res.status}): ${text.slice(0, 200)}`);
   }
-  return res.json() as Promise<KiwifyListResponse<KiwifySale>>;
+  const json = await res.json();
+
+  // Log the response structure on the first page to debug format mismatches
+  if (pageNumber === 1) {
+    const keys = Object.keys(json ?? {});
+    const sample = Array.isArray(json?.data) ? json.data[0] : null;
+    console.log("[kiwify-sync] API response keys:", keys, "data length:", json?.data?.length ?? "N/A");
+    if (sample) {
+      console.log("[kiwify-sync] First sale keys:", Object.keys(sample));
+    }
+  }
+
+  // Handle alternative response formats
+  if (Array.isArray(json)) {
+    return { data: json };
+  }
+  if (json && !Array.isArray(json.data) && typeof json === "object") {
+    // Try common alternative keys
+    const alt = json.sales ?? json.orders ?? json.results ?? json.items;
+    if (Array.isArray(alt)) {
+      console.log("[kiwify-sync] API returned data under alternative key, found", alt.length, "items");
+      return { data: alt, pagination: json.pagination };
+    }
+  }
+
+  return json as KiwifyListResponse<KiwifySale>;
 }
 
 async function fetchSalesWindow(
@@ -302,11 +327,13 @@ export async function processKiwifySyncJob(job: Job<SyncJobData>): Promise<{
       job,
       collected,
     );
+    console.log(`[kiwify-sync] Window ${isoFmt(windowStart)}..${isoFmt(windowEnd)}: ${windowSales.length} sales`);
     allSales.push(...windowSales);
     windowStart = windowEnd.add(1, "day");
   }
 
   const totalItems = allSales.length;
+  console.log(`[kiwify-sync] Total sales fetched from API: ${totalItems} (isReSync=${isReSync})`);
 
   if (!isReSync) {
     report(job, {
@@ -346,11 +373,15 @@ export async function processKiwifySyncJob(job: Job<SyncJobData>): Promise<{
 
   let paymentsSynced = 0;
   let oneTimePurchasesSynced = 0;
+  let skippedZeroGross = 0;
   const seenSubIds = new Set<string>();
 
   for (const sale of allSales) {
     const grossCents = pickGrossInCents(sale);
-    if (!grossCents) continue;
+    if (!grossCents) {
+      skippedZeroGross++;
+      continue;
+    }
 
     if (!budget.isUnlimited) {
       const paid = dayjs(pickPaidAt(sale));
@@ -525,6 +556,16 @@ export async function processKiwifySyncJob(job: Job<SyncJobData>): Promise<{
     .where(eq(integrations.id, integrationId));
 
   caches.clear();
+
+  console.log("[kiwify-sync] Summary:", {
+    totalFetched: totalItems,
+    skippedZeroGross,
+    skippedByLimit,
+    eventsInserted: eventRows.length,
+    paymentsInserted: paymentRows.length,
+    subscriptionsInserted: subRows.length,
+    customersInserted: customerRows.length,
+  });
 
   const completionMsg = reachedLimit
     ? `Sync concluído! ${skippedByLimit} transações ignoradas por limite do plano.`

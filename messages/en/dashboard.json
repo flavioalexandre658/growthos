@@ -128,7 +128,20 @@
       "upgrade": "Upgrade now"
     },
     "demoBanner": {
-      "modeLabel": "Demo mode"
+      "modeLabel": "Demo mode",
+      "title": "Demo mode",
+      "dashboardDescription": "This is sample data. Connect a gateway to see your real revenue.",
+      "financeDescription": "The P&L below uses demo data. Connect a gateway and add your real costs.",
+      "eventsDescription": "Simulated events. Install tracker.js and connect a gateway to see real data.",
+      "customersDescription": "Demo customers. Connect a gateway to see who buys from you.",
+      "channelsDescription": "Simulated channels. Install tracker.js to track the origin of each sale.",
+      "costsDescription": "Sample costs. Add your real costs to calculate the correct margin.",
+      "mrrDescription": "Demo MRR data. Connect a gateway with subscriptions to see real metrics.",
+      "subscriptionsDescription": "Demo subscriptions. Connect a gateway to see your real subscribers.",
+      "trackerDescription": "Simulated funnel. Install tracker.js to capture real conversions from your site.",
+      "pagesDescription": "Demo pages. Install tracker.js to track your site's landing pages.",
+      "connectGateway": "Connect gateway",
+      "installTracker": "Install tracker"
     },
     "tracker": {
       "title": "Tracker",

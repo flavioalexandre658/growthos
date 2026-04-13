@@ -2,12 +2,16 @@
 
 import { Suspense, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import { useFinancial } from "@/hooks/queries/use-financial";
 import { useDaily } from "@/hooks/queries/use-daily";
 import { useOrganization } from "@/components/providers/organization-provider";
 import { useIntegrations } from "@/hooks/queries/use-integrations";
+import { useOrgDataSources } from "@/hooks/queries/use-org-data-sources";
+import { getDemoData } from "@/lib/demo-data";
 import { IDateFilter } from "@/interfaces/dashboard.interface";
 import { PeriodFilter } from "@/app/[locale]/[slug]/_components/period-filter";
+import { DemoModeBanner } from "@/app/[locale]/[slug]/_components/demo-mode-banner";
 import { FinanceKpiCards } from "./finance-kpi-cards";
 import { RevenueLineChart } from "./revenue-line-chart";
 import { FinanceBreakdownTable } from "./finance-breakdown-table";
@@ -41,9 +45,15 @@ const PL_STEP_KEYS = [
 export function FinanceContent({ filter, slug }: FinanceContentProps) {
   const t = useTranslations("finance.financeContent");
   const tTour = useTranslations("tour.welcome.finance");
+  const locale = useLocale();
   const { organization } = useOrganization();
   const orgId = organization?.id;
+  const currency = organization?.currency ?? "BRL";
   const [showExplanation, setShowExplanation] = useState(false);
+
+  const { data: dataSources } = useOrgDataSources(orgId);
+  const isDemo = !dataSources?.hasGateway;
+  const demoData = isDemo ? getDemoData(currency) : null;
 
   const { data: integrations, isPending: integrationsLoading } = useIntegrations(orgId ?? "");
   const hasActiveIntegration = !integrationsLoading && (integrations ?? []).some((i) => i.status === "active");
@@ -57,14 +67,19 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
     filter,
   );
 
-  const pl = financial?.pl ?? null;
-  const periodDays = financial?.periodDays ?? 30;
+  const effectiveFinancial = (demoData?.financial ?? financial) as typeof financial;
+  const effectiveDaily = demoData?.daily ?? dailyResult?.rows;
+  const effectiveFinancialLoading = isDemo ? false : financialLoading;
+  const effectiveDailyLoading = isDemo ? false : dailyLoading;
+
+  const pl = effectiveFinancial?.pl ?? null;
+  const periodDays = effectiveFinancial?.periodDays ?? 30;
   const isSubMonth = periodDays < 30;
 
   const hasNoPayments =
-    !financialLoading &&
-    financial !== undefined &&
-    (financial?.grossRevenueInCents ?? 0) === 0;
+    !effectiveFinancialLoading &&
+    effectiveFinancial !== undefined &&
+    (effectiveFinancial?.grossRevenueInCents ?? 0) === 0;
 
   const hasCostsConfigured =
     pl !== null &&
@@ -91,7 +106,9 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
         </Suspense>
       </div>
 
-      {hasNoPayments && !hasActiveIntegration ? (
+      {isDemo && <DemoModeBanner module="finance" slug={slug} locale={locale} />}
+
+      {hasNoPayments && !hasActiveIntegration && !isDemo ? (
         <WelcomeState
           icon={IconCurrencyDollar}
           title={tTour("noPaymentsTitle")}
@@ -100,7 +117,7 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
           ctaHref={`/${slug}/settings/integrations`}
           className="min-h-[320px]"
         />
-      ) : hasNoPayments && hasActiveIntegration ? (
+      ) : hasNoPayments && hasActiveIntegration && !isDemo ? (
         <WelcomeState
           icon={IconCalendarOff}
           title={tTour("noDataPeriodTitle")}
@@ -121,7 +138,7 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
             </div>
           )}
 
-          {!hasCostsConfigured && !financialLoading && (
+          {!hasCostsConfigured && !effectiveFinancialLoading && (
             <InlineBanner
               description={tTour("noCostsBanner")}
               ctaLabel={tTour("noCostsCta")}
@@ -129,31 +146,31 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
             />
           )}
 
-          <FinanceKpiCards data={financial} isLoading={financialLoading} slug={slug} />
+          <FinanceKpiCards data={effectiveFinancial} isLoading={effectiveFinancialLoading} slug={slug} />
 
-          <ProfitLossWaterfall pl={pl} isLoading={financialLoading} />
+          <ProfitLossWaterfall pl={pl} isLoading={effectiveFinancialLoading} />
 
-          <RevenueLineChart data={dailyResult?.rows} pl={pl} isLoading={dailyLoading} />
+          <RevenueLineChart data={effectiveDaily} pl={pl} isLoading={effectiveDailyLoading} />
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
             <FinanceBreakdownTable
               title={t("revenueByPaymentMethod")}
               subtitle={t("revenueByPaymentMethodSubtitle")}
               rows={
-                financial?.byPaymentMethod.map((r) => ({
+                effectiveFinancial?.byPaymentMethod?.map((r) => ({
                   name: r.method,
                   payments: r.purchases,
                   revenue: r.revenue,
                   percentage: r.percentage,
                 })) ?? []
               }
-              isLoading={financialLoading}
+              isLoading={effectiveFinancialLoading}
             />
             <FinanceBreakdownTable
               title={t("revenueByCategory")}
               subtitle={t("revenueByCategorySubtitle")}
               rows={
-                financial?.byCategory.map((r) => ({
+                (effectiveFinancial as typeof financial)?.byCategory?.map((r) => ({
                   name: r.category,
                   payments: r.purchases,
                   revenue: r.revenue,
@@ -161,7 +178,7 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
                   marginPercentage: r.marginPercentage,
                 })) ?? []
               }
-              isLoading={financialLoading}
+              isLoading={effectiveFinancialLoading}
               showMargin
             />
           </div>
