@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { eq } from "drizzle-orm";
+import Stripe from "stripe";
 
 export const dynamic = "force-dynamic";
 import { authOptions } from "@/lib/auth-options";
@@ -29,10 +30,46 @@ export async function POST(req: NextRequest) {
 
   const origin = req.headers.get("origin") ?? process.env.NEXTAUTH_URL ?? "https://app.groware.io";
 
-  const portalSession = await stripe.billingPortal.sessions.create({
-    customer: userRow.stripeCustomerId,
-    return_url: `${origin}/organizations`,
-  });
+  try {
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: userRow.stripeCustomerId,
+      return_url: `${origin}/organizations`,
+    });
 
-  return NextResponse.json({ url: portalSession.url });
+    return NextResponse.json({ url: portalSession.url });
+  } catch (err) {
+    console.error("[billing/portal] stripe error", {
+      userId: session.user.id,
+      stripeCustomerId: userRow.stripeCustomerId,
+      error: err,
+    });
+
+    if (err instanceof Stripe.errors.StripeError) {
+      const message = err.message ?? "Stripe error";
+
+      if (/default configuration has not been created/i.test(message)) {
+        return NextResponse.json(
+          {
+            error:
+              "Stripe Customer Portal is not configured. An admin needs to save the portal settings at https://dashboard.stripe.com/settings/billing/portal",
+          },
+          { status: 500 },
+        );
+      }
+
+      if (err.code === "resource_missing") {
+        return NextResponse.json(
+          {
+            error:
+              "Stripe customer not found. This usually means the stored customer belongs to a different Stripe mode (test vs live) than the current API key.",
+          },
+          { status: 400 },
+        );
+      }
+
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+
+    return NextResponse.json({ error: "Unexpected error opening billing portal" }, { status: 500 });
+  }
 }
