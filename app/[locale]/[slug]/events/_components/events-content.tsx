@@ -53,8 +53,8 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
   const slug = organization?.slug ?? "";
   const currency = organization?.currency ?? "BRL";
 
-  const { data: dataSources } = useOrgDataSources(orgId);
-  const isDemo = !(dataSources?.hasRealData);
+  const { data: dataSources, isPending: dataSourcesPending } = useOrgDataSources(orgId);
+  const isDemo = !dataSourcesPending && !(dataSources?.hasRealData);
   const demoData = isDemo ? getDemoData(currency) : null;
 
   const [search, setSearch] = useState("");
@@ -87,7 +87,8 @@ export function EventsContent({ filter, initialEventTypes = [] }: EventsContentP
     max_value: maxValue ? Number(maxValue) * 100 : undefined,
   };
 
-  const { data: resp, isPending: isLoading } = useEvents(orgId, params);
+  const { data: resp, isPending: eventsLoading } = useEvents(orgId, params);
+  const isLoading = dataSourcesPending || eventsLoading;
 
   const demoEvents: IEvent[] = (demoData?.events ?? []).map((e) => ({
     ...e,

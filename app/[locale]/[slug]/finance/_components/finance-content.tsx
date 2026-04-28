@@ -49,8 +49,8 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
   const currency = organization?.currency ?? "BRL";
   const [showExplanation, setShowExplanation] = useState(false);
 
-  const { data: dataSources } = useOrgDataSources(orgId);
-  const isDemo = !(dataSources?.hasRealData);
+  const { data: dataSources, isPending: dataSourcesPending } = useOrgDataSources(orgId);
+  const isDemo = !dataSourcesPending && !(dataSources?.hasRealData);
   const demoData = isDemo ? getDemoData(currency) : null;
 
   const { data: integrations, isPending: integrationsLoading } = useIntegrations(orgId ?? "");
@@ -65,10 +65,10 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
     filter,
   );
 
-  const effectiveFinancial = (demoData?.financial ?? financial) as typeof financial;
-  const effectiveDaily = demoData?.daily ?? dailyResult?.rows;
-  const effectiveFinancialLoading = isDemo ? false : financialLoading;
-  const effectiveDailyLoading = isDemo ? false : dailyLoading;
+  const effectiveFinancial = (dataSourcesPending ? undefined : (demoData?.financial ?? financial)) as typeof financial;
+  const effectiveDaily = dataSourcesPending ? undefined : (demoData?.daily ?? dailyResult?.rows);
+  const effectiveFinancialLoading = dataSourcesPending || (isDemo ? false : financialLoading);
+  const effectiveDailyLoading = dataSourcesPending || (isDemo ? false : dailyLoading);
 
   const pl = effectiveFinancial?.pl ?? null;
   const periodDays = effectiveFinancial?.periodDays ?? 30;

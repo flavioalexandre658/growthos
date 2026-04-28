@@ -182,8 +182,8 @@ export function TrackerContent({ filter }: TrackerContentProps) {
   const locale = organization?.locale ?? "pt-BR";
   const currency = organization?.currency ?? "BRL";
 
-  const { data: dataSources } = useOrgDataSources(orgId);
-  const isDemo = !(dataSources?.hasRealData);
+  const { data: dataSources, isPending: dataSourcesPending } = useOrgDataSources(orgId);
+  const isDemo = !dataSourcesPending && !(dataSources?.hasRealData);
   const demoData = isDemo ? getDemoData(currency) : null;
 
   const initialHiddenKeys = new Set(
@@ -210,14 +210,14 @@ export function TrackerContent({ filter }: TrackerContentProps) {
   const { data: atRiskData } = useAtRiskCustomersCount(orgId ?? "");
   const { mutate: createAlerts } = useCreateDashboardAlerts(orgId ?? "");
 
-  const effectiveFunnel = isDemo ? (demoData?.funnel as IGenericFunnelData | undefined) : funnel;
-  const effectiveFunnelLoading = isDemo ? false : funnelLoading;
-  const effectiveDaily = isDemo ? demoData?.daily : dailyResult?.rows;
-  const effectiveDailyLoading = isDemo ? false : dailyLoading;
-  const effectiveSource = isDemo ? demoData?.sourceDistribution : sourceData;
-  const effectiveSourceLoading = isDemo ? false : sourceLoading;
-  const effectiveTopProducts = isDemo ? demoData?.topProducts : topProducts;
-  const effectiveTopProductsLoading = isDemo ? false : topProductsLoading;
+  const effectiveFunnel = dataSourcesPending ? undefined : (isDemo ? (demoData?.funnel as IGenericFunnelData | undefined) : funnel);
+  const effectiveFunnelLoading = dataSourcesPending || (isDemo ? false : funnelLoading);
+  const effectiveDaily = dataSourcesPending ? undefined : (isDemo ? demoData?.daily : dailyResult?.rows);
+  const effectiveDailyLoading = dataSourcesPending || (isDemo ? false : dailyLoading);
+  const effectiveSource = dataSourcesPending ? undefined : (isDemo ? demoData?.sourceDistribution : sourceData);
+  const effectiveSourceLoading = dataSourcesPending || (isDemo ? false : sourceLoading);
+  const effectiveTopProducts = dataSourcesPending ? undefined : (isDemo ? demoData?.topProducts : topProducts);
+  const effectiveTopProductsLoading = dataSourcesPending || (isDemo ? false : topProductsLoading);
 
   const allSteps: StepOption[] = (effectiveFunnel?.steps ?? [])
     .filter((s) => s.key !== "pageview")

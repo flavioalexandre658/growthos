@@ -34,8 +34,8 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
   const slug = organization?.slug ?? "";
   const currency = organization?.currency ?? "BRL";
 
-  const { data: dataSources } = useOrgDataSources(orgId);
-  const isDemo = !(dataSources?.hasRealData);
+  const { data: dataSources, isPending: dataSourcesPending } = useOrgDataSources(orgId);
+  const isDemo = !dataSourcesPending && !(dataSources?.hasRealData);
   const demoData = isDemo ? getDemoData(currency) : null;
 
   const [search, setSearch] = useState(initialSearch ?? "");
@@ -72,8 +72,8 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
     concentrationTop2: demoData.channels.concentrationTop2,
   } : null;
 
-  const effectiveResp = isDemo ? demoResp : resp;
-  const effectiveLoading = isDemo ? false : isLoading;
+  const effectiveResp = dataSourcesPending ? undefined : (isDemo ? demoResp : resp);
+  const effectiveLoading = dataSourcesPending || (isDemo ? false : isLoading);
 
   const channelsData = effectiveResp?.data ?? [];
   const pagination = effectiveResp?.pagination ?? EMPTY_PAGINATION;

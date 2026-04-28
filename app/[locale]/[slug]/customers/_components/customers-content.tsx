@@ -48,8 +48,8 @@ function AllCustomersList() {
   const timezone = organization?.timezone ?? "America/Sao_Paulo";
   const currency = organization?.currency ?? "BRL";
 
-  const { data: dataSources } = useOrgDataSources(orgId || undefined);
-  const isDemo = !(dataSources?.hasRealData);
+  const { data: dataSources, isPending: dataSourcesPending } = useOrgDataSources(orgId || undefined);
+  const isDemo = !dataSourcesPending && !(dataSources?.hasRealData);
   const demoData = isDemo ? getDemoData(currency) : null;
 
   const [search, setSearch] = useState("");
@@ -73,7 +73,8 @@ function AllCustomersList() {
     limit: 25,
   };
 
-  const { data, isLoading } = useCustomers(orgId, params);
+  const { data, isLoading: customersLoading } = useCustomers(orgId, params);
+  const isLoading = dataSourcesPending || customersLoading;
 
   const demoCustomers: ICustomer[] = (demoData?.customers ?? []).map((c) => ({
     id: c.id,
@@ -277,8 +278,8 @@ export function CustomersContent() {
   const orgId = organization?.id;
   const slug = organization?.slug ?? "";
 
-  const { data: dataSources } = useOrgDataSources(orgId);
-  const isDemo = !(dataSources?.hasRealData);
+  const { data: dataSources, isPending: dataSourcesPending } = useOrgDataSources(orgId);
+  const isDemo = !dataSourcesPending && !(dataSources?.hasRealData);
 
   return (
     <div className="space-y-4">

@@ -27,8 +27,8 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   const orgId = organization?.id;
   const currency = organization?.currency ?? "BRL";
 
-  const { data: dataSources } = useOrgDataSources(orgId);
-  const isDemo = !(dataSources?.hasRealData);
+  const { data: dataSources, isPending: dataSourcesPending } = useOrgDataSources(orgId);
+  const isDemo = !dataSourcesPending && !(dataSources?.hasRealData);
 
   const demoData = isDemo ? getDemoData(currency) : null;
 
@@ -36,12 +36,12 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   const { data: movement, isPending: movementLoading } = useMrrMovement(orgId, filter);
   const { data: growth, isPending: growthLoading } = useMrrGrowth(orgId, filter);
 
-  const effectiveOverview = demoData?.mrrOverview ?? overview;
-  const effectiveMovement = demoData?.mrrMovement ?? movement;
-  const effectiveGrowth = demoData?.mrrGrowth ?? growth;
-  const effectiveOverviewLoading = isDemo ? false : overviewLoading;
-  const effectiveMovementLoading = isDemo ? false : movementLoading;
-  const effectiveGrowthLoading = isDemo ? false : growthLoading;
+  const effectiveOverview = dataSourcesPending ? undefined : (demoData?.mrrOverview ?? overview);
+  const effectiveMovement = dataSourcesPending ? undefined : (demoData?.mrrMovement ?? movement);
+  const effectiveGrowth = dataSourcesPending ? undefined : (demoData?.mrrGrowth ?? growth);
+  const effectiveOverviewLoading = dataSourcesPending || (isDemo ? false : overviewLoading);
+  const effectiveMovementLoading = dataSourcesPending || (isDemo ? false : movementLoading);
+  const effectiveGrowthLoading = dataSourcesPending || (isDemo ? false : growthLoading);
 
   const slug = organization?.slug ?? "";
 

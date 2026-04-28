@@ -68,8 +68,8 @@ export function CostsContent({ filter = {}, slug }: { filter?: IDateFilter; slug
   const effectiveSlug = slug ?? organization?.slug ?? "";
   const currency = organization?.currency ?? "BRL";
 
-  const { data: dataSources } = useOrgDataSources(orgId);
-  const isDemo = !(dataSources?.hasRealData);
+  const { data: dataSources, isPending: dataSourcesPending } = useOrgDataSources(orgId);
+  const isDemo = !dataSourcesPending && !(dataSources?.hasRealData);
   const demoData = isDemo ? getDemoData(currency) : null;
 
   const { data: summary, isLoading: summaryLoading } = useCostsSummary(orgId);
@@ -84,8 +84,8 @@ export function CostsContent({ filter = {}, slug }: { filter?: IDateFilter; slug
     marginPercent: demoData.financial.pl.marginPercent,
   } : undefined;
 
-  const effectiveSummary = isDemo ? demoCostsSummary : summary;
-  const effectiveSummaryLoading = isDemo ? false : summaryLoading;
+  const effectiveSummary = dataSourcesPending ? undefined : (isDemo ? demoCostsSummary : summary);
+  const effectiveSummaryLoading = dataSourcesPending || (isDemo ? false : summaryLoading);
 
   const hasNoCosts =
     !effectiveSummaryLoading &&

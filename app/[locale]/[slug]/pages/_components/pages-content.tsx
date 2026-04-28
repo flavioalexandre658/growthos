@@ -195,8 +195,8 @@ export function PagesContent({ filter }: PagesContentProps) {
   const slug = organization?.slug ?? "";
   const currency = organization?.currency ?? "BRL";
 
-  const { data: dataSources } = useOrgDataSources(orgId);
-  const isDemo = !(dataSources?.hasRealData);
+  const { data: dataSources, isPending: dataSourcesPending } = useOrgDataSources(orgId);
+  const isDemo = !dataSourcesPending && !(dataSources?.hasRealData);
   const demoData = isDemo ? getDemoData(currency) : null;
 
   const [search, setSearch] = useState("");
@@ -237,8 +237,8 @@ export function PagesContent({ filter }: PagesContentProps) {
     scatterData: demoData.pages.scatterData,
   } : null;
 
-  const effectiveResp = isDemo ? demoResp : resp;
-  const effectiveLoading = isDemo ? false : isLoading;
+  const effectiveResp = dataSourcesPending ? undefined : (isDemo ? demoResp : resp);
+  const effectiveLoading = dataSourcesPending || (isDemo ? false : isLoading);
 
   const allData = useMemo(() => effectiveResp?.data ?? [], [effectiveResp?.data]);
   const pagination = effectiveResp?.pagination ?? EMPTY_PAGINATION;
