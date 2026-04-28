@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq, and, sql } from "drizzle-orm";
-import { createHash } from "crypto";
+import { createHash, randomUUID } from "crypto";
 
 export const dynamic = "force-dynamic";
 import { db } from "@/db";
@@ -14,9 +14,8 @@ import { extractGeo } from "@/utils/extract-geo";
 import { createNotification } from "@/utils/create-notification";
 import { cacheGet, cacheSet, apiKeyCacheKey, orgConfigCacheKey, invalidateOrgDashboardCache } from "@/lib/cache";
 import { getRedis } from "@/lib/redis";
-import { bufferPageview } from "@/utils/pageview-buffer";
+import { bufferEventInsert } from "@/utils/event-buffer";
 import { bufferFailedEvent } from "@/utils/event-fail-buffer";
-import dayjs from "@/utils/dayjs";
 
 const MAX_PAYLOAD_BYTES = 64 * 1024;
 
@@ -196,27 +195,39 @@ function sanitizeMetadata(raw: unknown): Record<string, unknown> | null {
   return Object.keys(clean).length > 0 ? clean : null;
 }
 
+function randomEventHash(): string {
+  return randomUUID().replace(/-/g, "").slice(0, 32);
+}
+
 async function handlePageview(
   organizationId: string,
   body: Record<string, unknown>,
-  tz: string
+  orgCurrency: string,
 ) {
-  const sessionId = toString(body.session_id) ?? "unknown";
-  const localDate = dayjs().tz(tz).format("YYYY-MM-DD");
-
-  await bufferPageview({
+  const eventRow: typeof events.$inferInsert = {
     organizationId,
-    date: localDate,
-    sessionId,
-    landingPage: toString(body.landing_page),
-    entryPage: toString(body.entry_page),
+    eventType: "pageview",
+    currency: orgCurrency,
+    baseCurrency: orgCurrency,
+    exchangeRate: 1,
     source: toString(body.source),
     medium: toString(body.medium),
+    rawSource: toString(body.source),
+    rawMedium: toString(body.medium),
     campaign: toString(body.campaign),
     content: toString(body.content),
-    device: toString(body.device),
+    landingPage: toString(body.landing_page),
+    entryPage: toString(body.entry_page),
     referrer: toString(body.referrer),
-  });
+    device: toString(body.device),
+    customerId: toString(body.customer_id),
+    sessionId: toString(body.session_id),
+    metadata: sanitizeMetadata(body.metadata),
+    eventHash: randomEventHash(),
+    createdAt: resolveCreatedAt(toString(body.event_time), toString(body.timestamp)),
+  };
+
+  await bufferEventInsert(eventRow);
 }
 
 async function resolveExchangeRate(
@@ -427,7 +438,6 @@ export async function POST(req: NextRequest) {
     await cacheSet(orgConfigCacheKey(apiKey.organizationId), orgConfig, 300);
   }
 
-  const orgTimezone = orgConfig.timezone;
   const orgCurrency = orgConfig.currency;
 
   if (await isOrgOverRevenueLimit(apiKey.organizationId)) {
@@ -442,7 +452,7 @@ export async function POST(req: NextRequest) {
     await handlePageview(
       apiKey.organizationId,
       body as Record<string, unknown>,
-      orgTimezone
+      orgCurrency,
     );
 
     return new NextResponse(null, { status: 204, headers: buildCorsHeaders(origin) });

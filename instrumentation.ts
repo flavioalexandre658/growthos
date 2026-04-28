@@ -8,14 +8,14 @@ export async function register() {
     }
 
     const { startWorkers, stopWorkers } = await import("./workers/register");
-    const { startPageviewFlushTimer, stopPageviewFlushTimer, flushPageviewBuffer } = await import("./utils/pageview-buffer");
+    const { startEventFlushTimer, stopEventFlushTimer, flushEventBuffer } = await import("./utils/event-buffer");
 
     await startWorkers();
-    startPageviewFlushTimer();
+    startEventFlushTimer();
 
     const shutdown = async () => {
-      stopPageviewFlushTimer();
-      await flushPageviewBuffer().catch(() => {});
+      stopEventFlushTimer();
+      await flushEventBuffer().catch(() => {});
       await stopWorkers();
       process.exit(0);
     };
