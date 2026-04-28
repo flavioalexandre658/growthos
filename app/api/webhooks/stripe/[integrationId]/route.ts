@@ -577,6 +577,21 @@ async function handleChargeRefunded(orgId: string, charge: Stripe.Charge, stripe
   }
 }
 
+async function resolveStripePlanName(
+  stripe: Stripe,
+  item: Stripe.SubscriptionItem | undefined,
+): Promise<string> {
+  const productRef = item?.price.product;
+  let productName: string | null = null;
+  if (typeof productRef === "string") {
+    const product = await stripe.products.retrieve(productRef).catch(() => null);
+    productName = product && !product.deleted ? product.name : null;
+  } else if (typeof productRef === "object" && productRef !== null && !productRef.deleted) {
+    productName = productRef.name;
+  }
+  return item?.price.nickname ?? productName ?? item?.price.id ?? "Plano";
+}
+
 async function handleSubscriptionCreated(
   orgId: string,
   sub: Stripe.Subscription,
@@ -606,14 +621,17 @@ async function handleSubscriptionCreated(
     valueInCents,
   );
 
+  const planName = await resolveStripePlanName(stripe, item);
+  const resolvedCustomerId = customerId ?? rawCustomerId;
+
   await db
     .insert(subscriptions)
     .values({
       organizationId: orgId,
       subscriptionId: sub.id,
-      customerId: customerId ?? rawCustomerId,
+      customerId: resolvedCustomerId,
       planId: item?.price.id ?? "unknown",
-      planName: item?.price.nickname ?? item?.price.id ?? "Plano",
+      planName,
       status: "active",
       valueInCents,
       currency: eventCurrency,
@@ -626,7 +644,11 @@ async function handleSubscriptionCreated(
     .onConflictDoUpdate({
       target: [subscriptions.subscriptionId],
       set: {
+        customerId: resolvedCustomerId,
+        planName,
         status: "active",
+        valueInCents,
+        currency: eventCurrency,
         baseCurrency,
         exchangeRate,
         baseValueInCents: baseGrossValueInCents,

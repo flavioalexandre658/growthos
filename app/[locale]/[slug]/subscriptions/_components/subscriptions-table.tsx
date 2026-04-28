@@ -120,6 +120,11 @@ function SubscriptionDetailGrid({ item, timezone, copyLabel }: { item: ISubscrip
 function SubscriptionCard({ item, timezone, t, locale, currency }: { item: ISubscriptionListItem; timezone: string; t: ReturnType<typeof useTranslations>; locale: string; currency: string }) {
   const [expanded, setExpanded] = useState(false);
 
+  const displayValue = item.baseValueInCents ?? item.valueInCents;
+  const displayCurrency = item.baseValueInCents != null
+    ? (item.baseCurrency ?? currency)
+    : (item.currency ?? currency);
+
   const billingIntervals: Record<string, string> = {
     monthly: t("billingIntervals.monthly"),
     quarterly: t("billingIntervals.quarterly"),
@@ -154,7 +159,7 @@ function SubscriptionCard({ item, timezone, t, locale, currency }: { item: ISubs
               </span>
             </div>
             <span className="text-xs font-mono font-semibold text-emerald-400 shrink-0">
-              {fmtCurrencyDecimal(item.valueInCents / 100, locale, currency)}
+              {fmtCurrencyDecimal(displayValue / 100, locale, displayCurrency)}
             </span>
           </div>
 
@@ -191,6 +196,11 @@ function SubscriptionCard({ item, timezone, t, locale, currency }: { item: ISubs
 
 function SubscriptionRow({ item, timezone, t, dayjsLocale, slug, locale, currency }: { item: ISubscriptionListItem; timezone: string; t: ReturnType<typeof useTranslations>; dayjsLocale: string; slug: string; locale: string; currency: string }) {
   const [expanded, setExpanded] = useState(false);
+
+  const displayValue = item.baseValueInCents ?? item.valueInCents;
+  const displayCurrency = item.baseValueInCents != null
+    ? (item.baseCurrency ?? currency)
+    : (item.currency ?? currency);
 
   const billingIntervals: Record<string, string> = {
     monthly: t("billingIntervals.monthly"),
@@ -244,7 +254,7 @@ function SubscriptionRow({ item, timezone, t, dayjsLocale, slug, locale, currenc
         </td>
         <td className="px-3 py-2.5 text-right">
           <span className="text-xs font-mono font-semibold text-emerald-400">
-            {fmtCurrencyDecimal(item.valueInCents / 100, locale, currency)}
+            {fmtCurrencyDecimal(displayValue / 100, locale, displayCurrency)}
           </span>
         </td>
         <td className="px-3 py-2.5">

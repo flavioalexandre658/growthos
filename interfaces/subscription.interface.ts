@@ -11,6 +11,9 @@ export interface ISubscriptionListItem {
   status: string;
   valueInCents: number;
   currency: string;
+  baseValueInCents: number | null;
+  baseCurrency: string | null;
+  exchangeRate: number | null;
   billingInterval: string;
   startedAt: Date;
   canceledAt: Date | null;

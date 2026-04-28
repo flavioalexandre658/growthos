@@ -323,6 +323,8 @@ function buildMrrGrowth(isBrl: boolean): IMrrGrowthEntry[] {
 function buildActiveSubscriptions(isBrl: boolean): IActiveSubscription[] {
   const plans = isBrl ? BRL_PLANS : USD_PLANS;
 
+  const demoCurrency = isBrl ? "BRL" : "USD";
+
   return CUSTOMER_NAMES.map((name, i) => {
     const plan = plans[i % plans.length];
     const startDays = 30 + i * 22;
@@ -334,6 +336,10 @@ function buildActiveSubscriptions(isBrl: boolean): IActiveSubscription[] {
       planName: plan.name,
       planId: plan.id,
       valueInCents: plan.cents,
+      currency: demoCurrency,
+      baseValueInCents: plan.cents,
+      baseCurrency: demoCurrency,
+      exchangeRate: 1,
       billingInterval: "monthly",
       status: "active",
       startedAt: daysAgo(startDays),

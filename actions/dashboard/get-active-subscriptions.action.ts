@@ -136,7 +136,8 @@ export async function getActiveSubscriptions(
   const now = dayjs();
 
   const mapped = rows.map((s) => {
-    const monthlyValue = normalizeToMonthly(s.valueInCents, s.billingInterval);
+    const ltvBase = s.baseValueInCents ?? s.valueInCents;
+    const monthlyValue = normalizeToMonthly(ltvBase, s.billingInterval);
     const renewalCount = computeRenewalCount(s.startedAt, s.billingInterval);
     const estimatedLtvInCents = monthlyValue * Math.max(renewalCount, 1);
     const nextBillingAt =
@@ -149,6 +150,10 @@ export async function getActiveSubscriptions(
       planName: s.planName,
       planId: s.planId,
       valueInCents: s.valueInCents,
+      currency: s.currency,
+      baseValueInCents: s.baseValueInCents,
+      baseCurrency: s.baseCurrency,
+      exchangeRate: s.exchangeRate,
       billingInterval: s.billingInterval,
       status: s.status,
       startedAt: s.startedAt,

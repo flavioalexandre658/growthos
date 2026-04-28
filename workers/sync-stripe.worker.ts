@@ -48,7 +48,11 @@ function report(job: Job, progress: SyncJobProgress): void {
 
 async function collectSubscriptions(stripe: Stripe, job: Job): Promise<Stripe.Subscription[]> {
   const all: Stripe.Subscription[] = [];
-  for await (const sub of stripe.subscriptions.list({ limit: 100, status: "all" })) {
+  for await (const sub of stripe.subscriptions.list({
+    limit: 100,
+    status: "all",
+    expand: ["data.items.data.price.product"],
+  })) {
     all.push(sub);
     if (all.length % 100 === 0) {
       report(job, { phase: "fetching", current: all.length, total: 0, message: `${all.length} subscriptions...` });
@@ -204,12 +208,19 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
       organizationId, eventCurrency, orgCurrency, valueInCents,
     );
 
+    const productRef = item?.price.product;
+    const productName =
+      typeof productRef === "object" && productRef !== null && !productRef.deleted
+        ? productRef.name
+        : null;
+    const planName = item?.price.nickname ?? productName ?? item?.price.id ?? "Plano";
+
     subRows.push({
       organizationId,
       subscriptionId: sub.id,
       customerId,
       planId: item?.price.id ?? "unknown",
-      planName: item?.price.nickname ?? item?.price.id ?? "Plano",
+      planName,
       status: mapStripeStatus(sub.status),
       valueInCents,
       currency: eventCurrency,
@@ -221,6 +232,17 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
       canceledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
     });
   }
+
+  await db.execute(sql`
+    DELETE FROM subscriptions
+    WHERE organization_id = ${organizationId}
+      AND id NOT IN (
+        SELECT DISTINCT ON (subscription_id) id
+        FROM subscriptions
+        WHERE organization_id = ${organizationId}
+        ORDER BY subscription_id, updated_at DESC
+      )
+  `);
 
   await bulkUpsertSubscriptions(subRows);
   processed += allSubs.length;

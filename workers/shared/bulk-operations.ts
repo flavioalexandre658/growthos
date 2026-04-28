@@ -106,11 +106,17 @@ export async function bulkUpsertSubscriptions(rows: SubscriptionInsert[]): Promi
       .onConflictDoUpdate({
         target: [subscriptions.subscriptionId],
         set: {
+          customerId: sql`excluded.customer_id`,
+          planId: sql`excluded.plan_id`,
+          planName: sql`excluded.plan_name`,
           status: sql`excluded.status`,
           canceledAt: sql`excluded.canceled_at`,
+          valueInCents: sql`excluded.value_in_cents`,
+          currency: sql`excluded.currency`,
           baseCurrency: sql`excluded.base_currency`,
           exchangeRate: sql`excluded.exchange_rate`,
           baseValueInCents: sql`excluded.base_value_in_cents`,
+          billingInterval: sql`excluded.billing_interval`,
           updatedAt: sql`now()`,
         },
       });

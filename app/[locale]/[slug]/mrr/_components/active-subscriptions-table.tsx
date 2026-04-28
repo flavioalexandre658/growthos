@@ -156,26 +156,32 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
           )}
         </Link>
       ),
-      mobileRender: (row) => (
-        <div className="flex items-start justify-between gap-2 min-w-0">
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-zinc-200 truncate">{row.planName}</p>
-            <p className="text-[10px] text-zinc-500 truncate">
-              {row.customerName
-                ? (isSensitive ? maskName(row.customerName) : row.customerName)
-                : <span className="font-mono text-zinc-600">{row.customerId.slice(0, 20)}…</span>}
-            </p>
+      mobileRender: (row) => {
+        const displayValue = row.baseValueInCents ?? row.valueInCents;
+        const displayCurrency = row.baseValueInCents != null
+          ? (row.baseCurrency ?? currency)
+          : (row.currency ?? currency);
+        return (
+          <div className="flex items-start justify-between gap-2 min-w-0">
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-zinc-200 truncate">{row.planName}</p>
+              <p className="text-[10px] text-zinc-500 truncate">
+                {row.customerName
+                  ? (isSensitive ? maskName(row.customerName) : row.customerName)
+                  : <span className="font-mono text-zinc-600">{row.customerId.slice(0, 20)}…</span>}
+              </p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="font-mono text-sm font-bold text-emerald-400">
+                {fmtCurrencyDecimal(displayValue / 100, locale, displayCurrency)}
+              </p>
+              <p className="text-[10px] text-zinc-600">
+                {INTERVAL_LABELS[row.billingInterval] ?? row.billingInterval}
+              </p>
+            </div>
           </div>
-          <div className="shrink-0 text-right">
-            <p className="font-mono text-sm font-bold text-emerald-400">
-              {fmtCurrencyDecimal(row.valueInCents / 100, locale, currency)}
-            </p>
-            <p className="text-[10px] text-zinc-600">
-              {INTERVAL_LABELS[row.billingInterval] ?? row.billingInterval}
-            </p>
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: "planName",
@@ -200,16 +206,20 @@ export function ActiveSubscriptionsTable({ organizationId }: ActiveSubscriptions
       currentSortKey: sortField,
       currentSortDir: sortDir,
       render: (row) => {
-        const monthly = normalizeToMonthly(row.valueInCents, row.billingInterval);
+        const displayValue = row.baseValueInCents ?? row.valueInCents;
+        const displayCurrency = row.baseValueInCents != null
+          ? (row.baseCurrency ?? currency)
+          : (row.currency ?? currency);
+        const monthly = normalizeToMonthly(displayValue, row.billingInterval);
         const isNonMonthly = row.billingInterval !== "monthly" && row.billingInterval !== "weekly";
         return (
           <div className="text-right">
             <span className="font-mono text-sm font-bold text-emerald-400">
-              {fmtCurrencyDecimal(row.valueInCents / 100, locale, currency)}
+              {fmtCurrencyDecimal(displayValue / 100, locale, displayCurrency)}
             </span>
             {isNonMonthly && (
               <div className="text-[10px] text-zinc-600 font-mono">
-                {fmtCurrencyDecimal(monthly / 100, locale, currency)}/mês
+                {fmtCurrencyDecimal(monthly / 100, locale, displayCurrency)}/mês
               </div>
             )}
           </div>

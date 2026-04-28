@@ -64,6 +64,10 @@ export interface IActiveSubscription {
   planName: string;
   planId: string;
   valueInCents: number;
+  currency: string;
+  baseValueInCents: number | null;
+  baseCurrency: string | null;
+  exchangeRate: number | null;
   billingInterval: string;
   status: string;
   startedAt: Date;
