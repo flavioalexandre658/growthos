@@ -48,7 +48,7 @@ export function StepVerifyEvent({
       }
       return result;
     },
-    refetchInterval: hasFired ? false : 3000,
+    refetchInterval: hasFired ? false : 30_000,
   });
 
   const hasEvent = (data?.count ?? 0) > 0 || hasFired;

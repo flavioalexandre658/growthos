@@ -4,11 +4,10 @@ import { createHash } from "crypto";
 
 export const dynamic = "force-dynamic";
 import { db } from "@/db";
-import { apiKeys, events, subscriptions, organizations, usageMonthly, notifications } from "@/db/schema";
+import { apiKeys, events, subscriptions, organizations, notifications } from "@/db/schema";
 import { resolveExchangeRate as resolveRate } from "@/utils/resolve-exchange-rate";
 import { checkRateLimit } from "@/utils/rate-limiter";
 import { insertPayment } from "@/utils/insert-payment";
-import { getOrgOwnerId } from "@/utils/get-plan-usage";
 import { isOrgOverRevenueLimit } from "@/utils/check-revenue-limit";
 import { upsertCustomer } from "@/utils/upsert-customer";
 import { extractGeo } from "@/utils/extract-geo";
@@ -431,8 +430,6 @@ export async function POST(req: NextRequest) {
   const orgTimezone = orgConfig.timezone;
   const orgCurrency = orgConfig.currency;
 
-  const ownerId = await getOrgOwnerId(apiKey.organizationId);
-
   if (await isOrgOverRevenueLimit(apiKey.organizationId)) {
     return jsonError(
       "Revenue limit exceeded. Upgrade your plan to continue receiving data.",
@@ -447,33 +444,6 @@ export async function POST(req: NextRequest) {
       body as Record<string, unknown>,
       orgTimezone
     );
-
-    if (ownerId) {
-      const yearMonth = dayjs().format("YYYY-MM");
-      db.insert(usageMonthly)
-        .values({
-          userId: ownerId,
-          organizationId: apiKey.organizationId,
-          yearMonth,
-          eventsCount: 1,
-        })
-        .onConflictDoUpdate({
-          target: [usageMonthly.userId, usageMonthly.organizationId, usageMonthly.yearMonth],
-          set: {
-            eventsCount: sql`${usageMonthly.eventsCount} + 1`,
-            updatedAt: new Date(),
-          },
-        })
-        .execute()
-        .catch((err) => {
-          console.error("[Groware] usage_monthly upsert failed (pageview)", {
-            userId: ownerId,
-            orgId: apiKey.organizationId,
-            yearMonth,
-            error: err instanceof Error ? err.message : String(err),
-          });
-        });
-    }
 
     return new NextResponse(null, { status: 204, headers: buildCorsHeaders(origin) });
   }
@@ -768,33 +738,6 @@ export async function POST(req: NextRequest) {
           });
       }
     }
-  }
-
-  if (ownerId) {
-    const yearMonth = dayjs().format("YYYY-MM");
-    db.insert(usageMonthly)
-      .values({
-        userId: ownerId,
-        organizationId: apiKey.organizationId,
-        yearMonth,
-        eventsCount: 1,
-      })
-      .onConflictDoUpdate({
-        target: [usageMonthly.userId, usageMonthly.organizationId, usageMonthly.yearMonth],
-        set: {
-          eventsCount: sql`${usageMonthly.eventsCount} + 1`,
-          updatedAt: new Date(),
-        },
-      })
-      .execute()
-      .catch((err) => {
-        console.error("[Groware] usage_monthly upsert failed", {
-          userId: ownerId,
-          orgId: apiKey.organizationId,
-          yearMonth,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      });
   }
 
   if (PAYMENT_EVENT_TYPES.has(eventType)) {

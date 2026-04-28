@@ -109,7 +109,7 @@ export function StepInstallTracker({
       }
       return result;
     },
-    refetchInterval: hasFired ? false : 3000,
+    refetchInterval: hasFired ? false : 30_000,
     enabled: !!apiKey,
   });
 

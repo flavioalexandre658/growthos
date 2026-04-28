@@ -232,7 +232,7 @@ function LiveMonitor({ organizationId, onLatestEvent }: LiveMonitorProps) {
     };
 
     poll();
-    const interval = setInterval(poll, 5000);
+    const interval = setInterval(poll, 30_000);
     return () => clearInterval(interval);
   }, [organizationId, isPolling, onLatestEvent]);
 
