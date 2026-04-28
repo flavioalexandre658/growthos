@@ -21,7 +21,7 @@ export async function processCronJob(job: Job<CronJobData>) {
   const pathMap: Record<string, string> = {
     "email-sequences": "/api/cron/email-sequences",
     "weekly-digest": "/api/cron/weekly-digest",
-    "aggregate-and-cleanup": "/api/cron/aggregate-and-cleanup",
+    "cleanup-events": "/api/cron/cleanup-events",
     "evaluate-alerts": "/api/cron/evaluate-alerts",
   };
 

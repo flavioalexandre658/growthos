@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth-options";
 import { and, eq, gte, desc } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { apiKeys, pageviewAggregates } from "@/db/schema";
+import { apiKeys, events } from "@/db/schema";
 import type { IDebugResult } from "@/interfaces/event.interface";
 
 const schema = z.object({
@@ -101,15 +101,16 @@ export async function debugUrl(input: z.infer<typeof schema>): Promise<IDebugRes
 
     const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const [recentPageview] = await db
-      .select({ id: pageviewAggregates.id })
-      .from(pageviewAggregates)
+      .select({ id: events.id })
+      .from(events)
       .where(
         and(
-          eq(pageviewAggregates.organizationId, data.organizationId),
-          gte(pageviewAggregates.createdAt, since),
+          eq(events.organizationId, data.organizationId),
+          eq(events.eventType, "pageview"),
+          gte(events.createdAt, since),
         ),
       )
-      .orderBy(desc(pageviewAggregates.createdAt))
+      .orderBy(desc(events.createdAt))
       .limit(1);
 
     if (recentPageview) {

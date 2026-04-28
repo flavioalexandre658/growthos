@@ -6,9 +6,6 @@ import {
   integrations,
   orgMembers,
   organizations,
-  pageviewAggregates,
-  pageviewDailySessions,
-  funnelDaily,
 } from "@/db/schema";
 import { eq, and, gte, lte, sum, count, desc, sql } from "drizzle-orm";
 import dayjs from "dayjs";
@@ -112,8 +109,13 @@ export async function getEmailDynamicData(
   if (emailId.startsWith("tracker_only")) {
     const [pvCount] = await db
       .select({ total: count() })
-      .from(pageviewAggregates)
-      .where(eq(pageviewAggregates.organizationId, organizationId));
+      .from(events)
+      .where(
+        and(
+          eq(events.organizationId, organizationId),
+          eq(events.eventType, "pageview"),
+        ),
+      );
 
     const [signupCount] = await db
       .select({ total: count() })
@@ -285,18 +287,19 @@ async function buildDigestData(
 
   const [topChannelResult] = await db
     .select({
-      source: pageviewDailySessions.source,
-      totalSessions: sum(pageviewDailySessions.sessions),
+      source: sql<string>`COALESCE(${events.source}, 'direct')`,
+      totalSessions: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
     })
-    .from(pageviewDailySessions)
+    .from(events)
     .where(
       and(
-        eq(pageviewDailySessions.organizationId, organizationId),
-        gte(pageviewDailySessions.date, dayjs(sevenDaysAgo).format("YYYY-MM-DD")),
+        eq(events.organizationId, organizationId),
+        eq(events.eventType, "pageview"),
+        gte(events.createdAt, sevenDaysAgo),
       ),
     )
-    .groupBy(pageviewDailySessions.source)
-    .orderBy(desc(sum(pageviewDailySessions.sessions)))
+    .groupBy(sql`COALESCE(${events.source}, 'direct')`)
+    .orderBy(desc(sql`COUNT(DISTINCT ${events.sessionId})`))
     .limit(1);
 
   return {

@@ -3,7 +3,7 @@
 import { getServerSession } from "next-auth";
 import { eq, and, sql, gte, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { organizations, orgMembers, payments, events, pageviewAggregates } from "@/db/schema";
+import { organizations, orgMembers, payments, events } from "@/db/schema";
 import { REVENUE_EVENT_TYPES } from "@/utils/event-types";
 import { authOptions } from "@/lib/auth-options";
 import dayjs from "@/utils/dayjs";
@@ -52,34 +52,26 @@ export async function getOrganizationsWithStats(): Promise<IOrgStats[]> {
     .where(and(inArray(payments.organizationId, orgIds), inArray(payments.eventType, [...REVENUE_EVENT_TYPES]), gte(payments.createdAt, monthStart)))
     .groupBy(payments.organizationId);
 
-  const monthStartStr = dayjs().startOf("month").format("YYYY-MM-DD");
-
   const pvRows = await db
     .select({
-      organizationId: pageviewAggregates.organizationId,
-      count: sql<number>`COUNT(DISTINCT ${pageviewAggregates.sessionId})`,
+      organizationId: events.organizationId,
+      count: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
     })
-    .from(pageviewAggregates)
+    .from(events)
     .where(
       and(
-        inArray(pageviewAggregates.organizationId, orgIds),
-        gte(pageviewAggregates.date, monthStartStr),
+        inArray(events.organizationId, orgIds),
+        eq(events.eventType, "pageview"),
+        gte(events.createdAt, monthStart),
       ),
     )
-    .groupBy(pageviewAggregates.organizationId);
+    .groupBy(events.organizationId);
 
-  const [hasEventRows, hasPvRows] = await Promise.all([
-    db
-      .select({ organizationId: events.organizationId })
-      .from(events)
-      .where(inArray(events.organizationId, orgIds))
-      .groupBy(events.organizationId),
-    db
-      .select({ organizationId: pageviewAggregates.organizationId })
-      .from(pageviewAggregates)
-      .where(inArray(pageviewAggregates.organizationId, orgIds))
-      .groupBy(pageviewAggregates.organizationId),
-  ]);
+  const hasEventRows = await db
+    .select({ organizationId: events.organizationId })
+    .from(events)
+    .where(inArray(events.organizationId, orgIds))
+    .groupBy(events.organizationId);
 
   const revenueMap: Record<string, { revenue: number; purchases: number }> = {};
   for (const r of revenueRows) {
@@ -89,10 +81,7 @@ export async function getOrganizationsWithStats(): Promise<IOrgStats[]> {
   const pvMap: Record<string, number> = {};
   for (const r of pvRows) pvMap[r.organizationId] = Number(r.count);
 
-  const hasDataSet = new Set([
-    ...hasEventRows.map((r) => r.organizationId),
-    ...hasPvRows.map((r) => r.organizationId),
-  ]);
+  const hasDataSet = new Set(hasEventRows.map((r) => r.organizationId));
 
   return orgs.map((org) => ({
     id: org.id,

@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/db";
-import { users, orgMembers, integrations, events, pageviewAggregates } from "@/db/schema";
+import { users, orgMembers, integrations, events } from "@/db/schema";
 import { eq, and, count } from "drizzle-orm";
 import type { EmailSegment } from "@/interfaces/email-sequence.interface";
 import dayjs from "dayjs";
@@ -54,8 +54,13 @@ export async function classifyUserSegment(
 
   const [pageviewCount] = await db
     .select({ total: count() })
-    .from(pageviewAggregates)
-    .where(eq(pageviewAggregates.organizationId, organizationId))
+    .from(events)
+    .where(
+      and(
+        eq(events.organizationId, organizationId),
+        eq(events.eventType, "pageview"),
+      ),
+    )
     .limit(1);
 
   const hasActiveIntegration = !!activeIntegration;
@@ -77,17 +82,20 @@ export async function classifyUserSegment(
 
   if (!hasActiveIntegration && hasPageviews) {
     const [firstPageview] = await db
-      .select({ date: pageviewAggregates.date })
-      .from(pageviewAggregates)
-      .where(eq(pageviewAggregates.organizationId, organizationId))
-      .orderBy(pageviewAggregates.date)
+      .select({ createdAt: events.createdAt })
+      .from(events)
+      .where(
+        and(
+          eq(events.organizationId, organizationId),
+          eq(events.eventType, "pageview"),
+        ),
+      )
+      .orderBy(events.createdAt)
       .limit(1);
 
     return {
       segment: "tracker_only",
-      firstPageviewAt: firstPageview?.date
-        ? new Date(firstPageview.date)
-        : undefined,
+      firstPageviewAt: firstPageview?.createdAt ?? undefined,
     };
   }
 
@@ -121,8 +129,13 @@ export async function classifyUserSegment(
 export async function hasPageviewsForOrg(organizationId: string): Promise<boolean> {
   const [result] = await db
     .select({ total: count() })
-    .from(pageviewAggregates)
-    .where(eq(pageviewAggregates.organizationId, organizationId))
+    .from(events)
+    .where(
+      and(
+        eq(events.organizationId, organizationId),
+        eq(events.eventType, "pageview"),
+      ),
+    )
     .limit(1);
   return (result?.total ?? 0) > 0;
 }

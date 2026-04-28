@@ -14,7 +14,7 @@
       "schedule": "0 11 * * 1"
     },
     {
-      "path": "/api/cron/aggregate-and-cleanup",
+      "path": "/api/cron/cleanup-events",
       "schedule": "0 3 * * *"
     },
     {

@@ -336,7 +336,7 @@ async function registerCronSchedules(cronQueue: Queue): Promise<void> {
   const schedules: Array<{ name: string; pattern: string }> = [
     { name: "email-sequences", pattern: "0 * * * *" },
     { name: "evaluate-alerts", pattern: "0 * * * *" },
-    { name: "aggregate-and-cleanup", pattern: "0 3 * * *" },
+    { name: "cleanup-events", pattern: "0 3 * * *" },
     { name: "weekly-digest", pattern: "0 11 * * 1" },
     { name: "flush-failed-events", pattern: "*/15 * * * *" },
   ];

@@ -1,73 +1,42 @@
 import { eq, and, gte, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { pageviewAggregates, pageviewDailySessions, pageviewDailyPages } from "@/db/schema";
+import { events } from "@/db/schema";
 import dayjs from "@/utils/dayjs";
 
-const RETENTION_DAYS = 30;
-
-function toDateStr(date: Date, tz: string): string {
-  return dayjs(date).tz(tz).format("YYYY-MM-DD");
-}
-
-function getCutoffDate(tz: string): string {
-  return dayjs().tz(tz).subtract(RETENTION_DAYS, "days").startOf("day").format("YYYY-MM-DD");
+function toRange(startDate: Date, endDate: Date, tz: string): { start: Date; end: Date } {
+  const start = dayjs(startDate).tz(tz).startOf("day").toDate();
+  const end = dayjs(endDate).tz(tz).endOf("day").toDate();
+  return { start, end };
 }
 
 export async function getPageviewSessionsByDate(
   organizationId: string,
   startDate: Date,
   endDate: Date,
-  tz: string
+  tz: string,
 ): Promise<Map<string, number>> {
-  const startStr = toDateStr(startDate, tz);
-  const endStr = toDateStr(endDate, tz);
-  const cutoffStr = getCutoffDate(tz);
+  const { start, end } = toRange(startDate, endDate, tz);
 
-  const recentStart = startStr < cutoffStr ? cutoffStr : startStr;
-  const historicalEnd = startStr < cutoffStr ? (endStr < cutoffStr ? endStr : dayjs(cutoffStr).subtract(1, "day").format("YYYY-MM-DD")) : null;
-
-  const map = new Map<string, number>();
-
-  if (historicalEnd && startStr < cutoffStr) {
-    const histRows = await db
-      .select({
-        date: pageviewDailySessions.date,
-        sessions: sql<number>`SUM(${pageviewDailySessions.sessions})`,
-      })
-      .from(pageviewDailySessions)
-      .where(
-        and(
-          eq(pageviewDailySessions.organizationId, organizationId),
-          gte(pageviewDailySessions.date, startStr),
-          lte(pageviewDailySessions.date, historicalEnd)
-        )
-      )
-      .groupBy(pageviewDailySessions.date);
-
-    for (const row of histRows) {
-      map.set(row.date, (map.get(row.date) ?? 0) + Number(row.sessions));
-    }
-  }
-
-  const recentRows = await db
+  const rows = await db
     .select({
-      date: pageviewAggregates.date,
-      sessions: sql<number>`COUNT(DISTINCT ${pageviewAggregates.sessionId})`,
+      date: sql<string>`TO_CHAR(${events.createdAt} AT TIME ZONE ${tz}, 'YYYY-MM-DD')`,
+      sessions: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
     })
-    .from(pageviewAggregates)
+    .from(events)
     .where(
       and(
-        eq(pageviewAggregates.organizationId, organizationId),
-        gte(pageviewAggregates.date, recentStart),
-        lte(pageviewAggregates.date, endStr)
-      )
+        eq(events.organizationId, organizationId),
+        eq(events.eventType, "pageview"),
+        gte(events.createdAt, start),
+        lte(events.createdAt, end),
+      ),
     )
-    .groupBy(pageviewAggregates.date);
+    .groupBy(sql`TO_CHAR(${events.createdAt} AT TIME ZONE ${tz}, 'YYYY-MM-DD')`);
 
-  for (const row of recentRows) {
-    map.set(row.date, (map.get(row.date) ?? 0) + Number(row.sessions));
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    map.set(row.date, Number(row.sessions));
   }
-
   return map;
 }
 
@@ -75,103 +44,55 @@ export async function getPageviewTotalSessions(
   organizationId: string,
   startDate: Date,
   endDate: Date,
-  tz: string
+  tz: string,
 ): Promise<number> {
-  const startStr = toDateStr(startDate, tz);
-  const endStr = toDateStr(endDate, tz);
-  const cutoffStr = getCutoffDate(tz);
+  const { start, end } = toRange(startDate, endDate, tz);
 
-  let total = 0;
-
-  if (startStr < cutoffStr) {
-    const historicalEnd = endStr < cutoffStr ? endStr : dayjs(cutoffStr).subtract(1, "day").format("YYYY-MM-DD");
-    const [histResult] = await db
-      .select({
-        sessions: sql<number>`COALESCE(SUM(${pageviewDailySessions.sessions}), 0)`,
-      })
-      .from(pageviewDailySessions)
-      .where(
-        and(
-          eq(pageviewDailySessions.organizationId, organizationId),
-          gte(pageviewDailySessions.date, startStr),
-          lte(pageviewDailySessions.date, historicalEnd)
-        )
-      );
-    total += Number(histResult?.sessions ?? 0);
-  }
-
-  const recentStart = startStr < cutoffStr ? cutoffStr : startStr;
-  const [recentResult] = await db
+  const [row] = await db
     .select({
-      sessions: sql<number>`COUNT(DISTINCT ${pageviewAggregates.sessionId})`,
+      sessions: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
     })
-    .from(pageviewAggregates)
+    .from(events)
     .where(
       and(
-        eq(pageviewAggregates.organizationId, organizationId),
-        gte(pageviewAggregates.date, recentStart),
-        lte(pageviewAggregates.date, endStr)
-      )
+        eq(events.organizationId, organizationId),
+        eq(events.eventType, "pageview"),
+        gte(events.createdAt, start),
+        lte(events.createdAt, end),
+      ),
     );
 
-  total += Number(recentResult?.sessions ?? 0);
-  return total;
+  return Number(row?.sessions ?? 0);
 }
 
 export async function getPageviewSessionsBySource(
   organizationId: string,
   startDate: Date,
   endDate: Date,
-  tz: string
+  tz: string,
 ): Promise<Map<string, number>> {
-  const startStr = toDateStr(startDate, tz);
-  const endStr = toDateStr(endDate, tz);
-  const cutoffStr = getCutoffDate(tz);
+  const { start, end } = toRange(startDate, endDate, tz);
 
-  const map = new Map<string, number>();
-
-  if (startStr < cutoffStr) {
-    const historicalEnd = endStr < cutoffStr ? endStr : dayjs(cutoffStr).subtract(1, "day").format("YYYY-MM-DD");
-    const histRows = await db
-      .select({
-        source: sql<string>`COALESCE(${pageviewDailySessions.source}, 'direct')`,
-        sessions: sql<number>`SUM(${pageviewDailySessions.sessions})`,
-      })
-      .from(pageviewDailySessions)
-      .where(
-        and(
-          eq(pageviewDailySessions.organizationId, organizationId),
-          gte(pageviewDailySessions.date, startStr),
-          lte(pageviewDailySessions.date, historicalEnd)
-        )
-      )
-      .groupBy(sql`COALESCE(${pageviewDailySessions.source}, 'direct')`);
-
-    for (const row of histRows) {
-      map.set(row.source, (map.get(row.source) ?? 0) + Number(row.sessions));
-    }
-  }
-
-  const recentStart = startStr < cutoffStr ? cutoffStr : startStr;
-  const recentRows = await db
+  const rows = await db
     .select({
-      source: sql<string>`COALESCE(${pageviewAggregates.source}, 'direct')`,
-      sessions: sql<number>`COUNT(DISTINCT ${pageviewAggregates.sessionId})`,
+      source: sql<string>`COALESCE(${events.source}, 'direct')`,
+      sessions: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
     })
-    .from(pageviewAggregates)
+    .from(events)
     .where(
       and(
-        eq(pageviewAggregates.organizationId, organizationId),
-        gte(pageviewAggregates.date, recentStart),
-        lte(pageviewAggregates.date, endStr)
-      )
+        eq(events.organizationId, organizationId),
+        eq(events.eventType, "pageview"),
+        gte(events.createdAt, start),
+        lte(events.createdAt, end),
+      ),
     )
-    .groupBy(sql`COALESCE(${pageviewAggregates.source}, 'direct')`);
+    .groupBy(sql`COALESCE(${events.source}, 'direct')`);
 
-  for (const row of recentRows) {
-    map.set(row.source, (map.get(row.source) ?? 0) + Number(row.sessions));
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    map.set(row.source, Number(row.sessions));
   }
-
   return map;
 }
 
@@ -179,66 +100,39 @@ export async function getPageviewSessionsByChannel(
   organizationId: string,
   startDate: Date,
   endDate: Date,
-  tz: string
+  tz: string,
 ): Promise<Map<string, number>> {
-  const startStr = toDateStr(startDate, tz);
-  const endStr = toDateStr(endDate, tz);
-  const cutoffStr = getCutoffDate(tz);
+  const { start, end } = toRange(startDate, endDate, tz);
 
   const PAID_MEDIUMS = ["cpc", "ppc", "paid", "ads", "paid_social", "display", "cpv", "cpm"];
   const paidList = PAID_MEDIUMS.map((m) => `'${m}'`).join(", ");
 
-  const channelExprAgg = sql.raw(`CASE
+  const channelExpr = sql.raw(`CASE
     WHEN COALESCE("source", 'direct') = 'direct' AND COALESCE("medium", 'direct') = 'direct' THEN 'direct'
     WHEN COALESCE("medium", '') IN (${paidList}) THEN COALESCE("source", 'direct') || '_paid'
     ELSE COALESCE("source", 'direct') || '_organic'
   END`);
 
-  const channelExprDaily = sql.raw(`CASE
-    WHEN COALESCE(pds.source, 'direct') = 'direct' AND COALESCE(pds.medium, 'direct') = 'direct' THEN 'direct'
-    WHEN COALESCE(pds.medium, '') IN (${paidList}) THEN COALESCE(pds.source, 'direct') || '_paid'
-    ELSE COALESCE(pds.source, 'direct') || '_organic'
-  END`);
-
-  const map = new Map<string, number>();
-
-  if (startStr < cutoffStr) {
-    const historicalEnd = endStr < cutoffStr ? endStr : dayjs(cutoffStr).subtract(1, "day").format("YYYY-MM-DD");
-    const histRows = await db.execute<{ channel: string; sessions: string }>(
-      sql.raw(`
-        SELECT ${channelExprDaily} AS channel, SUM(pds.sessions) AS sessions
-        FROM pageview_daily_sessions pds
-        WHERE pds.organization_id = '${organizationId}'
-          AND pds.date >= '${startStr}'
-          AND pds.date <= '${historicalEnd}'
-        GROUP BY ${channelExprDaily}
-      `)
-    );
-    for (const row of histRows.rows) {
-      map.set(row.channel, (map.get(row.channel) ?? 0) + Number(row.sessions));
-    }
-  }
-
-  const recentStart = startStr < cutoffStr ? cutoffStr : startStr;
-  const recentRows = await db
+  const rows = await db
     .select({
-      channel: sql<string>`${channelExprAgg}`,
-      sessions: sql<number>`COUNT(DISTINCT ${pageviewAggregates.sessionId})`,
+      channel: sql<string>`${channelExpr}`,
+      sessions: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
     })
-    .from(pageviewAggregates)
+    .from(events)
     .where(
       and(
-        eq(pageviewAggregates.organizationId, organizationId),
-        gte(pageviewAggregates.date, recentStart),
-        lte(pageviewAggregates.date, endStr)
-      )
+        eq(events.organizationId, organizationId),
+        eq(events.eventType, "pageview"),
+        gte(events.createdAt, start),
+        lte(events.createdAt, end),
+      ),
     )
-    .groupBy(sql`${channelExprAgg}`);
+    .groupBy(sql`${channelExpr}`);
 
-  for (const row of recentRows) {
-    map.set(row.channel, (map.get(row.channel) ?? 0) + Number(row.sessions));
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    map.set(row.channel, Number(row.sessions));
   }
-
   return map;
 }
 
@@ -246,58 +140,31 @@ export async function getPageviewSessionsByEntryPage(
   organizationId: string,
   startDate: Date,
   endDate: Date,
-  tz: string
+  tz: string,
 ): Promise<Map<string, number>> {
-  const startStr = toDateStr(startDate, tz);
-  const endStr = toDateStr(endDate, tz);
-  const cutoffStr = getCutoffDate(tz);
+  const { start, end } = toRange(startDate, endDate, tz);
 
-  const map = new Map<string, number>();
-
-  if (startStr < cutoffStr) {
-    const historicalEnd = endStr < cutoffStr ? endStr : dayjs(cutoffStr).subtract(1, "day").format("YYYY-MM-DD");
-    const histRows = await db
-      .select({
-        page: pageviewDailySessions.entryPage,
-        sessions: sql<number>`SUM(${pageviewDailySessions.sessions})`,
-      })
-      .from(pageviewDailySessions)
-      .where(
-        and(
-          eq(pageviewDailySessions.organizationId, organizationId),
-          gte(pageviewDailySessions.date, startStr),
-          lte(pageviewDailySessions.date, historicalEnd),
-          sql`${pageviewDailySessions.entryPage} != ''`
-        )
-      )
-      .groupBy(pageviewDailySessions.entryPage);
-
-    for (const row of histRows) {
-      if (row.page) map.set(row.page, (map.get(row.page) ?? 0) + Number(row.sessions));
-    }
-  }
-
-  const recentStart = startStr < cutoffStr ? cutoffStr : startStr;
-  const recentRows = await db
+  const rows = await db
     .select({
-      page: pageviewAggregates.entryPage,
-      sessions: sql<number>`COUNT(DISTINCT ${pageviewAggregates.sessionId})`,
+      page: events.entryPage,
+      sessions: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
     })
-    .from(pageviewAggregates)
+    .from(events)
     .where(
       and(
-        eq(pageviewAggregates.organizationId, organizationId),
-        gte(pageviewAggregates.date, recentStart),
-        lte(pageviewAggregates.date, endStr),
-        sql`${pageviewAggregates.entryPage} IS NOT NULL`
-      )
+        eq(events.organizationId, organizationId),
+        eq(events.eventType, "pageview"),
+        gte(events.createdAt, start),
+        lte(events.createdAt, end),
+        sql`${events.entryPage} IS NOT NULL AND ${events.entryPage} != ''`,
+      ),
     )
-    .groupBy(pageviewAggregates.entryPage);
+    .groupBy(events.entryPage);
 
-  for (const row of recentRows) {
-    if (row.page) map.set(row.page, (map.get(row.page) ?? 0) + Number(row.sessions));
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    if (row.page) map.set(row.page, Number(row.sessions));
   }
-
   return map;
 }
 
@@ -305,57 +172,30 @@ export async function getPageviewSessionsByLandingPage(
   organizationId: string,
   startDate: Date,
   endDate: Date,
-  tz: string
+  tz: string,
 ): Promise<Map<string, number>> {
-  const startStr = toDateStr(startDate, tz);
-  const endStr = toDateStr(endDate, tz);
-  const cutoffStr = getCutoffDate(tz);
+  const { start, end } = toRange(startDate, endDate, tz);
 
-  const map = new Map<string, number>();
-
-  if (startStr < cutoffStr) {
-    const historicalEnd = endStr < cutoffStr ? endStr : dayjs(cutoffStr).subtract(1, "day").format("YYYY-MM-DD");
-    const histRows = await db
-      .select({
-        page: pageviewDailyPages.landingPage,
-        sessions: sql<number>`SUM(${pageviewDailyPages.sessions})`,
-      })
-      .from(pageviewDailyPages)
-      .where(
-        and(
-          eq(pageviewDailyPages.organizationId, organizationId),
-          gte(pageviewDailyPages.date, startStr),
-          lte(pageviewDailyPages.date, historicalEnd),
-          sql`${pageviewDailyPages.landingPage} != ''`
-        )
-      )
-      .groupBy(pageviewDailyPages.landingPage);
-
-    for (const row of histRows) {
-      if (row.page) map.set(row.page, (map.get(row.page) ?? 0) + Number(row.sessions));
-    }
-  }
-
-  const recentStart = startStr < cutoffStr ? cutoffStr : startStr;
-  const recentRows = await db
+  const rows = await db
     .select({
-      page: pageviewAggregates.landingPage,
-      sessions: sql<number>`COUNT(DISTINCT ${pageviewAggregates.sessionId})`,
+      page: events.landingPage,
+      sessions: sql<number>`COUNT(DISTINCT ${events.sessionId})`,
     })
-    .from(pageviewAggregates)
+    .from(events)
     .where(
       and(
-        eq(pageviewAggregates.organizationId, organizationId),
-        gte(pageviewAggregates.date, recentStart),
-        lte(pageviewAggregates.date, endStr),
-        sql`${pageviewAggregates.landingPage} IS NOT NULL`
-      )
+        eq(events.organizationId, organizationId),
+        eq(events.eventType, "pageview"),
+        gte(events.createdAt, start),
+        lte(events.createdAt, end),
+        sql`${events.landingPage} IS NOT NULL AND ${events.landingPage} != ''`,
+      ),
     )
-    .groupBy(pageviewAggregates.landingPage);
+    .groupBy(events.landingPage);
 
-  for (const row of recentRows) {
-    if (row.page) map.set(row.page, (map.get(row.page) ?? 0) + Number(row.sessions));
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    if (row.page) map.set(row.page, Number(row.sessions));
   }
-
   return map;
 }
