@@ -9,6 +9,7 @@ import {
 import { extractGrowthosCustomerId } from "@/utils/oauth-token-cache";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
+import { resolveInternalCustomerId } from "@/utils/resolve-internal-customer-id";
 import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
@@ -183,7 +184,13 @@ async function handleHotmartApproved(orgId: string, body: HotmartWebhookBody): P
   const grossValueInCents = pickGrossInCents(data);
   if (!grossValueInCents) return;
 
-  const customerId = pickCustomerId(data);
+  const fallbackCustomerId = pickCustomerId(data);
+  const customerEmail = data.buyer?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const acq = await lookupAcquisitionContext(orgId, customerId, {
     email: data.buyer?.email ?? null,
   });
@@ -339,7 +346,13 @@ async function handleHotmartRefund(orgId: string, body: HotmartWebhookBody): Pro
   const grossValueInCents = pickGrossInCents(data);
   if (!grossValueInCents) return;
 
-  const customerId = pickCustomerId(data);
+  const fallbackCustomerId = pickCustomerId(data);
+  const customerEmail = data.buyer?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const orgCurrency = await getOrgCurrency(orgId);
   const eventCurrency = pickCurrency(data);
   const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
@@ -424,7 +437,13 @@ async function handleHotmartSubscriptionCanceled(
   const subId = data?.subscription?.subscriber?.code;
   if (!subId) return;
 
-  const customerId = pickCustomerId(data);
+  const fallbackCustomerId = pickCustomerId(data);
+  const customerEmail = data?.buyer?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const grossValueInCents = pickGrossInCents(data);
   const orgCurrency = await getOrgCurrency(orgId);
   const eventCurrency = pickCurrency(data);

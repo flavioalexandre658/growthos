@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm";
 import { extractSubscriptionIdFromInvoice, extractPaymentIntentFromInvoice, mapBillingInterval, stripeEventHash } from "@/utils/stripe-helpers";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
+import { resolveInternalCustomerId } from "@/utils/resolve-internal-customer-id";
 import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
@@ -28,6 +29,7 @@ async function resolveCustomerId(
   objectMetadata: Record<string, string> | null | undefined,
   rawCustomerId: string | null,
   paymentIntentId?: string | null,
+  hints?: { orgId?: string; email?: string | null; sessionId?: string | null },
 ): Promise<string | null> {
   const fromObjectMeta = extractMetaCustomerId(objectMetadata);
   if (fromObjectMeta) return fromObjectMeta;
@@ -45,6 +47,7 @@ async function resolveCustomerId(
     } catch {}
   }
 
+  let resolvedEmail = hints?.email ?? null;
   if (rawCustomerId?.startsWith("cus_")) {
     try {
       const customer = await stripe.customers.retrieve(rawCustomerId);
@@ -53,8 +56,20 @@ async function resolveCustomerId(
           (customer as Stripe.Customer).metadata,
         );
         if (fromCustomer) return fromCustomer;
+        if (!resolvedEmail) {
+          resolvedEmail = (customer as Stripe.Customer).email ?? null;
+        }
       }
     } catch {}
+  }
+
+  if (hints?.orgId && (resolvedEmail || hints.sessionId)) {
+    const internal = await resolveInternalCustomerId(hints.orgId, {
+      email: resolvedEmail,
+      sessionId: hints.sessionId ?? null,
+      fallbackId: rawCustomerId,
+    });
+    if (internal) return internal;
   }
 
   return rawCustomerId;
@@ -206,7 +221,18 @@ async function handleCheckoutSessionCompleted(
 
   const rawStripeCustomerId =
     typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
-  const customerId = await resolveCustomerId(stripe, session.metadata, rawStripeCustomerId);
+  const metaSessionId = session.metadata?.groware_session_id ?? null;
+  const customerId = await resolveCustomerId(
+    stripe,
+    session.metadata,
+    rawStripeCustomerId,
+    null,
+    {
+      orgId,
+      email: session.customer_details?.email ?? null,
+      sessionId: metaSessionId,
+    },
+  );
   if (!customerId) return;
 
   const piId =
@@ -214,8 +240,6 @@ async function handleCheckoutSessionCompleted(
       ? session.payment_intent
       : session.payment_intent?.id ?? null;
   if (!piId) return;
-
-  const metaSessionId = session.metadata?.groware_session_id ?? null;
   const acq = await lookupAcquisitionContext(orgId, customerId, {
     email: session.customer_details?.email ?? null,
     sessionId: metaSessionId,
@@ -343,10 +367,18 @@ async function handleCheckoutSessionCompleted(
 async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventTimestamp: number, stripe: Stripe) {
   const rawCustomerId =
     typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
+  const invoiceMetaSessionId =
+    (invoice.metadata as Record<string, string> | null)?.groware_session_id ?? null;
   const customerId = await resolveCustomerId(
     stripe,
     invoice.metadata as Record<string, string> | null,
     rawCustomerId,
+    null,
+    {
+      orgId,
+      email: invoice.customer_email ?? null,
+      sessionId: invoiceMetaSessionId,
+    },
   );
 
   const subscriptionId = extractSubscriptionIdFromInvoice(invoice);
@@ -501,6 +533,12 @@ async function handleChargeRefunded(orgId: string, charge: Stripe.Charge, stripe
     stripe,
     charge.metadata as Record<string, string> | null,
     rawCustomerId,
+    null,
+    {
+      orgId,
+      email: charge.billing_details?.email ?? null,
+      sessionId: null,
+    },
   );
 
   const eventCurrency = charge.currency.toUpperCase();
@@ -605,10 +643,25 @@ async function handleSubscriptionCreated(
 ) {
   const rawCustomerId =
     typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+  let subCreatedEmail: string | null = null;
+  if (rawCustomerId?.startsWith("cus_")) {
+    try {
+      const stripeCustomer = await stripe.customers.retrieve(rawCustomerId);
+      if (stripeCustomer && !stripeCustomer.deleted) {
+        subCreatedEmail = (stripeCustomer as Stripe.Customer).email ?? null;
+      }
+    } catch {}
+  }
   const customerId = await resolveCustomerId(
     stripe,
     sub.metadata as Record<string, string> | null,
     rawCustomerId,
+    null,
+    {
+      orgId,
+      email: subCreatedEmail,
+      sessionId: sub.metadata?.groware_session_id ?? null,
+    },
   );
 
   const item = sub.items.data[0];
@@ -672,10 +725,25 @@ async function handleSubscriptionCanceled(
 ) {
   const rawCustomerId =
     typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+  let subCanceledEmail: string | null = null;
+  if (rawCustomerId?.startsWith("cus_")) {
+    try {
+      const stripeCustomer = await stripe.customers.retrieve(rawCustomerId);
+      if (stripeCustomer && !stripeCustomer.deleted) {
+        subCanceledEmail = (stripeCustomer as Stripe.Customer).email ?? null;
+      }
+    } catch {}
+  }
   const customerId = await resolveCustomerId(
     stripe,
     sub.metadata as Record<string, string> | null,
     rawCustomerId,
+    null,
+    {
+      orgId,
+      email: subCanceledEmail,
+      sessionId: sub.metadata?.groware_session_id ?? null,
+    },
   );
 
   const item = sub.items.data[0];
@@ -761,10 +829,25 @@ async function handleSubscriptionUpdated(
 
   const rawCustomerId =
     typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+  let subUpdatedEmail: string | null = null;
+  if (rawCustomerId?.startsWith("cus_")) {
+    try {
+      const stripeCustomer = await stripe.customers.retrieve(rawCustomerId);
+      if (stripeCustomer && !stripeCustomer.deleted) {
+        subUpdatedEmail = (stripeCustomer as Stripe.Customer).email ?? null;
+      }
+    } catch {}
+  }
   const customerId = await resolveCustomerId(
     stripe,
     sub.metadata as Record<string, string> | null,
     rawCustomerId,
+    null,
+    {
+      orgId,
+      email: subUpdatedEmail,
+      sessionId: sub.metadata?.groware_session_id ?? null,
+    },
   );
 
   const eventCurrency = sub.currency.toUpperCase();
@@ -837,11 +920,17 @@ async function handlePaymentIntentSucceeded(
     typeof paymentIntent.customer === "string"
       ? paymentIntent.customer
       : paymentIntent.customer?.id ?? null;
+  const piMetaSessionIdRaw = paymentIntent.metadata?.groware_session_id ?? null;
   const customerId = await resolveCustomerId(
     stripe,
     paymentIntent.metadata as Record<string, string> | null,
     rawStripeCustomerId,
     paymentIntent.id,
+    {
+      orgId,
+      email: paymentIntent.receipt_email ?? null,
+      sessionId: piMetaSessionIdRaw,
+    },
   );
   if (!customerId) return;
 

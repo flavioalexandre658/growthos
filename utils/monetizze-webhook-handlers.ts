@@ -11,6 +11,7 @@ import {
 } from "@/utils/monetizze-helpers";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
+import { resolveInternalCustomerId } from "@/utils/resolve-internal-customer-id";
 import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
@@ -84,7 +85,12 @@ async function handleMonetizzePurchase(orgId: string, fields: URLSearchParams): 
   if (!grossValueInCents) return;
 
   const email = getMonetizzeNestedField(fields, "comprador", "email");
-  const customerId = email ? email.toLowerCase() : vendaCodigo;
+  const fallbackCustomerId = email ? email.toLowerCase() : vendaCodigo;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: email?.toLowerCase() ?? null,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const acq = await lookupAcquisitionContext(orgId, customerId, {
     email: email ?? null,
   });
@@ -248,7 +254,12 @@ async function handleMonetizzeRefund(orgId: string, fields: URLSearchParams): Pr
   if (!grossValueInCents) return;
 
   const email = getMonetizzeNestedField(fields, "comprador", "email");
-  const customerId = email ? email.toLowerCase() : vendaCodigo;
+  const fallbackCustomerId = email ? email.toLowerCase() : vendaCodigo;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: email?.toLowerCase() ?? null,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
 
   const orgCurrency = await getOrgCurrency(orgId);
   const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
@@ -314,7 +325,12 @@ async function handleMonetizzeSubscriptionCanceled(
   subCode: string,
 ): Promise<void> {
   const email = getMonetizzeNestedField(fields, "comprador", "email");
-  const customerId = email ? email.toLowerCase() : subCode;
+  const fallbackCustomerId = email ? email.toLowerCase() : subCode;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: email?.toLowerCase() ?? null,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
 
   const valorStr = getMonetizzeNestedField(fields, "venda", "valor") ?? "0";
   const grossValueInCents = Math.round(parseFloat(valorStr) * 100);

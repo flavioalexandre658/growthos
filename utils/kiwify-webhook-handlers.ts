@@ -9,6 +9,7 @@ import {
 import { extractGrowthosCustomerId } from "@/utils/oauth-token-cache";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
+import { resolveInternalCustomerId } from "@/utils/resolve-internal-customer-id";
 import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
@@ -208,8 +209,14 @@ async function handleKiwifyPurchase(
   const grossValueInCents = pickGrossInCents(body);
   if (!grossValueInCents) return;
 
-  const customerId = pickCustomerId(body);
+  const fallbackCustomerId = pickCustomerId(body);
   const customerEntity = pickCustomer(body);
+  const customerEmail = customerEntity?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const acq = await lookupAcquisitionContext(orgId, customerId, {
     email: customerEntity?.email ?? null,
   });
@@ -367,7 +374,13 @@ async function handleKiwifyRefund(orgId: string, body: KiwifyWebhookBody): Promi
   const grossValueInCents = pickGrossInCents(body);
   if (!grossValueInCents) return;
 
-  const customerId = pickCustomerId(body);
+  const fallbackCustomerId = pickCustomerId(body);
+  const customerEmail = pickCustomer(body)?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const orgCurrency = await getOrgCurrency(orgId);
   const eventCurrency = pickCurrency(body);
   const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
@@ -436,7 +449,13 @@ async function handleKiwifySubscriptionCanceled(
   const subInfo = pickSubscriptionInfo(body);
   if (!subInfo?.id) return;
 
-  const customerId = pickCustomerId(body);
+  const fallbackCustomerId = pickCustomerId(body);
+  const customerEmail = pickCustomer(body)?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const grossValueInCents = pickGrossInCents(body);
   const orgCurrency = await getOrgCurrency(orgId);
   const eventCurrency = pickCurrency(body);

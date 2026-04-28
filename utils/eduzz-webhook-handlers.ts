@@ -10,6 +10,7 @@ import {
 } from "@/utils/eduzz-helpers";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
+import { resolveInternalCustomerId } from "@/utils/resolve-internal-customer-id";
 import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
@@ -131,7 +132,13 @@ async function handleEduzzPurchase(orgId: string, body: EduzzWebhookBody): Promi
   if (!grossValueInCents) return;
 
   const eventCurrency = (body.trans_currency ?? "BRL").toUpperCase();
-  const customerId = pickCustomerId(body);
+  const fallbackCustomerId = pickCustomerId(body);
+  const customerEmail = body.cus_email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const acq = await lookupAcquisitionContext(orgId, customerId, {
     email: body.cus_email ?? null,
   });
@@ -293,7 +300,13 @@ async function handleEduzzRefund(orgId: string, body: EduzzWebhookBody): Promise
   if (!grossValueInCents) return;
 
   const eventCurrency = (body.trans_currency ?? "BRL").toUpperCase();
-  const customerId = pickCustomerId(body);
+  const fallbackCustomerId = pickCustomerId(body);
+  const customerEmail = body.cus_email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
 
   const orgCurrency = await getOrgCurrency(orgId);
   const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
@@ -368,7 +381,13 @@ async function handleEduzzSubscriptionCanceled(orgId: string, body: EduzzWebhook
   const subId = body.recurrence_cod ? String(body.recurrence_cod) : null;
   if (!subId) return;
 
-  const customerId = pickCustomerId(body);
+  const fallbackCustomerId = pickCustomerId(body);
+  const customerEmail = body.cus_email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const grossValueInCents = Math.round((body.trans_value ?? 0) * 100);
   const eventCurrency = (body.trans_currency ?? "BRL").toUpperCase();
   const orgCurrency = await getOrgCurrency(orgId);

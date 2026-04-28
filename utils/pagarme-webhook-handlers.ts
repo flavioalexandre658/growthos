@@ -9,6 +9,7 @@ import {
 import { extractGrowthosCustomerId } from "@/utils/oauth-token-cache";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
+import { resolveInternalCustomerId } from "@/utils/resolve-internal-customer-id";
 import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
@@ -264,7 +265,13 @@ async function handlePagarmePaid(
   if (!grossValueInCents) return;
 
   const sourceEntity = charge ?? order ?? subscription;
-  const customerId = pickCustomerId(sourceEntity);
+  const fallbackCustomerId = pickCustomerId(sourceEntity);
+  const customerEmail = sourceEntity?.customer?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const acq = await lookupAcquisitionContext(orgId, customerId, {
     email: sourceEntity?.customer?.email ?? null,
   });
@@ -410,7 +417,13 @@ async function handlePagarmeRefund(orgId: string, body: PagarmeWebhookBody): Pro
   const grossValueInCents = charge?.amount ?? charge?.paid_amount ?? 0;
   if (!grossValueInCents) return;
 
-  const customerId = pickCustomerId(charge);
+  const fallbackCustomerId = pickCustomerId(charge);
+  const customerEmail = charge?.customer?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const orgCurrency = await getOrgCurrency(orgId);
   const eventCurrency = (charge?.currency ?? "BRL").toUpperCase();
   const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
@@ -489,7 +502,13 @@ async function handlePagarmeSubscriptionCreated(
   const subscription = body.data as PagarmeSubscription | undefined;
   if (!subscription?.id) return;
 
-  const customerId = pickCustomerId(subscription);
+  const fallbackCustomerId = pickCustomerId(subscription);
+  const customerEmail = subscription.customer?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const eventCurrency = (subscription.currency ?? "BRL").toUpperCase();
   const item = subscription.items && subscription.items.length > 0 ? subscription.items[0] : null;
   const valueInCents = item?.pricing_scheme?.price ?? 0;
@@ -558,7 +577,13 @@ async function handlePagarmeSubscriptionCanceled(
   const subscription = body.data as PagarmeSubscription | undefined;
   if (!subscription?.id) return;
 
-  const customerId = pickCustomerId(subscription);
+  const fallbackCustomerId = pickCustomerId(subscription);
+  const customerEmail = subscription.customer?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const eventCurrency = (subscription.currency ?? "BRL").toUpperCase();
   const item = subscription.items && subscription.items.length > 0 ? subscription.items[0] : null;
   const valueInCents = item?.pricing_scheme?.price ?? 0;

@@ -1,9 +1,9 @@
 import Stripe from "stripe";
 import type { Job } from "bullmq";
 import { db } from "@/db";
-import { integrations, events, payments, subscriptions, organizations } from "@/db/schema";
+import { integrations, events, payments, subscriptions, organizations, customers } from "@/db/schema";
 import { decrypt } from "@/lib/crypto";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, isNotNull } from "drizzle-orm";
 import { extractSubscriptionIdFromInvoice, extractPaymentIntentFromInvoice, mapBillingInterval, stripeEventHash } from "@/utils/stripe-helpers";
 import { getRevenueBudget } from "@/utils/check-revenue-limit";
 import dayjs from "@/utils/dayjs";
@@ -185,6 +185,32 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
 
   await caches.preloadAcquisitions(organizationId);
 
+  const emailToInternalId = new Map<string, string>();
+  const customerRowsForCache = await db
+    .select({ customerId: customers.customerId, email: customers.email })
+    .from(customers)
+    .where(
+      and(
+        eq(customers.organizationId, organizationId),
+        isNotNull(customers.email),
+      ),
+    );
+  for (const row of customerRowsForCache) {
+    if (!row.email) continue;
+    const key = row.email.toLowerCase();
+    if (!emailToInternalId.has(key)) {
+      emailToInternalId.set(key, row.customerId);
+    }
+  }
+
+  function resolveByEmail(email: string | null | undefined, fallbackId: string | null): string | null {
+    if (email) {
+      const internal = emailToInternalId.get(email.toLowerCase());
+      if (internal) return internal;
+    }
+    return fallbackId;
+  }
+
   let processed = 0;
   const subIntervalMap = new Map<string, BillingInterval>();
 
@@ -260,7 +286,8 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
 
     const rawCustomerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id ?? "";
     const metaCustomerId = extractMetaCustomerId(invoice.metadata as Record<string, string> | null);
-    const customerId = metaCustomerId ?? rawCustomerId;
+    const internalByEmail = resolveByEmail(invoice.customer_email ?? null, null);
+    const customerId = metaCustomerId ?? internalByEmail ?? rawCustomerId;
 
     const acq = customerId ? await caches.lookupAcquisition(organizationId, customerId) : null;
 
@@ -376,7 +403,8 @@ export async function processStripeSyncJob(job: Job<SyncJobData>): Promise<{
 
     const rawCustomerId = typeof charge.customer === "string" ? charge.customer : charge.customer?.id ?? null;
     const metaCustomerId = extractMetaCustomerId(charge.metadata as Record<string, string> | null);
-    const customerId = metaCustomerId ?? rawCustomerId;
+    const internalByEmail = resolveByEmail(charge.billing_details?.email ?? null, null);
+    const customerId = metaCustomerId ?? internalByEmail ?? rawCustomerId;
 
     const acq = customerId ? await caches.lookupAcquisition(organizationId, customerId) : null;
     const pm = charge.payment_method_details?.type ?? "credit_card";

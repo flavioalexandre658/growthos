@@ -10,6 +10,7 @@ import {
 } from "@/utils/guru-helpers";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
+import { resolveInternalCustomerId } from "@/utils/resolve-internal-customer-id";
 import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
@@ -142,7 +143,13 @@ async function handleGuruPurchase(orgId: string, body: GuruWebhookBody): Promise
   const grossValueInCents = pickGrossInCents(body);
   if (!grossValueInCents) return;
 
-  const customerId = pickCustomerId(body);
+  const fallbackCustomerId = pickCustomerId(body);
+  const customerEmail = body.contact?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const acq = await lookupAcquisitionContext(orgId, customerId, {
     email: body.contact?.email ?? null,
   });
@@ -293,7 +300,13 @@ async function handleGuruRefund(orgId: string, body: GuruWebhookBody): Promise<v
   const grossValueInCents = pickGrossInCents(body);
   if (!grossValueInCents) return;
 
-  const customerId = pickCustomerId(body);
+  const fallbackCustomerId = pickCustomerId(body);
+  const customerEmail = body.contact?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const orgCurrency = await getOrgCurrency(orgId);
   const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
     orgId,
@@ -356,7 +369,13 @@ async function handleGuruSubscriptionCanceled(orgId: string, body: GuruWebhookBo
   const subId = body.subscription?.id;
   if (!subId) return;
 
-  const customerId = pickCustomerId(body);
+  const fallbackCustomerId = pickCustomerId(body);
+  const customerEmail = body.contact?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const grossValueInCents = pickGrossInCents(body);
   const orgCurrency = await getOrgCurrency(orgId);
   const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(

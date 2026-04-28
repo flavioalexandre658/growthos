@@ -9,6 +9,7 @@ import {
 } from "@/utils/paypal-helpers";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
+import { resolveInternalCustomerId } from "@/utils/resolve-internal-customer-id";
 import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
@@ -125,9 +126,15 @@ async function handlePayPalPayment(orgId: string, body: PayPalWebhookBody): Prom
 
   const grossValueInCents = amount.cents;
   const eventCurrency = amount.currency;
-  const customerId = pickCustomerId(resource);
+  const fallbackCustomerId = pickCustomerId(resource);
+  const customerEmailLookup = pickCustomerEmail(resource);
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmailLookup,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const acq = await lookupAcquisitionContext(orgId, customerId, {
-    email: pickCustomerEmail(resource),
+    email: customerEmailLookup,
   });
 
   const subscriptionId = resource.billing_agreement_id
@@ -262,7 +269,13 @@ async function handlePayPalRefund(orgId: string, body: PayPalWebhookBody): Promi
 
   const grossValueInCents = amount.cents;
   const eventCurrency = amount.currency;
-  const customerId = pickCustomerId(resource);
+  const fallbackCustomerId = pickCustomerId(resource);
+  const customerEmailLookup = pickCustomerEmail(resource);
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmailLookup,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
 
   const orgCurrency = await getOrgCurrency(orgId);
   const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
@@ -329,7 +342,13 @@ async function handlePayPalSubscriptionCreated(orgId: string, body: PayPalWebhoo
   const subId = String(resource.id ?? "");
   if (!subId) return;
 
-  const customerId = pickCustomerId(resource);
+  const fallbackCustomerId = pickCustomerId(resource);
+  const customerEmailLookup = pickCustomerEmail(resource);
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmailLookup,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const billingInfo = resource.billing_info as Record<string, unknown> | undefined;
   const lastPayment = billingInfo?.last_payment as Record<string, unknown> | undefined;
   const amountObj = lastPayment?.amount as { value?: string; currency_code?: string } | undefined;
@@ -406,7 +425,13 @@ async function handlePayPalSubscriptionCanceled(orgId: string, body: PayPalWebho
   const subId = String(resource.id ?? "");
   if (!subId) return;
 
-  const customerId = pickCustomerId(resource);
+  const fallbackCustomerId = pickCustomerId(resource);
+  const customerEmailLookup = pickCustomerEmail(resource);
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmailLookup,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const orgCurrency = await getOrgCurrency(orgId);
   const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
     orgId,

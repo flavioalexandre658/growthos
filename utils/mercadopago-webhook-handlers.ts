@@ -16,6 +16,7 @@ import {
 import { extractGrowthosCustomerId } from "@/utils/oauth-token-cache";
 import { resolveExchangeRate } from "@/utils/resolve-exchange-rate";
 import { lookupAcquisitionContext } from "@/utils/acquisition-lookup";
+import { resolveInternalCustomerId } from "@/utils/resolve-internal-customer-id";
 import { checkMilestones } from "@/utils/milestones";
 import { insertPayment } from "@/utils/insert-payment";
 import { upsertCustomer } from "@/utils/upsert-customer";
@@ -139,7 +140,13 @@ async function handleMPPayment(
   const grossValueInCents = Math.round((payment.transaction_amount ?? 0) * 100);
   if (!grossValueInCents) return;
 
-  const customerId = pickPaymentCustomerId(payment);
+  const fallbackCustomerId = pickPaymentCustomerId(payment);
+  const customerEmail = payment.payer?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const acq = await lookupAcquisitionContext(orgId, customerId, {
     email: payment.payer?.email ?? null,
   });
@@ -287,7 +294,13 @@ async function handleMPRefund(orgId: string, payment: MPPayment): Promise<void> 
   const grossValueInCents = Math.round((payment.transaction_amount ?? 0) * 100);
   if (!grossValueInCents) return;
 
-  const customerId = pickPaymentCustomerId(payment);
+  const fallbackCustomerId = pickPaymentCustomerId(payment);
+  const customerEmail = payment.payer?.email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const orgCurrency = await getOrgCurrency(orgId);
   const eventCurrency = (payment.currency_id ?? "BRL").toUpperCase();
   const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
@@ -350,7 +363,13 @@ async function handleMPRefund(orgId: string, payment: MPPayment): Promise<void> 
 }
 
 async function handleMPPreapproval(orgId: string, preapproval: MPPreapproval): Promise<void> {
-  const customerId = pickPreapprovalCustomerId(preapproval);
+  const fallbackCustomerId = pickPreapprovalCustomerId(preapproval);
+  const customerEmail = preapproval.payer_email?.toLowerCase() ?? null;
+  const customerId =
+    (await resolveInternalCustomerId(orgId, {
+      email: customerEmail,
+      fallbackId: fallbackCustomerId,
+    })) ?? fallbackCustomerId;
   const status = mapMercadoPagoPreapprovalStatus(preapproval.status);
 
   const recurring = preapproval.auto_recurring;
