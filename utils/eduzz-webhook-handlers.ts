@@ -132,7 +132,9 @@ async function handleEduzzPurchase(orgId: string, body: EduzzWebhookBody): Promi
 
   const eventCurrency = (body.trans_currency ?? "BRL").toUpperCase();
   const customerId = pickCustomerId(body);
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: body.cus_email ?? null,
+  });
 
   const recurring = !!body.recurrence_cod;
   const subscriptionId = recurring ? String(body.recurrence_cod) : null;

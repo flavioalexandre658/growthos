@@ -84,6 +84,7 @@ export async function getChannels(
     topChannel: "",
     concentrationTop2: 0,
     investmentGroups: [],
+    attributionRate: { total: 0, attributed: 0, percentage: 0 },
   };
 
   const session = await getServerSession(authOptions);
@@ -120,21 +121,21 @@ export async function getChannels(
   const paidList = PAID_MEDIUMS.map((m) => `'${m}'`).join(", ");
 
   const channelExpr = sql.raw(`CASE
-    WHEN COALESCE("source", 'direct') = 'direct' AND COALESCE("medium", 'direct') = 'direct' THEN 'direct'
-    WHEN COALESCE("medium", '') IN (${paidList}) THEN COALESCE("source", 'direct') || '_paid'
-    ELSE COALESCE("source", 'direct') || '_organic'
+    WHEN LOWER(COALESCE("source", 'direct')) = 'direct' AND LOWER(COALESCE("medium", 'direct')) = 'direct' THEN 'direct'
+    WHEN LOWER(COALESCE("medium", '')) IN (${paidList}) THEN LOWER(COALESCE("source", 'direct')) || '_paid'
+    ELSE LOWER(COALESCE("source", 'direct')) || '_organic'
   END`);
 
   const channelExprPayments = sql.raw(`CASE
-    WHEN COALESCE("source", 'direct') = 'direct' AND COALESCE("medium", 'direct') = 'direct' THEN 'direct'
-    WHEN COALESCE("medium", '') IN (${paidList}) THEN COALESCE("source", 'direct') || '_paid'
-    ELSE COALESCE("source", 'direct') || '_organic'
+    WHEN LOWER(COALESCE("source", 'direct')) = 'direct' AND LOWER(COALESCE("medium", 'direct')) = 'direct' THEN 'direct'
+    WHEN LOWER(COALESCE("medium", '')) IN (${paidList}) THEN LOWER(COALESCE("source", 'direct')) || '_paid'
+    ELSE LOWER(COALESCE("source", 'direct')) || '_organic'
   END`);
 
   const channelExprCustomers = sql.raw(`CASE
-    WHEN COALESCE("first_source", 'direct') = 'direct' AND COALESCE("first_medium", 'direct') = 'direct' THEN 'direct'
-    WHEN COALESCE("first_medium", '') IN (${paidList}) THEN COALESCE("first_source", 'direct') || '_paid'
-    ELSE COALESCE("first_source", 'direct') || '_organic'
+    WHEN LOWER(COALESCE("first_source", 'direct')) = 'direct' AND LOWER(COALESCE("first_medium", 'direct')) = 'direct' THEN 'direct'
+    WHEN LOWER(COALESCE("first_medium", '')) IN (${paidList}) THEN LOWER(COALESCE("first_source", 'direct')) || '_paid'
+    ELSE LOWER(COALESCE("first_source", 'direct')) || '_organic'
   END`);
 
   const [rawRows, prevRawRows, marketingRows, customerCountRows, ltvRows, churnRows] = await Promise.all([
@@ -270,6 +271,28 @@ export async function getChannels(
       )
     )
     .groupBy(sql`${channelExprPayments}`, payments.eventType);
+
+  const [attributionRow] = await db
+    .select({
+      total: sql<number>`COUNT(*)`,
+      attributed: sql<number>`COUNT(*) FILTER (WHERE ${payments.source} IS NOT NULL AND LOWER(${payments.source}) <> 'direct')`,
+    })
+    .from(payments)
+    .where(
+      and(
+        eq(payments.organizationId, organizationId),
+        gte(payments.createdAt, startDate),
+        lte(payments.createdAt, endDate),
+        inArray(payments.eventType, REVENUE_EVENT_TYPES)
+      )
+    );
+
+  const attributionTotal = Number(attributionRow?.total ?? 0);
+  const attributionAttributed = Number(attributionRow?.attributed ?? 0);
+  const attributionPercentage =
+    attributionTotal > 0
+      ? Math.round((attributionAttributed / attributionTotal) * 100)
+      : 0;
 
   const pvBySource = await getPageviewSessionsByChannel(
     organizationId,
@@ -507,6 +530,11 @@ export async function getChannels(
     topChannel,
     concentrationTop2,
     investmentGroups,
+    attributionRate: {
+      total: attributionTotal,
+      attributed: attributionAttributed,
+      percentage: attributionPercentage,
+    },
   };
 
   await cacheSet(cacheKey, result, CACHE_TTL);

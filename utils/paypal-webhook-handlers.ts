@@ -126,7 +126,9 @@ async function handlePayPalPayment(orgId: string, body: PayPalWebhookBody): Prom
   const grossValueInCents = amount.cents;
   const eventCurrency = amount.currency;
   const customerId = pickCustomerId(resource);
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: pickCustomerEmail(resource),
+  });
 
   const subscriptionId = resource.billing_agreement_id
     ? String(resource.billing_agreement_id)

@@ -216,6 +216,9 @@ async function handlePageview(
     rawMedium: toString(body.medium),
     campaign: toString(body.campaign),
     content: toString(body.content),
+    term: toString(body.term),
+    clickId: toString(body.click_id),
+    clickIdType: toString(body.click_id_type),
     landingPage: toString(body.landing_page),
     entryPage: toString(body.entry_page),
     referrer: toString(body.referrer),
@@ -599,6 +602,9 @@ export async function POST(req: NextRequest) {
     rawMedium: toString(body.medium),
     campaign: toString(body.campaign),
     content: toString(body.content),
+    term: toString(body.term),
+    clickId: toString(body.click_id),
+    clickIdType: toString(body.click_id_type),
     landingPage: toString(body.landing_page),
     entryPage: toString(body.entry_page),
     referrer: toString(body.referrer),
@@ -686,6 +692,10 @@ export async function POST(req: NextRequest) {
       firstLandingPage: toString(body.first_landing_page),
       firstReferrer: toString(body.first_referrer),
       firstDevice: toString(body.first_device),
+      firstSessionId: toString(body.session_id),
+      firstClickId: toString(body.first_click_id) ?? toString(body.click_id),
+      firstClickIdType: toString(body.first_click_id_type) ?? toString(body.click_id_type),
+      firstTerm: toString(body.first_term) ?? toString(body.term),
       eventTimestamp: createdAt,
     }).catch((err) => {
       console.error("[Groware] upsertCustomer failed", {
@@ -695,8 +705,10 @@ export async function POST(req: NextRequest) {
       });
     });
 
+    const sessionId = toString(body.session_id);
+    const customerEmail = toString(body.customer_email);
+
     if (eventType === "identify") {
-      const sessionId = toString(body.session_id);
       if (sessionId) {
         db.update(events)
           .set({ customerId })
@@ -705,7 +717,7 @@ export async function POST(req: NextRequest) {
               eq(events.organizationId, apiKey.organizationId),
               eq(events.sessionId, sessionId),
               sql`${events.customerId} IS NULL`,
-              sql`${events.createdAt} > now() - interval '1 hour'`
+              sql`${events.createdAt} > now() - interval '90 days'`
             )
           )
           .execute()
@@ -713,6 +725,28 @@ export async function POST(req: NextRequest) {
             console.error("[Groware] retroactive session enrichment failed", {
               orgId: apiKey.organizationId,
               sessionId,
+              customerId,
+              error: err instanceof Error ? err.message : String(err),
+            });
+          });
+      }
+
+      if (customerEmail) {
+        db.update(events)
+          .set({ customerId })
+          .where(
+            and(
+              eq(events.organizationId, apiKey.organizationId),
+              sql`${events.customerId} IS NULL`,
+              sql`${events.metadata}->>'customer_email' = ${customerEmail}`,
+              sql`${events.createdAt} > now() - interval '90 days'`
+            )
+          )
+          .execute()
+          .catch((err) => {
+            console.error("[Groware] retroactive email enrichment failed", {
+              orgId: apiKey.organizationId,
+              customerEmail,
               customerId,
               error: err instanceof Error ? err.message : String(err),
             });

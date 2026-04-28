@@ -113,7 +113,9 @@ async function handleAbacatePayPurchase(orgId: string, body: AbacatePayWebhookBo
   if (!grossValueInCents) return;
 
   const customerId = pickCustomerId(body);
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: body.data?.customer?.email ?? null,
+  });
   const recurring = isRecurring(body);
 
   const orgCurrency = await getOrgCurrency(orgId);

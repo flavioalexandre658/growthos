@@ -12,6 +12,7 @@ import { PeriodFilter } from "@/app/[locale]/[slug]/_components/period-filter";
 import { DemoModeBanner } from "@/app/[locale]/[slug]/_components/demo-mode-banner";
 import { ChannelsTreemap } from "./channels-treemap";
 import { ChannelsKpiStrip } from "./channels-kpi-strip";
+import { ChannelsAttributionCard } from "./channels-attribution-card";
 import { ChannelsTable } from "./channels-table";
 import { ChannelsInvestmentKpis } from "./channels-investment-kpis";
 import { ChannelsCampaigns } from "./channels-campaigns";
@@ -71,6 +72,7 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
     channelsWithRevenue: demoData.channels.channelsWithRevenue,
     topChannel: demoData.channels.topChannel,
     concentrationTop2: demoData.channels.concentrationTop2,
+    attributionRate: { total: 0, attributed: 0, percentage: 0 },
   } : null;
 
   const effectiveResp = dataSourcesNotReady ? undefined : (isDemo ? demoResp : resp);
@@ -127,7 +129,13 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
         />
       ) : (
         <>
-          <ChannelsKpiStrip data={effectiveResp as IChannelsResult | undefined} isLoading={effectiveLoading} />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_auto]">
+            <ChannelsKpiStrip data={effectiveResp as IChannelsResult | undefined} isLoading={effectiveLoading} />
+            <ChannelsAttributionCard
+              attributionRate={(effectiveResp as IChannelsResult | undefined)?.attributionRate}
+              isLoading={effectiveLoading}
+            />
+          </div>
 
           {investmentGroups.length > 0 && (
             <ChannelsInvestmentKpis groups={investmentGroups} />
@@ -148,6 +156,8 @@ export function ChannelsContent({ filter, initialSearch }: ChannelsContentProps)
             onOrderDir={setOrderDir}
             onPageChange={setPage}
             onPageSizeChange={(s) => { setLimit(s); setPage(1); }}
+            organizationId={isDemo ? undefined : orgId}
+            filter={filter}
           />
         </>
       )}

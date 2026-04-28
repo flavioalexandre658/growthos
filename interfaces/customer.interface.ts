@@ -17,6 +17,10 @@ export interface ICustomer {
   firstLandingPage: string | null;
   firstReferrer: string | null;
   firstDevice: string | null;
+  firstSessionId: string | null;
+  firstClickId: string | null;
+  firstClickIdType: string | null;
+  firstTerm: string | null;
   firstSeenAt: Date;
   lastSeenAt: Date;
   createdAt: Date;
@@ -60,5 +64,9 @@ export interface IUpsertCustomerInput {
   firstLandingPage?: string | null;
   firstReferrer?: string | null;
   firstDevice?: string | null;
+  firstSessionId?: string | null;
+  firstClickId?: string | null;
+  firstClickIdType?: string | null;
+  firstTerm?: string | null;
   eventTimestamp?: Date;
 }

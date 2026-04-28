@@ -121,6 +121,24 @@ export interface IChannelInvestmentGroup {
   channelKeys: string[];
 }
 
+export interface IChannelAttributionRate {
+  total: number;
+  attributed: number;
+  percentage: number;
+}
+
+export interface IChannelBreakdownItem {
+  name: string;
+  count: number;
+  revenue: number;
+}
+
+export interface IChannelBreakdownResult {
+  campaigns: IChannelBreakdownItem[];
+  contents: IChannelBreakdownItem[];
+  terms: IChannelBreakdownItem[];
+}
+
 export interface IChannelsResult {
   data: IChannelData[];
   pagination: IPaginationMeta;
@@ -130,6 +148,7 @@ export interface IChannelsResult {
   topChannel: string;
   concentrationTop2: number;
   investmentGroups: IChannelInvestmentGroup[];
+  attributionRate: IChannelAttributionRate;
 }
 
 export interface ILandingPageData {

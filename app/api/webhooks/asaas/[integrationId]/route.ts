@@ -215,7 +215,10 @@ export async function handleAsaasEvent(orgId: string, body: AsaasWebhookBody, as
 
 async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload, asaasApiKey: string) {
   const customerId = payment.externalReference ?? payment.customer;
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const customerData = await fetchAsaasCustomer(payment.customer, asaasApiKey);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: customerData?.email ?? null,
+  });
 
   const isRecurring = !!payment.subscription;
   const orgCurrency = await getOrgCurrency(orgId);
@@ -331,8 +334,7 @@ async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload
       .where(eq(subscriptions.subscriptionId, payment.subscription!));
   }
 
-  fetchAsaasCustomer(payment.customer, asaasApiKey).then((customerData) => {
-    if (!customerData) return;
+  if (customerData) {
     upsertCustomer({
       organizationId: orgId,
       customerId,
@@ -347,7 +349,7 @@ async function handlePaymentReceived(orgId: string, payment: AsaasPaymentPayload
         error: err instanceof Error ? err.message : String(err),
       });
     });
-  }).catch(() => {});
+  }
 
   const asaasValueLabel = payment.value
     ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(payment.value)

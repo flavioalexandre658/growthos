@@ -110,7 +110,9 @@ async function handleKirvanoPurchase(orgId: string, body: KirvanoWebhookBody, is
   if (!grossValueInCents) return;
 
   const customerId = pickCustomerId(body);
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: body.customer?.email ?? null,
+  });
   const recurring = (body.type ?? "").toUpperCase() === "RECURRING";
   const product = pickProductInfo(body);
 

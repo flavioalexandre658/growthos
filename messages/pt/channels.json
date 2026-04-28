@@ -66,6 +66,18 @@
       "revenue": "Receita",
       "roi": "ROI",
       "noInvestment": "Sem investimento registrado no período"
+    },
+    "attributionRate": {
+      "title": "Taxa de atribuição",
+      "subtitle": "{attributed} de {total} vendas atribuídas"
+    },
+    "breakdown": {
+      "campaigns": "Top campanhas",
+      "contents": "Top conteúdos",
+      "terms": "Top termos",
+      "empty": "Sem dados",
+      "expand": "Expandir detalhes",
+      "collapse": "Recolher"
     }
   }
 }

@@ -265,7 +265,9 @@ async function handlePagarmePaid(
 
   const sourceEntity = charge ?? order ?? subscription;
   const customerId = pickCustomerId(sourceEntity);
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: sourceEntity?.customer?.email ?? null,
+  });
 
   const recurring = forceRecurring || !!charge?.subscription_id || !!subscription;
 

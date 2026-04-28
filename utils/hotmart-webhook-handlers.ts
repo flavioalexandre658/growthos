@@ -184,7 +184,9 @@ async function handleHotmartApproved(orgId: string, body: HotmartWebhookBody): P
   if (!grossValueInCents) return;
 
   const customerId = pickCustomerId(data);
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: data.buyer?.email ?? null,
+  });
   const recurring = isRecurring(data);
   const recurrenceNumber = data.purchase.recurrence_number ?? 0;
 

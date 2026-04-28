@@ -140,7 +140,9 @@ async function handleMPPayment(
   if (!grossValueInCents) return;
 
   const customerId = pickPaymentCustomerId(payment);
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: payment.payer?.email ?? null,
+  });
 
   const preapprovalId =
     (payment.metadata?.preapproval_id as string | undefined) ??

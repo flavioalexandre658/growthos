@@ -209,7 +209,10 @@ async function handleKiwifyPurchase(
   if (!grossValueInCents) return;
 
   const customerId = pickCustomerId(body);
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const customerEntity = pickCustomer(body);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: customerEntity?.email ?? null,
+  });
   const recurring = forceRecurring || isRecurring(body);
 
   const orgCurrency = await getOrgCurrency(orgId);

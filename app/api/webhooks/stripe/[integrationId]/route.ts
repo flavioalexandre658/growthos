@@ -215,8 +215,11 @@ async function handleCheckoutSessionCompleted(
       : session.payment_intent?.id ?? null;
   if (!piId) return;
 
-  const acq = await lookupAcquisitionContext(orgId, customerId);
   const metaSessionId = session.metadata?.groware_session_id ?? null;
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: session.customer_details?.email ?? null,
+    sessionId: metaSessionId,
+  });
 
   const eventCurrency = session.currency?.toUpperCase() ?? "BRL";
   const orgCurrency = await getOrgCurrency(orgId);
@@ -361,7 +364,9 @@ async function handleInvoicePaid(orgId: string, invoice: Stripe.Invoice, eventTi
     billingInterval = sub?.billingInterval ?? null;
   }
 
-  const acq = await lookupAcquisitionContext(orgId, customerId ?? "");
+  const acq = await lookupAcquisitionContext(orgId, customerId ?? "", {
+    email: invoice.customer_email ?? null,
+  });
   const eventCurrency = invoice.currency.toUpperCase();
   const orgCurrency = await getOrgCurrency(orgId);
   const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(
@@ -840,7 +845,11 @@ async function handlePaymentIntentSucceeded(
   );
   if (!customerId) return;
 
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const piMetaSessionId = paymentIntent.metadata?.groware_session_id ?? null;
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: paymentIntent.receipt_email ?? null,
+    sessionId: piMetaSessionId,
+  });
 
   const eventCurrency = paymentIntent.currency.toUpperCase();
   const orgCurrency = await getOrgCurrency(orgId);

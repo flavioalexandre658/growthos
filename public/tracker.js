@@ -24,6 +24,10 @@
   var QUEUE_KEY = "groware_queue";
   var UTM_KEY = "groware_utm";
   var SESSION_KEY = "groware_sid";
+  var SESSION_COOKIE_KEY = "groware_session";
+  var SESSION_COOKIE_DAYS = 90;
+  var CLICK_ID_KEY = "groware_click_id";
+  var CLICK_ID_TYPE_KEY = "groware_click_id_type";
   var CHECKOUT_KEY = "groware_checkout";
   var DEDUP_KEY = "groware_dedup";
   var DEDUP_TTL_MS = 24 * 60 * 60 * 1000;
@@ -74,13 +78,47 @@
     });
   }
 
+  function getSessionCookie() {
+    try {
+      var match = document.cookie.match(/(?:^|;\s*)groware_session=([^;]+)/);
+      return match ? decodeURIComponent(match[1]) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function setSessionCookie(sessionId) {
+    try {
+      var expires = new Date(Date.now() + SESSION_COOKIE_DAYS * 24 * 60 * 60 * 1000).toUTCString();
+      document.cookie =
+        SESSION_COOKIE_KEY +
+        "=" +
+        encodeURIComponent(sessionId) +
+        "; expires=" +
+        expires +
+        "; path=/; SameSite=Lax";
+    } catch (_) {}
+  }
+
   function getSessionId() {
     try {
-      var sid = sessionStorage.getItem(SESSION_KEY);
-      if (!sid) {
-        sid = "s_" + generateId();
-        sessionStorage.setItem(SESSION_KEY, sid);
+      var fromCookie = getSessionCookie();
+      if (fromCookie) {
+        try {
+          if (sessionStorage.getItem(SESSION_KEY) !== fromCookie) {
+            sessionStorage.setItem(SESSION_KEY, fromCookie);
+          }
+        } catch (_) {}
+        return fromCookie;
       }
+      var sid = sessionStorage.getItem(SESSION_KEY);
+      if (sid) {
+        setSessionCookie(sid);
+        return sid;
+      }
+      sid = "s_" + generateId();
+      try { sessionStorage.setItem(SESSION_KEY, sid); } catch (_) {}
+      setSessionCookie(sid);
       return sid;
     } catch (_) {
       return "s_" + generateId();
@@ -271,11 +309,50 @@
     return null;
   }
 
+  function getClickIdMeta(params) {
+    var types = [
+      "fbclid",
+      "gclid",
+      "gbraid",
+      "wbraid",
+      "msclkid",
+      "ttclid",
+      "twclid",
+      "li_fat_id",
+      "ScCid",
+      "pclid",
+    ];
+    for (var i = 0; i < types.length; i++) {
+      var value = params.get(types[i]);
+      if (value) return { clickId: value, clickIdType: types[i] };
+    }
+    return null;
+  }
+
+  function persistClickIdMeta(meta) {
+    if (!meta) return;
+    try {
+      localStorage.setItem(CLICK_ID_KEY, meta.clickId);
+      localStorage.setItem(CLICK_ID_TYPE_KEY, meta.clickIdType);
+    } catch (_) {}
+  }
+
+  function getStoredClickIdMeta() {
+    try {
+      var clickId = localStorage.getItem(CLICK_ID_KEY);
+      var clickIdType = localStorage.getItem(CLICK_ID_TYPE_KEY);
+      if (clickId && clickIdType) return { clickId: clickId, clickIdType: clickIdType };
+    } catch (_) {}
+    return null;
+  }
+
   function persistUtms() {
     try {
       var params = new URLSearchParams(window.location.search);
       var clickId = detectClickId(params);
       var utmSource = params.get("utm_source");
+      var clickIdMeta = getClickIdMeta(params);
+      if (clickIdMeta) persistClickIdMeta(clickIdMeta);
 
       if (clickId) {
         var utms = {
@@ -373,11 +450,16 @@
           ? "mobile"
           : "desktop";
 
+      var firstTouchClickIdMeta = getClickIdMeta(params);
+
       var firstTouch = {
         source: source,
         medium: medium,
         campaign: params.get("utm_campaign") || null,
         content: params.get("utm_content") || null,
+        term: params.get("utm_term") || null,
+        click_id: firstTouchClickIdMeta ? firstTouchClickIdMeta.clickId : null,
+        click_id_type: firstTouchClickIdMeta ? firstTouchClickIdMeta.clickIdType : null,
         landing_page: window.location.pathname,
         referrer: rawReferrer,
         device: device,
@@ -423,6 +505,7 @@
     var externalReferrer =
       rawReferrer && !isSameSite(rawReferrer) ? rawReferrer : null;
     var clickId = detectClickId(params);
+    var clickIdMeta = getClickIdMeta(params) || getStoredClickIdMeta();
 
     var source =
       params.get("utm_source") ||
@@ -442,6 +525,9 @@
     var content =
       params.get("utm_content") || (storedUtms && storedUtms.content) || null;
 
+    var term =
+      params.get("utm_term") || (storedUtms && storedUtms.term) || null;
+
     var device =
       /Mobi|Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent,
@@ -456,6 +542,9 @@
       medium: medium,
       campaign: campaign,
       content: content,
+      term: term,
+      click_id: clickIdMeta ? clickIdMeta.clickId : null,
+      click_id_type: clickIdMeta ? clickIdMeta.clickIdType : null,
       landing_page: window.location.pathname,
       entry_page: getEntryPage(),
       referrer: rawReferrer,
@@ -469,6 +558,9 @@
       ctx.first_medium = firstTouch.medium;
       ctx.first_campaign = firstTouch.campaign;
       ctx.first_content = firstTouch.content;
+      ctx.first_term = firstTouch.term || null;
+      ctx.first_click_id = firstTouch.click_id || null;
+      ctx.first_click_id_type = firstTouch.click_id_type || null;
       ctx.first_landing_page = firstTouch.landing_page;
       ctx.first_referrer = firstTouch.referrer;
       ctx.first_device = firstTouch.device;

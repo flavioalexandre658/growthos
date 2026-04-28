@@ -111,7 +111,9 @@ async function handlePagBankChargePaid(
   if (!grossValueInCents) return;
 
   const customerId = pickCustomerId(body);
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: body.customer?.email ?? null,
+  });
 
   const orgCurrency = await getOrgCurrency(orgId);
   const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(

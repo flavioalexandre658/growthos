@@ -7,6 +7,7 @@ import {
   IStepMeta,
   OrderDirection,
   IPaginationMeta,
+  IDateFilter,
 } from "@/interfaces/dashboard.interface";
 import { ResponsiveTable, TableColumn, ServerPaginationConfig } from "@/components/ui/responsive-table";
 import { IconChevronDown, IconChevronUp, IconEye, IconEyeOff } from "@tabler/icons-react";
@@ -14,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { ChannelBadge } from "@/components/ui/channel-badge";
 import { fmtInt, fmtCurrencyDecimal } from "@/utils/format";
 import { useOrganization } from "@/components/providers/organization-provider";
+import { ChannelsBreakdownPanel } from "./channels-breakdown-panel";
 
 function roiColor(roi: number) {
   if (roi >= 500) return "text-emerald-400";
@@ -69,9 +71,25 @@ interface ChannelsTableProps {
   onOrderDir: (dir: OrderDirection) => void;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  organizationId?: string;
+  filter?: IDateFilter;
 }
 
-function ExpandedChannelRow({ c, t, locale, currency }: { c: ChannelRow; t: ReturnType<typeof useTranslations<"channels.table">>; locale: string; currency: string }) {
+function ExpandedChannelRow({
+  c,
+  t,
+  locale,
+  currency,
+  organizationId,
+  filter,
+}: {
+  c: ChannelRow;
+  t: ReturnType<typeof useTranslations<"channels.table">>;
+  locale: string;
+  currency: string;
+  organizationId?: string;
+  filter?: IDateFilter;
+}) {
   const hasInvestment = c.investment !== undefined && c.investment !== null;
   const hasLtv = c.avgLtv !== undefined && c.avgLtv > 0;
   const hasChurn = !!c.churnRate;
@@ -138,6 +156,17 @@ function ExpandedChannelRow({ c, t, locale, currency }: { c: ChannelRow; t: Retu
           <span className="font-mono text-sm text-zinc-300">{fmtCurrencyDecimal(c.ticket_medio / 100, locale, currency)}</span>
         </div>
       )}
+      {organizationId && filter && (
+        <div className="col-span-2 sm:col-span-4">
+          <ChannelsBreakdownPanel
+            organizationId={organizationId}
+            channelKey={c.channel}
+            filter={filter}
+            locale={locale}
+            currency={currency}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -153,6 +182,8 @@ export function ChannelsTable({
   onOrderDir,
   onPageChange,
   onPageSizeChange,
+  organizationId,
+  filter,
 }: ChannelsTableProps) {
   const t = useTranslations("channels.table");
   const { organization } = useOrganization();
@@ -323,7 +354,16 @@ export function ChannelsTable({
       serverPagination={serverPagination}
       emptyMessage={t("emptyState")}
       header={tableHeader}
-      expandedRowRender={(c) => <ExpandedChannelRow c={c} t={t} locale={locale} currency={currency} />}
+      expandedRowRender={(c) => (
+        <ExpandedChannelRow
+          c={c}
+          t={t}
+          locale={locale}
+          currency={currency}
+          organizationId={organizationId}
+          filter={filter}
+        />
+      )}
     />
   );
 }

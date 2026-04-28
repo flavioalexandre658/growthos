@@ -85,7 +85,9 @@ async function handleMonetizzePurchase(orgId: string, fields: URLSearchParams): 
 
   const email = getMonetizzeNestedField(fields, "comprador", "email");
   const customerId = email ? email.toLowerCase() : vendaCodigo;
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: email ?? null,
+  });
 
   const subCode = getMonetizzeNestedField(fields, "assinatura", "codigo");
   const recurring = !!subCode;

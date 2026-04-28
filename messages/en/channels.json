@@ -66,6 +66,18 @@
       "revenue": "Revenue",
       "roi": "ROI",
       "noInvestment": "No investment recorded in the period"
+    },
+    "attributionRate": {
+      "title": "Attribution rate",
+      "subtitle": "{attributed} of {total} sales attributed"
+    },
+    "breakdown": {
+      "campaigns": "Top campaigns",
+      "contents": "Top contents",
+      "terms": "Top terms",
+      "empty": "No data",
+      "expand": "Expand details",
+      "collapse": "Collapse"
     }
   }
 }

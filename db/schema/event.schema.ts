@@ -31,6 +31,9 @@ export const events = pgTable(
     rawMedium: text("raw_medium"),
     campaign: text("campaign"),
     content: text("content"),
+    term: text("term"),
+    clickId: text("click_id"),
+    clickIdType: text("click_id_type"),
     landingPage: text("landing_page"),
     entryPage: text("entry_page"),
     referrer: text("referrer"),
@@ -61,5 +64,12 @@ export const events = pgTable(
     ),
     index("events_org_created_idx").on(table.organizationId, table.createdAt),
     uniqueIndex("events_hash_unique_idx").on(table.organizationId, table.eventHash),
+    index("events_org_source_created_idx").on(
+      table.organizationId,
+      table.source,
+      table.createdAt
+    ),
+    index("events_org_session_idx").on(table.organizationId, table.sessionId),
+    index("events_org_click_id_idx").on(table.organizationId, table.clickId),
   ]
 );

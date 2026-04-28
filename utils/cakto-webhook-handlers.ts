@@ -99,7 +99,9 @@ async function handleCaktoPurchase(orgId: string, body: CaktoWebhookBody): Promi
   if (!grossValueInCents) return;
 
   const customerId = pickCustomerId(body);
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: body.customer?.email ?? null,
+  });
   const recurring = !!body.subscription;
 
   const orgCurrency = await getOrgCurrency(orgId);
@@ -419,7 +421,9 @@ async function handleCaktoRenewal(orgId: string, body: CaktoWebhookBody): Promis
   if (!grossValueInCents) return;
 
   const customerId = pickCustomerId(body);
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: body.customer?.email ?? null,
+  });
 
   const orgCurrency = await getOrgCurrency(orgId);
   const { baseCurrency, exchangeRate, baseGrossValueInCents } = await computeBaseValue(

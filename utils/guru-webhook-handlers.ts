@@ -143,7 +143,9 @@ async function handleGuruPurchase(orgId: string, body: GuruWebhookBody): Promise
   if (!grossValueInCents) return;
 
   const customerId = pickCustomerId(body);
-  const acq = await lookupAcquisitionContext(orgId, customerId);
+  const acq = await lookupAcquisitionContext(orgId, customerId, {
+    email: body.contact?.email ?? null,
+  });
   const recurring = isRecurring(body);
 
   const orgCurrency = await getOrgCurrency(orgId);
