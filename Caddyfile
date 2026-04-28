@@ -1,8 +1,16 @@
 groware.io {
 	reverse_proxy app:3000
 
-	encode gzip
+	encode zstd br gzip
 
-	@static path /tracker*.js /tracker*.map /_next/static/*
-	header @static Cache-Control "public, max-age=3600, stale-while-revalidate=86400"
+	@nextStatic path /_next/static/*
+	header @nextStatic Cache-Control "public, max-age=31536000, immutable"
+
+	@tracker path /tracker*.js /tracker*.map
+	header @tracker {
+		Cache-Control "public, max-age=2592000, stale-while-revalidate=604800"
+		Timing-Allow-Origin "*"
+		X-Content-Type-Options "nosniff"
+		Access-Control-Allow-Origin "*"
+	}
 }

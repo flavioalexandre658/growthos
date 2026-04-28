@@ -25,6 +25,7 @@ ENV NEXTAUTH_URL=$NEXTAUTH_URL
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx terser public/tracker.js -o public/tracker.min.js -c -m --source-map 2>/dev/null || true
+RUN echo "NEXT_PUBLIC_TRACKER_VERSION=$(sha256sum public/tracker.min.js | awk '{print $1}' | head -c 8)" >> .env.production
 RUN npm run build
 
 FROM node:20-alpine AS runner

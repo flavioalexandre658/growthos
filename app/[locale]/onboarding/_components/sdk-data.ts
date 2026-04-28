@@ -1,4 +1,5 @@
 import type { ComponentType } from "react";
+import { getTrackerSrc } from "@/utils/tracker-url";
 import {
   IconBrandNextjs,
   IconBrandReact,
@@ -70,8 +71,8 @@ export function getTutorialSteps(
   ctx: TutorialContext,
 ): TutorialStep[] {
   const { apiKey, baseUrl, t } = ctx;
-  const scriptTag = `<script async src="${baseUrl}/tracker.min.js" data-key="${apiKey}"></script>`;
-  const debugTag = `<script async src="${baseUrl}/tracker.min.js" data-key="${apiKey}" data-debug="true"></script>`;
+  const scriptTag = `<script async src="${getTrackerSrc(baseUrl)}" data-key="${apiKey}"></script>`;
+  const debugTag = `<script async src="${getTrackerSrc(baseUrl)}" data-key="${apiKey}" data-debug="true"></script>`;
 
   const c = (key: string) => t(`sdks.common.${key}`);
 
@@ -100,7 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <Script
-          src="${baseUrl}/tracker.min.js"
+          src="${getTrackerSrc(baseUrl)}"
           data-key={process.env.NEXT_PUBLIC_GROWARE_KEY}
           strategy="afterInteractive"
         />
@@ -273,7 +274,7 @@ await fetch('${baseUrl}/api/track', {
           file: "app/layout.tsx",
           language: "tsx",
           code: `<Script
-  src="${baseUrl}/tracker.min.js"
+  src="${getTrackerSrc(baseUrl)}"
   data-key={process.env.NEXT_PUBLIC_GROWARE_KEY}
   data-debug="true"
   strategy="afterInteractive"
@@ -989,7 +990,7 @@ export const groware = {
           language: "php",
           code: `<?php
 function groware_tracker_script() {
-  echo '<script async src="${baseUrl}/tracker.min.js" data-key="${apiKey}"></script>';
+  echo '<script async src="${getTrackerSrc(baseUrl)}" data-key="${apiKey}"></script>';
 }
 add_action('wp_head', 'groware_tracker_script', 1); // priority 1 = loads early`,
           callout: {
@@ -1057,7 +1058,7 @@ add_action('woocommerce_thankyou', 'groware_track_woo_purchase');`,
           code: `<?php
 function groware_tracker_script() {
   // Remove data-debug="true" in production
-  echo '<script async src="${baseUrl}/tracker.min.js" data-key="${apiKey}" data-debug="true"></script>';
+  echo '<script async src="${getTrackerSrc(baseUrl)}" data-key="${apiKey}" data-debug="true"></script>';
 }`,
         },
       ];
@@ -1070,7 +1071,7 @@ function groware_tracker_script() {
           description: t("sdks.gtm.createTagDesc"),
           file: "GTM → Tags → New Tag",
           language: "html",
-          code: `<script async src="${baseUrl}/tracker.min.js" data-key="${apiKey}"></script>`,
+          code: `<script async src="${getTrackerSrc(baseUrl)}" data-key="${apiKey}"></script>`,
           callout: {
             title: t("sdks.gtm.calloutTagOrderTitle"),
             body: t("sdks.gtm.calloutTagOrderBody"),
@@ -1879,7 +1880,7 @@ interface SdkPromptContext {
 }
 
 function getSdkInstallSection(sdkId: string, apiKey: string, baseUrl: string): string {
-  const scriptTag = `<script async src="${baseUrl}/tracker.min.js" data-key="${apiKey}"></script>`;
+  const scriptTag = `<script async src="${getTrackerSrc(baseUrl)}" data-key="${apiKey}"></script>`;
 
   const sections: Record<string, string> = {
     nextjs: `════════════════════════════════════════════
@@ -1890,7 +1891,7 @@ INSTALAÇÃO — NEXT.JS (App Router)
 
 2. No layout raiz (app/layout.tsx), use next/script:
    import Script from 'next/script'
-   <Script src="${baseUrl}/tracker.min.js" data-key={process.env.NEXT_PUBLIC_GROWARE_KEY} strategy="afterInteractive" />
+   <Script src="${getTrackerSrc(baseUrl)}" data-key={process.env.NEXT_PUBLIC_GROWARE_KEY} strategy="afterInteractive" />
 
 3. Crie o hook hooks/use-tracker.ts com useCallback + requestIdleCallback para chamar window.Groware com segurança.
 

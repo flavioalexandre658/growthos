@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import toast from "react-hot-toast";
+import { getTrackerSrc } from "@/utils/tracker-url";
 import {
   IconKey,
   IconCopy,
@@ -146,7 +147,7 @@ export function StepApiKey({
   }, [organizationId, organizationName, existingKey, t]);
 
   const snippet = apiKey
-    ? `<script async src="${baseUrl}/tracker.min.js" data-key="${apiKey}"></script>`
+    ? `<script async src="${getTrackerSrc(baseUrl)}" data-key="${apiKey}"></script>`
     : "";
 
   const copyKey = () => {

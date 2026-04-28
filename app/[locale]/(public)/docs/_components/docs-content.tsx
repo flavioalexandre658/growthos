@@ -28,6 +28,7 @@ import { EventCard } from "./event-card";
 import { Callout } from "./callout";
 import { AutoPropTable } from "./auto-prop-table";
 import { cn } from "@/lib/utils";
+import { getTrackerSrc } from "@/utils/tracker-url";
 
 interface DocsContentProps {
   serverUrl: string;
@@ -98,10 +99,10 @@ const AUTO_CONTEXT_ROWS = [
 // ─── Code snippets ────────────────────────────────────────────────────────────
 
 const buildInstallHtml = (baseUrl: string) =>
-  `<!-- Groware — stub (garante que identify/track funcionam antes do script carregar) -->\n<script>\nwindow.Groware=window.Groware||{_q:[],track:function(e,d){this._q.push(["track",e,d])},identify:function(i,t){this._q.push(["identify",i,t])},reset:function(){this._q.push(["reset"])}}\n</script>\n\n<!-- Groware — script principal (carrega em paralelo, não bloqueia o HTML) -->\n<script async src="${baseUrl}/tracker.min.js" data-key="tok_xxx"></script>`;
+  `<!-- Groware — stub (garante que identify/track funcionam antes do script carregar) -->\n<script>\nwindow.Groware=window.Groware||{_q:[],track:function(e,d){this._q.push(["track",e,d])},identify:function(i,t){this._q.push(["identify",i,t])},reset:function(){this._q.push(["reset"])}}\n</script>\n\n<!-- Groware — script principal (carrega em paralelo, não bloqueia o HTML) -->\n<script async src="${getTrackerSrc(baseUrl)}" data-key="tok_xxx"></script>`;
 
 const buildInstallNextjs = (baseUrl: string) =>
-  `import Script from 'next/script'\n\nexport default function RootLayout({ children }) {\n  return (\n    <html>\n      <head>\n        {/* Stub — garante que identify/track funcionam antes do script carregar */}\n        <script dangerouslySetInnerHTML={{ __html: \`window.Groware=window.Groware||{_q:[],track:function(e,d){this._q.push(["track",e,d])},identify:function(i,t){this._q.push(["identify",i,t])},reset:function(){this._q.push(["reset"])}}\` }} />\n      </head>\n      <body>\n        {children}\n        <Script\n          src="${baseUrl}/tracker.min.js"\n          data-key={process.env.NEXT_PUBLIC_GROWARE_KEY}\n          strategy="afterInteractive"\n        />\n      </body>\n    </html>\n  )\n}`;
+  `import Script from 'next/script'\n\nexport default function RootLayout({ children }) {\n  return (\n    <html>\n      <head>\n        {/* Stub — garante que identify/track funcionam antes do script carregar */}\n        <script dangerouslySetInnerHTML={{ __html: \`window.Groware=window.Groware||{_q:[],track:function(e,d){this._q.push(["track",e,d])},identify:function(i,t){this._q.push(["identify",i,t])},reset:function(){this._q.push(["reset"])}}\` }} />\n      </head>\n      <body>\n        {children}\n        <Script\n          src="${getTrackerSrc(baseUrl)}"\n          data-key={process.env.NEXT_PUBLIC_GROWARE_KEY}\n          strategy="afterInteractive"\n        />\n      </body>\n    </html>\n  )\n}`;
 
 const IDENTIFY_CODE = `// Após o login do usuário — enriquece o perfil e vincula eventos\nwindow.Groware.identify(user.id, {\n  name: user.name,\n  email: user.email,\n  phone: user.phone,  // opcional\n})\n\n// No logout — limpa os dados do perfil da sessão\nwindow.Groware.reset()\n\n// Desse ponto em diante, todos os eventos enviados pelo tracker.js\n// incluem automaticamente customer_id, customer_name e customer_email.`;
 
@@ -112,7 +113,7 @@ const IDENTIFY_STUB_CODE = `<!-- 1. Stub — coloque ANTES do <script async src=
 </script>
 
 <!-- 2. Script principal (minificado) — carrega em paralelo sem bloquear o HTML -->
-<script async src="https://groware.io/tracker.min.js" data-key="tok_xxx"></script>
+<script async src="${getTrackerSrc("https://groware.io")}" data-key="tok_xxx"></script>
 
 <!-- 3. Agora identify() pode ser chamado em qualquer ponto da página -->
 <script>
@@ -415,8 +416,8 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 O Groware oferece dois arquivos de script. O padrão é o <Mono>tracker.min.js</Mono> — minificado (~10KB), ideal para produção. O <Mono>tracker.js</Mono> (~22KB) é a versão legível, útil apenas para depuração local.
               </p>
               <AttrTable rows={[
-                { name: "tracker.min.js", required: "recomendado", desc: "Versão minificada (~10KB). Use em produção. Mesmo comportamento do tracker.js.", example: `${serverUrl}/tracker.min.js` },
-                { name: "tracker.js", required: "debug", desc: "Versão legível (~22KB). Use apenas para inspecionar o código do tracker localmente.", example: `${serverUrl}/tracker.js` },
+                { name: "tracker.min.js", required: "recomendado", desc: "Versão minificada (~10KB). Use em produção. Mesmo comportamento do tracker.js.", example: `${getTrackerSrc(serverUrl)}` },
+                { name: "tracker.js", required: "debug", desc: "Versão legível (~22KB). Use apenas para inspecionar o código do tracker localmente.", example: `${getTrackerSrc(serverUrl, "full")}` },
               ]} />
               <p className="text-sm text-zinc-400 leading-relaxed mt-4 mb-3">
                 <strong className="text-zinc-200">Por que usar <Mono>async</Mono> e não <Mono>defer</Mono>?</strong>
@@ -424,7 +425,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 Já o <Mono>defer</Mono> atrasa a execução até o HTML terminar de ser analisado, o que pode causar perda de contexto de navegação em SPAs.
               </p>
               <CodeBlock
-                code={`<!-- Padrão recomendado: stub inline + async (não bloqueia o HTML) -->\n<script>\nwindow.Groware=window.Groware||{_q:[],track:function(e,d){this._q.push(["track",e,d])},identify:function(i,t){this._q.push(["identify",i,t])},reset:function(){this._q.push(["reset"])}}\n</script>\n<script async src="${serverUrl}/tracker.min.js" data-key="tok_xxx"></script>`}
+                code={`<!-- Padrão recomendado: stub inline + async (não bloqueia o HTML) -->\n<script>\nwindow.Groware=window.Groware||{_q:[],track:function(e,d){this._q.push(["track",e,d])},identify:function(i,t){this._q.push(["identify",i,t])},reset:function(){this._q.push(["reset"])}}\n</script>\n<script async src="${getTrackerSrc(serverUrl)}" data-key="tok_xxx"></script>`}
                 lang="html"
                 title="Padrão recomendado (async)"
               />
@@ -433,7 +434,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
                 {" "}Use esta estratégia apenas em sites onde performance é crítica e você não precisa capturar eventos no carregamento inicial.
               </p>
               <CodeBlock
-                code={`<script>\nwindow.Groware=window.Groware||{_q:[],track:function(e,d){this._q.push(["track",e,d])},identify:function(i,t){this._q.push(["identify",i,t])},reset:function(){this._q.push(["reset"])}}\n\nwindow.addEventListener('load', function() {\n  var s = document.createElement('script');\n  s.src = '${serverUrl}/tracker.min.js';\n  s.async = true;\n  s.setAttribute('data-key', 'tok_xxx');\n  document.head.appendChild(s);\n});\n</script>`}
+                code={`<script>\nwindow.Groware=window.Groware||{_q:[],track:function(e,d){this._q.push(["track",e,d])},identify:function(i,t){this._q.push(["identify",i,t])},reset:function(){this._q.push(["reset"])}}\n\nwindow.addEventListener('load', function() {\n  var s = document.createElement('script');\n  s.src = '${getTrackerSrc(serverUrl)}';\n  s.async = true;\n  s.setAttribute('data-key', 'tok_xxx');\n  document.head.appendChild(s);\n});\n</script>`}
                 lang="html"
                 title="Lazy loading (após window.load)"
               />
@@ -875,7 +876,7 @@ export function DocsContent({ serverUrl }: DocsContentProps) {
           <TabsContent value="debug" className="mt-0 space-y-6">
             <SectionHeader title="Debug & Validação" />
 
-            <CodeBlock code={`<script\n  src="${serverUrl}/tracker.js"\n  data-key="tok_xxx"\n  data-debug="true"\n></script>\n<!-- Use tracker.js (não minificado) para debug — código legível no DevTools -->`} lang="html" title="Ativar modo debug (versão legível)" />
+            <CodeBlock code={`<script\n  src="${getTrackerSrc(serverUrl, "full")}"\n  data-key="tok_xxx"\n  data-debug="true"\n></script>\n<!-- Use tracker.js (não minificado) para debug — código legível no DevTools -->`} lang="html" title="Ativar modo debug (versão legível)" />
             <CodeBlock code={DEBUG_CODE} lang="js" title="Console do navegador" />
 
             <Separator className="bg-zinc-800/60" />

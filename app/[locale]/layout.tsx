@@ -10,6 +10,7 @@ import { SensitiveModeProvider } from "@/components/providers/sensitive-mode-pro
 import { GoogleTagManager, GoogleTagManagerNoScript } from "@/components/tracking/google-tag-manager";
 import { routing } from "../../i18n/routing";
 import { notFound } from "next/navigation";
+import { getTrackerSrc } from "@/utils/tracker-url";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -123,7 +124,7 @@ export default async function LocaleLayout({ children, params }: Props) {
       <head>
         <script
           async
-          src="https://groware.io/tracker.min.js"
+          src={getTrackerSrc("https://groware.io")}
           data-key={process.env.NEXT_PUBLIC_GROWARE_KEY}
         />
       </head>
