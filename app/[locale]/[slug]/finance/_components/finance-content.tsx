@@ -49,8 +49,9 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
   const currency = organization?.currency ?? "BRL";
   const [showExplanation, setShowExplanation] = useState(false);
 
-  const { data: dataSources, isPending: dataSourcesPending } = useOrgDataSources(orgId);
-  const isDemo = !dataSourcesPending && !(dataSources?.hasRealData);
+  const { data: dataSources, isPending: dataSourcesPending, isFetching: dataSourcesFetching } = useOrgDataSources(orgId);
+  const dataSourcesNotReady = dataSourcesPending || dataSourcesFetching;
+  const isDemo = !dataSourcesNotReady && !(dataSources?.hasRealData);
   const demoData = isDemo ? getDemoData(currency) : null;
 
   const { data: integrations, isPending: integrationsLoading } = useIntegrations(orgId ?? "");
@@ -65,10 +66,10 @@ export function FinanceContent({ filter, slug }: FinanceContentProps) {
     filter,
   );
 
-  const effectiveFinancial = (dataSourcesPending ? undefined : (demoData?.financial ?? financial)) as typeof financial;
-  const effectiveDaily = dataSourcesPending ? undefined : (demoData?.daily ?? dailyResult?.rows);
-  const effectiveFinancialLoading = dataSourcesPending || (isDemo ? false : financialLoading);
-  const effectiveDailyLoading = dataSourcesPending || (isDemo ? false : dailyLoading);
+  const effectiveFinancial = (dataSourcesNotReady ? undefined : (demoData?.financial ?? financial)) as typeof financial;
+  const effectiveDaily = dataSourcesNotReady ? undefined : (demoData?.daily ?? dailyResult?.rows);
+  const effectiveFinancialLoading = dataSourcesNotReady || (isDemo ? false : financialLoading);
+  const effectiveDailyLoading = dataSourcesNotReady || (isDemo ? false : dailyLoading);
 
   const pl = effectiveFinancial?.pl ?? null;
   const periodDays = effectiveFinancial?.periodDays ?? 30;

@@ -182,8 +182,9 @@ export function TrackerContent({ filter }: TrackerContentProps) {
   const locale = organization?.locale ?? "pt-BR";
   const currency = organization?.currency ?? "BRL";
 
-  const { data: dataSources, isPending: dataSourcesPending } = useOrgDataSources(orgId);
-  const isDemo = !dataSourcesPending && !(dataSources?.hasRealData);
+  const { data: dataSources, isPending: dataSourcesPending, isFetching: dataSourcesFetching } = useOrgDataSources(orgId);
+  const dataSourcesNotReady = dataSourcesPending || dataSourcesFetching;
+  const isDemo = !dataSourcesNotReady && !(dataSources?.hasRealData);
   const demoData = isDemo ? getDemoData(currency) : null;
 
   const initialHiddenKeys = new Set(
@@ -210,14 +211,14 @@ export function TrackerContent({ filter }: TrackerContentProps) {
   const { data: atRiskData } = useAtRiskCustomersCount(orgId ?? "");
   const { mutate: createAlerts } = useCreateDashboardAlerts(orgId ?? "");
 
-  const effectiveFunnel = dataSourcesPending ? undefined : (isDemo ? (demoData?.funnel as IGenericFunnelData | undefined) : funnel);
-  const effectiveFunnelLoading = dataSourcesPending || (isDemo ? false : funnelLoading);
-  const effectiveDaily = dataSourcesPending ? undefined : (isDemo ? demoData?.daily : dailyResult?.rows);
-  const effectiveDailyLoading = dataSourcesPending || (isDemo ? false : dailyLoading);
-  const effectiveSource = dataSourcesPending ? undefined : (isDemo ? demoData?.sourceDistribution : sourceData);
-  const effectiveSourceLoading = dataSourcesPending || (isDemo ? false : sourceLoading);
-  const effectiveTopProducts = dataSourcesPending ? undefined : (isDemo ? demoData?.topProducts : topProducts);
-  const effectiveTopProductsLoading = dataSourcesPending || (isDemo ? false : topProductsLoading);
+  const effectiveFunnel = dataSourcesNotReady ? undefined : (isDemo ? (demoData?.funnel as IGenericFunnelData | undefined) : funnel);
+  const effectiveFunnelLoading = dataSourcesNotReady || (isDemo ? false : funnelLoading);
+  const effectiveDaily = dataSourcesNotReady ? undefined : (isDemo ? demoData?.daily : dailyResult?.rows);
+  const effectiveDailyLoading = dataSourcesNotReady || (isDemo ? false : dailyLoading);
+  const effectiveSource = dataSourcesNotReady ? undefined : (isDemo ? demoData?.sourceDistribution : sourceData);
+  const effectiveSourceLoading = dataSourcesNotReady || (isDemo ? false : sourceLoading);
+  const effectiveTopProducts = dataSourcesNotReady ? undefined : (isDemo ? demoData?.topProducts : topProducts);
+  const effectiveTopProductsLoading = dataSourcesNotReady || (isDemo ? false : topProductsLoading);
 
   const allSteps: StepOption[] = (effectiveFunnel?.steps ?? [])
     .filter((s) => s.key !== "pageview")

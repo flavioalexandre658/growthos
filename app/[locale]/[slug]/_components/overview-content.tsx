@@ -27,8 +27,9 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   const orgId = organization?.id;
   const currency = organization?.currency ?? "BRL";
 
-  const { data: dataSources, isPending: dataSourcesPending } = useOrgDataSources(orgId);
-  const isDemo = !dataSourcesPending && !(dataSources?.hasRealData);
+  const { data: dataSources, isPending: dataSourcesPending, isFetching: dataSourcesFetching } = useOrgDataSources(orgId);
+  const dataSourcesNotReady = dataSourcesPending || dataSourcesFetching;
+  const isDemo = !dataSourcesNotReady && !(dataSources?.hasRealData);
 
   const demoData = isDemo ? getDemoData(currency) : null;
 
@@ -36,12 +37,12 @@ export function OverviewContent({ filter }: OverviewContentProps) {
   const { data: movement, isPending: movementLoading } = useMrrMovement(orgId, filter);
   const { data: growth, isPending: growthLoading } = useMrrGrowth(orgId, filter);
 
-  const effectiveOverview = dataSourcesPending ? undefined : (demoData?.mrrOverview ?? overview);
-  const effectiveMovement = dataSourcesPending ? undefined : (demoData?.mrrMovement ?? movement);
-  const effectiveGrowth = dataSourcesPending ? undefined : (demoData?.mrrGrowth ?? growth);
-  const effectiveOverviewLoading = dataSourcesPending || (isDemo ? false : overviewLoading);
-  const effectiveMovementLoading = dataSourcesPending || (isDemo ? false : movementLoading);
-  const effectiveGrowthLoading = dataSourcesPending || (isDemo ? false : growthLoading);
+  const effectiveOverview = dataSourcesNotReady ? undefined : (demoData?.mrrOverview ?? overview);
+  const effectiveMovement = dataSourcesNotReady ? undefined : (demoData?.mrrMovement ?? movement);
+  const effectiveGrowth = dataSourcesNotReady ? undefined : (demoData?.mrrGrowth ?? growth);
+  const effectiveOverviewLoading = dataSourcesNotReady || (isDemo ? false : overviewLoading);
+  const effectiveMovementLoading = dataSourcesNotReady || (isDemo ? false : movementLoading);
+  const effectiveGrowthLoading = dataSourcesNotReady || (isDemo ? false : growthLoading);
 
   const slug = organization?.slug ?? "";
 
